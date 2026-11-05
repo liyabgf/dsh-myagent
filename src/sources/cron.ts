@@ -36,7 +36,13 @@ export class CronSource implements Source {
   private timer?: ReturnType<typeof setTimeout>
   private stopped = false
   private last: SourceStatus = { ok: true }
-  private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0 }
+  private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0, unhandled: 0 }
+  /**
+   * How many slots the most recent firing dispositioned in a state this Source does not handle. Per firing, not
+   * cumulative: a cumulative number on the board is a permanent alarm (S38/S41), whereas this one recurs on every
+   * slot until the union and this Source agree again, and clears on the first firing that has none.
+   */
+  private unhandledNow = 0
   private lastTriggerAt?: string
 
   constructor(private readonly host: SourceHost) {}
@@ -102,6 +108,18 @@ export class CronSource implements Source {
       changed = true
     }
     if (changed) this.cursor.set(state)
+    // An unrecognized disposition joins the same one-decision-at-the-end structure rather than reporting itself where
+    // it happens: `record` clears whatever this part reported, so a `problem()` raised during `fireDue` would be
+    // erased by the `arm()` that immediately follows it. That is the inbox defect fixed in the same round, and the
+    // comment below is the rule both now follow.
+    if (this.unhandledNow > 0) {
+      // "in its most recent firing" is load-bearing wording, not decoration: `unhandledNow` is per firing while
+      // `counts.unhandled` is cumulative, so after two firings the board says 1 and the count says 2. Two numbers that
+      // disagree without saying why read as a bug to the person who has to act on them.
+      this.health.problem(`${this.unhandledNow} schedule slot(s) in the most recent firing were dispositioned in a `
+        + 'state this Source does not handle; nothing was executed for them, and the count says how many in total')
+      broken = true
+    }
     // `record` clears whatever this part reported, so a summary written after the loop would erase the problem the
     // loop just found — the one thing an unattended system must not do to its own alarm.
     if (!broken) this.health.record(schedules.length === 0 ? 'no schedule' : `${schedules.length} schedule(s)`)
@@ -151,6 +169,9 @@ export class CronSource implements Source {
 
   /** Produce a Trigger for every slot that has passed, folding the slots a downtime skipped into one. */
   private fireDue(): void {
+    // Per firing, so the board line clears on the first firing that has none instead of accumulating into a permanent
+    // alarm (S38/S41).
+    this.unhandledNow = 0
     const settings = this.host.settings()
     const state = this.state()
     const now = Date.now()
@@ -191,9 +212,23 @@ export class CronSource implements Source {
         },
       }
       const result = this.host.engine.receive(trigger)
-      this.counts[result.disposition.state === 'accepted' ? 'accepted'
-        : result.disposition.state === 'observed' ? 'observed'
-          : result.stored === 'duplicate' ? 'duplicate' : 'ignored']++
+      // Exhaustive, with the unknown state counted as itself. Precedence is unchanged: `accepted` and `observed` are
+      // decided BEFORE `stored === 'duplicate'`, so a duplicate of an accepted slot still counts `accepted` — a slot
+      // that fired twice is two accepted slots, and `sources.spec.ts` pins that. What changes is the tail: a state
+      // this Source does not know used to be counted as `ignored`, which says "the gate refused this" when in fact
+      // the gate's answer was not recognized. Neither `pending` (no producer in src/) nor `lost` (`Engine.receive`
+      // re-runs the gate for a stored `lost` row, so it can never return one) reaches here today; the union is closed
+      // only by its declaration, so a future member would, and it would have been counted as a refusal.
+      // Not named `state`: `fireDue` already has a `const state = this.state()` and shadowing it in the loop body is
+      // a typecheck error, not a style choice.
+      const answered = result.disposition.state
+      const bucket = answered === 'accepted' ? 'accepted'
+        : answered === 'observed' ? 'observed'
+          : result.stored === 'duplicate' ? 'duplicate'
+            : answered === 'ignored' ? 'ignored'
+              : 'unhandled'
+      this.counts[bucket]++
+      if (bucket === 'unhandled') this.unhandledNow++
       this.lastTriggerAt = at
       const following = missed > 0
         ? nextRun(schedule.timing, new Date(now))

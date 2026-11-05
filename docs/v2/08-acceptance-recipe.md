@@ -425,7 +425,12 @@ shasum -a 256 $HOME/.dsh/state/myagent-acceptance/myagent.sqlite3   # 必须与�
 ls $HOME/.dsh/state/myagent-acceptance/ | grep -E 'wal|shm|lock'    # 应当没有输出
 
 # 8.3 日常宿主全程未受影响
-sqlite3 "file:$HOME/.dsh/state/myagent/myagent.sqlite3?mode=ro" 'select version from schema_version'  # 仍是 1
+sqlite3 "file:$HOME/.dsh/state/myagent/myagent.sqlite3?mode=ro" 'select version from schema_version'  # 应当是 5，且与验收前相同
+# 【工程第 23 轮更正】这里原来写的是「仍是 1」。那在 V1 时代为真，日常库迁移到 5 之后就是假的了，
+# 而它与同一节上方第 419 行的「应当是 5」直接矛盾。这句话已经在不同文档里以不同形式出现过四次（§4.57 记录过），
+# 原因都是同一个：**一个写下时为真的数字被抄进了配方，之后没人回来核对**。
+# 照这条配方跑的人会看到 5，然后以为日常库被验收污染了——一句过期的断言比没有断言更坏，因为它会让人去查一个不存在的问题。
+# 这条检查的真正意思是"验收没有动日常库"，所以要比的是**验收前后相同**，而不是某个写死的值。
 lsof -nP -iTCP:3080 -sTCP:LISTEN | tail -1                                                            # pid 未变
 ```
 

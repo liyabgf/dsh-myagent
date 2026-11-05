@@ -379,6 +379,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
     effect: (fn: () => () => Promise<void>) => { disposals.push(fn()); return () => {} },
     fiber: {},
     agents: { get: (id: string) => agents.get(id) },
+    skills: { register: () => () => {} },
     webServer: {
       port: 3080,
       register: (route: { path: string; handler: (req: unknown, res: unknown) => void | Promise<void> }) => {

@@ -8,6 +8,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { createRuntime, type Runtime } from './app/runtime.ts'
+import { registerSkills, type SkillsPort } from './app/skills.ts'
 import { Config, type DeploymentConfig } from './deployment.ts'
 
 export const name = 'myagent'
@@ -16,6 +17,13 @@ export const name = 'myagent'
 export const inject = [
   'agents', 'sessionController', 'sessionPersistence', 'workspaceRegistry', 'permissionPresets',
   'tools', 'systemPrompt', 'webServer', 'subprocess',
+  // Declared, not probed. The first version read `ctx.skills` without declaring it and guarded with "if undefined,
+  // warn" — and cordis does not return undefined for an undeclared service, it THROWS: the plugin manager showed
+  // `fiberPhase: failed`, `cannot get property "skills" without inject`, and myagent was not mounted on the daily host
+  // at all (panel 404). 783 offline tests and a green gate could not see it, because the test stub's ctx is a plain
+  // object that answers any property. This is the reason "key paths must be verified on a real host" is a hard rule.
+  // The DSH plugins that use the registry declare it the same way (`skill-badge/src/index.ts:55`).
+  'skills',
 ]
 
 export { Config }
@@ -29,12 +37,22 @@ export { Config }
  * on demand instead, from the panel or from the first Ticket somebody opens in it.
  */
 export async function apply(ctx: Context, config: DeploymentConfig): Promise<void> {
+  // Contributed before the runtime, because the skills do not depend on it: they are general utilities distilled from
+  // what real workers kept re-inventing, and a host whose myagent failed to start still benefits from them. `skills` is
+  // in `inject`, so it is present here; there is no "absent" branch, because there is no such case to handle.
   let runtime: Runtime
   try {
     runtime = createRuntime(ctx, config)
   } catch (error) {
     ctx.logger.error('myagent did not start, and the host carries on without it: %s', errorChain(error))
     return
+  }
+  const skills = (ctx as unknown as { skills?: SkillsPort }).skills
+  if (skills !== undefined) {
+    ctx.effect(() => {
+      const release = registerSkills(skills)
+      return () => { release() }
+    })
   }
   // Stopping releases the state lock, the routes, the pump and the Store, in that order.
   ctx.effect(() => async () => { await runtime.stop() })

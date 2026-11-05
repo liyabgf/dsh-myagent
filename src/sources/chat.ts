@@ -67,7 +67,14 @@ const SETTLE_MS = 1000
 /** The largest message file this Source reads; a bigger one is set aside rather than loaded. */
 const MAX_BYTES = 512 * 1024
 /** Where a taken message goes, by what the gate decided — the inbox's folders, so the directory shows what is waiting. */
-const TAKEN = { accepted: 'accepted', observed: 'observed', rejected: 'rejected' } as const
+const TAKEN = {
+  accepted: 'accepted', observed: 'observed', rejected: 'rejected',
+  // Where a message goes when its disposition is a state this Source does not handle. Not `rejected`: a rejection is
+  // a verdict the gate issued, and filing an unhandled state there would claim one. See the backlog line in
+  // scanChannel for what the operator is told — the event itself is recorded in the archived file's annotation, which
+  // is where `take` already puts every note, because a past event does not belong on a board that means "right now".
+  unhandled: 'unhandled',
+} as const
 type Taken = keyof typeof TAKEN
 /** Where `deliver` writes, inside the channel directory; see the file header for why not the directory itself. */
 const OUT_DIR = 'out'
@@ -136,7 +143,7 @@ export class ChatSource implements TwoWaySource {
   private stopped = false
   private last: SourceStatus = { ok: true }
   /** `waiting` is a gauge recomputed from the directories each pass; the rest accumulate for the life of the instance. */
-  private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0, waiting: 0 }
+  private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0, waiting: 0, unhandled: 0 }
   /** The waiting queue as data, not as a sentence. Set by the same pass that composes the health line. */
   private waitingNow: { count: number; ids: string[]; more: number } = { count: 0, ids: [], more: 0 }
   private lastTriggerAt?: string
@@ -383,7 +390,9 @@ export class ChatSource implements TwoWaySource {
         // FIRST disposition earned rather than a blanket `accepted/`.
         this.counts.duplicate++
         const folder: Taken = disposition.state === 'observed' ? 'observed'
-          : disposition.state === 'ignored' ? 'rejected' : 'accepted'
+          : disposition.state === 'ignored' ? 'rejected'
+          : disposition.state === 'accepted' ? 'accepted'
+          : 'unhandled'
         await this.take(path, directory, entry.name, folder, `Already taken as Trigger ${trigger.id}`, trigger.id, issues)
       } else if (disposition.state === 'accepted') {
         this.counts.accepted++
@@ -396,8 +405,33 @@ export class ChatSource implements TwoWaySource {
         const decision = this.host.engine.decisionOf(disposition.decisionId)
         const why = decision === undefined ? 'refused' : `${decision.reason}${decision.detail === undefined ? '' : `: ${decision.detail}`}`
         await this.take(path, directory, entry.name, 'rejected', why, trigger.id, issues)
+      } else {
+        // A disposition state this Source does not know. Neither is reachable today — `pending` has no producer
+        // anywhere in src/ (a grep for `state: 'pending'` finds only `Assignment.state`), and `Engine.receive` re-runs
+        // the gate for a stored `lost` row so it can never return `lost` — but the union is closed only by its
+        // declaration, so any future member walks straight in here. This is the fifth member of the family discipline
+        // 0.10 exists for; an earlier one put a false sentence into the audit record.
+        //
+        // What is NOT done here, and why: no `issues.push`. The board means "right now" (round 43), and this is a past
+        // event — putting it there has exactly two outcomes and both are defects: it either stays forever (the S38/S41
+        // permanent false alarm) or the next quiet pass overwrites it with `record(detail)` and the operator never
+        // sees it. The event is recorded where `take` already records every note: the first line of the archived file.
+        // What the board gets instead is the BACKLOG, recomputed every pass, below.
+        this.counts.unhandled++
+        await this.take(path, directory, entry.name, 'unhandled',
+          `Disposition "${disposition.state}" is not handled by this Source; nothing was executed`, trigger.id, issues)
       }
       this.host.requestPass()
+    }
+    // The backlog, not the event: how many messages are parked in `unhandled/` right now. Recomputed every pass, so
+    // a quiet pass cannot erase it (the directory is still there) and it retires on its own once a person deals with
+    // the files (the count reaches zero and the line stops being pushed). That is the shape a board entry needs; an
+    // event is not, which is why the `else` above records the event in the file and says nothing here.
+    const parked = join(directory, TAKEN.unhandled)
+    const backlog = await readdir(parked).then(names => names.length, () => 0)
+    if (backlog > 0) {
+      issues.push(`channel ${channel.id}: ${backlog} message(s) are parked in ${TAKEN.unhandled}/ because their `
+        + 'disposition was not a state this Source handles; nothing was executed for them, and each file says why')
     }
     return { settling, waiting, ids }
   }

@@ -20,7 +20,12 @@ const SETTLE_MS = 1000
 /** The largest request file this Source reads; a bigger one is refused rather than loaded. */
 const MAX_BYTES = 512 * 1024
 /** Where a taken file goes, by what the gate decided. */
-const TAKEN = { accepted: 'accepted', observed: 'observed', rejected: 'rejected' } as const
+const TAKEN = {
+  accepted: 'accepted', observed: 'observed', rejected: 'rejected',
+  // Where a request goes when its disposition is a state this Source does not handle. Not `accepted`: that folder's
+  // name is a claim, and filing something there that was never accepted is a sentence the operator reads and believes.
+  unhandled: 'unhandled',
+} as const
 type Taken = keyof typeof TAKEN
 
 /** What a request file's front matter may say. Unknown keys stay in the body. */
@@ -90,7 +95,7 @@ export class InboxSource implements Source {
   private scanning?: Promise<void>
   private stopped = false
   private last: SourceStatus = { ok: true }
-  private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0 }
+  private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0, unhandled: 0 }
   private lastTriggerAt?: string
 
   constructor(private readonly host: SourceHost, private readonly defaultDirectory: string) {}
@@ -187,6 +192,11 @@ export class InboxSource implements Source {
     await mkdir(directory, { recursive: true })
     const now = Date.now()
     let settling = 0
+    // What went wrong during this pass, collected rather than reported as it happens. The reason is at the end of the
+    // pass: `record(detail)` overwrites the entry wholesale (`health.ts:17`), so a `problem()` called mid-pass was
+    // erased before the pass finished and the operator never saw it. That is the S19/N5 shape — chat collects issues
+    // this way already, and its spec says cron and rule each shipped the bug once. inbox still had it.
+    const issues: string[] = []
     for (const entry of await readdirSafe(directory)) {
       if (this.stopped) return
       if (!entry.isFile() || entry.name.startsWith('.') || !entry.name.toLowerCase().endsWith('.md')) continue
@@ -202,12 +212,12 @@ export class InboxSource implements Source {
       if (now - info.mtimeMs < SETTLE_MS) { settling++; continue }
       if (info.size > MAX_BYTES) {
         this.counts.ignored++
-        await this.take(path, directory, entry.name, 'rejected', `Refused: larger than ${MAX_BYTES} bytes`, key('inbox', entry.name, info.mtimeMs, info.size))
+        await this.take(path, directory, entry.name, 'rejected', `Refused: larger than ${MAX_BYTES} bytes`, key('inbox', entry.name, info.mtimeMs, info.size), issues)
         continue
       }
       let text: string
       try { text = await readFile(path, 'utf8') }
-      catch (error) { this.health.problem(`Could not read ${entry.name}: ${reason(error)}`); continue }
+      catch (error) { issues.push(`Could not read ${entry.name}: ${reason(error)}`); continue }
       const parsed = frontMatter(text, entry.name.replace(/\.md$/i, ''))
       const at = new Date(info.mtimeMs).toISOString()
       const trigger: Trigger = {
@@ -227,24 +237,43 @@ export class InboxSource implements Source {
       const disposition = result.disposition
       if (disposition.state === 'accepted') {
         this.counts.accepted++
-        await this.take(path, directory, entry.name, 'accepted', `Ticket ${disposition.ticketId}`, trigger.id)
+        await this.take(path, directory, entry.name, 'accepted', `Ticket ${disposition.ticketId}`, trigger.id, issues)
       } else if (disposition.state === 'observed') {
         this.counts.observed++
-        await this.take(path, directory, entry.name, 'observed', 'The accept mode records this request and executes nothing', trigger.id)
+        await this.take(path, directory, entry.name, 'observed', 'The accept mode records this request and executes nothing', trigger.id, issues)
       } else if (disposition.state === 'ignored') {
         this.counts.ignored++
         const decision = this.host.engine.decisionOf(disposition.decisionId)
         const why = decision === undefined ? 'refused' : `${decision.reason}${decision.detail === undefined ? '' : `: ${decision.detail}`}`
-        await this.take(path, directory, entry.name, 'rejected', why, trigger.id)
+        await this.take(path, directory, entry.name, 'rejected', why, trigger.id, issues)
       } else {
-        // Seen before this process started and left behind: move it out so no poll reads it again.
-        this.counts.duplicate++
-        await this.take(path, directory, entry.name, 'accepted', `Already taken as Trigger ${trigger.id}`, trigger.id)
+        // A disposition state this Source does not know. The comment that used to be here said "seen before this
+        // process started and left behind", but that was already false: a duplicate carries the STORED disposition, so
+        // one whose request was accepted takes the first branch and one that was refused takes the third — this branch
+        // is reached only by a state nothing produces (`pending` has no producer in src/, and `Engine.receive` re-runs
+        // the gate for a stored `lost` row so it can never return `lost`). A false comment is the mildest form of the
+        // thing discipline 0.10 exists to prevent; a false folder name is the same sentence written on disk.
+        //
+        // No `issues.push` here: this is a past event, and the board means "right now". The event is recorded where
+        // `take` records every note — the first line of the archived file. The board gets the backlog, below.
+        this.counts.unhandled++
+        await this.take(path, directory, entry.name, 'unhandled',
+          `Disposition "${disposition.state}" is not handled by this Source; nothing was executed`, trigger.id, issues)
       }
       this.host.requestPass()
     }
+    // The backlog, not the event: how many requests are parked in `unhandled/` right now. Recomputed every pass, so a
+    // quiet pass cannot erase it and it retires on its own once a person deals with the files.
+    const parked = join(directory, TAKEN.unhandled)
+    const backlog = await readdirSafe(parked).then(entries => entries.filter(e => e.isFile()).length)
+    if (backlog > 0) {
+      issues.push(`${backlog} request(s) are parked in ${TAKEN.unhandled}/ because their disposition was not a state `
+        + 'this Source handles; nothing was executed for them, and each file says why')
+    }
     const detail = settling > 0 ? `${settling} file(s) still settling` : undefined
-    this.health.record(detail)
+    // One decision at the end of the pass, not a `problem()` mid-pass that this line would overwrite.
+    if (issues.length > 0) this.health.problem(issues.join('; '))
+    else this.health.record(detail)
     this.last = { ok: true, detail, lastTriggerAt: this.lastTriggerAt, counts: { ...this.counts } }
   }
 
@@ -253,7 +282,9 @@ export class InboxSource implements Source {
    * The Trigger is already stored when this runs, so a file that cannot be moved is reported rather than retried into
    * a second Ticket.
    */
-  private async take(path: string, directory: string, name: string, target: Taken, note: string, identity: string): Promise<void> {
+  private async take(
+    path: string, directory: string, name: string, target: Taken, note: string, identity: string, issues: string[],
+  ): Promise<void> {
     const folder = join(directory, TAKEN[target])
     try {
       const body = await readFile(path, 'utf8')
@@ -270,7 +301,7 @@ export class InboxSource implements Source {
       await mkdir(folder, { recursive: true })
       await writeFile(join(folder, uniqueName(identity, name)), `<!-- myagent: ${note} -->\n${body}`, 'utf8')
     } catch (error) {
-      this.health.problem(`Could not move ${name} out of the inbox: ${reason(error)}`)
+      issues.push(`Could not move ${name} out of the inbox: ${reason(error)}`)
     }
   }
 }

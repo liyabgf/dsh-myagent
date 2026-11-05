@@ -53,6 +53,18 @@ readable text each wrote their own `html2txt.py` from scratch, and one Ticket wr
 and then `mk_news_manifest2.py` beside it rather than fixing the first. Every one of those was turns spent
 re-deriving something that already existed, and turns are the budget you are actually spending.
 
+This bundle contributes skills of its own, and they are named `myagent-*` so you can spot them:
+- **`myagent-html-to-text`** turns a saved page into readable text with the standard library alone, keeping table
+  cells separable. If you are about to write an HTML-to-text converter, stop — two Tickets already did, and neither
+  could see the other's.
+- **`myagent-source-registry`** is how to make fetched material checkable: a manifest appended as you fetch (final
+  URL, status, bytes, UTC time, local copy), then a registry that separates captured from failed and primary from
+  secondary. Load it before you fetch more than a couple of sources, and **before you write conclusions someone else
+  will have to verify** — the second real run could merge with the first only because the first had a registry.
+- **`myagent-polite-fetch`** is the batch-fetching half of the same method: the spacing, the retry set and the two
+  timeouts that two real runs survived with, and the curl line that produced them. Load it **before** writing a
+  fetching loop — the numbers in it were measured, and guessing them is how a run gets blocked at page forty.
+
 So: check first, and write only what is genuinely specific to this Ticket. When you do write something
 generic — extracting text from a format, fetching politely under a rate limit, building a registry of where
 each fact came from — say so in your report, because the next Ticket cannot see your directory and the only

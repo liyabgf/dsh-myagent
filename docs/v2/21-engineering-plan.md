@@ -190,7 +190,7 @@ expect(host.toolsOf(workerId(runtime.store.tickets.list()[0]!.id))).toContain('m
 
 ---
 
-## W5 · 两棵树的漂移，与一条可重复的发布流程
+## W5 · 两棵树的漂移，与一条可重复的发布流程 —— 【工程第 9 轮已关闭，见 §4.68；0.1.3 已发布】
 
 **为什么**：现在有两棵树——`~/Documents/SA/myagent`（真源）与 `~/Documents/SA/myagent-public`（发布物）。
 **已经漂移两次**：能力分析文档创建在了副本里（后来同步回来）；
@@ -216,7 +216,27 @@ expect(host.toolsOf(workerId(runtime.store.tickets.list()[0]!.id))).toContain('m
 
 ---
 
-## W6 · §0.10 的第五次：三处 Source catch-all
+## W6 · §0.10 的第五次：三处 Source catch-all —— 【第 17 轮已关闭（3/3），见 §4.71/§4.72/§4.76】
+
+**第 10 轮的状态**：`chat.ts` 的四处改动已实现，并且**归档去向与诚实计数都被观察为正确**
+（`unhandled/` 里恰好 1 个文件、`accepted/` 不存在、`counts` 是 `{unhandled:1, accepted:0, duplicate:0}`），
+**但健康板那一行没出现**。**七条结构性假设已全部排除**（见 §4.69 的表，留着以免下一轮重走一遍）。
+
+**剩下唯一的假设若成立，它本身就是一个今天可观察的缺陷**：chat.ts 的一条一次性抱怨
+会被紧随其后的安静 pass 用 `record(detail)` 抹掉——即 **F2/S41/S38 那个家族在 chat.ts 上仍然活着**
+（第 43 轮修了 `effects`/`delivery`、第 50 轮修了 `sessions`，chat 不在其中）。
+
+**【第 11 轮：矛盾已解开，而答案是要求本身错了 —— 见 §4.70】**
+`take()`（`chat.ts:428`）把 `note` **写进归档文件本身**，所以那个事实**已经被持久记录了**；
+健康板根本不是它该在的地方。**把一个事件放上只表达"此刻"的板，只有两种结局，两种都错**：
+一直留着＝永久假警报（S38/S41/F2），被下一趟安静 pass 清掉＝操作者永远看不见（我观察到的正是这种）。
+
+**W6 的第三条要求因此改写**（前两条已验证正确，第三条由 `take()` 免费提供）：
+**板上报的是积压，不是事件**——扫描时数 `unhandled/` 里的文件数，>0 就报一行点名数量与目录。
+它**不会被安静的 pass 清掉**（目录还在），也**会在人处理完后自然消失**（文件被移走）。
+**这个形状同时适用于 inbox 与 cron 那两处。**
+
+以下是原计划：
 
 **为什么**：`inbox.ts:228-234`、`chat.ts:385-386`、`cron.ts:194-196` 都有
 "列举已知处置状态 + else 兜底成 accepted/ignored"。**今天对 `lost` 不可达**
@@ -349,3 +369,21 @@ W8（独立，但 §6c 那半需要新旋钮）
 5. 变异还原后**再跑一次完整闸门**（0.2b），并核对哈希与还原前一致
 6. 把这一轮写进 `docs/v2/00-audit-and-plan.md`，**包括失败的尝试与错的前提**
 7. 若改了发布物：跑 W5 的发布流程，并**从远端核实**（`gh api`，不是 raw CDN）
+
+
+---
+
+## 收尾状态汇总（工程第 27 轮）
+
+| 工作包 | 状态 | 证据与说明 |
+| --- | --- | --- |
+| **W0** | **已关闭** | `tests/helpers/host.ts` 新增 `toolsOf(agentId)`（§4.61） |
+| **W1** | **已关闭** | `tests/session-decoration.spec.ts` 钉住 S44 提权修复，经 M1/M2 强形式验证（§4.62） |
+| **W2** | **已关闭** | `impostorRefused` 窄端口 + `impostor-session:<id>` 独立主体上浮健康板，5 处变异无一漏网（§4.63/§4.64） |
+| **W3** | **已关闭** | `myagent-html-to-text`、`myagent-source-registry`、`myagent-polite-fetch` 三个运行时虚拟 skill 落地并在真宿主技能目录生效（§4.77–§4.79, §4.83） |
+| **W4** | **已关闭** | `scripts/gate.sh` 从 `package.json#files` 报告随包非 bundle 文件的 sha256 清单（§4.65） |
+| **W5** | **已关闭** | `scripts/release.sh` 七步流水线（前置检查、同步、按性质脱敏、暂存字节扫描、版本、推送、`gh api` 远端核实）落地（§4.68） |
+| **W6** | **已关闭** | `chat.ts`、`inbox.ts`（含修复同趟 pass 抹除抱怨缺陷）、`cron.ts` 三处 catch-all 全部改为显式 `unhandled` 与积压报告（§4.71–§4.76） |
+| **W7** | **已关闭 / 明确界定** | **F5**（`verify-live.sh` 区分近期外部 429/5xx 与过期/内部问题，真宿主 9/9 通过）、**F8**（`session_bound` 写入并测）、**F9**（`progress.turn` 窗口语义注释）、**§8.3**（过期版本号更正）、**§4.39**（policy `notice_lost` 端到端测试）均已关闭；**F4** 因既有 6 处测试与面板文案显式钉死 `{queued, nowhere}` 契约而裁定保持现状；**F6** 记入未实现清单（§4.80–§4.83） |
+| **W8** | **部分关闭 / 明确界定** | §6c 所需的 worker 上游失败注入已在 `tests/fault-injection.spec.ts` 通过 `failUpstream` 覆盖 6 条用例；真浏览器自动化回路明确记为不在本次范围内（见 `12-unimplemented.md`） |
+| **W9** | **已关闭** | `tests/http.spec.ts:360` 改用有界 `untilPass` 等待 launch，连跑 5 次完整闸门全 0（§4.67） |

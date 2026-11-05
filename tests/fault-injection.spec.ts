@@ -739,9 +739,34 @@ describe('a worker that fails on an upstream error', () => {
   })
 })
 
-// A test for the policy-notice case was attempted and removed rather than left red or faked: the precedence fix in
-// `runtime.ts` is verified for report notices by the mutation check above (M2, the `text:` spread is load-bearing), but
-// reproducing a LOST POLICY notice in a deployment test needs one more fact I did not establish — how `saveSettings`'
-// policy effects reach `delivery.policyChanged` under the stub, since `exhaust(runtime, 'notify')` after a
-// `allowedSenders` change produced no `notice_lost` event at all. Recorded as debt in docs/v2/00-audit-and-plan.md
-// §4.40 rather than papered over with an assertion about the report case only.
+describe('a policy notice the front desk never takes', () => {
+  // Closes the §4.39 / §4.40 debt: a policy notice carries `detail` and no `summary`, which is the branch the `??`
+  // precedence bug (`summary ?? detail === undefined` parsing as `summary ?? (detail === undefined)`) silently broke
+  // while leaving report notices untouched. `saveSettings` enqueues the notice without running the pass immediately,
+  // so `settle(runtime)` runs attempt 1 before `exhaust(runtime, 'notify')` drives attempts 2..5 to permanent failure.
+  it('records notice_lost on the Ticket with the policy detail text when a policy notice gives up', async () => {
+    const context = await deployment('auto', { notify: { fails: Infinity } })
+    const { runtime, host } = context
+    try {
+      await runtime.createMainSession()
+      const id = await started(context)
+      runtime.saveSettings({
+        acceptMode: 'auto', allowedSenders: ['someone-else'],
+        sources: { inbox: { directory: context.inbox, pollMs: 1000 } },
+      })
+      await settle(runtime)
+      await exhaust(runtime, 'notify')
+
+      expect(host.refusals).toHaveLength(5)
+      expect(runtime.store.effectCounts().notify ?? 0).toBe(0)
+      const lost = runtime.engine.history(id).filter(event => event.type === 'notice_lost')
+      expect(lost).toHaveLength(1)
+      expect(lost[0]!.by).toEqual({ kind: 'system', id: 'delivery' })
+      expect(lost[0]!.detail).toMatchObject({
+        notice: 'policy',
+        text: 'The sender may not originate work here. (operator may no longer start work here)',
+      })
+      expect(String(lost[0]!.detail!.error)).toContain('the front desk is not reachable')
+    } finally { await runtime.stop() }
+  })
+})

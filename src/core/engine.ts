@@ -885,8 +885,20 @@ export class Engine {
    * derived; everything that later addresses the worker — a delivery, a stop, a turn ending — reads it from here.
    */
   bindSession(ticketId: string, sessionId: string): void {
+    const before = this.repos.tickets.get(ticketId)
     this.mutate(ticketId, ticket => ticket.execution === undefined || ticket.execution.sessionId === sessionId
       ? ticket : { ...ticket, execution: { ...ticket.execution, sessionId } })
+    // Record which Session actually ran this Ticket, and only when this call is what bound it: a repeated bind of the
+    // same Session (a retry, or DSH answering with the identity it was asked for) is not a second fact, and a log full
+    // of duplicates would bury the one line that matters.
+    //
+    // `session_bound` has been in the TicketEventType union since the data model was written and had NO writer, so
+    // nothing in a Ticket's own log said which Session did the work. That is not a cosmetic gap: reconstructing it for
+    // the round-50 production investigation meant reading DSH's own session files and correlating timestamps, when the
+    // Ticket's log is the place that question should have been answerable from.
+    const bound = before !== undefined && before.execution !== undefined
+      && before.execution.sessionId !== sessionId
+    if (bound) this.record(ticketId, 'session_bound', undefined, { sessionId })
   }
 
   /** Read a Decision by id, for the panel and for a Source that words its own refusal. */

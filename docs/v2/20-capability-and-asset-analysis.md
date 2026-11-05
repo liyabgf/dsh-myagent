@@ -360,3 +360,56 @@ before provider registration order is considered"（`:78`）——**与 DSH 内�
 > 如果它信了我那句"已经有机制在发布"，它就会去找那个不存在的机制、然后照它设计 W3——
 > **于是三个 skill 会被放到一个加载不到它们的目录里，成为死文件**（§3.3 警告的正是这个）。
 > **这是 0.11 的正面例子：配方（我给的调查方向）被当成结论来用会出事，而被当成假设来查就救回了整件事。**
+
+
+### 3.6 【工程第 18 轮】W3 的机制全部查实——实现已是机械步骤
+
+§3.5 定下了"用 `ctx.skills.register` 注册虚拟 skill"，本轮把剩下的三个未知全部查实，
+**每一条都有 `file:line`**（都在 DSH 检出 `packages/skill/skill/src/index.ts`，除最后一条）：
+
+**1. `ctx.skills` 对插件可用，且 DSH 自己有四处调用点可抄。**
+`packages/experimental/creation-recommendations/src/skill.ts:16`、
+`packages/experimental/plugin-recommendations/src/skill.ts:34`、
+`packages/experimental/skill-badge/src/index.ts:59` 都是 `ctx.skills.registerProvider(() => …)`；
+`packages/sandbox/sandbox-windows-acl/src/acl-skill.ts:74` 是 cordis 的 effect 形式
+`yield ctx.skills.registerProvider(() => provider)`。
+**注意这四处用的都是 `registerProvider`（注册一整个 provider），而 myagent 要的是 `register`（注册单个 skill）**——
+后者更省，因为 myagent 不需要"发现"任何东西，它知道自己有哪三个 skill。
+
+**2. `SkillRegistration` 的确切形状**（`:95`）：
+`Omit<SkillDefinition, 'invocation' | 'provider'> & { invocation?, provider? }`，
+而 `SkillDefinition extends SkillSummary` 且加 `content: string`。所以：
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| `name` | **是** | kebab-case；`validateRuntimeSkill`（`:741`）用 `SKILL_NAME` 校验，不合语法就抛 `invalid skill name` |
+| `description` | **是** | 非空，否则抛 `requires a description` |
+| `source` | **是** | 用 `'runtime'`（`:40` 的 `SkillSource` 里有它） |
+| `content` | **是** | **正文就是代码里的字符串**——虚拟 skill，`path` 不填（`:58` "absent for virtual skills"） |
+| `whenToUse` | 否 | 额外的路由提示 |
+| `invocation` | 否 | **省略＝模型与用户两个面都允许**（`:96` 的注释） |
+| `provider` | 否 | 省略＝用注册表自己的 runtime provider |
+| `resourceBase` | 否 | `{kind:'directory', path}` 或 `{kind:'url', url}`；虚拟 skill 用不到 |
+
+**3. §3.3b 那个 rank 未核实项，答案是"不能设"。**
+`rank` 属于 **`SkillCandidate`**（`:78`），**不属于 `SkillRegistration`**。
+所以单个 `register()` 调用**无法指定 rank**，注册表内部给运行时 skill 赋 **`RUNTIME_RANK = 250`**（`:24`），
+而 `BUNDLED_SKILL_RANK = 600`（`:28`）、"Lower ranks win"（`:78`）——
+**即 myagent 的 skill 在同名时会赢过 DSH 内置的**。
+**取名因此要带前缀意识**（例如 `myagent-html-to-text` 而不是 `html-to-text`），
+**否则会静默 shadow 掉宿主的内置 skill，而没有任何一方会报错。**
+
+**4. 实现清单（机械步骤，不需要再调查）**：
+1. 新建 `src/app/skills.ts`，导出一个函数：调 `ctx.skills.register({name, description, whenToUse, source:'runtime', content})`
+   并**返回它给的注销函数**
+2. `src/index.ts` 的 apply 里调用它，**注销函数交给 cordis 的 effect/dispose**
+   （照 `acl-skill.ts:74` 的 `yield` 形式，或照 myagent 既有的 `ctx.effect(() => async () => …)` 形式，见 `src/index.ts:40`）
+3. `prompts/worker.md` 的「Reuse before you build」一节**点名这三个 skill**——
+   否则"先找现成的"仍然指向空处
+4. 正文**从 `examples/real-run-1-collect/scripts/html2txt.py` 与 `real-run-2-compare/scripts/html2txt.py` 提炼**
+   （两份独立写的同名工具，1675 与 2044 字节、内容不同），**不要凭想象重写**
+
+**5. 实现前唯一还要解决的是测试装置**：`tests/helpers/host.ts` 的假 ctx 里**未必有 `skills` 服务**，
+而断言"skill 进了目录"需要一个能读的目录。**所以第一步是给假 ctx 加一个最小的 skills 记录器**
+（照 W0 给 `toolsOf` 加读取口的同一手法：桩本来就 intercept 了 `ctx.tools.register`，
+这里要 intercept `ctx.skills.register`），**否则又会写出一条不可能失败的断言**（§4.61/§4.75 那条教训）。

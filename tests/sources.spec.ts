@@ -1,5 +1,5 @@
 /** The two Sources that produce Triggers on this machine: a directory of request files, and the operator's schedules. */
-import { chmodSync, existsSync, readFileSync, readdirSync, writeFileSync, utimesSync, mkdirSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { HealthBoard } from '../src/app/health.ts'
@@ -938,5 +938,126 @@ describe('an inbox directory anybody can write to', () => {
     try {
       expect(health.problems().map(problem => problem.detail).join('\n')).not.toContain('writable by others')
     } finally { await source.stop() }
+  })
+})
+
+describe('the inbox board and the state it does not handle', () => {
+  const directory = () => tempDir('myagent-inbox-')
+
+  // The erasure defect, which is the one that could happen today: `record(detail)` overwrites the entry wholesale
+  // (`health.ts:17`), so a `problem()` raised mid-pass was gone before the pass ended. Collecting the pass's issues
+  // and deciding once, at the end, is what makes a complaint the operator can actually see. This is the S19/N5 shape
+  // that chat's spec says cron and rule each shipped once.
+  it('keeps a complaint raised mid-pass, instead of overwriting it with the end-of-pass summary', async () => {
+    const inbox = directory()
+    const { host } = harness()
+    drop(inbox, 'stuck.md', '---\ntitle: Unreadable\n---\nBody.')
+    chmodSync(join(inbox, 'stuck.md'), 0o000)
+    const source = new InboxSource(host, inbox)
+    source.start()
+    try {
+      await source.poll()
+      const problems = host.health.problems()
+      expect(problems.map(problem => problem.detail).join('\n')).toContain('Could not read stuck.md')
+      // And the file was left where it is: a request that could not be read was not taken, so it must not be filed
+      // anywhere that claims it was.
+      expect(existsSync(join(inbox, 'accepted'))).toBe(false)  // 更强的断言：那个目录根本不该存在
+    } finally { chmodSync(join(inbox, 'stuck.md'), 0o644); source.stop() }
+  })
+
+  it('parks an unhandled disposition where the folder claims no verdict, and reports the backlog rather than the event', async () => {
+    const inbox = directory()
+    const { host, tickets } = harness()
+    // `pending` has no producer in src/ and `Engine.receive` re-runs the gate for a stored `lost` row, so neither
+    // reaches this branch today; fabricating a state is the only way in, and the point is that a future union member
+    // arrives exactly here.
+    const real = host.engine.receive.bind(host.engine)
+    ;(host.engine as { receive: unknown }).receive = (trigger: never) => ({
+      ...real(trigger), disposition: { state: 'summoned' },
+    })
+    drop(inbox, 'odd.md', '---\ntitle: Odd\n---\nDo the thing.')
+    const source = new InboxSource(host, inbox)
+    source.start()
+    try {
+      await source.poll()
+      expect(source.status().counts).toMatchObject({ unhandled: 1, accepted: 0 })
+      expect(existsSync(join(inbox, 'accepted'))).toBe(false)  // 更强的断言：那个目录根本不该存在
+      const parked = taken(inbox, 'unhandled')
+      expect(parked).toHaveLength(1)
+      // The event is recorded durably, inside the archived file — where `take` already puts every note.
+      const first = readFileSync(join(inbox, 'unhandled', parked[0]!), 'utf8').split('\n')[0]!
+      expect(first).toContain('summoned')
+      expect(first).toContain('nothing was executed')
+      // Not asserted: `tickets()` is NOT empty here, and that is an artifact of the fabrication rather than a defect.
+      // Overriding the RETURNED disposition cannot un-do what the real `receive` already did — it stored the Trigger
+      // and created the Ticket, because the real gate accepted it. So this harness can prove where an unhandled state
+      // is filed and what the board says, but not that nothing ran. For a real unhandled state nothing does run,
+      // because a disposition other than `accepted` is what "no Ticket" means; asserting that needs a Source whose
+      // engine returns the state without having acted on it, which is a different (and larger) piece of harness.
+
+      // The board reports the BACKLOG, and an explicit SECOND pass does not erase it — the assertion that
+      // distinguishes a current condition from a past event, which is why the event itself is not on the board at all.
+      // `poll()` rather than `wait(ms)`: `start()` already ran one pass, and waiting on the timer made this assertion
+      // pass vacuously (no second pass happened), which is the hollow-guard shape discipline 0.8 exists to catch.
+      expect(host.health.problems().map(p => p.detail).join('\n')).toContain('1 request(s) are parked in unhandled/')
+      await source.poll()
+      expect(host.health.problems().map(p => p.detail).join('\n')).toContain('1 request(s) are parked in unhandled/')
+
+      // And it retires on its own once a person deals with the file.
+      rmSync(join(inbox, 'unhandled', parked[0]!))
+      await source.poll()
+      expect(host.health.problems()).toEqual([])
+    } finally { source.stop() }
+  })
+})
+
+describe('a cron slot whose disposition this Source does not handle', () => {
+  const NOW = '2026-11-03T10:00:30Z'
+
+  // Two assertions carry this, and they carry different things. `ignored: 0` pins the COUNTING fix: the tail of the
+  // ternary used to be `'ignored'`, which says "the gate refused this" when the truth is that the gate's answer was
+  // not recognized. The cleared board pins the SHAPE of the report: `unhandledNow` is per firing, not cumulative, so
+  // the line recurs while slots keep arriving unrecognized and retires on the first ordinary firing. A cumulative
+  // number on the board would be a permanent alarm (S38/S41); a momentary one would never have been visible at all,
+  // which is the inbox defect fixed the same round.
+  //
+  // The exact numbers come from a diagnostic run rather than from reasoning: at NOW two slots are already due (09:59
+  // and 10:00), so the first pass fires TWICE — `unhandled: 2` cumulative while the board names the most recent
+  // firing's 1. Asserting 1 because "one seed means one firing" was the previous attempt's mistake, and the lesson is
+  // the one §4.61 states: prove what the apparatus did before asserting what it should have done.
+  it('counts it as itself rather than as a refusal, and the board line retires on the next ordinary firing', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(NOW))
+    const { host, triggers, cursors } = harness({
+      sources: { cron: { enabled: true, schedules: [{ id: 'digest', name: 'Daily digest', prompt: 'Write today\'s digest.', timing: { kind: 'cron', expression: '* * * * *' } }] } },
+    })
+    cursors.set('cron', { digest: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 } })
+    const real = host.engine.receive.bind(host.engine)
+    const source = new CronSource(host)
+    try {
+      // `pending` has no producer in src/ and `Engine.receive` re-runs the gate for a stored `lost` row, so neither
+      // reaches the tail today; fabricating a state is the only way in, and the point is that a future union member
+      // arrives exactly there.
+      ;(host.engine as { receive: unknown }).receive = (trigger: never) => ({
+        ...real(trigger), disposition: { state: 'summoned' },
+      })
+      source.start()
+      await vi.advanceTimersByTimeAsync(60)
+
+      // The apparatus ran, and this is asserted before anything about the counting: two slots were due, both fired.
+      expect(triggers()).toHaveLength(2)
+      expect(source.status().counts).toMatchObject({ unhandled: 2, ignored: 0, accepted: 0, observed: 0, duplicate: 0 })
+      expect(host.health.problems().map(problem => problem.detail).join('\n'))
+        .toContain('1 schedule slot(s) in the most recent firing were dispositioned in a state this Source does not handle')
+
+      // The load-bearing half: with the real gate restored, the NEXT firing is ordinary, so the line must go away on
+      // its own — no hand clearing, and nothing left behind to be mistaken for a current problem. The cumulative
+      // count stays at 2, because it is a count of what happened, not of what is wrong now.
+      ;(host.engine as { receive: unknown }).receive = real
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(host.health.problems()).toEqual([])
+      expect(source.status().counts).toMatchObject({ unhandled: 2, ignored: 0 })
+      expect(source.status().counts!.accepted).toBeGreaterThan(0)
+    } finally { vi.useRealTimers(); source.stop() }
   })
 })

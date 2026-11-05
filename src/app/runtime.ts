@@ -110,6 +110,16 @@ export interface WorkerProgress {
   readonly sessionTitle: string
   readonly loaded: boolean
   readonly agentStatus?: string
+  /**
+   * The number of the turn in progress, read from the most recent `turn/start` WITHIN the last {@link PROGRESS_SCAN}
+   * events — so it is absent, not zero, once a single long turn has produced more events than that.
+   *
+   * That is not a theoretical edge: in the round-50 production run both workers showed `turn: 1` early and no `turn` at
+   * all fifty minutes later, after a hundred-odd tool calls in one turn had pushed the `turn/start` out of the window.
+   * The field was recorded as "semantics unclear" (F9); it was in fact a windowed reading that disappears exactly when
+   * a long task makes it most interesting. Absent therefore means "not in the window", never "no turn has started" —
+   * a reader that needs the latter must look at `agentStatus`.
+   */
   readonly turn?: number
   readonly lastSaid?: string
   readonly lastEventAt?: string

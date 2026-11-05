@@ -7,6 +7,37 @@
 # 退出码 0 = 全部通过；1 = 有断言失败（逐条打印）。
 set -uo pipefail
 
+# 第 4 步的分类器，定义在任何网络请求之前，好让 VERIFY_CLASSIFY_ONLY=1 能离线验证它。
+classify() {
+  python3 -c '
+import json,sys,datetime,re
+FRESH_MIN = 30
+EXTERNAL = re.compile(r"\b(?:429|500|502|503|504)\b|LlmError:|upstream error|do_request_failed|rate.?limit|rpm_exceeded|ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENOTFOUND|socket hang up|network", re.I)
+s = json.load(sys.stdin)
+now = datetime.datetime.now(datetime.timezone.utc)
+internal, external_fresh, external_stale = [], [], []
+for name, v in s["health"].items():
+    if v.get("ok", True): continue
+    detail = v.get("detail") or ""
+    at = v.get("at")
+    age = None
+    if at:
+        try: age = (now - datetime.datetime.fromisoformat(at.replace("Z", "+00:00"))).total_seconds() / 60
+        except ValueError: age = None
+    if EXTERNAL.search(detail):
+        # 没有时间戳的外部问题按"过期"处理：无法证明它是近期的，就不能用"近期"这个理由放行它。
+        (external_fresh if age is not None and age <= FRESH_MIN else external_stale).append((name, detail[:90], age))
+    else:
+        internal.append((name, detail[:90]))
+fmt = lambda a: "无" if a is None else f"{a:.0f} 分钟前"
+for n, d, a in external_fresh: print(f"  · 外部（近期，放行）：{n} — {d}（{fmt(a)}）")
+for n, d, a in external_stale: print(f"  · 外部但已过期（判失败，像是条目粘住了）：{n} — {d}（{fmt(a)}）")
+for n, d in internal: print(f"  · 内部问题（判失败）：{n} — {d}")
+if not (internal or external_fresh or external_stale): print("  · 问题：无")
+sys.exit(1 if internal or external_stale else 0)'
+}
+if [ "${VERIFY_CLASSIFY_ONLY:-}" = "1" ]; then classify; exit $?; fi
+
 BASE="http://127.0.0.1:${PORT:-3080}/myagent"
 H='x-myagent-request: 1'
 pass=0; fail=0
@@ -37,14 +68,19 @@ printf '  · 主 Session exists=%s id=%s\n' "$exists" "$mainid"
 # exists 为 True 也是合法的（你点过"创建主 Session"）；这里只报告，不判定。
 
 echo "── 4. 健康板"
+# 分类而不是一律判失败（S28 / 生产发现 F5）。第 50 轮的生产运行里，一条上游 429 让这一步报红，
+# 而 myagent 本身是好的——"以为系统坏了"的代价是去查系统。所以：
+#   - 外部问题（上游限流、网络）且 **近期**：打印，放行。那是上游的事实，不是 myagent 的故障。
+#   - 外部问题但 **过期**（超过 FRESH_MIN 分钟）：判失败。一条三小时前的 429 说明的不是限流，而是
+#     健康条目粘住了（F2 那个缺陷的形状）——放行它就会把一个真缺陷藏在"外部"这个标签后面。
+#   - 任何内部问题：判失败。
+# 分类函数可以单独跑（VERIFY_CLASSIFY_ONLY=1，从 stdin 读 /api/state 的 JSON），这样它能被构造的输入验证。
 printf '%s' "$state" | python3 -c '
 import json,sys
 s=json.load(sys.stdin)
-bad=[(k,v.get("detail")) for k,v in s["health"].items() if not v.get("ok",True)]
-print("  · 问题：", bad if bad else "无")
 print("  · 计数：", {k:v for k,v in s["counts"].items() if k!="effects"}, "| 队列：", s["counts"]["effects"])
-print("  · 受理模式：", s["settings"]["acceptMode"], "| 暂停：", s["settings"]["paused"])
-sys.exit(1 if bad else 0)' && ok "健康板无问题" || bad "健康板有问题（见上）"
+print("  · 受理模式：", s["settings"]["acceptMode"], "| 暂停：", s["settings"]["paused"])'
+printf '%s' "$state" | classify && ok "健康板无需处理的问题" || bad "健康板有需要处理的问题（见上）"
 
 echo "── 5. 排期与下次触发"
 json schedules | python3 -c '

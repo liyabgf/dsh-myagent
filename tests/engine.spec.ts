@@ -963,3 +963,32 @@ describe('a notice that will never arrive', () => {
     expect(() => engine.noticeLost('no-such-ticket', { error: 'x' })).toThrow(UserError)
   })
 })
+
+describe('binding a Session to a Ticket', () => {
+  // `session_bound` sat in the TicketEventType union with no writer, so a Ticket's own log never said which Session
+  // did the work. Reconstructing that for the round-50 production investigation meant reading DSH's session files and
+  // correlating timestamps — the question should have been answerable from the log it was asked about.
+  it('records which Session ran it, once per Session, and says nothing when nothing changed', () => {
+    const { engine, memory } = harness()
+    const id = engine.receive(trigger()).ticketId!
+    // The stub Executor's `prepare` sets `execution` with no sessionId, so this is the first binding — the case DSH
+    // produces when it answers a create with a different identity than the one asked for (`sessions.ts`).
+    engine.bindSession(id, 'worker-elsewhere')
+    const bound = memory.events.list(id).filter(event => event.type === 'session_bound')
+    expect(bound).toHaveLength(1)
+    expect(bound[0]!.detail).toEqual({ sessionId: 'worker-elsewhere' })
+    expect(memory.tickets.get(id)!.execution?.sessionId).toBe('worker-elsewhere')
+
+    // Binding the SAME Session again is not a second fact: a retry that re-binds would otherwise write a line each
+    // time, and the one that matters would be buried in duplicates.
+    engine.bindSession(id, 'worker-elsewhere')
+    expect(memory.events.list(id).filter(event => event.type === 'session_bound')).toHaveLength(1)
+
+    // A genuinely different Session IS a second fact — a Ticket that moved to another Session should say so, and the
+    // log should read as a sequence rather than as one binding that was later edited.
+    engine.bindSession(id, 'worker-replacement')
+    const second = memory.events.list(id).filter(event => event.type === 'session_bound')
+    expect(second).toHaveLength(2)
+    expect(second[1]!.detail).toEqual({ sessionId: 'worker-replacement' })
+  })
+})

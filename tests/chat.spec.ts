@@ -7,7 +7,7 @@
  * the gate's `via: 'chat'`, `policyVersion` moving for `identities` — are asserted in `chat-contract.spec.ts` at
  * the layer that owns them and are not repeated here. What lives here needs a running Source, which is what C1 adds.
  */
-import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { HealthBoard } from '../src/app/health.ts'
@@ -450,3 +450,60 @@ describe('the scan window and the switches', () => {
   })
 })
 
+
+describe('a disposition state this Source does not handle', () => {
+  it('parks the message where the folder name claims no verdict, records why inside it, and reports the backlog rather than the event', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    // `pending` has no producer anywhere in src/ and `Engine.receive` re-runs the gate for a stored `lost` row, so it
+    // can never return `lost`: neither state reaches the fallback today. Fabricating one is the only way in, and that
+    // is the point — the union is closed only by its declaration, so a future member arrives exactly here.
+    const real = context.engine.receive.bind(context.engine)
+    ;(context.engine as { receive: unknown }).receive = (trigger: never) => ({
+      ...real(trigger), disposition: { state: 'summoned' },
+    })
+    await source.start()
+    try {
+      drop(ops, 'alert.md', message({ from: 'U01ABCDEF', id: 'msg-1', title: 'weekly alerts' }, 'Sort this out.'))
+      await source.poll()
+
+      // Counted as what it is, and not as an acceptance.
+      expect(source.status().counts).toMatchObject({ unhandled: 1, accepted: 0, duplicate: 0 })
+
+      // Parked where the folder name claims no verdict. `accepted/` must not exist at all: before this, the file
+      // stayed in the channel directory, so the NEXT scan saw a duplicate and filed it there — one pass of silence,
+      // then a directory whose name claims an acceptance that never happened, with `duplicate` taking the blame.
+      expect(existsSync(join(ops, 'accepted'))).toBe(false)
+      const parked = readdirSync(join(ops, 'unhandled'))
+      expect(parked).toHaveLength(1)
+
+      // The event is recorded durably, inside the archived file — which is where `take` already puts every note. This
+      // is the assertion that replaces the health line the first attempt wrongly asked for: a past event on a board
+      // that means "right now" either stays forever or is erased by the next quiet pass, and neither is usable.
+      const body = readFileSync(join(ops, 'unhandled', parked[0]!), 'utf8')
+      expect(body.split('\n')[0]).toContain('summoned')
+      expect(body.split('\n')[0]).toContain('nothing was executed')
+      // And the operator's own words survive under the annotation, so the message is not lost by being parked.
+      expect(body).toContain('Sort this out.')
+
+      // The board reports the BACKLOG: a current condition, recomputed every pass.
+      const first = context.health.problems()
+      expect(first).toHaveLength(1)
+      expect(first[0]!.name).toBe('source:chat')
+      expect(first[0]!.detail).toContain('1 message(s) are parked in unhandled/')
+
+      // The pair that makes the design verifiable rather than merely plausible. A one-pass event line would be gone
+      // here, overwritten by the quiet pass's `record(detail)` — that is exactly what the first attempt observed and
+      // spent three rounds trying to explain. A backlog is still true, so it is still reported.
+      await source.poll()
+      expect(context.health.problems()).toHaveLength(1)
+      expect(source.status().counts).toMatchObject({ unhandled: 1, accepted: 0, duplicate: 0 })
+
+      // And it retires on its own once a person deals with the files: no lingering alarm to clear by hand.
+      rmSync(join(ops, 'unhandled', parked[0]!))
+      await source.poll()
+      expect(context.health.problems()).toEqual([])
+    } finally { await source.stop() }
+  })
+})
