@@ -1,0 +1,68 @@
+
+
+Affiliate links on Android Authority may earn us a commission. Learn more.
+
+General technology
+
+Gemini 4 Carbon is Google's second new frontier model this month
+
+Google introduces Gemini 4 Carbon, its latest frontier model.
+
+By
+
+•
+
+Oct 28, 2026 — 4:53 PM ET
+
+•
+
+•
+
+Ryan McNeal / Android Authority
+
+Add Android Authority on Google:
+
+Preferred SourceGoogle Discover
+
+TL;DR
+
+Google has introduced its latest frontier model — Gemini 4 Carbon.
+
+Carbon improves upon coding, agentic and scientific tasks, full-stack web development, and multimodal understanding. However, cybersecurity is where it makes its biggest leap.
+
+The model initially will be released to a subset of cyber defenders before eventually rolling out to developers, businesses, and consumers.
+
+Carbon will be available at $2 per million input tokens and $10 per million output tokens, with cached input tokens priced at 95% off the input token price.
+
+About a month ago, Google teased us with its next frontier model — Gemini 4 Argon. Two weeks ago, that model saw the light of day as it finally rolled out for everyday users. While two weeks may not sound all that long, time moves a little faster in the world of AI. Google is now teasing us once again with a brand new frontier model.
+
+The latest AI model to come from the minds over there at the Mountain View-based firm is called Gemini 4 Carbon. According to Google, Carbon improves upon coding, agentic and scientific tasks, full-stack web development, and multimodal understanding. Carbon is said to outperform most other models, capturing the number one spot on version 5.0 of the Artificial Analysis Intelligence Index. However, cybersecurity is where Carbon really shines.
+
+Google
+
+Based on the company’s own benchmarks, Carbon more than doubles the success rate for generating secure code compared to Argon. Meanwhile, Google claims “Carbon performed more than 10X better than another lab’s large frontier model when generating high-quality patches.” It also performed well on external benchmarks including SEC-bench Pro (for finding vulnerabilities), ExploitGym (for exploitation), and CWE-bench (for patching).
+
+While Carbon builds on the same safety and security stack as Argon, Google went a step further to also improve the model’s alignment. The tech giant boasts that Carbon offers the following:
+
+Reduced shortcuts and loophole exploitation
+
+Greater transparency and honesty
+
+Improved collaboration with the user when facing ambiguity
+
+Less overstepping when following through a task
+
+Improved resistance against prompt injections
+
+For the release of Gemini 4 Carbon, the company has decided to follow the US government’s voluntary review process. As a result, it won’t be rolling out to consumers right away. Instead, the plan is to release it this week to a subset of cyber defenders. When it does become available to the general public, it will cost $2 per million input tokens and $10 per million output tokens. Cached input tokens will be priced at 95% off the input token price.
+
+News
+
+AIGoogleGoogle Gemini
+
++
+
+Conversation
+
+Read what readers said or add your take.
+

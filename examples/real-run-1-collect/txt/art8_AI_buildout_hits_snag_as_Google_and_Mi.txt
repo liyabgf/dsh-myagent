@@ -1,0 +1,96 @@
+
+
+Skip Navigation
+
+Markets
+
+Business
+
+Investing
+
+Tech
+
+Politics & Policy
+
+Video
+
+Watchlist
+
+Investing Club
+
+PRO
+
+Livestream
+
+Key Points
+
+Microsoft and Google both reported capital expenditures that fell short of analysts' estimates.
+
+Amy Hood, Microsoft's CFO, said on the company's earnings call that third-party providers of AI chips had delays that will push out some available capacity until the first half of 2027.
+
+The disclosures added to investor concerns about neoclouds, which are seeing their cost of capital rise as fears mount about their debt loads.
+
+In this article
+
+GOOGL
+
+MSFT
+
+Sundar Pichai, CEO, Google and Satya Nadella, CEO of Microsoft.
+
+Denis Balibouse | Ruben Sprich | Reuters
+
+The past few quarters of hyperscaler earnings have been marked by ever-increasing capital expenditure forecasts as tech giants race to build out artificial intelligence infrastructure to meet what they describe as insatiable demand.
+
+At least for the moment, Microsoft and Alphabet are telling a slightly different story.
+
+In their earnings reports Wednesday, both companies shared capex figures that came up shy of analysts' estimates. Microsoft reduced its capex forecast for the year to $170 billion from $175 billion, and Alphabet held its guidance at $195 billion to $205 billion.
+
+The numbers suggest a slowdown is nowhere in sight, but they do represent another potential point of concern for the AI buildout. Shares of neoclouds CoreWeave, Nebius and IREN all dropped after the reports, as did Oracle, which is one of the biggest spenders on AI infrastructure.
+
+Microsoft CFO Amy Hood said on the software company's earnings call that third-party providers of graphics processing units had delays that will push out some available capacity until the first half of 2027. She didn't provide names, but Microsoft relies on CoreWeave, IREN and Nebius, among others.
+
+Anat Ashkenazi, Alphabet's finance chief, told analysts that outside computing power "came online only at the very end of Q3." Alphabet shares tumbled about 10% in extended trading as the company missed on earnings and revenue and reported negative free cash flow of more than $9 billion.
+
+Plenty of Alphabet shareholders remain faithful.
+
+"We are pleased with what we see and what we heard, and trust management's approach to their AI spending," Chris Ballard, managing director of Check Capital Management, wrote in an email to CNBC.
+
+Investors will get a final read on hyperscaler capex for the quarter when Amazon reports results after the close Thursday. In Meta's earnings report last week, the company said it expects full-year capex of $135 billion to $145 billion, raising the bottom of the range from $130 billion. Like with Alphabet, Meta shares sank as the company reported negative free cash flow.
+
+watch now
+
+VIDEO4:3304:33
+
+Free cashflow or AI capex? Markets don't know what they want, says Albion's Ware
+
+Squawk Box Asia
+
+Delays from emerging neocloud partners have occurred before at Microsoft, but they're more critical now as Anthropic gets set to go public. Anthropic counts on infrastructure from Amazon, Google and Microsoft for much of its computing needs, alongside capacity from SpaceX, Lambda and Nscale, which filed to go public in September but hasn't updated its prospectus in weeks.
+
+At times this year, Anthropic's Claude assistant has been unavailable due to climbing demand. Rival OpenAI, which has said an initial public offering in 2027 is likely, is also in constant need of more capacity.
+
+One big challenge for the market is that the neoclouds require billions of dollars in outside capital to fuel their buildouts but don't have investment-grade credit ratings. With interest rates rising and concerns about their debt loads mounting, lenders are pulling out of the market.
+
+Last week, analysts at Gartner shared with CNBC the firm's prediction that, by 2030, 80% of neocloud companies will either be absorbed or completely cease operations. Nvidia-backed neocloud Firmus, based in Australia, withdrew plans to go public earlier this month, despite boasting large usage commitments from Meta and OpenAI.
+
+None of that is to suggest the AI buildout is over, or even close to plateauing.
+
+Microsoft's Hood said Wednesday that she sees capital spending accelerating in the first half of 2027 thanks to higher component costs and the delayed deliveries. As a group, hyperscaler capex is expected to top $1 trillion next year and, according to some estimates, continue rising from there.
+
+Despite the third-quarter capex shortfall, investors cheered Microsoft's report on Wednesday as the company beat earnings and revenue estimates, driven by 48% sales growth in its Azure cloud business.
+
+"We view the quarter as further validation of Microsoft's AI-led growth opportunity," Cantor analysts led by Thomas Blakey wrote in a Wednesday note to clients. They recommend buying Microsoft stock, and they pushed up their one-year price target to $630 from $608.
+
+WATCH: Could be Google's worst earnings reaction as a public company, says Bespoke's Hickey
+
+watch now
+
+VIDEO3:2803:28
+
+This could end up being Google's worst earnings reaction as a public company, says Bespoke's Hickey
+
+Closing Bell: Overtime
+
+Choose CNBC as your preferred source on Google and never miss a moment from the most trusted name in business news.
+

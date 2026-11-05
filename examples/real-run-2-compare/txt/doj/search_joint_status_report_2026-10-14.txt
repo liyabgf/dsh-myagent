@@ -1,0 +1,1601 @@
+ 
+ 
+ 
+   
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+   
+ 
+ 
+    
+  
+  
+  
+   
+   
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 1 of 17 
+I
+N THE UNITED STATES DISTRICT COURT 
+FOR THE DISTRICT OF COLUMBIA 
+United States of America,  et al., 
+Plaintiffs,  
+v. 
+Google LLC, 
+Defendant.  
+Case No. 1:20-cv-03010-APM 
+HON. AMIT P. MEHTA 
+State of Colorado, et al., 
+Plaintiffs,  
+v. 
+Google LLC,      
+Defendant.  
+C
+ase No. 1:20-cv-03715-APM 
+HON. AMIT P. MEHTA 
+J
+OINT STATUS REPORT 
+P
+ursuant to the Court’s August 7, 2026, Minute Order, the Parties submit the following 
+Joint Status Report.  The Parties jointly propose that they file a further status report on August 28, 
+2026. 
+I. C
+ompelled Testimony from TC Staff
+S
+ection VII.C.3.c of the Final Judgment provides that “[n]o member of the TC shall be 
+required to testify by deposition, in court, or before any other tribunal regarding any matter related 
+to this Final Judgment.” The TC Members have requested that a similar prohibition be put in place 
+for TC Staff. Hr’g Tr. (July 14, 2026) at 4:06–7:11. Pursuant to the Court’s direction, the Parties 
+have met and conferred and have agreed to propose that the Court enter an order that states: 
+ 
+  
+ 
+   
+ 
+  
+ 
+  
+  
+ 
+  
+ 
+ 
+ 
+  
+      
+    
+      
+ 
+  
+ 
+ 
+ 
+  
+      
+      
+   
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 2 of 17 
+No TC Staff shall be required to testify by deposition, in court, or before any other 
+tribunal, administrative or quasi -judicial proceeding or arbitration regarding any 
+matter related to the Final Judgment, provided that this provision applies only to 
+testimony about TC work performed in furtherance of the TC’s duties under the 
+Final Judgment. For clarity, (i) any willful misconduct by TC Staff shall not 
+constitute work performed in furtherance of the TC’s duties under the Final 
+Judgment, and (ii) for any testimony not prohibited by this provision, such 
+testimony shall not disclose the substance of TC deliberations, analysis, 
+investigation, recommendations, or review of highly sensitive information provided 
+to the TC.   
+For purposes of this provision, “TC Staff” shall mean any individual hired or 
+engaged by the TC’s legal entity, Remedies Technical Committee, Inc., as a W- 2 
+employee or 1099 contractor, to provide professional services in furtherance of the 
+TC’s duties under the Final Judgment, pursuant to Section VII.A.7.i of the Final 
+Judgment. 
+II. G
+oogle’s Indemnification of TC Staff 
+On A
+ugust 13, 2026, the TC’s counsel sent the Parties a written proposal with respect to 
+indemnification of TC Members and TC Staff.  The Parties are reviewing this proposal and, i n 
+view of its complexity, propose two weeks of conferral before the next joint status report is due 
+(August 28, 2026). 
+III. Po
+st-TC Employment Restrictions 
+T
+he Final Judgment directs that “unless the Court so approves, no TC [M]ember . . . may 
+perform any work for Google or any Competitor of Google during the time that they serve on the 
+TC and for one (1) year after ceasing to serve on the TC.” Final J. § VII.A.2.c. The term 
+“Competitor” is defined to mean “any provider of or potential entrant in the provision of (i) a 
+General Search Engine (GSE) in the United States, (ii) Search Text Ads in the United States, or 
+(iii) a GenAI Product in the United States.” Id. § IX.E. The terms “General Search Engine,” 
+“Search Text Ads,” and “GenAI Product” are separately defined. Id. §§ IX.J-K, IX.Y. Staff or 
+consultants that the TC hires are also subject to this post-employment restriction. Id. § VII.A.7.i. 
+2 
+ 
+ 
+  
+  
+  
+   
+  
+   
+ 
+  
+ 
+  
+   
+  
+  
+ 
+ 
+   
+ 
+  
+ 
+   
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 3 of 17 
+The TC Members have requested greater clarity regarding the restriction on post -TC 
+employment set forth in Section VII.A.2.c. Hr’g Tr. (July 14, 2026) at 4:06–7:11. Pursuant to the 
+Court’s direction, the Parties have met and conferred and have agreed to propose that the Court 
+approve the following as to Section VII.A.2.c: 
+1. For purposes of Section VII.A.2.c, “Competitor” shall expressly include the 
+following (“Expressly Identified Entities”): 
+a. Any entity that, as of the date the TC Member or TC Staff either ceases working 
+with the TC or begins performing work for the entity: 
+i. has been certified as a Qualified Competitor under the Final Judgment and 
+whose certification is then in effect; 
+ii. has a pending application for Qualified Competitor status; or 
+iii. is identified on a list of named entities pursuant to this approval (“Named 
+Entities”). Named Entities include the following entities identified by the 
+Court in the Court’s liability, remedy, or Final Judgment opinion: 
+Anthropic, Brave, DeepSeek, DuckDuckGo, Ecosia, Meta, Microsoft, 
+OpenAI, Perplexity, Yahoo, and SpaceXAI (formerly xAI). This list of 
+Named Entities is not intended to be exhaustive and may be modified at any 
+time by subsequent agreement of the Parties or by application to and 
+approval by the Court based upon the standard set forth in Section IX.E in 
+the Final Judgment. 
+b. Any entity that, within the one-year period immediately preceding the date that the 
+TC Member or TC Staff ceases working with the TC and/or Remedies Technical 
+3 
+ 
+ 
+ 
+     
+ 
+   
+ 
+  
+ 
+   
+  
+  
+ 
+    
+ 
+ 
+ 
+   
+ 
+ 
+ 
+  
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 4 of 17 
+Committee, Inc., was certified as a Qualified Competitor but that status has been 
+rescinded, withdrawn, allowed to lapse, or otherwise terminated. 
+2. To the extent an exiting TC Member or TC Staff intends to begin performing work for an 
+entity that is not an Expressly Identified Entity but that meets the standard for Competitor 
+set forth in Section IX.E in the Final Judgment, such work may be consented to by the 
+Parties or approved by the Court as follows: 
+a. Prior to beginning such work, the exiting TC Member or TC Staff shall notify the 
+TC and the Parties that they intend to perform such work and: (i) identify that entity 
+and the division or other unit thereof within which the person would perform work; 
+and (ii) provide a statement that, to their knowledge, the work they will perform 
+will not support the entity’s provision of a GSE, Search Text Ads, or GenAI 
+Products (“Notice of Work”). 
+b. Each Party shall then have five (5) business days from the date on which the Notice 
+of Work was sent to file with the Court any objection thereto and shall request 
+expedited resolution of the objection.  The Party or Parties filing such objection 
+shall carry the burden to establish that such entity meets the standard set forth in 
+Section IX.E in the Final Judgment, such that the prohibition in Section VII.A.2 of 
+the Final Judgment should apply.  As to any objection raised by Google, Plaintiffs, 
+in consultation with the TC, shall submit a response to the Court addressing whether 
+Google has met its burden under this Section 2(b).  As to any objection raised by 
+Plaintiffs, Google shall submit a response to the Court addressing whether Plaintiffs 
+have met their burden under this Section 2(b). 
+4 
+ 
+   
+ 
+ 
+   
+ 
+  
+    
+ 
+  
+  
+   
+ 
+ 
+  
+   
+   
+ 
+  
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 5 of 17 
+c. If no such objection is timely filed, then the Parties shall be deemed to have 
+consented to that exiting TC Member or TC Staff’s Notice of Work under Section 
+VII.A.2 of the Final Judgment. 
+For purposes of this approval, “TC Staff” shall mean any individual hired or engaged by 
+the TC’s legal entity, Remedies Technical Committee, Inc., as a W-2 employee or 1099 contractor, 
+to provide professional services in furtherance of the TC’s duties under the Final Judgment, 
+pursuant to Section VII.A.7.i of the Final Judgment. 
+The TC shall maintain a current list of Expressly Identified Entities and shall update that 
+list promptly upon any Qualified Competitor certification, application, or change in status, or any 
+change to the list of Named Entities.   
+Any TC Member or TC Staff may request a copy of the Expressly Identified Entities list 
+for up to one (1) year after ceasing to work with the TC; provided, however, that the TC Member 
+or TC Staff shall (a) treat such copy as Highly Confidential under the Protective Order, and (b) use 
+such copy solely for the purpose of assessing the extent to which Sections 1–2 above may apply 
+to potential work that the TC Member or TC Staff may perform after ceasing to serve on or work 
+for the TC.  
+Nothing in this approval shall preclude an exiting TC Member or TC Staff from seeking 
+the Court’s approval under Section VII.A.2 for an exception to Section 1 above.  Such request 
+shall first be made to all Parties and shall include at least the following: (a) identification of the 
+Expressly Identified Entity and the division or other unit thereof within which the person would 
+perform work; and (b) a statement that, to their knowledge, the work they will perform will not 
+support the Expressly Identified Entity’s provision of a GSE, Search Text Ads, or GenAI Products. 
+Plaintiffs shall promptly notify the Court of such request for approval, and Plaintiffs and/or Google 
+5 
+ 
+ 
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 6 of 17 
+may object to the request.  In the event of such objections, for the avoidance of doubt, the exiting  
+TC Member or TC Staff  would bear the burden to establish the grounds for approval.  
+Dated:  August 14, 2026  
+                                 Respectfully submitted,  
+/s
+/ Karl E. Herrmann 
+Claire M. Maddox (D.C. Bar #498356) 
+Travis R. Chapman (D.C. Bar #90031151) 
+Danielle Hauck 
+Grant M. Fergusson (D.C. Bar #90004882) 
+Karl E. Herrmann (D.C. Bar #1022464) 
+Emma Waitzman (D.C. Bar #1738427) 
+U.S. Department of Justice 
+Antitrust Division 
+Technology & Digital Platforms Section 
+450 Fifth Street NW, Suite 7100 
+Washington, DC 20530 
+Telephone: (202) 549-7155 
+Claire.Maddox@usdoj.gov 
+Counsel for Plaintiff United States of America 
+6 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+ 
+ 
+ 
+  
+  
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+  
+ 
+  
+ 
+ 
+  
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 7 of 17 
+By: /s/ Amanda Wentz 
+Amanda J. Wentz 
+Assistant Attorney General 
+Office of the Arkansas Attorney General 
+101 West Capitol Avenue 
+Little Rock, Arkansas 72201 
+Phone: (501) 682-1178 
+Amanda.Wentz@ArkansasAG.gov 
+Counsel for Plaintiff State of Arkansas 
+By: /s/ Carolyn D. Jeffries 
+Rob Bonta, Attorney General 
+Paula Blizzard, Senior Assistant Attorney 
+General 
+Michael Jorgenson, Supervising Deputy 
+Attorney General 
+Brian Wang, Deputy Attorney 
+General 
+Carolyn D. Jeffries, Deputy Attorney 
+General (DC Bar No. 1600843) 
+Office of the Attorney General 
+California Department of Justice 
+455 Golden Gate Avenue, Suite 11000 
+San Francisco, California 94102 
+Cari.Jeffries@doj.ca.gov 
+Counsel for Plaintiff State of California 
+By: /s/ Lee Istrail 
+James Uthmeier, Attorney General 
+R. Scott Palmer, Special Counsel, Complex 
+Enforcement Chief, Antitrust Division 
+Lee Istrail, Assistant Attorney General 
+Office of the Attorney General, State of 
+Florida 
+PL-01 The Capitol 
+Tallahassee, Florida 32399 
+Lee.Istrail@myfloridalegal.com 
+Scott.Palmer@myfloridalegal.com 
+Counsel for Plaintiff State of Florida 
+By: /s/ Charles Thimmesch 
+Christopher Carr, Attorney General 
+Logan B. Winkles, Deputy Attorney 
+General 
+Ronald J. Stay, Jr., Senior Assistant 
+Attorney General 
+Charles Thimmesch, Senior Assistant 
+Attorney General 
+Office of the Attorney General, State of 
+Georgia 
+40 Capitol Square, SW 
+Atlanta, Georgia 30334-1300 
+cthimmesch@law.georgia.gov 
+Counsel for Plaintiff State of Georgia 
+By: 
+/s/ Scott L. Barnhart       
+Theodore Edward Rokita, Attorney General 
+Scott L. Barnhart, Chief Counsel and 
+Director, Consumer Protection Division 
+Office of the Attorney General, State of 
+Indiana 
+Indiana Government Center South, Fifth 
+Floor 
+302 West Washington Street 
+Indianapolis, Indiana 46204 
+Scott.Barnhart@atg.in.gov 
+Counsel for Plaintiff State of Indiana 
+7 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+  
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 8 of 17 
+By: /s/ Jonathan E. Farmer 
+Russell Coleman, Attorney General 
+J. Christian Lewis, Commissioner of the 
+Office of Consumer Protection 
+Philip R. Heleringer, Executive 
+Director of the Office of Consumer 
+Protection  
+Jonathan E. Farmer, Deputy Executive 
+Director of the Office of Consumer 
+Protection 
+Office of the Attorney General, 
+Commonwealth of Kentucky 
+1024 Capital Center Drive, Suite 200 
+Frankfort, Kentucky 40601 
+Philip.Heleringer@ky.gov 
+Counsel for Plaintiff 
+Commonwealth of Kentucky 
+By: /s/ Asyl Nachabe 
+Liz Murrill, Attorney General 
+Asyl Nachabe, Assistant Attorney General 
+Office of the Attorney General, State of 
+Louisiana 
+Public Protection Division 
+909 Poydras St. Suite 1850 
+New Orleans, LA 70112 
+(225) 326-6435 
+NachabeA@ag.louisiana.gov 
+Counsel for Plaintiff State of Louisiana 
+By: /s/ Scott Mertens 
+Dana Nessel, Attorney General 
+Scott Mertens, Assistant Attorney General 
+Michigan Department of Attorney General 
+P.O. Box 30736 
+Lansing, Michigan 48909  
+MertensS@michigan.gov 
+Counsel for Plaintiff State of Michigan 
+By: /s/ Alison Esbeck 
+Alison Esbeck 
+Assistant Attorney General 
+Missouri Attorney General’s Office 
+815 Olive Street | Suite 200 
+Saint Louis, Missouri 63101  
+Alison.esbeck@ago.mo.gov  
+Phone: 314-340-4977 
+Counsel for Plaintiff State of Missouri 
+By: /s/ Anna Schneider 
+Anna Schneider 
+Special Assistant Attorney General, 
+Senior Counsel,  
+Montana Office of Consumer Protection 
+P.O. Box 200151  
+Helena, MT 59602-0150 
+Phone: (406) 444-4500 
+Anna.schneider@mt.gov 
+Counsel for Plaintiff State of Montana 
+By: /s/ Mary Frances Jowers 
+Alan Wilson, Attorney General 
+W. Jeffrey Young, Chief Deputy 
+Attorney General 
+C. Havird Jones, Jr., Senior Assistant 
+Deputy Attorney General 
+Mary Frances Jowers, Assistant Deputy 
+Attorney General 
+Office of the Attorney General 
+State of South Carolina 
+1000 Assembly Street 
+Rembert C. Dennis 
+Building 
+P.O. Box 11549 
+Columbia, South Carolina 29211-1549 
+mfjowers@scag.gov 
+Counsel for Plaintiff State of South Carolina 
+8 
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+  
+  
+ 
+  
+  
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 9 of 17 
+By: /s/ Diamante Smith 
+Ken Paxton, Attorney General 
+Brent Webster, First Assistant Attorney 
+General 
+Ralph Molina, Deputy First Assistant 
+Attorney General 
+Austin Kinghorn, Deputy Attorney General 
+for Civil Litigation 
+Thomas York, Division Chief, Antitrust 
+Division 
+Diamante Smith, Assistant Attorney 
+General, Antitrust Division 
+Office of the Attorney General, 
+State of Texas 
+P.O. Box 12548 
+Austin, Texas 78711-2548 
+(512) 936-1162 
+Diamante.Smith@oag.texas.gov 
+Counsel for Plaintiff State of Texas 
+By: /s/ Caitlin M. Madden 
+Joshua L. Kaul, Attorney General 
+Caitlin M. Madden, Assistant 
+Attorney General 
+Wisconsin Department of Justice 
+17 W. Main St.  
+Post Office Box 7857 
+Madison, Wisconsin 53707-7857 
+caitlin.madden@Wisconsin.gov  
+Counsel for Plaintiff State of Wisconsin 
+9 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+  
+   
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 10 of 17 
+PHILIP WEISER 
+Attorney General of Colorado 
+/s/ Jonathan B. Sallet 
+Jonathan B. Sallet, DC Bar No. 336198 
+Steven M. Kaufmann 
+Elizabeth W. Hereford 
+Conor J. May 
+Colorado Office of the Attorney General 
+1300 Broadway, 7th Floor 
+Denver, CO 80203 
+Telephone: (720) 508-6000 
+E-Mail: Jon.Sallet@coag.gov 
+Steve.Kaufmann@coag.gov 
+Elizabeth.Hereford@coag.gov  
+Conor.May@coag.gov 
+William F. Cavanaugh, Jr. 
+PATTERSON BELKNAP WEBB & 
+TYLER LLP 
+1133 Avenue of the Americas 
+New York, NY 10036 
+Telephone: (212) 336-2793 
+E-Mail: wfcavanaugh@pbwt.com 
+Counsel for Plaintiff State of Colorado 
+MIKE HILGERS 
+Attorney General of Nebraska 
+Justin C. McCully, Assistant Attorney 
+General 
+Nebraska Department of Justice 
+Office of the Attorney General 
+2115 State Capitol 
+Lincoln, NE 68509 
+Telephone: (402) 471-9305 
+E-Mail: Justin.mccully@nebraska.gov 
+William F. Cavanaugh, Jr. 
+PATTERSON BELKNAP WEBB & 
+TYLER LLP 
+1133 Avenue of the Americas 
+New York, NY 10036 
+Telephone: (212) 336-2793 
+E-Mail: wfcavanaugh@pbwt.com 
+Counsel for Plaintiff State of Nebraska 
+KRISTIN K. MAYES 
+Attorney General of Arizona 
+Robert A. Bernheim, Unit Chief Counsel 
+Jayme Weber, Senior Litigation Counsel 
+Arizona Office of the Attorney General 
+400 West Congress, Ste. S-215 
+Tucson, Arizona 85701 
+Telephone: (520) 628-6507 
+E-Mail: Robert.Bernheim@azag.gov 
+Jayme.Weber@azag.gov 
+Counsel for Plaintiff State of Arizona 
+BRENNA BIRD 
+Attorney General of Iowa 
+Noah Goerlitz, Assistant Attorney General 
+Office of the Attorney General of Iowa 
+1305 E. Walnut St., 2nd Floor 
+Des Moines, IA 50319 
+Telephone: (515) 725-1018 
+E-Mail: Noah.goerlitz@ag.iowa.gov 
+Counsel for Plaintiff State of Iowa 
+LETITIA JAMES 
+Attorney General of New York 
+Elinor R. Hoffmann 
+Morgan J. Feder 
+Michael D. Schwartz 
+Office of the New York State Attorney 
+General 
+28 Liberty Street 
+New York, NY 10005 
+Telephone: (212) 416-8513 
+E-Mail: Elinor.hoffmann@ag.ny.gov 
+Morgan.feder@ag.ny.gov  
+Michael.schwartz@ag.ny.gov 
+Counsel for Plaintiff State of New York 
+10 
+ 
+ 
+ 
+  
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+  
+   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+  
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 11 of 17 
+JEFF JACKSON 
+Attorney General of North Carolina 
+Kunal Janak Choksi 
+Joshua Daniel Abram 
+North Carolina Department of Justice 
+114 W. Edenton St. 
+Raleigh, NC 27603 
+Telephone: (919) 716-6000  
+E-Mail: kchoksi@ncdoj.gov 
+jabram@ncdoj.gov 
+Counsel for Plaintiff State of North 
+Carolina 
+JONATHAN SKRMETTI 
+Attorney General of Tennessee 
+J. David McDowell 
+Austin Ostiguy 
+Tyler Corcoran 
+Office of the Attorney General and 
+Reporter 
+P.O. Box 20207  
+Nashville, TN 37202 
+Telephone: (615) 741-8722 
+E-Mail: David.McDowell@ag.tn.gov  
+austin.ostiguy@ag.tn.gov  
+Tyler.Corcoran@ag.tn.gov 
+Counsel for Plaintiff State of Tennessee 
+DEREK E. BROWN 
+Attorney General of Utah 
+Marie W.L. Martin, Division Director 
+Utah Office of Attorney General 
+160 E 300 S, 5th Floor 
+P.O. Box 140811 
+Salt Lake City, Utah 84114  
+Telephone: (801) 440-9825  
+E-Mail: 
+mwmartin@agutah.gov 
+Counsel for Plaintiff State of Utah 
+STEPHEN J. COX 
+Attorney General of Alaska 
+Jeff Pickett 
+Senior Assistant Attorney General 
+State of Alaska, Department of Law 
+Office of the Attorney General 
+1031 W. Fourth Avenue, Suite 200 
+Anchorage, Alaska 99501 
+Telephone: (907) 269-5275 
+E-Mail: Jeff.pickett@alaska.gov 
+Counsel for Plaintiff State of Alaska 
+WILLIAM TONG 
+Attorney General of Connecticut 
+Nicole Demers 
+Office of the Attorney General of 
+Connecticut 
+165 Capitol Avenue, Suite 5000 
+Hartford, CT 06106 
+Telephone: (860) 808-5202 
+E-Mail: Nicole.demers@ct.gov 
+Counsel for Plaintiff State of Connecticut 
+KATHLEEN JENNINGS 
+Attorney General of Delaware 
+Michael Andrew Undorf 
+Delaware Department of Justice 
+Fraud and Consumer Protection Division  
+820 N. French St., 5th Floor 
+Wilmington, DE 19801 
+Telephone: (302) 683-8816 
+E-Mail: Michael.undorf@delaware.gov 
+Counsel for Plaintiff State of Delaware 
+BRIAN SCHWALB 
+Attorney General of the District of 
+Columbia 
+Elizabeth Gentry Arthur 
+Office of the Attorney General for the 
+11 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+ 
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 12 of 17 
+District of Columbia 
+400 6th Street NW 
+Washington, DC 20001 
+Telephone: (202) 724-6514 
+E-Mail: Elizabeth.arthur@dc.gov 
+Counsel for Plaintiff District of Columbia 
+DOUGLAS MOYLAN 
+Attorney General of Guam 
+Norman Lee Miller, Jr. 
+Office of the Attorney General of Guam 
+590 S. Marine Corps Drive, Suite 901  
+Tamuning, Guam 96913 
+Telephone: (671) 475-2710 
+E-Mail: nmillerjr@oagguam.org 
+Counsel for Plaintiff Territory Guam 
+ANNE E. LOPEZ 
+Attorney General of Hawai‘i 
+Rodney I. Kimura 
+Department of the Attorney General, State 
+of Hawai‘i 
+425 Queen Street 
+Honolulu, HI 96813 
+Telephone (808) 586-1180 
+E-Mail: Rodney.i.kimura@hawaii.gov 
+Counsel for Plaintiff State of Hawai‘i 
+RAÚL LABRADOR 
+Attorney General of Idaho 
+John K. Olson 
+Office of the Idaho Attorney General 
+Consumer Protection Division 
+954 W. Jefferson St., 2nd Floor 
+P.O. Box 83720  
+Boise, ID 83720 
+Telephone: (208) 332-3549 
+E-Mail: John.olson@ag.idaho.gov 
+Counsel for Plaintiff State of Idaho 
+KWAME RAOUL 
+Attorney General of Illinois 
+Elizabeth Maxeiner 
+Brian Yost 
+Jennifer Coronel 
+Office of the Attorney General of Illinois 
+115 S. LaSalle St. 
+Chicago, IL 60603 
+Telephone: (773) 590-7935 
+E-Mail: Elizabeth.maxeiner@ilag.gov 
+Brian.yost@ilag.gov 
+Jennifer.coronel@ilag.gov 
+Counsel for Plaintiff State of Illinois 
+KRIS W. KOBACH 
+Attorney General of Kansas 
+Christopher Teters 
+Kansas Office of the Attorney General 
+120 S.W. 10th Avenue, 2nd Floor 
+Topeka, KS 66612 
+Telephone: (785) 296-3751 
+E-Mail: chris.teters@ag.ks.gov 
+Counsel for Plaintiff State of Kansas 
+AARON M. FREY 
+Attorney General of Maine 
+Christina M. Moylan 
+Office of the Attorney General of Maine 
+6 State House Station 
+August, ME 04333 
+Telephone: (207) 626-8800 
+E-Mail: Christina.moylan@maine.gov 
+Counsel for Plaintiff State of Maine 
+ANTHONY G. BROWN 
+Attorney General of Maryland 
+Schonette J. Walker 
+Melissa English 
+12 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+  
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+  
+  
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 13 of 17 
+Office of the Attorney General of 
+Maryland 
+200 St. Paul Place, 19th Floor 
+Baltimore, MD 21202 
+Telephone: (410) 576-6480 
+E-Mail: swalker@oag.state.md.us 
+menglish@oag.state.md.us 
+Counsel for Plaintiff State of Maryland 
+ANDREA CAMPBELL 
+Attorney General of Massachusetts 
+Jennifer E. Greaney 
+Office of the Attorney General of 
+Massachusetts 
+One Ashburton Place, 18th Floor 
+Boston, MA 02108 
+Telephone: (617) 963-2981 
+E-Mail: Jennifer, greaney@mass.gov  
+Counsel for Plaintiff Commonwealth of 
+Massachusetts 
+KEITH ELLISON 
+Attorney General of Minnesota 
+Zach Biesanz 
+Senior Enforcement Counsel 
+Office of the Minnesota Attorney General 
+Antitrust Division 
+445 Minnesota Street, Suite 600 
+St. Paul, MN 55101 
+Telephone: (651) 757-1257 
+E-Mail: Zach.biesanz@ag.state.mn.us 
+Counsel for Plaintiff State of Minnesota 
+AARON D. FORD 
+Attorney General of Nevada 
+Michelle C. Badorine 
+Lucas J. Tucker 
+Nevada Office of the Attorney General 
+100 N. Carson Street 
+Carson City, NV 89701 
+Telephone: (775) 684-1164 
+E-Mail: mbadorine@ag.nv.gov 
+ltucker@ag.nv.gov 
+Counsel for Plaintiff State of Nevada 
+JOHN FORMELLA 
+Attorney General of New Hampshire 
+Brandon Garod 
+Office of Attorney General of New 
+Hampshire 
+1 Granite Place South 
+Concord, NH 03301 
+Telephone: (603) 271-1217 
+E-Mail: Brandon.h.garod@doj.nh.gov 
+Counsel for Plaintiff State of New 
+Hampshire 
+JENNIFER DAVENPORT 
+Acting Attorney General of New Jersey 
+Yale A. Leber 
+Abiola G. Miles 
+Deputy Attorneys General 
+New Jersey Attorney General’s Office 
+25 Market Street, P.O. Box 106 
+Trenton, NJ 08625 
+Telephone: (609) 376-2383 
+E-Mail: Yale.Leber@law.njoag.gov 
+Abiola.Miles@law.njoag.gov 
+Counsel for Plaintiff State of New Jersey 
+RAÚL TORREZ 
+Attorney General of New Mexico 
+Judith E. Paquin Cholla Khoury 
+Assistant Attorney General 
+New Mexico Office of the Attorney 
+General 
+408 Galisteo St. 
+Santa Fe, NM 87504 
+Telephone: (505) 490-4885  
+E-Mail: jpaquin@nmag.gov 
+13 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+  
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+  
+  
+   
+ 
+  
+  
+ 
+ 
+ 
+  
+   
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 14 of 17 
+ckhoury@nmag.gov 
+Counsel for Plaintiff State of New Mexico 
+DREW WRIGLEY 
+Attorney General of North Dakota 
+Elin S. Alm 
+Assistant Attorney General 
+Consumer Protection and Antitrust 
+Division  
+Office of the Attorney General of North 
+Dakota 
+1720 Burlington Drive, Suite C 
+Bismarck, ND 58504 
+Telephone: (701) 328-5570  
+E-Mail: ealm@nd.gov 
+Counsel for Plaintiff State of North 
+Dakota 
+D. ANDREW WILSON 
+Attorney General of Ohio 
+Beth Ann Finnerty, Section Chief, 
+Antitrust 
+Sarah Mader, Assistant Attorney General, 
+Antitrust 
+Office of the Attorney General of Ohio 
+30 E Broad Street, 26th Floor 
+Columbus, OH 43215 
+Telephone: (614) 466-4328  
+E-Mail: Beth.Finnerty@ohioago.gov 
+Sarah.Mader@ohioago.gov 
+Counsel for Plaintiff State of Ohio 
+GENTNER DRUMMOND 
+Attorney General of Oklahoma 
+Cameron R. Capps 
+Office of the Oklahoma Attorney General 
+313 NE 21st Street 
+Oklahoma City, OK 73105  
+Telephone: (405) 522-0858 
+E-Mail: Cameron.capps@oag.ok.gov 
+Counsel for Plaintiff State of Oklahoma 
+DAN RAYFIELD 
+Attorney General of Oregon 
+Gina Ko, Assistant Attorney General 
+Oregon Department of Justice 
+100 SW Market Street 
+Portland, OR 97201 
+Telephone: (503) 934-4400 
+E-Mail: Gina.Ko@doj.oregon.gov 
+Counsel for Plaintiff State of Oregon 
+DAVID W. SUNDAY, JR. 
+Attorney General of Pennsylvania 
+Tracy W. Wertz 
+Joseph S. Betsko 
+Pennsylvania Office of Attorney General 
+Strawberry Square 
+Harrisburg, PA 17120 
+Telephone: (717) 787-4530 
+E-Mail: jbetsko@attorneygeneral.gov 
+twertz@attorneygeneral.gov 
+Counsel for Plaintiff Commonwealth of 
+Pennsylvania 
+LOURDES L. GÓMEZ TORRES 
+Secretary of Justice 
+TANIA L. FERNÁNDEZ-MEDERO 
+Assistant Secretary of Justice 
+SAMUEL WISCOVITCH-CORALI 
+Deputy Undersecretary 
+Pablo Tufiño-Soto 
+Senior Attorney 
+Antitrust Division 
+Puerto Rico Department of Justice 
+P.O. Box 9020192  
+San Juan, Puerto Rico 00902-0192  
+Telephone: (787) 721-2900, Ext. 1205 
+14 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 15 of 17 
+E-Mail: ptufino@justicia.pr.gov 
+Counsel for Plaintiff Territory Puerto 
+Rico 
+PETER NERONHA 
+Attorney General of Rhode Island 
+Stephen Provazza 
+Rhode Island Office of the Attorney 
+General 
+150 South Main Street 
+Providence, RI 02903 
+Telephone: (401) 274-4400 
+E-Mail: SProvazza@riag.ri.gov 
+Counsel for Plaintiff State of Rhode Island 
+MARTIN J. JACKLEY 
+Attorney General of South Dakota 
+Yvette K. Lafrentz 
+Office of the Attorney General of South 
+Dakota 
+1302 E. Hwy 14, Suite 1 
+Pierre, SD 57501 
+Telephone: (605) 773-3215 
+E-Mail: Yvette.lafrentz@state.sd.us 
+Counsel for Plaintiff State of South 
+Dakota 
+CHARITY R. CLARK 
+Attorney General of Vermont 
+Christopher J. Curtis, Assistant Attorney 
+General 
+Office of the Attorney General of 
+Vermont 
+109 State St. 
+Montpelier, VT 05609 
+Telephone: (802) 828-3170 
+E-Mail: christopher.curtis@vermont.gov 
+Counsel for Plaintiff State of Vermont 
+JAY JONES 
+Attorney General of Virginia 
+Tyler T. Henry 
+Senior Assistant Attorney General 
+Antitrust Unit 
+Office of the Attorney General of Virginia 
+202 N. 9th Street 
+Richmond, VA 23219 
+Telephone: (804) 692-0485 
+E-Mail: thenry@oag.state.va.us 
+Counsel for Plaintiff State of Virginia 
+NICHOLAS W. BROWN 
+Attorney General of Washington 
+Amy N.L. Hanson 
+Senior Managing Assistant Attorney 
+General 
+800 Fifth Avenue, Suite 2000 
+Seattle, WA 98104 
+Telephone: (206) 464-5419 
+E-Mail: Amy.hanson@atg.wa.gov 
+Counsel for Plaintiff State of Washington 
+JOHN B. McCUSKEY 
+Attorney General of West Virginia 
+Douglas Lee Davis 
+Office of the Attorney General, State of 
+West Virginia 
+1900 Kanawha Boulevard East 
+Building 6, Suite 401 
+P.O. Box 1789  
+Charleston, WV 25305 
+Telephone: (304) 558-8986 
+E-Mail: Douglas.l.davis@wvago.gov 
+Counsel for Plaintiff State of West 
+Virginia 
+KEITH KAUTZ 
+Attorney General of Wyoming 
+William T. Young 
+15 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 16 of 17 
+Wyoming Attorney General’s Office 
+2320 Capitol Avenue 
+Kendrick Building  
+Cheyenne, WY 82002 
+Telephone: (307) 777-7847 
+E-Mail: William.young@wyo.gov 
+Counsel for Plaintiff State of Wyoming 
+16 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+  
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1542 Filed 08/14/26 Page 17 of 17 
+WILLIAMS & CONNOLLY LLP 
+By: /s/ John E. Schmidtlein 
+John E. Schmidtlein (D.C. Bar No. 441261) 
+Benjamin M. Greenblum (D.C. Bar No. 979786) 
+Colette T. Connor (D.C. Bar No. 991533) 
+680 Maine Avenue, SW 
+Washington, DC 20024 
+Tel: 202-434-5000 
+jschmidtlein@wc.com 
+bgreenblum@wc.com 
+cconnor@wc.com 
+WILSON SONSINI GOODRICH & ROSATI P.C. 
+Michael Sommer (admitted pro hac vice) 
+Franklin M. Rubinstein (D.C. Bar No. 476674) 
+1700 K Street, NW 
+Washington, DC 20006 
+Tel: 202-973-880 
+msommer@wsgr.com 
+frubinstein@wsgr.com 
+ROPES & GRAY LLP 
+Mark S. Popofsky (D.C. Bar No. 454213) 
+2099 Pennsylvania Avenue, NW 
+Washington, DC 20006 
+Tel: 202-508-4624 
+Mark.Popofsky@ropesgray.com 
+Matthew McGinnis (admitted pro hac vice) 
+Prudential Tower 
+800 Boylston Street 
+Boston, MA 02199 
+Tel: 617-951-7703 
+Matthew.McGinnis@ropesgray.com 
+Counsel for Defendant Google LLC 
+17 

@@ -1,0 +1,41 @@
+# Commission approves Google's acquisition of Wiz
+ref=IP/26/333
+
+The European Commission has unconditionally approved, under the EU Merger Regulation, the proposed acquisition by Google of Wiz. The Commission concluded that the transaction would raise no competition concerns in the European Economic Area ('EEA').
+
+Google offers cloud infrastructure through Google Cloud Platform. Google also offers cloud security services to its cloud users and, to a limited extent, to users of other cloud infrastructure providers. Wiz offers a so-called cloud-native application protection platform. The platform provides cloud customers, such as large European businesses, with a single security platform to protect their applications against cybersecurity threats across different cloud environments.
+
+The Commission's investigation
+
+The transaction relates primarily to the fast-growing cloud security industry where both Google and Wiz are active. This is closely linked to the market for cloud infrastructure where Google operates alongside other cloud service providers.
+
+According to the companies, the transaction will allow Google to accelerate two large and growing trends in the AI era: improved cloud security and the ability to use multiple clouds. In the market for cloud infrastructure Google faces competition from Amazon Web Services ('AWS') and Microsoft Azure, which occupy very strong positions. Multi-cloud security solutions help customers to deploy and diversify their workload across multiple clouds, including Google Cloud Platform.
+
+The Commission gathered extensive feedback from customers and rival suppliers of cloud security and cloud infrastructure services, in order to investigate the impact of all material aspects of the transaction.
+
+Based on its market investigation, the Commission found that there are several credible competitors that customers could switch to if Google were to bundle Wiz's multi-cloud security platform with its existing products, or in case Wiz's platform no longer worked with clouds other than Google's.
+
+The Commission also investigated whether Google, by acquiring Wiz, would obtain access to commercially sensitive data on competing cloud service providers that also integrate with Wiz's solutions. The market investigation confirmed that the data that Google would obtain as a result of the transaction is not commercially sensitive, and can generally be accessed by other security software companies.
+
+The Commission therefore concluded that the proposed transaction would not raise competition concerns on any of the markets examined in the EEA and cleared the transaction unconditionally.
+
+Companies and products
+
+Google, headquartered in the US, is a multinational technology company active in a wide range of product areas including online advertising technology, internet search, software, and hardware. Amongst other products and services, Google is active in cloud computing and offers cloud security products and services. Google is a subsidiary of Alphabet, which is listed on the NASDAQ.
+
+Wiz, headquartered in the US, is mainly active in the cloud security space with its cloud-native application protection platform, which provides cloud customers with a single security platform to protect their applications against cybersecurity threats across multiple clouds.
+
+Merger control rules and procedure
+
+The transaction was notified to the Commission on 6 January 2026.
+
+The Commission has the duty to assess mergers and acquisitions involving companies with a turnover above certain thresholds (see Article 1 of the EU Merger Regulation) and to prevent concentrations that would significantly impede effective competition in the EEA or any substantial part of it.
+
+The proposed transaction did not meet the turnover thresholds of the EU Merger Regulation. However, the Commission received a referral request from Google pursuant to Article 4(5) of the Merger Regulation, as the transaction was capable of being reviewed under the national competition laws of at least three Member States: Cyprus, Ireland and Sweden. On 4 July 2025, the Commission transmitted Google's request to all Member States, none of which expressed disagreement with the referral. On 29 July 2025, the Commission accepted the referral of the case.
+
+The vast majority of notified mergers do not pose competition problems and are cleared after a routine review. From the moment a transaction is notified, the Commission generally has 25 working days to decide whether to grant approval (Phase I) or to start an in-depth investigation (Phase II).
+
+For more information
+
+More information will be available on the Commission's competition website, in the public case register under the case number M.11964.
+

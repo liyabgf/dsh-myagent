@@ -1,0 +1,131 @@
+Cookies on GOV.UK
+
+We use some essential cookies to make this website work.
+
+We'd like to set additional cookies to understand how you use GOV.UK, remember your settings and improve government services.
+
+We also use cookies set by other sites to help us deliver content from their services.
+
+You have accepted additional cookies. You can change your cookie settings at any time.
+
+You have rejected additional cookies. You can change your cookie settings at any time.
+
+View cookies
+
+Skip to main content
+
+Press release
+
+CMA consults on new requirements for Apple and Google's mobile platforms
+
+New measures designed to bring down prices and spur UK tech innovation.
+
+From:
+
+Competition and Markets Authority
+
+Published:
+30 June 2026
+
+The CMA is consulting on new conduct requirements for Apple and Google under the UK digital markets competition regime. The proposed requirements would remove restrictions currently preventing UK app developers from ‘steering' their customers away from Apple and Google's platforms for payment.
+
+Steering requirements for Apple and Google
+
+‘Steering' – the ability for developers to engage with customers about off‑platform options – is currently banned by Apple and restricted by Google in the UK. Lifting these constraints would allow developers to bypass mandatory fees set by platforms.
+
+The CMA's consultation includes principles to ensure that the fees Apple and Google charge for steering are fair and reasonable. Using an evidence-based framework, the CMA would expect steering fees to be lower than current app store charges, with savings passed onto UK customers or invested back into the developers' businesses to support future innovation.
+
+Speaking today at the Informa Connect CompLaw conference, Will Hayter, Executive Director for Digital Markets, will say:
+
+[On steering] We are consulting today on draft conduct requirements to support so-called ‘steering', or the ability for app developers to engage directly with their users outside Apple and Google's app stores…
+
+We think it is important to give both app developers and users more choice about how they communicate and how they transact. This is not only because choice is inherently valuable but also because we see this as the best way to introduce some competitive pressure in a vital part of the mobile ecosystem that is otherwise sorely lacking such pressure.
+
+[On steering fees] While it is only fair for Apple and Google to be compensated for the services they provide, any fees they charge must be justified through a robust, evidence-led framework involving due reference to both cost and value.
+
+Accessing contactless functionality on iOS
+
+After hearing concerns from businesses that Apple's high fees and strict terms prevented access to near field communication (NFC) functionality, the CMA is designing a potential requirement to allow access for developers.
+
+Unblocking the restriction would enable UK fintechs and developers to support contactless transactions, like card-based payments through digital wallets, from within their own iOS apps. Doing so would help unlock innovation and competition by supporting future payment methods – such as account-to-account, digital currency and stablecoin, as well as other non-financial uses, including digital ID and car keys.
+
+The CMA is seeking views from developers on 2 design elements:
+
+The technical method by which NFC access should be provided
+
+The price charged for such access
+
+Competition regime progress
+
+Hayter's speech marks 18 months since the start of the UK's digital markets competition regime, during which time the CMA has concluded 3 strategic market status investigations and launched a fourth into Microsoft's business software ecosystem.
+
+The CMA has so far imposed 3 conduct requirements for Google search and has secured immediate benefits through commitments offered by Apple and Google in relation to mobile. These commitments provide more certainty for UK developers on app distribution and to request interoperable access to functionality from Apple .
+
+As Will will say later today:
+
+In many cases, the market takes enough care of both companies and people – such is the power of competition to give people a choice of innovative products and services at reasonable prices, and to give companies with great ideas the chance to succeed.
+
+But sometimes that simply doesn't work in practice. If companies don't do right by consumers, we may have to step in.
+
+Adding:
+
+… I do think that the Digital Markets, Competition and Consumers Act is an exceptionally well designed legislative tool to bring about positive change – it is precise enough to set boundaries, but flexible enough to respond to the realities of the market and to adapt over time as those realities shift.
+
+More information can be found on the CMA's Apple and Google mobile platforms pages.
+
+Notes to editors
+
+Will Hayter's full remarks to Informa Connect CompLaw conference will be published on the CMA's website later today.
+
+On 24 June, Google announced new global terms and conditions for its Play Store, which are due to come into effect in the UK today. The changes include allowing developers to steer their users outside of the Play Store to complete transactions, subject to certain restrictions. Google has also introduced changes to the fees that it charges app developers, including those that wish to use steering. The CMA will assess the likely impact of these changes on users and businesses during the next phase of its work on mobile platforms.
+
+Under the Digital Markets, Competition and Consumers Act, the CMA is required to consult before it can impose a new conduct requirement.
+
+Respondents should submit responses by 5pm on 28 July 2026 for steering conduct requirement consultation. The CMA will consider the feedback received and a decision will be taken on whether to impose any new requirements later this year.
+
+NFC is a short-range wireless technology that allows compatible devices to exchange data or communicate by bringing them close together, such as contactless payments. Those wishing to submit their views on the potential NFC requirement should do so by 5pm on 21 July 2026.
+
+App store terms and conditions, including steering, are issues which are under scrutiny in many other jurisdictions, including the EU, US, and Japan.
+
+For media enquiries, contact the CMA press office.
+
+Email
+
+press@cma.gov.uk
+
+Telephone numbers
+
+Phone:
+020 3738 6460
+
+Out of hours:
+020 3738 6878
+
+Opening hours
+
+Monday to Friday, 9am to 5:30pm. On bank holidays, use our out of hours number.
+
+Find out about call charges
+
+Share this page
+
+The following links open in a new tab
+
+Share on Facebook
+
+(opens in new tab)
+
+Share on X
+
+(opens in new tab)
+
+Is this page useful?
+
+Maybe
+
+Thank you for your feedback
+
+Help us improve GOV.UK
+
+To help us improve GOV.UK, we'd like to know more about your visit today.
+Please fill in this survey (opens in a new tab).

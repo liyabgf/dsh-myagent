@@ -1,0 +1,82 @@
+
+
+Skip to content
+
+Story text
+
+Size
+
+Width
+*
+
+Links
+
+* Subscribers only
+
+Learn more
+
+It has become increasingly common for AI firms to announce that their latest and most capable models engaged in unauthorized real-world hacking. Google, which has been slow to release frontier Gemini models in recent months, has been absent from the “rogue AI” conversation until now. Following a Wall Street Journal report, Google has confirmed that Gemini models hacked three companies during a May 2026 test, but the nature of the intrusion isn’t as troubling (or impressive) as previous AI hacks.
+
+The hack took place during a test conducted by cybersecurity firm Irregular. A collection of Gemini models were taking part in a “capture the flag” exercise intended to test the AI’s cybersecurity capabilities in a closed environment. The AI was instructed to retrieve information from a fake company (which shared a name with a real company) within this environment. Irregular was not supposed to allow the model to operate outside its servers, but due to a misconfiguration, Gemini was able to access the Internet.
+
+When Gemini started snooping around the web, it targeted real infrastructure instead of the fakes. For one of the three hacks, Gemini simply guessed passwords until it accessed a company’s online services. In the other two instances, Gemini searched public software repositories until it found login credentials for companies that had been accidentally included.
+
+In all three test runs, Google’s models reportedly stopped after realizing they had accessed a real company’s servers. At that point, Irregular changed its configuration to prevent the AI from accessing the Internet. Apparently, Irregular didn’t initially consider this event worthy of further investigation—it didn’t even tell Google about the hacks until July, following the news of other AI hacking incidents. After becoming aware of the event, Google notified the companies so they could (we hope) improve their password security.
+
+Google’s decision not to publicly disclose the hacks comes down to the model’s behavior after using its ill-gotten passwords. Since the models realized the systems were real and stopped, the company didn’t consider this a true example of model misalignment.
+
+In a statement, Google’s vice president of security engineering, Heather Adkins, downplayed the severity of the incident. “This event highlights the importance of training powerful AI models to act responsibly. In this case, the model acted appropriately,” she said.
+
+This is very different from hacks like the OpenAI-Hugging Face incident, which was clear-cut model misalignment. When OpenAI’s models escaped containment, they did so by using software exploits with the express purpose of accessing information that was not available in their testing environment, all in service of acing a benchmark and earning higher “rewards.” You could, however, argue that OpenAI’s setup essentially encouraged this behavior.
+
+Google’s AI didn’t do anything so malicious—someone just left the door open and the AI got out. Gemini was allowed access to a wealth of information on the Internet, and it used it to log in to systems it wasn’t authorized to access. Guessing passwords isn’t exactly world-ending AI apocalypse behavior, but it’s probably still something Google should have disclosed when it became aware it had happened.
+
+Ryan Whitwam
+
+Senior Technology Reporter
+
+Ryan Whitwam
+
+Senior Technology Reporter
+
+Ryan Whitwam is a senior technology reporter at Ars Technica, covering the ways Google, AI, and mobile technology continue to change the world. Over his 20-year career, he's written for Android Police, ExtremeTech, Wirecutter, NY Times, and more. He has reviewed more phones than most people will ever own. You can follow him on Bluesky, where you will see photos of his dozens of mechanical keyboards.
+
+80 Comments
+
+Comments
+
+Forum view
+
+Loading comments...
+
+Prev story
+
+Next story
+
+1.
+Elon Musk moved SpaceX to red Texas. Now it's blue. What happens next?
+
+2.
+Trump wanted to give No Kings no air. Then, Meta suspended its Instagram.
+
+3.
+Ted Cruz aims to stack FCC with Republicans before Democrats take Senate control
+
+4.
+What I learned driving the Slate electric truck prototype
+
+5.
+Uranium cubes reveal why the German nuclear project failed
+
+Dashboard
+
+Edit Post
+
+Howdy, Account
+
+AccountEdit Profile
+
+Log Out
+
+Connecting…
+

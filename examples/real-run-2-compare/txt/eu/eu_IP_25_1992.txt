@@ -1,0 +1,49 @@
+# Commission fines Google €2.95 billion over abusive practices in online advertising technology
+ref=IP/25/1992
+
+The European Commission has fined Google €2.95 billion for breaching EU antitrust rules by distorting competition in the advertising technology industry (‘adtech'). It did so by favouring its own online display advertising technology services to the detriment of competing providers of advertising technology services, advertisers and online publishers. The Commission has ordered Google (i) to bring these self-preferencing practices to an end; and (ii) to implement measures to cease its inherent conflicts of interest along the adtech supply chain. Google has now 60 days to inform the Commission about how it intends to do so.
+
+The infringement
+
+Google is a US multinational technology company with advertising as main source of revenue. In particular, Google: (i) sells advertising on its own websites and applications; and (ii) intermediates between advertisers that want to place their ads online and publishers (i.e. third-party, websites and apps) that can supply that space.
+
+Advertisers and publishers rely on the adtech industry's digital tools for the placement of real time ads not linked to a search query, such as banner ads in websites of newspapers (‘display ads'). In particular, the adtech industry provides three digital tools: (i) publisher ad servers used by publishers to manage the advertising space on their websites and apps; (ii) programmatic ad buying tools for the open web used by advertisers to manage their automated advertising campaigns; and (iii) ad exchanges where demand and supply meet in real time, typically via auctions, to buy and sell display adds.
+
+Google provides several adtech services that intermediate between advertisers and publishers to display ads on websites or mobile apps. It operates (i) two ad buying tools - "Google Ads" and "DV 360"; (ii) a publisher ad server, "DoubleClick For Publishers, or DFP"; and (iii) an ad exchange, "AdX".
+
+The Commission's investigation found that Google is dominant: (i) in the market for publisher ad servers with its service "DFP"; and (ii) in the market for programmatic ad buying tools for the open web with its services "Google Ads" and "DV360". Both markets are European Economic Area-wide.
+
+In particular, the Commission found that, between at least 2014 and today, Google abused such dominant positions in breach of Article 102 of the Treaty on the Functioning of the European Union (‘TFEU') by:
+
+Favouring its own ad exchange AdX in the ad selection process run by its dominant publisher ad server DFP by, for example, informing AdX in advance of the value of the best bid from competitors which it had to beat to win the auction.
+
+Favouring its ad exchange AdX in the way its ad buying tools Google Ads and DV360 place bids on ad exchanges. For example, Google Ads was avoiding competing ad exchanges and mainly placing bids on AdX, thus making it the most attractive ad exchange.
+
+The Commission has concluded that those conducts aimed at intentionally giving AdX a competitive advantage and may have foreclosed ad exchanges competing with AdX. This has reinforced AdX's central role in the adtech supply chain as well as Google's ability to charge a high fee for its service.
+
+The Commission has ordered Google to bring these self-preferencing practices to an end. It has also ordered Google to implement measures to cease its inherent conflicts of interest along the adtech supply chain. Google has now 60 days to inform the Commission about the measures it intends to propose to that effect. Once received, the Commission will thoroughly assess them to see if they eliminate the conflicts of interest. Should they not, subject to Google's right to be heard, the Commission will proceed to impose an appropriate remedy. The Commission has already signalled its preliminary view that only the divestment by Google of part of its services would address the situation of inherent conflicts of interest, but it first wishes to hear and assess Google's proposal.
+
+The fine of €2.95 billion was set on the basis of the Commission's 2006 guidelines on fines.
+
+In setting the level of the fine, the Commission considered various elements, including the duration and gravity of the infringement, as well as the relevant EEA turnover of AdX, to which the infringements relate, and which therefore defines the basic amount of the fine. In addition, the Commission took into account the fact that Google had already been fined in the past for abuses of a dominant position.
+
+The Commission's conclusion on the existence of an abuse of dominance by Google, for a conduct which is largely similar to the one investigated by the US Department of Justice, is also important in view of the upcoming trial on remedies in the US, set to start on 22 September 2025.
+
+Background
+
+In June 2021, the Commission opened formal proceedings into possible anticompetitive conduct by Google in the online advertising technology sector. In June 2023, the Commission sent Google a Statement of Objections, to which the company responded in December 2023.
+
+Article 102 of the TFEU and Article 54 of the European Economic Area (‘EEA') Agreement prohibit the abuse of a dominant position.
+
+Market dominance is, as such, not illegal under EU antitrust rules. However, dominant companies have a special responsibility not to abuse their powerful market position by restricting competition, either in the market where they are dominant or in separate markets.
+
+Where the Commission, finds that there is an infringement of Article 102 of the TFEU, it may by decision require the company concerned to bring such infringement to an end. For this purpose, it may impose on them any behavioural or structural remedies which are proportionate to the infringement committed and necessary to bring the infringement effectively to an end. Structural remedies can only be imposed either where there is no equally effective behavioural remedy or where any equally effective behavioural remedy would be more burdensome for the company concerned than the structural remedy.
+
+More information on this case will be available under the case number AT.40670 in the public case register on the Commission's competition website, once confidentiality issues have been dealt with.
+
+Action for damages
+
+Any person or company affected by anti-competitive behaviour as described in this case may bring the matter before the courts of the Member States and seek damages. The case law of the Court of Justice of the European Union and Council Regulation 1/2003 both confirm that in cases before national courts, a Commission decision constitutes binding proof that the behaviour took place and was illegal. Even though the Commission has fined the company concerned, damages may be awarded by national courts without being reduced on account of the Commission fine.
+
+The Antitrust Damages Directive makes it easier for victims of anti-competitive practices to obtain damages. More information on antitrust damages actions, including a practical guide on how to quantify antitrust harm, is available here.
+

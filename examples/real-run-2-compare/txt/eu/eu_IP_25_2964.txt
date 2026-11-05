@@ -1,0 +1,29 @@
+# Commission opens investigation into possible anticompetitive conduct by Google in the use of online content for AI purposes
+ref=IP/25/2964
+
+The European Commission has opened a formal antitrust investigation to assess whether Google has breached EU competition rules by using the content of web publishers, as well as content uploaded on the online video-sharing platform YouTube, for artificial intelligence (‘AI') purposes. The investigation will notably examine whether Google is distorting competition by imposing unfair terms and conditions on publishers and content creators, or by granting itself privileged access to such content, thereby placing developers of rival AI models at a disadvantage.
+
+Google, headquartered in the US, is a multinational technology company specialising in internet-related services and products that include online advertising technologies, search, cloud computing, software, hardware and AI.
+
+The Commission is concerned that Google may have used:
+
+The content of web publishers to provide generative AI-powered services (‘AI Overviews' and ‘AI Mode') on its search results pages without appropriate compensation to publishers and without offering them the possibility to refuse such use of their content. AI Overviews shows AI-generated summaries responsive to a user's search query above organic results, while AI Mode is a search tab similar to a chatbot answering users' queries in a conversational style. The Commission will investigate to what extent the generation of AI Overviews and AI Mode by Google is based on web publishers' content without appropriate compensation for that, and without the possibility for publishers to refuse without losing access to Google Search. Indeed, many publishers depend on Google Search for user traffic, and they do not want to risk losing access to it.
+
+Video and other content uploaded on YouTube to train Google's generative AI models without appropriate compensation to creators and without offering them the possibility to refuse such use of their content. Content creators uploading videos on YouTube have an obligation to grant Google permission to use their data for different purposes, including for training generative AI models. Google does not remunerate YouTube content creators for their content, nor does allow them to upload their content on YouTube without allowing Google to use such data. At the same time, rival developers of AI models are barred by YouTube policies from using YouTube content to train their own AI models.
+
+If proven, the practices under investigation may breach EU competition rules that prohibit the abuse of a dominant position (Article 102 of the Treaty on the Functioning of the European Union (‘TFEU')) and Article 54 of the European Economic Area (‘EEA') Agreement.
+
+The Commission will now carry out its in-depth investigation as a matter of priority. The opening of a formal investigation does not prejudge its outcome.
+
+Background
+
+Article 102 of the TFEU prohibits the abuse of a dominant position. The implementation of Article 102 TFEU is defined in Regulation 1/2003.
+
+Article 11(6) of Regulation 1/2003 provides that the opening of proceedings by the Commission relieves the competition authorities of the Member States of their competence to also apply EU competition rules to the practices concerned. Article 16(1) further provides that national courts must avoid adopting decisions which would conflict with a decision contemplated by the Commission in proceedings it has initiated.
+
+The Commission has informed Google and the competition authorities of the Member States that it has opened proceedings in this case.
+
+There is no legal deadline for bringing an antitrust investigation to an end. The duration of an antitrust investigation depends on a number of factors, including the complexity of the case, the extent to which the companies concerned cooperate with the Commission and the parties' exercise of the rights of defence.
+
+More information on this investigation will be available on the Commission's competition website, in the public case register under the case number AT.40983.
+

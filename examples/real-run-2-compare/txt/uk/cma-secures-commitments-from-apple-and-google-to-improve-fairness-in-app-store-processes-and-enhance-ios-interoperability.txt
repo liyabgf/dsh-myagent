@@ -1,0 +1,123 @@
+Cookies on GOV.UK
+
+We use some essential cookies to make this website work.
+
+We'd like to set additional cookies to understand how you use GOV.UK, remember your settings and improve government services.
+
+We also use cookies set by other sites to help us deliver content from their services.
+
+You have accepted additional cookies. You can change your cookie settings at any time.
+
+You have rejected additional cookies. You can change your cookie settings at any time.
+
+View cookies
+
+Skip to main content
+
+Press release
+
+CMA secures commitments from Apple and Google to improve fairness in app store processes and enhance iOS interoperability
+
+Commitments would deliver immediate improvements to the way UK developers publish apps and how they access Apple's tools.
+
+From:
+
+Competition and Markets Authority
+
+Published:
+10 February 2026
+
+The Competition and Markets Authority (CMA) is seeking views on a package of commitments from Apple and Google intended to deliver immediate improvements in certainty, transparency and fairness for thousands of UK businesses dependent on app stores to serve their customers. Additional commitments from Apple will deliver a step change in how developers can request interoperable access to the iOS and iPadOS mobile operating systems, giving greater certainty over how they can deliver innovative new products. The commitments will be underpinned by robust monitoring and reporting by the CMA to ensure compliance.
+
+Today's proposals represent the first changes secured by the CMA following the designation of both Apple and Google's mobile platforms under the digital markets competition regime in October last year. They are part of an ongoing programme of work and updates on further measures are expected in the coming months. These include ensuring businesses can get fairer terms for distributing their apps to customers, and making sure innovative businesses like fintechs can access the tools they need to compete fairly with Apple's digital wallet.
+
+Last year, the CMA designated both Apple and Google with strategic market status (SMS) in mobile platforms under the regime. The designation allows the CMA to introduce targeted measures for the purposes of fair dealing, open choices or trust and transparency. The CMA has since worked with Apple and Google to secure immediate commitments addressing concerns in certain priority areas, including with respect to app store processes. The commitments reflect the pragmatic and flexible design of the UK's digital markets regime, delivering immediate benefits to UK businesses and consumers without the need for a formal and lengthy process.
+
+Should the companies fail to implement the commitments effectively, the CMA would expect to move swiftly to impose formal ‘conduct requirements'.
+
+The measures announced today are intended to boost the UK's app economy and to provide developers with confidence that they will be treated fairly by Apple and Google. The UK has a vibrant app developer community, representing Europe's largest app economy by revenue and app developer count. In total, the UK app economy generates an estimated 1.5% of the UK's GDP and supports around 400,000 jobs here. App-led innovation has powered the success of strategically important sectors for the UK, like financial services and gaming. It is essential that this part of the digital economy works well.
+
+The commitments include:​
+
+​App review: Making sure Apple and Google review apps to be distributed on their app stores in a fair, objective and transparent way and do not discriminate against apps which compete with their own, or give preferential treatment to their own apps.
+
+App ranking: Making sure Apple and Google rank apps in their app stores ​in a fair, objective and transparent way and do not discriminate against apps which compete with their own, or give preferential treatment to their own apps.
+
+Data collection: Making sure Apple and Google safeguard the app data they gather from developers in the course of app review and do not use this data unfairly.
+
+Interoperability: Enabling developers to more easily request interoperable access to features and functionality within Apple's mobile operating systems, giving businesses more certainty over how they can deliver innovative products and services to UK consumers. Apple has committed to considering requests fairly and objectively. ​
+
+​As part of the commitments process, the CMA will closely monitor Apple and Google's implementation of the changes and will report publicly on what it finds. Metrics provided by Apple and Google will include those in relation to:
+
+proportion of apps submitted for review, approved, rejected and appealed
+
+time taken for app review
+
+the number of complaints received and outcomes of these
+
+interoperability requests received, outcomes and timeliness
+
+Sarah Cardell, Chief Executive of the CMA, said:
+
+Following designation of Apple and Google's mobile platforms in October last year, the CMA has moved swiftly to secure a package of commitments from Apple and Google that will boost the UK's app economy, giving developers the opportunity and confidence they need to invest and innovate.
+
+The ability to secure immediate commitments from Apple and Google reflects the unique flexibility of the UK digital markets competition regime and offers a practical route to swiftly address the concerns we've identified.
+
+These are important first steps while we continue to work on a broad range of additional measures to improve Apple and Google's app store services in the UK, for example by enabling more choice and innovation in digital wallets, boosting the UK's fintech sector and potentially supporting the roll out of digital IDs.
+
+The CMA welcomes views on the proposed commitments by 3 March 2026. Subject to views, the commitments will take effect from 1 April 2026.
+
+More information can be found on the CMA's Apple and Google mobile platforms pages and in a blog by Will Hayter, Executive Director for Digital Markets.
+
+Notes to editors
+
+The UK has a vibrant app developer community, representing Europe's largest app economy by revenue and app developer count. As of 2025, mobile development in the UK is valued at £28 billion.
+
+To designate a firm with SMS, the CMA must decide that it has substantial and entrenched market power and a position of strategic significance in a digital activity.
+
+In October, the CMA found Apple and Google's mobile platforms held an effective duopoly, with around 90 - 100% of UK mobile devices running on Apple or Google's mobile platform. The CMA's investigation heard concerns affecting businesses and consumers in the UK which informed its decision to designate as well as subsequent discussions on the commitments secured from Apple and Google.
+
+Apple and Google having SMS does not imply that they have acted anti-competitively.
+
+For media enquiries, contact the CMA press office.
+
+Email
+
+press@cma.gov.uk
+
+Telephone numbers
+
+Phone:
+020 3738 6460
+
+Out of hours:
+020 3738 6878
+
+Opening hours
+
+Monday to Friday, 9am to 5:30pm. On bank holidays, use our out of hours number.
+
+Find out about call charges
+
+Share this page
+
+The following links open in a new tab
+
+Share on Facebook
+
+(opens in new tab)
+
+Share on X
+
+(opens in new tab)
+
+Is this page useful?
+
+Maybe
+
+Thank you for your feedback
+
+Help us improve GOV.UK
+
+To help us improve GOV.UK, we'd like to know more about your visit today.
+Please fill in this survey (opens in a new tab).

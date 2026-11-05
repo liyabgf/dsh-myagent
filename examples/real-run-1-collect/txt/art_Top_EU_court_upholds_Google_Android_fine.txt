@@ -1,0 +1,56 @@
+
+
+Skip to main content
+
+Advertisement
+
+BRUSSELS — Europe’s top court on Thursday dismissed Google’s appeal against a €4.1 billion Android antitrust fine, handing the European Commission a major victory in one of its longest-running antitrust battles with Big Tech.
+
+The Court of Justice of the European Union upheld a lower court’s 2022 judgment, which largely backed the Commission’s finding that Google abused its dominant position by imposing restrictions on makers of smartphones that use its Android operating system and mobile network operators to protect the dominance of Google Search and Chrome.
+
+The General Court reduced the original €4.34 billion penalty to €4.125 billion, a fine that now stands.
+
+Advertisement
+
+The ruling “fails to recognize our significant investment to ensure Android remains open, interoperable and free,” a Google spokesperson said in a statement. The company said it had complied with the initial findings from 2018 and remains “focused on continued innovation and openness for our users, partners and developers.”
+
+The ruling brings to a close a case that was one of the defining antitrust battles of former Competition Commissioner Margrethe Vestager’s tenure and reinforces the Commission’s use of traditional competition law to tackle the market power of digital platforms.
+
+While the bloc now relies increasingly on the Digital Markets Act to regulate large online platforms, the ruling provides another judicial endorsement of the legal principles that underpinned Brussels’ earlier antitrust crackdown on Big Tech.
+
+“Today’s judgment sends a very clear message: dominant companies cannot use their power to shut out competition and limit consumer choice,” said Agustín Reyna, director general of the European Consumer Organisation (BEUC), which intervened in support of the Commission.
+
+While calling the ruling a major victory, Reyna said it also shows why forward-looking tools like the DMA are needed “to nip unfair practices in the bud.”
+
+Abuse of dominance
+
+At the heart of the case were agreements requiring smartphone manufacturers seeking access to Google’s Play Store to pre-install Google Search and Chrome, alongside restrictions that the Commission said made it harder for rival search engines and browsers to compete.
+
+Advertisement
+
+The judgment is also expected to shape future abuse-of-dominance cases under Article 102, particularly on how EU competition authorities assess tying practices in digital markets.
+
+For FairSearch — the original complainant — the law moved too slowly to prevent Google from establishing and entrenching its dominance over mobile markets.
+
+However, this case’s underlying principles “have been embodied in European laws,” said Thomas Vinje, FairSearch’s spokesperson.
+
+Now the battle has moved on to artificial intelligence “where anticompetitive conduct risks being repeated and can be addressed by European competition law and regulations spawned by this Google Android case.”
+
+Why motive matters
+
+For Christian Bergqvist, associate professor at the University of Copenhagen, the judgment confirms that Article 102 remains a powerful tool for tackling dominant digital platforms.
+
+But the most important aspect of the Android case, he told POLITICO, is the Commission's theory of harm: Google sought to protect its search monopoly as internet users shifted from desktop computers to smartphones.
+
+Advertisement
+
+Although competition authorities do not need to prove an anticompetitive motive to establish an abuse of dominance, understanding a company's commercial incentives can help explain why even seemingly free products may raise competition concerns.
+
+The motive “can nevertheless play an important role in enforcement prioritization and in understanding the commercial logic underlying a firm's conduct," Bergqvist said.
+
+With the closing of this case, the focus now shifts to enforcement under the Digital Markets Act, which took effect in 2024. Seven tech companies — including Google — have been designated as gatekeepers by the Commission.
+
+The EU executive has been investigating Google Search since March 2024 under the DMA for favoring its own services, such as Google Flights, by placing them higher in search results than those of rivals. A decision to fine the U.S. company is expected soon.
+
+This article has been updated.
+

@@ -1,0 +1,55 @@
+# Commission fines Google €890 million for breaches of the Digital Markets Act
+ref=IP/26/1670
+
+Today, the European Commission took two decisions finding non-compliance by Google with the Digital Markets Act (DMA) for self-preferencing its own services on Google Search, and for putting in place restrictions on businesses to direct consumers to alternative, often cheaper, purchase channels on Google Play (steering). In this regard, the Commission issued Google a fine of €460 million and a fine of €430 million respectively.
+
+Self-preferencing on Google Search
+
+Under the DMA, gatekeepers must not treat their own services more favourably in ranking than third-party services. They have to apply transparent, fair and non-discriminatory conditions to such ranking.
+
+The Commission found that Google gives preferential treatment to its own services, including shopping, hotels, transport and sports results, over those of third parties in Google Search, thereby breaching its obligations under the DMA.
+
+Google displays its own services more prominently in search results, including at the top of the search results page or by using enhanced visuals and filters, while similar third-party services do not have the same prominence.
+
+Google's anti-steering
+
+Under the DMA, app developers that distribute their apps via Google Play should be able to inform customers – free of charge – of alternative, often cheaper, offers, and to direct them to those offers to make purchases, for example on websites or alternative app stores.
+
+The Commission found that Google failed to comply with that obligation.
+
+In particular, Google prevents app developers from freely communicating and promoting offers and concluding contracts with users in distribution channels of their choice, including third-party app stores.
+
+While Google can receive a fee for facilitating the initial acquisition of a new customer by an app developer via Google Play, the level of the steering-related fees charged by Google and the length of the charging period for these fees went beyond what is considered compliant with the DMA.
+
+As part of today's two decisions, the Commission has ordered Google to bring the non-compliance to an end.
+
+In particular, Google must implement measures to:
+
+Treat third-party services that feature on Google's search results in a fair and non-discriminatory manner by reference to its own services, and
+
+Allow app developers distributing their apps via Google Play Store, both technically and contractually, to freely communicate, promote offers and conclude contracts with users not only within but also outside the Google Play app store.
+
+The Commission notes that, after a constructive dialogue, Google has proposed and started testing changes to how it presents its own services on Google Search for free services such as shopping, hotels and flights. The Commission will monitor the implementation of these solutions which constitute substantial progress towards compliance. The Commission also notes that Google has proposed and started testing changes to how it presents shopping ads and content related services, such as sports. The Commission is currently assessing these changes and will continue its dialogue with Google in light of today's decision. The Commission also takes note of Google's proposals on how it plans to apply the principles of the decision to AI Overviews and AI Mode, on which dialogue will continue in light of today's decision.
+
+The Commission also notes that Google has rolled out changes related to Google's steering terms. These constitute good progress towards compliance and will also be assessed in light of the cease and desist order of today's decision.
+
+The fines imposed today on Google take into account the gravity and duration of the non-compliance.
+
+Next steps
+
+Google is required to comply with the Commission's decisions within 60 days, otherwise it risks periodic penalty payments of up to 5% of its total worldwide turnover.
+
+The Commission continues to engage with Google to ensure compliance with its decisions and the DMA more generally.
+
+Background
+
+Google was designated as a gatekeeper in September 2023 for its online search engine Google Search. On 25 March 2024, the Commission opened non-compliance investigations into Google's measures to prevent self-preferencing and into its steering rules. On 19 March 2025, the Commission informed Google of its preliminary view that the company was in breach of the DMA.
+
+Google exercised its rights of defence by examining in detail all the documents in the two Commission investigation files and comprehensively replying in writing to the Commission's preliminary findings.
+
+The two non-compliance decisions were adopted after a thorough investigation, including feedback from market participants, and extensive dialogue with Google.
+
+When calculating the fines, the Commission has assessed the gravity, duration and recurrence of the breaches and concluded that the level of fines imposed are proportionate and appropriate.
+
+Google may decide to appeal today's decisions.
+

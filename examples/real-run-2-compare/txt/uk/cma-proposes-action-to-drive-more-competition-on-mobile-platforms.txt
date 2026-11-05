@@ -1,0 +1,143 @@
+Cookies on GOV.UK
+
+We use some essential cookies to make this website work.
+
+We'd like to set additional cookies to understand how you use GOV.UK, remember your settings and improve government services.
+
+We also use cookies set by other sites to help us deliver content from their services.
+
+You have accepted additional cookies. You can change your cookie settings at any time.
+
+You have rejected additional cookies. You can change your cookie settings at any time.
+
+View cookies
+
+Skip to main content
+
+Press release
+
+CMA proposes action to drive more competition on mobile platforms
+
+Measures designed to boost the UK's app economy, unlocking global success and ensuring UK consumers aren't left behind.
+
+From:
+
+Competition and Markets Authority
+
+Published:
+23 July 2025
+
+The Competition and Markets Authority (CMA) is today proposing to designate Apple and Google with ‘strategic market status' (SMS) in each of their mobile platforms and has published separate roadmaps of potential actions to improve competition.
+
+The UK app economy
+
+The UK has a vibrant app developer community, representing Europe's largest app economy by revenue and app developer count. In total, the UK app economy generates an estimated 1.5% of the UK's GDP and supports around 400,000 jobs here. App-led innovation has powered the success of strategically important sectors for the UK, like financial services and gaming. Fintech stands out, attracting over £18 billion in inward investment over the past 3 years. Meanwhile, gaming contributes £6 billion to the UK economy, with mobile gaming alone bringing in nearly £2 billion a year. UK developers are also behind many of the apps that make modern life work – helping millions of people work, shop, bank, travel, game, consume content and stay connected.
+
+UK mobile platforms
+
+Apple and Google's mobile platforms hold an effective duopoly, with around 90 - 100% of UK mobile devices running on Apple or Google's mobile platform. The CMA's investigation has heard concerns affecting businesses and consumers in the UK. These differ across Apple and Google but include:
+
+inconsistent and unpredictable app review processes can create uncertainty for developers, meaning delayed or failed launches
+
+inconsistent app store search rankings may favour apps owned by the firms
+
+up to 30% commission on some in-app purchases, as well as restrictions on developers ‘steering' customers outside of their app stores, for example towards other ways to pay or subscribe, which could make some business models unviable, reduce consumer choice, and chill innovation
+
+restrictions on developers' access to features and functionality including between smartphones and wearable technology (such as smart watches) may be impeding innovation
+
+‘Choice architecture' (like default settings, pre-installation, prominence, prompts, and friction) may favour the firms' own services, limiting competition and genuine choice for users.
+
+It is essential the digital economy works well to power the success of businesses across the UK economy. More competition and choice will unlock opportunities for UK businesses to invest, innovate and grow, as well as allowing UK consumers to benefit from the latest innovations, high quality experiences and more choice.
+
+A proportionate, pro-innovation approach
+
+The UK's new digital markets competition regime can help unlock opportunities for innovation and growth, by promoting competition in digital markets while protecting UK consumers and businesses from unfair or harmful practices. To support pace and provide greater predictability for Apple and Google and other market participants, the CMA has published roadmaps outlining how it would prioritise actions taken during the first half of any designation period. Measures outlined in the roadmaps focus on areas including:
+
+App stores
+
+Ensuring a fair and transparent app review process and app store rankings to give UK app developers certainty
+
+Allowing the ability to ‘steer' users out of app stores, for example to make purchases. Potentially driving innovation and financial savings for developers
+
+Interoperability
+
+Ensuring UK app developers have interoperable access to key Apple functionality to create innovative products and services
+
+Addressing Apple restrictions on digital wallets to ensure UK FinTech can compete, and enabling connected devices like smartwatches and gaming headsets to seamlessly connect with smartphones
+
+Consumer choice
+
+Ensuring consumers have a genuine choice over the services they use on their devices
+
+AI services
+
+Exploring the factors likely to be important for the development of AI services like voice assistants on mobile devices to ensure a level playing field in this rapidly advancing sector
+
+Sarah Cardell, Chief Executive of the CMA, said:
+
+Apple and Google's mobile platforms are both critical to the UK economy – playing an important role in all our lives, from banking and shopping to entertainment and education. But our investigation so far has identified opportunities for more innovation and choice.
+
+The targeted and proportionate actions we have set out today would enable UK app developers to remain at the forefront of global innovation while ensuring UK consumers receive a world-class experience. Time is of the essence: as competition agencies and courts globally take action in these markets, it's essential the UK doesn't fall behind.
+
+The CMA welcomes views on its proposed designation decisions and accompanying roadmaps. A final decision on both SMS designations will be made by 22 October 2025.
+
+More information about these investigations is available on the Apple and Google case pages.
+
+Read more on today's announcement in this blog.
+
+Notes to editors
+
+On 23 January 2025 the CMA launched two separate SMS investigations – one into Apple and another into Google – to assess these firms' position in their respective ‘mobile ecosystems.' The investigations are exploring the impact on people who use mobile devices and the businesses developing services or content for these devices. The CMA is today publishing proposed decision reports and roadmaps as part of these parallel investigations.
+
+The CMA will be consulting with affected businesses and consumer groups widely over the coming months. The CMA expects to begin consulting on a first set of priority interventions from shortly after any designation decision and will publish an updated roadmap addressing our approach to the more complex issues the CMA has identified in the first half of 2026.
+
+The issues covered by the proposed designations are being scrutinised around the world and the CMA recognises that any proposed action taken must fit with decisions being taken elsewhere.
+
+In line with the CMA's prioritisation principles and the strategic steer from government, the CMA's roadmaps consider targeted measures where it can make a difference in the UK, and which fit with steps taken, or proposed, in other jurisdictions such as the EU and US.
+
+A finding that Google/Apple has SMS does not imply that it has acted anti-competitively. If the CMA designates Google and/or Apple as having SMS, it would then be able (subject to a legal framework that includes further public consultation and showing that measures are proportionate) to introduce interventions (including as set out in the roadmap) to unlock competition, increase innovation, and protect consumers.
+
+FinTech figures from: Innovate Finance FinTech Investment Landscape reports
+
+For media enquiries, contact the CMA press office.
+
+Email
+
+press@cma.gov.uk
+
+Telephone numbers
+
+Phone:
+020 3738 6460
+
+Out of hours:
+020 3738 6878
+
+Opening hours
+
+Monday to Friday, 9am to 5:30pm. On bank holidays, use our out of hours number.
+
+Find out about call charges
+
+Share this page
+
+The following links open in a new tab
+
+Share on Facebook
+
+(opens in new tab)
+
+Share on X
+
+(opens in new tab)
+
+Is this page useful?
+
+Maybe
+
+Thank you for your feedback
+
+Help us improve GOV.UK
+
+To help us improve GOV.UK, we'd like to know more about your visit today.
+Please fill in this survey (opens in a new tab).

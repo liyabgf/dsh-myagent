@@ -1,0 +1,449 @@
+
+
+Topics
+
+Analytics
+
+Android
+
+Apple
+
+Artificial Intelligence
+
+Augmented Reality
+
+Careers
+
+Cloud Computing
+
+Collaboration Software
+
+Computers and Peripherals
+
+Contributor Content
+
+Data Center
+
+Emerging Technology
+
+Enterprise Applications
+
+Enterprise Buyer’s Guides
+
+Generative AI
+
+Hybrid and Remote Work
+
+Industry
+
+IT Leadership
+
+IT Management
+
+IT Operations
+
+Mobile
+
+Networking
+
+Office Suites
+
+Operating Systems
+
+Productivity Software
+
+Security
+
+Vendors and Providers
+
+Windows
+
+by JR Raphael
+
+Contributing Editor
+
+Hello, Googlebook: The complete FAQ on Google’s Android-ChromeOS combo
+
+news analysis
+
+Sep 23, 202623 mins
+
+Googlebook, Googlebook, Googlebook. Google’s mysterious new Android- and ChromeOS-combining laptops have been the talk of the town here in the land o’ Googley matters for much of this year already — and their name also makes for an incredibly challenging tongue-twister to say, as an added layer of intrigue. (Seriously: Try saying it 10 times fast. It ain’t easy.)
+
+All linguistic feats aside, the story with the Googlebook so far has mostly been one of questions — with Google giving us shockingly little solid info about what these systems are actually all about, what they’ll be like to use, and how they’ll fit into the broader Android and Chrome ecosystems that’ve existed around us all this time.
+
+For the first time now, we’re finally getting some solid answers. The first-ever Googlebooks are up for pre-order as of this week and set to become broadly available in early October. I had the opportunity to check in with Google ahead of the announcement, ask some questions, and get some inside info about all of the many unknowns surrounding these systems.
+
+Here, with no punches pulled and no stones left unturned, is everything we know — going far beyond the spotlighted talking points that you’ll see in the official Googlebook announcements.
+
+[Get level-headed knowledge in your inbox with my free Android Intelligence newsletter — one new and useful thing from me to you each Friday.]
+
+Let’s start simple: What exactly is a Googlebook?
+
+A fine place to start, you wise little wallaby. A Googlebook is the name for a new kind of laptop Google’s launching, with a whole new kind of custom operating system behind it. The simplest way to think about it is as a specialized version of Android that incorporates many of the concepts and ideas central to ChromeOS and Chromebooks — with a focus on a productivity-centric, desktop-caliber computing environment that avoids many of the awkward compromises that come with trying to work on a traditional Android tablet.
+
+Googlebooks are not, notably, the same thing as Google Books — the long-standing book searching service Google still operates — though you can access Google Books on a Googlebook for a true Matrix moment.
+
+Google
+
+OK, wise guy. So how exactly is a Googlebook different from a Chromebook, then? Or an Android tablet?
+
+This is where it starts to get tricky — but the shortest possible answer is that it’s kind of a combination of those two things, in what’s meant to be a “best of both worlds” setup.
+
+In practical terms, what that means is that you get an expanded desktop that’s designed to feel like Android but with a variety of enhancements to better take advantage of the added screen space. Amusingly enough, that results in something that brings to mind the short-lived large-screen-optimized Android 3.0 Honeycomb era of 2010 — with notifications and Quick Settings living in one corner of the interface, the clock and date in another corner, and a dock along the the bottom-center.
+
+Google
+
+Unlike with Chromebooks, Googlebooks do give you a fully customizable home screen, where you can add any number of widgets and shortcuts you want. They also allegedly include the new Gemini-powered Create My Widget option for building your own custom widgets from simple natural-language prompting, though we’ve been hearing about that since May with promises of an appearance on Pixel phones, too, and it’s yet to show up anywhere so far.
+
+Google
+
+And, of course, you can install and run any Android app natively on the device in addition to using the full web and all the progressive web apps out on the wild ol’ World Wide Web of ours.
+
+Google’s promise with this is “a laptop that feels familiar to Android users,” as natural and familiar as the phone they already know, and that certainly seems to be how things appear. Googlebooks also tie into Android’s auto-syncing system and bring all of your apps, settings, and basic system-connected data over by default; they follow the Material 3 Expressive design language used throughout Android (in the software’s standard version, as it appears on Pixels and certain other devices) as well as in most Google-made Android apps; and it offers the ability to both continue work from your phone — in apps that support the option, at least (a list that isn’t at all clear as of yet) — and to stream apps directly from your phone and run ’em on the computer, as you can with ChromeOS already.
+
+Google
+
+There’s also a new desktop-specific Files app that boasts a few neat-sounding tricks, like being able to let you interact with files from your phone on the computer and also search for an image in your storage based on what’s in it and not just its filename, as you can in Google Photos — so, for example, searching for “taco” and finding all images that show a taco (of which you should have many).
+
+Google
+
+Do Googlebooks run the regular desktop version of Chrome, like Chromebooks? Or the mobile version, like Android devices?
+
+With the caveat that I haven’t had a chance to spend any actual hands-on time with these devices for myself just yet, Google says its Googlebooks will sport the “full browser capabilities” and “desktop-class” browser quality carried over from ChromeOS — with full native support for browser extensions and a computer-level browsing experience.
+
+The systems will also allow you to easily hand off tabs from your phone to your laptop and vice-versa, and Google’s been working to ensure web apps like its Workspace suite of Docs, Sheets, Slides, and so on work perfectly well on all of the devices.
+
+Are there any special software touches that set these apart from other laptops, beyond the native Android app compatibility?
+
+Excellent question, detective. As you’d expect — for better or for worse, depending on your perspective — Googlebooks have Gemini baked into their operating system in all sorts of places, for what Google’s calling a “deep OS-native AI” experience.
+
+Some specific examples:
+
+A Magic Pointer feature lets you wiggle your mouse to summon Gemini and have it identify or interact with whatever’s in that area of your display.
+
+Google
+
+Magic Cues offer proactive contextual assistance — suggested actions, in other words — based on what you’re doing (in theory, at least; this same system has been present on Pixels for quite a while now, and I rarely ever see it show up).
+
+Rambler, Google’s new Wispr-Flow-like natural speaking dictation system, is built in at the system level for simple voice-to-text work in any app or process you’re using.
+
+Google
+
+Beyond that, you’ve got all the bits of built-in Android syncing and integration we’ve already gone over — with files, apps, and the alleged continuity stuff (forgive my skepticism on that; we’ve just been hearing about such systems within Android for years now, and they’ve yet really manifest in any meaningful ways) — along with the phone-to-computer app streaming possibility and automatic cross-device file access.
+
+Google
+
+There’s also a ChromeOS-like “Quick Insert” key that follows the Chromebook’s current model of acting as a supercharged clipboard of sorts — along with the added integration of that Rambler voice-to-text system now.
+
+Google
+
+And the classic Google glowbar from Google-made devices past makes a glorious return across the entire Googlebook ecosystem — with special light patterns to go along with devices booting up, the resurrected old Chromebook Pixel trick of being able to touch the bar in a certain way to summon a visual representation of your laptop’s current battery level, and other unspecified “playful Easter eggs” to be discovered.
+
+Google
+
+Google also says it’ll be opening up the glowbar system to developers in the future so that the light can be integrated into other apps and made even more useful, though it’s not at all clear what the timeline might be for that actually happening — or, of course, if and when different developers will invest the time and resources in participating.
+
+But wait — I thought Googlebooks were all about AI?
+
+They are, to some degree. But other than the fact that Gemini is easily accessible for on-demand summoning on the Googlebook, most of the AI takes the shape of those aforementioned features — like how Magic Pointer can lean on AI to identify what’s on your screen and offer up extra info or potentially actions related to it, how Magic Cues leverage AI to assess on-screen text at different moments and suggest actions connected to that, and how Rambler uses AI to listen and process your speech and then transform even unfocused ramblings into legible prose.
+
+The same goes for the Files app and its ability to search through images on the fly to find specific terms, even when they aren’t included in the files’ names.
+
+So the AI is certainly there. It just may or may not be the true day-to-day-use focal point of these systems (or at least overtly so), particularly for business users.
+
+Got it. So, the big question: If the software is a combination of Android and ChromeOS, what is it called?
+
+Ah, yes: the big question, indeed. I asked Google this during the media briefing and, I’m happy to report, finally have an answer:
+
+The software is based on Android but is technically now its own separate entity.
+
+So with that mind, it’ll be called Googlebook OS — yes, with a space between the two terms, just to keep everyone perpetually unsure of how to style it. (Anyone else remember how we went from Chrome OS to ChromeOS a few years back?!)
+
+If Googlebooks run Googlebook OS and Chromebooks run ChromeOS, what in the world do Android tablets run now?
+
+An identity crisis on a 10″ screen — obviously.
+
+In all seriousness, I’m not entirely convinced that anyone is spending much time thinking about tablets right now. Google’s flipped and flopped and flopped and flipped more times than I can even count when it comes to its tablet philosophy (or lack thereof) over the years — and best we can tell at the moment, the philosophy is mostly just “meh, whatever.”
+
+Following the discontinuation of its 2023 Pixel Tablet, Google itself is showing no signs of making its own tablet again anytime soon or doing much to support other device-makers’ efforts in that area — beyond just noting that Android itself can of course be molded into any form and used for any purpose anyone wants. If I had to guess, I’d say that ho-hum Android tablets will continue to show up from a variety of companies, running Android beneath a variety of over-the-top custom interfaces, without much in the way of love or attention from Google or fancy branding like Googlebooks. And they’ll just kinda be there for anyone who cares. Which Google, best I can tell, doesn’t.
+
+But, as usual when it comes to Google, only time will tell.
+
+All righty, then. So, with Googlebooks: Can device-makers mess with the interface, a la Android — or is it more like ChromeOS, where everything’s standardized and uniform across the entire ecosystem?
+
+You’re one smart cookie! That was a pressing question I had going into all of this as well, given what a dramatic difference that distinction creates on Android vs. ChromeOS. While we won’t have a ton of detail or firsthand device-to-device confirmation for a little while yet, Google told me we can expect “consistent experiences” across the Googlebook ecosystem — which certainly seems like we’re looking at more of a Chromebook-like approach than the free-for-all land of Android, with every device-maker having the opportunity to completely revamp the interface and add in all sorts of unnecessary extras.
+
+How will software updates work, then? And how long will these be supported?
+
+Seemingly in line with that previous answer, we can cautiously celebrate: Google says all Googlebook software updates will come directly from Google, with regular operating system updates and Pixel-style quarterly feature drops for a full 10 years from every device’s launch date.
+
+That means, at least in theory, everyone should get every update more or less instantly when it’s released — without any of the hemming and hawing and unacceptable uncertainty that we see with that in the Android arena.
+
+Halle-frickin’-lujah.
+
+What about security, fast boot, and the other things Google’s been touting as advantages of Chromebooks all this time?
+
+On the security front, Google says Googlebook OS is “built on the same security architecture” as ChromeOS, with the whole Google Titan hardware system there to support it. The company also says Googlebooks will have a fast boot setup similar to what we see on Chromebooks.
+
+The two areas that remain murky in my mind for now are:
+
+The ChromeOS advantage of being able to wipe your entire system, restart it, sign back in, and be right back where you left off in a matter of minutes. Traditionally, this same process has been a massive pain in the patootie (to use the technical term) on Android. It’s not entirely clear yet which path Googlebook OS will follow, but since it has so much Android architecture, I can’t help but suspect it’ll be more similar to that side of things than the ChromeOS approach.
+
+The true desktop computer feel that Chromebooks have but that Android devices have never quite managed to master. Android’s come a long way in this area lately, though, and Google says it’s done all sorts of specific optimizing for Googlebook OS — leading to a supposedly “no compromise” result — so, once more, we shall see.
+
+Chromebooks let you install Linux apps. Do Googlebooks?
+
+They do — so all those same advantages and line-blurring possibilities for power users exist in this new environment, just as they have in ChromeOS all these years.
+
+For the nerds among us wanting even more details, Googlebooks offer a Debian Linux environment through a built-in Terminal app. So, much like the traditional Chromebook approach, you can install any compatible Linux program via the command line and then take it from there.
+
+What about Windows app compatibility and all the work that went into that on the ChromeOS front?
+
+This is an interesting one, given how much Google worked to bring Windows app compatibility into Chromebooks over time — with multiple approaches over the years and the goal of closing any remaining gaps for businesses that rely on native Windows software that just won’t work in a web-centric or mobile app environment.
+
+With Googlebook OS, though, Google’s giving that path up — and the devices will not have any manner of Windows app compatibility. I asked what the story was with that and got back the following explanation from a company spokesperson:
+
+Googlebook takes a fundamentally different architectural path than previous platforms. We aren’t attempting to patch together legacy PC software layers or rely on Windows emulation to make a laptop functional.
+
+Instead, Googlebook OS is built directly on the Android tech stack with the desktop foundations of ChromeOS, pairing the world’s largest native app ecosystem with an uncompromised, full desktop Chrome browser.
+
+This makes it easier than ever for developers to build a true desktop-class app experience on the same Android architecture they’ve already built for.
+
+Top developers are deeply invested in Googlebook already. Leading partners like Capcut, Luminar, and Fantastical have built dedicated versions of their products specifically to take full advantage of Googlebook’s desktop performance, multi-windowing, multitasking and keyboard/mouse precision.
+
+Because Googlebook OS is built directly on standard Android, the developer on-ramp is straightforward. Requiring no proprietary rewrites, developers can use standard Android APIs from a single codebase that spans over 3B devices. By adopting large screen guidelines, their apps scale seamlessly from phones, to desktop with low engineering overhead.
+
+Google also noted that the Play Store will feature a specially curated and categorized experience for Googlebook users that breaks recommended apps down into “Made for Desktop,” “Optimized for Desktop,” “Desktop Web Experiences,” and “Mobile Android Apps” sections for easier discovery and understanding.
+
+That all sounds fantastic in concept — but we’ve also been hearing about similar efforts on the ChromeOS front for years, and the fruits of similar-seeming solutions never seemed to fully show up or make much difference in that environment. And also, as usual, this depends largely on developers participating and creating the right kind of software to take advantage of this approach and the framework around it.
+
+For someone who really wants the full desktop version of, say, Adobe Photoshop or Microsoft PowerPoint — or someone whose company has proprietary software that’s available only for Windows — this will seemingly mean that Googlebooks won’t be a good option or a viable path forward.
+
+You mentioned PowerPoint. What exactly would this setup mean for Microsoft Office apps and companies that rely on those tools as part of their workflow?
+
+It means you’ll have to choose between using the Office web apps — which are generally decent and reasonably fully featured but not the same as their desktop counterparts — or using the Office Android apps, which are similarly manageable but, once more, not the full desktop-caliber experience.
+
+Or, of course, you could use Google Docs (which has gotten pretty darn good at Office compatibility over time) or a Linux-based office suite like LibreOffice instead. But that’s arguably a compromise, if the desktop Microsoft Office app is what you want or need.
+
+When asked about this, a Google exec said he’d personally go with the Office Android app over the web app, in that specific scenario. But, again, it’s hard not to see that as a compromise and a possible deal-breaker for anyone who’s fully invested in the Microsoft ecosystem.
+
+Who’s making these Googlebooks, anyway? And how much are they?
+
+Like Android and ChromeOS both, Googlebooks will be made by a variety of different hardware manufacturers. We’ll see five models from five different companies to start:
+
+The HP Googlebook 14 — a 14″ all-aluminum clamshell started at $1,299
+
+The Dell XPS Googlebook — a 13.4″ “machined aluminum” laptop starting at $1,199
+
+The Lenovo Googlebook 15 — a 15″ magnesium-alloy and carbon fiber system starting at $1,299
+
+The Acer Googlebook 14 — a swiveling convertible aluminum/magnesium laptop/tablet combo that starts at $899
+
+And the Asus Googlebook 14 — a 14″ aluminum/magnesium computer starting at $1,299
+
+Google
+
+A Google exec described the HP system as being especially high in “craft and care,” the Dell as having the most “flashy design,” the Lenovo as being the “workhorse machine,” the Acer as being the sole convertible, and the Asus as being the most lightweight model.
+
+All of these initial systems also come with a free year of personal access to Google’s AI Pro plan, which includes 5TB of Google cloud storage and would typically cost $200.
+
+Hang on — so Google itself isn’t making one?
+
+Nope — not yet, anyway.
+
+If it ever does, how in the world would it handle the branding for that?!
+
+By calling it the Google Googlebook for Google by Google, presumably.
+
+What about more affordable options — for schools, businesses, anyone who isn’t looking to pay a thousand bucks for a laptop?
+
+What about that, indeed. At launch, at least, Google is deliberately focusing Googlebooks on the premium (and thus also pricey!) market. It’s not clear at this point if or when the category will expand to include more midrange and budget-level systems, but one could certainly imagine those sorts of options coming into the mix over time.
+
+So are Chromebooks going away, then? Is this a replacement?
+
+Kinda-sorta-maybe, but not exactly. Clear as mud, right?
+
+That’s the question I’ve been asking ever since the notion of the Googlebook first came up, and Google’s been artfully dancing around it and avoiding any direct answer ever since.
+
+What the company is saying is that it absolutely is maintaining support for the entire range of current Chromebooks through their promised support windows — and that we’ll see quite a few new Chromebooks launching in the next year yet.
+
+Oh, and that at least some current Chromebooks may be able to transition to Googlebook OS at some unspecified point in the future, with details to be determined.
+
+That’s all well and good — and, by all means, good on Google for not giving up on the products that are out there and the many customers (enterprise, education, and individual) who’ve bought into ’em — but it still doesn’t truly tell us anything about the long-term aim of all of this and if Googlebooks are ultimately meant to take the Chromebook’s place, once devices that were presumably already under development and in the pipeline are done.
+
+What I’d say is that reading between the lines, it certainly seems logical and feels like the idea is for Googlebooks to be the future and Chromebooks to be a legacy, technically-still-supported-but-no-longer-the-primary-focus piece of the past. Some court documents unearthed earlier this year suggest that Google has planned to phase ChromeOS out entirely over the next several years, which would fit in perfectly with the notion of keeping ChromeOS around on the backburner until all current devices are past their promised support periods. And the fact that Google isn’t outright answering this question and saying “Yes, Chromebooks will stick around as an option alongside Googlebooks indefinitely, and we continue to keep actively investing in and developing both” sure makes the answer here seem apparent — even if it isn’t being directly confirmed in any way at this point.
+
+All right — so when can I actually buy a Googlebook?
+
+The five aforementioned devices are all up for preorder as of this week and should start shipping and showing up on store shelves on October 4, for the US, and October 5 for Canada, the UK, Ireland, France, Germany, and Australia.
+
+What happens if you open both Google Books and Google Play Books on a Googlebook, then look for books about Google to save into your Gemini Notebook (formerly known as Google NotebookLM)?
+
+One of three things will absolutely, positively happen:
+
+You’ll be living the dream.
+
+You’ll summon the ghost of Mr. Jingles, the old bell mascot from Google+, back from the Google graveyard.
+
+The universe will spontaneously combust.
+
+Keep me posted.
+
+How many Google Books could a Googlebook book if a Googlebook could book books?
+
+All right. I think we’re done here.
+
+Want even more no-nonsense Googley knowledge? Come check out my free Android Intelligence newsletter to get next-level insight delivered directly to your inbox.
+
+GoogleAndroidChromeOSOperating SystemsProductivity SoftwareArtificial Intelligence
+
+by
+JR Raphael
+
+Contributing Editor
+
+Follow JR Raphael on LinkedIn
+
+JR Raphael is obsessed with productivity and finding clever ways to make the most of modern technology. He's written about almost everything imaginable at some point — including even construction, crime, and climate in his past life as a TV news producer — but these days, he's known primarily for his unmatched analysis of Google's Android and ChromeOS platforms (both of which he's covered closely since their starts) along with his knack for digging up off-the-beaten-path tech tips and treasures.
+
+JR writes Computerworld's Android Intelligence column — the internet's longest-standing Android column and one he's conducted since its inception way back in 2010 — along with a variety of practical pieces about business productivity. That aside, he's the founder and editorial director of The Intelligence, where he waxes poetic with his calorie-packed Android Intelligence newsletter (a saucy sibling to the same-named CW column) as well as his cross-platform Cool Tools recommendation station. He is also a contributing editor at Fast Company and has written or been cited in everywhere from The Verge and Mental Floss to The New York Times, ABC World News, and USA Today.
+
+(Random trivia: JR was actually quoted in Walter Isaacson’s best-selling biography of Steve Jobs — for, erm, somewhat salacious and very appropriately Android-related reasons.)
+
+Despite his refusal to comb his hair, JR's work has been honored with a gaggle of awards over the years — including two Emmys, three Murrows, and a smattering of top distinctions from the Associated Press. He has also received a handful of coveted Azbee Awards for standout business reporting, most recently in recognition of his in-depth exposé of Google's business-aimed Android phone recommendations.
+
+In his spare time, JR enjoys breathing, chewing, and staring aimlessly into space.
+
+More from this author
+
+analysis
+
+The case for a full-circle Googlebook future
+
+Oct 28, 2026 8 mins
+
+analysis
+
+7 out-of-sight Googlebook highlights
+
+Oct 23, 2026 9 mins
+
+analysis
+
+The Googlebook work test: Can an Android laptop get the job done?
+
+Oct 20, 2026 19 mins
+
+tip
+
+6 wild ways to make Android widgets more useful
+
+Oct 16, 2026 13 mins
+
+tip
+
+An Android widget revelation
+
+Oct 14, 2026 8 mins
+
+tip
+
+16 advanced Android messaging features you’ve probably never noticed
+
+Oct 12, 2026 21 mins
+
+how-to
+
+12 steps to smarter Google account security
+
+Oct 9, 2026 21 mins
+
+tip
+
+12 tricks for more efficient Android texting
+
+Oct 8, 2026 16 mins
+
+Show me more
+
+news
+
+Tech layoffs this year: A timeline
+
+By Peter Sayer, Valerie Potter and Dan Muse
+
+Nov 4, 202616 mins
+
+HiringIT JobsTechnology Industry
+
+tip
+
+Get a load of Excel’s new multi-value cells
+
+By Howard Wen
+
+Nov 4, 20267 mins
+
+Microsoft 365Microsoft ExcelMicrosoft Office
+
+news brief
+
+Microsoft files patent for AI that can alter what people say during live broadcasts
+
+By Viktor Eriksson
+
+Nov 4, 20261 min
+
+Artificial IntelligenceCollaboration SoftwareMicrosoft
+
+podcast
+
+Can your tech stack actually handle AI?
+
+Aug 11, 202630 mins
+
+Artificial IntelligenceEnterprise ArchitectureGenerative AI
+
+podcast
+
+Physical AI: How Intelligent Robots Are Changing the Future of Work
+
+Aug 3, 202629 mins
+
+Artificial IntelligenceRobotics
+
+podcast
+
+Microsoft Copilot Growth, ClaudeBleed Risk, LinkedIn GDPR Complaint | Ep. 84
+
+By Arnold Davick
+
+May 22, 20262 mins
+
+Artificial Intelligence
+
+video
+
+Who benefits from Big Tech? Sam Altman's RAM argument, unhappy workers, and insecure connected devices
+
+Nov 4, 202628 mins
+
+Artificial IntelligenceGenerative AIHiring
+
+video
+
+Anthropic's IPO, Hollywood consolidation, and the fight over AI transparency
+
+Oct 29, 202626 mins
+
+Artificial IntelligenceGenerative AIStreaming Media
+
+video
+
+NVIDIA goes all in on AI, Tesla's Roadster takes flight, and Flock faces more scrutiny
+
+Oct 24, 202628 mins
+
+Automotive IndustryDesktop PCsGraphics Cards
+

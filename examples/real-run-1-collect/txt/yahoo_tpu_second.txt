@@ -1,0 +1,92 @@
+
+
+Oops, something went wrong
+
+Skip to navigation Skip to main content Skip to right column
+
+Alphabet’s TPUs Now Rank “Second Only to Nvidia” in Compute Built. Google Cloud Shows It
+
+Roxanna Maglangit
+
+Tue, November 3, 2026 at 9:58 AM PST 4 min read
+
+GOOG
++3.32%
+
+NVDA
+-3.70%
+
+OPAI.PVT
+
+Key Takeaways
+
+Google Cloud revenue grew 103% to $30.7 billion in Alphabet's third quarter, and the company said TPU system sales were a meaningful contributor.
+
+Alphabet's TPU chips are becoming a second profit engine, and investors selling the stock over slower Search growth are giving them little credit.
+
+One venture investor ranks TPUs second only to NVIDIA in total compute built, and OpenAI reportedly plans to buy Google's chips.
+
+Alphabet trades at 20x forward earnings, below its five-year average of 23x, though free cash flow was negative $9.1 billion in the quarter.
+
+Alphabet (GOOG) dropped 19% in a month as Search slowed. But investors selling on Search are missing a chip business that, by one investor's count, now ranks right behind NVIDIA (NVDA:NASDAQ).
+
+On an Oct. 31 episode of Moonshots with Peter Diamandis, Dave Blundin, founder and general partner of Link Ventures, said this about Google's custom AI chips:
+
+"The TPUs are now second only to NVIDIA in terms of total compute manufactured, and they've done it incredibly quietly."
+
+Not so quietly anymore. Alphabet just put the chips right in Google Cloud's results.
+
+Cloud is now a profit engine
+
+Google Cloud revenue grew 103% to $30.7 billion in the third quarter, and Alphabet said in its earnings release that TPU system sales were a meaningful contributor. Cloud's operating income roughly tripled to $11.1 billion, and its operating margin rose to 36.2% from 23.7% a year earlier.
+
+Investors were watching Search instead. Search & other grew 12%, down from 17% in the second quarter, and came in about $1.5 billion short of estimates.
+
+Analysts still expect Alphabet's normalized EPS to reach $18.26 in 2028, up from $10.81 in 2025:
+
+The dip in 2027 falls in the year CFO Anat Ashkenazi expects capital spending "to increase significantly in 2027," as she said on the third-quarter call.
+
+TIKR tracks 58 analysts on Alphabet. How many say "Buy"?
+
+See the full breakdown of Buy, Hold, and Sell ratings on Alphabet, along with Wall Street's revenue and earnings estimates, all in one place. More than 500,000 investors use TIKR to research stocks like this one. See Alphabet's Analyst Ratings
+
+The chips are the new piece
+
+Alphabet's quarterly revenue reached $128 billion in the third quarter, up from $102 billion a year earlier:
+
+Cloud supplied about three-fifths of that gain. And this was only the second quarter of TPU system sales: Alphabet's quarterly filing says it started booking them in the second quarter.
+
+The biggest buyer may still be on the way. OpenAI plans to buy Google's chips, The Information reported on Oct. 27, on top of the NVIDIA chips it already buys. Neither company has confirmed a deal.
+
+NVIDIA doesn't have to lose for that to work. Palo Alto Networks' CEO said NVIDIA is sold out and can't supply chips for 2028. An AI lab that can't get enough NVIDIA chips needs a second supplier, and Google has chips to sell.
+
+Lumpy sales, and a big bill
+
+Blundin's ranking is his own estimate, and Alphabet hasn't put a number on its TPU sales. Hardware deals can also be lumpy. Alphabet builds the systems before it books the sale, and its inventory rose to $10.0 billion at June 30 from $2.4 billion at the end of 2025.
+
+Still, Google Cloud's backlog reached $561 billion at Sept. 30, and management expects just over half of Alphabet's backlog to become revenue within two years. (Scotiabank estimates that about 22% of Cloud's backlog comes from Anthropic, so a lot rides on one customer.)
+
+The spending is the real cost. Capex was $51.4 billion in the quarter, and free cash flow was negative $9.1 billion.
+
+Investors get the chips at a discount
+
+Alphabet traded at 20x forward earnings as of Oct. 30, below its five-year average of 23x and far off the 33x it hit in April:
+
+The way I see it, that's what you pay for a search company with a spending problem. Google Cloud just showed there's a chip business in there too, and at 20x, investors are getting it for very little.
+
+Of course, TPU sales are only two quarters old. Fourth-quarter results in early February, along with Alphabet's first 2027 capex figure, will show us whether they keep growing.
+
+So what is Alphabet stock actually worth?
+
+TIKR lets you forecast the future price of any stock in less than a minute. Just enter a few assumptions into TIKR's valuation model and see what Alphabet could be worth. Start from Wall Street consensus estimates, or adjust the inputs to reflect your own view of the business. It's free to use.
+
+Value Alphabet for free
+
+Terms and Privacy Policy
+
+Your Privacy Choices
+
+CA Privacy Notice
+
+More Info
+

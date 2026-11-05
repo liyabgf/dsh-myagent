@@ -1,0 +1,202 @@
+
+
+Home / Google News / Misc Google / Google AI Overview Lawsuit Dismissed Over No Agreement With Publishers
+
+Google AI Overview Lawsuit Dismissed Over No Agreement With Publishers
+
+Oct 1, 2026 - 11:31 am
+
+3
+
+—
+
+by
+Barry Schwartz
+
+Barry Schwartz
+/ Executive Editor
+
+Barry Schwartz is the CEO of RustyBrick and a technologist, a New York Web service firm specializing in customized online technology that helps companies decrease costs and increase sales. Barry is also the founder of the Search Engine Roundtable and the News Editor of Search Engine Land. He is well known & respected for his expertise in the search marketing industry. He only provides consulting services to expert SEOs and also performs search marketing expert witness services. Barry graduated from the City University of New York and lives with his family in the NYC region. You can follow Barry on Twitter at @rustybrick or on LinkedIn and read his full bio over here.
+
+39,527 Articles as
+barry.schwartz
+
+Filed Under
+
+Misc Google
+
+About a year ago, Penske, which operates and owns Rolling Stone, The Hollywood Reporter, Billboard, Variety, and others, sued Google over its AI Overviews. Well, that case was dismissed because Penske failed to prove that Google entered into any formal agreement with Penske to sell its content in exchange for any amount of traffic.
+
+The findings from Judge Amit P. Mehta said, "They maintain that Plaintiffs have failed to plead any actual agreement whereby Defendants promised to “sell” Plaintiffs any specific amount of traffic—or any traffic whatsoever—in exchange for “buying” their content." Mehta added, "The court agrees with Defendants that Plaintiffs have failed to allege plausible claims of reciprocal dealing."
+
+The Press Gazette wrote, "US District Judge Amit Mehta found that no “formal bargain” had ever been struck between publishers and Google, which means they cannot prove a claim under antitrust law, specifically the Sherman Act."
+
+The ruling document is here if you want to see it.
+
+The publishers argued that Google effectively forces them to provide content for free in exchange for visibility in Google Search. The publishers claimed Google then uses that content to answer users' questions directly, reducing the need for users to click through to the original websites.
+
+Judge Mehta rejected the reciprocal dealing theory because the complaints did not establish an actual agreement. He said, "an expectation is not an agreement." The court said the publishers had not alleged negotiated terms, commitments, communications showing mutual assent, or other facts demonstrating a meeting of the minds.The court held that automated web crawling and publisher expectations of search referral traffic reflect general search engine functionality rather than an enforceable or coercive bargain
+
+The court also wrote, "the court does not treat Plaintiffs’ alleged harms lightly. Nor is it unsympathetic to the situation publishers now find themselves in, and the knock-on consequences to journalists, educators, and other online creators whose content Google takes and repurposes without compensation."
+
+Jason Kint was quoted at the end as saying:
+
+Jason Kint, chief executive of Digital Content Next which represents online publishers in the US, said in response: “Strip away all of the legal technicalities and antitrust mumbo jumbo and the real-world problem is still crystal clear. Google has an adjudicated illegal monopoly in search and is now swallowing up all of the journalism of humanity to power its AI products, while sending less and less traffic and value back to the publishers who create it. Judge Mehta himself continues to recognise that harm to publishers and journalists whose content Google ‘takes and repurposes without compensation.’
+
+“Publishers raised this harm in US vs Google, and when it wasn’t addressed there, they brought it directly to the courts. Now that path has been dismissed, too.
+
+“At some point, someone with authority has to address what is happening in the real world: Google is using its dominance to fundamentally undermine the open web and the economics of original journalism.”
+
+good report on bad news here, Penske v. Google dismissal.
+
+I don't often get entire last section of a report but enough already, something must be done. An illegal monopolist is destroying the open web...putting it into what a Microsoft executive called the 'doom loop.' 1/2 pic.twitter.com/yzLxRzaHpr
+— Jason Kint (@jason_kint) October 1, 2026
+
+But in other and similar news, Publishers clear major hurdle in Google ad-tech antitrust fight says that the September 30th ruling allows core claims by Gannett, Daily Mail and a class of digital publishers to proceed, preserving their pursuit of damages. But this lawsuit centers entirely on Google's ad tech stack and programmatic digital advertising marketplace and nothing to do with AI Overviews.
+
+Forum discussion at X.
+
+Copied!
+
+Popular Categories
+
+Google
+
+Bing
+
+Algorithm Updates
+
+Maps
+
+Ads
+
+The Pulse of the search community
+
+Follow
+
+Subscribe Options
+
+Google Search Volatility
+
+More Details
+
+Search Video Recaps
+
+Video Details
+
+More Videos
+
+Subscribe to Videos
+
+Most Recent Articles
+
+Google Search Engine Optimization
+
+Google Updates Crawled - Currently Not Indexed Details
+
+Nov 3, 2026 - 4:15 pm
+
+0
+
+-
+
+by
+Barry Schwartz
+
+Google Search Engine Optimization
+
+Google Performance Reports Showing Weird Spike In Clicks For Some Sites
+
+Nov 3, 2026 - 10:54 am
+
+6
+
+-
+
+by
+Barry Schwartz
+
+Search Forum Recap
+
+Daily Search Forum Recap: November 3, 2026
+
+Nov 3, 2026 - 10:00 am
+
+1
+
+-
+
+by
+Barry Schwartz
+
+Google
+
+Google Will Turn Off Google Search For K-12 Schools & Testing Learning Beta
+
+Nov 3, 2026 - 9:44 am
+
+6
+
+-
+
+by
+Barry Schwartz
+
+Google
+
+Google AI Mode Biased: It Only Shows Links To Google Flights
+
+Nov 3, 2026 - 7:51 am
+
+1
+
+-
+
+by
+Barry Schwartz
+
+Google
+
+Google Tests Removing AI Mode Button From Search Bar
+
+Nov 3, 2026 - 7:41 am
+
+3
+
+-
+
+by
+Barry Schwartz
+
+Previous Story:
+Phase Two Of The Google September 2026 Spam Update Hits On 9/30
+
+Next Story:
+ChatGPT Adds Virtually Try On Clothing & Accessories
+
+Submit a Thread
+
+Forum Search
+
+Awards
+
+About Us
+
+Comments Policy
+
+Advertise
+
+Contact
+
+The content at
+the Search Engine Roundtable are the sole opinion of the authors and
+in no way reflect views of RustyBrick ®, Inc
+
+Copyright © 1994-2026
+RustyBrick ®, Inc.
+Web Development All Rights Reserved.
+
+This work by Search Engine Roundtable is licensed under a Creative Commons Attribution 3.0 United States License.
+Creative Commons License and YouTube videos under YouTube's
+ToS.
+

@@ -1,0 +1,86 @@
+
+
+Google Cloud Sales Explode 103 Percent As CEO Touts TPU ‘Extraordinary Demand’
+
+“We are selling much more than just a [TPU] chip. Software, training, inference—there is a significant added value that’s being provided to the customer that’s purchasing a TPU system,” says Google Cloud CEO Thomas Kurian.
+
+Google Cloud CEO Thomas Kurian doesn’t typically participate in Alphabet’s financial earnings report, but with his cloud unit growing a record 103 percent, Kurian was on the call to explain Google Cloud’s massive $30.7 billion in quarterly sales.
+
+“Google Cloud now has 18 product lines with more than $1 billion each in annual revenue. And our growth this quarter was driven by strong growth in Google Cloud Platform (GCP) with strength in both AI and core GCP,” said Kurian during Alphabet’s third quarter 2026 earnings report.
+
+However, the majority of Kurian’s discussion focused on Google Cloud’s growing TPU business during the third quarter, as TPU system sales were “a meaningful contributor” to revenue growth.
+
+Kurian explained that a TPU system is not just a chip sale, but a specialized system that combines multiple technologies including hardware, compute, storage and networking.
+
+“So we are selling much more than just a chip. Software, training, inference—there is a significant added value that’s being provided to the customer that’s purchasing a TPU system,” Google Cloud’s CEO said. “A TPU system is a combination of hardware, system software, compilers, the whole thing assembled as a system, including optical networking and other things.”
+
+[Related: Google Cloud CEO: TPUs Have ‘Faster’ Payback Versus GPUs]
+
+Google Cloud generated a record $30.7 billion in Q3 sales, up from $15.16 billion year over year.
+
+This represents a whopping 103 percent growth rate, marking Google Cloud’s highest growth rate ever.
+
+Google Cloud’s TPU Charge With Over 100 Customers And Growing Distribution
+
+Google Cloud currently has over “100 significant TPU customers” who start on the Google Cloud Platform, the CEO said.
+
+Google’s TPU systems are specialized systems built for AI, combining hardware, compute, storage and networking with systems components and optimized software for AI training and inference. Kurian highlighted Google Cloud’s new TPUs like 8t for training and 8i for AI inference that offer substantial price performance and improvements relative to prior generations.
+
+Additionally, Google Cloud is broadening its TPU distribution.
+
+“So in the past, you could use TPUs in our cloud. Now, for customers who want TPU systems in their data centers, we’re making TPU systems available in their data centers. We’re also broadening availability to other providers,” he said.
+
+For example, Google Cloud recently announced a partnership with Oracle and an agreement with AI infrastructure provider Crux AI to offer customers TPU systems.
+
+“We are seeing extraordinary demand and strong growth from both AI labs, capital markets, financial service institutions and enterprises. And if you imagine these 100-plus customers growing to many more and also scaling their use into TPU systems—we see strong demand over the future,” Kurian said.
+
+By putting TPU systems in third-party facilities and in customer data centers, it allows Google Cloud to broaden its addressable market, he said.
+
+Google Cloud operating income was $11.12 billion, up 209 percent year over year, from $3.6 billion in Q3 2025.
+
+GCP Accounted For Majority Of Revenue
+
+With much of his discussion and comments geared toward TPU momentum, Kurian pointed out that the majority of Google Cloud revenue stemmed from its flagship GCP offering.
+
+“The strongest growth contributor was the Google Cloud Platform with strength in both AI and core GCP,” he said.
+
+“So GCP accounted for the vast majority of revenue generated in Q3, and cloud revenue growth—excluding the impact of TPU system sales—was very, very strong,” Kurian added. “Demand was also strong across our product lines.”
+
+‘Nobody Else Has’ The Full AI Stack Like Google Cloud, 66degrees CEO Says
+
+The top executive at one Google Cloud channel partner, 66degrees, said no other competitor can offer what Google is providing from an end-to-end technology stack standpoint in the AI era.
+
+“Google is the one hyperscaler that brings everything together,” said 66degrees CEO Ben Kessler.
+
+“Google is focused on: ‘OK, we’re going to create the chip. And then we’re going to create the data center. And then we’re going to actually create the agentic data stack. And then we’re going to create the AI models. And we’re not only going to create the AI models, but we’re going to give you an agent development kit to build custom agents. Then we’re going to give you the ability to monitor those agents, and then we’re going to give you Gemini Enterprise, etc.’” Kessler said. “Nobody else has that.”
+
+Kurian, for his part, said strong Q3 momentum was “driven by our integrated AI portfolio of chips, models, data, security and agent platforms—all designed to work together.”
+
+Gemini Sales Momentum; Trillions Of Tokens On Gemini Enterprise
+
+Kurian said that Gemini revenue growth is driving growth in other parts of the portfolio.
+
+“For instance, as customers build agents, they use compute to perform a task. So they buy compute. They use storage to store memories of the agent, database to serve up what’s called context for the agent to reason on,” he said.
+
+Over the past 12 months, more than 2,600 customers have used at least 100 billion tokens with around 75 customers using at least 10 trillion tokens on Gemini Enterprise.
+
+Nearly 90 percent of the Fortune 100 use Gemini Enterprise. Customers who used Gemini Enterprise in Q3 2025 more than quadrupled their spend year-over-year, Kurian highlighted.
+
+Gemini is also driving Google Cloud’s database, analytics and cybersecurity products.
+
+“The growing risk of cybersecurity threats is also driving strong demand for our AI-powered security platform,” Kurian said.
+
+“Our security platform integrates threat intelligence, cyber response prioritization, automated scanning, code remediation and monitoring. Gemini and Google Threat Intelligence autonomously analyze millions of external events every day with 98 percent accuracy,” he said.
+
+More than 95 percent of Wiz customers are adopting AI-powered features, he added.
+
+Alphabet’s $127 Billion Q3 Earnings And Global Headcount
+
+Google Cloud parent company Alphabet reported total revenue of $127 billion, up 25 percent year over year, compared to $102 billion.
+
+Operating income was $40.6 billion during the third quarter of 2026 compared to $31.2 billion in Q3 2025.
+
+The company reported having a global headcount of nearly 205,000 employees in Q3 2026 compared to 190,000 employees in Q3 2025.
+
+Even with the record Google Cloud revenue, Alphabet stock was down nearly 12 percent on Thursday.
+

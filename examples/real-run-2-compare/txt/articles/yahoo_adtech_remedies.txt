@@ -1,0 +1,118 @@
+Oops, something went wrong
+
+Skip to navigation Skip to main content Skip to right column
+
+Sign in
+
+U.S. markets open in 8h 58m
+
+US Markets
+
+Europe Markets
+
+Asia Markets
+
+Cryptocurrencies
+
+Rates
+
+Commodities
+
+Currencies
+
+U.S. markets open in 8h 58m
+
+S&P Futures
+7,700.00
+-20.50 -0.27%
+
+Dow Futures
+53,666.00
++163.00 +0.30%
+
+Nasdaq Futures
+28,236.00
+-330.75 -1.16%
+
+Russell 2000 Futures
+2,868.20
++2.30 +0.08%
+
+10-Yr Bond
+4.8940
+-0.0580 -1.17%
+
+VIX
+16.61
+-4.22 -20.26%
+
+Gold
+4,139.20
++66.20 +1.63%
+
+Bitcoin USD
+80,392.34
++2,761.73 +3.56%
+
+Crude Oil Dec 26
+86.99
+-1.13 -1.28%
+
+US Private Equity
+10,904.74
++49.51 +0.46%
+
+ADVERTISEMENT
+
+Google ad tech remedies ruling unsealed: what the judge ordered
+
+a Google sign is lit up on the left side of a building, while the trees and lamp posts on the right are in the shade · Quartz · David Paul Morris/Bloomberg via Getty Images
+
+Cris Tolomia
+
+September 17, 2026 2 min read
+
+GOOG
++2.53%
+
+Google must make its ad technology products work with rival systems and share auction data with publishers, under a remedies order unsealed Wednesday by U.S. District Judge Leonie Brinkema of the Eastern District of Virginia.
+
+The 106-page opinion, which had remained under seal since Judge Brinkema rejected the Justice Department's bid to force a sale of Google's AdX ad exchange on Sept. 2, outlines behavioral changes that will govern the Alphabet subsidiary's ad tech business for six years — the duration Google proposed, rather than the 15 years sought by the government.
+
+At the center of the order is a requirement dismantling the connection between Google's two primary publisher-facing products. Publishers that rely on its DFP ad server will be free to use competing exchanges instead of AdX, according to The Next Web. AdX must also bid into competing publisher ad servers on the same terms it offers DFP, and both AdX and DFP must connect to Prebid, the open-source header-bidding framework, the Justice Department said.
+
+Publishers will also gain access to real-time bid data — both winning and losing — and Google must release documentation detailing how DFP determines auction winners, according to The Next Web. The company must appoint an internal antitrust compliance monitor. The requirements take effect within 60 days and apply worldwide.
+
+In her opinion, Judge Brinkema wrote that the remedies will be "sufficient to effectively pry open to competition the ad tech markets that were injured by Google's unlawful conduct, and prevent Google from reverting to anticompetitive conduct in these markets." She also acknowledged a "lack of trust that Google will comply with an order from this court," according to The Next Web, even as she chose behavioral remedies over a breakup. Measures to break up Google's ad tech business were "neither realistic nor needed," the judge wrote, according to The New York Times.
+
+Associate Attorney General Stanley E. Woodward Jr. called the ruling "a significant victory" for the Justice Department's efforts to protect and restore competition, adding that the department would "continue to review the opinion to consider the Department's options," he said in a statement.
+
+"We're very pleased the court rejected the DOJ's proposal to break apart tools that help small businesses reach new customers and grow," said Lee-Anne Mulholland, Google's global head of regulatory affairs, according to the Times.
+
+The ad tech unit generated $30 billion in revenue last year, representing roughly 8% of what parent company Alphabet took in overall, according to the Times. The ruling is the second time a federal judge has found Google to be a monopolist but declined to order a breakup — a federal judge in Washington previously rejected the DOJ's push to force Google to divest its Chrome browser in a separate case over its dominance in online search.
+
+Terms and Privacy Policy
+
+Your Privacy Choices
+
+CA Privacy Notice
+
+More Info
+
+Recommended Stories
+
+Edit your Dock
+
+Hang tight, restoring your last session
+
+ADVERTISEMENT
+
+More News
+
+Terms and Privacy Policy
+
+Your Privacy Choices
+
+CA Privacy Notice
+
+Ad Terms Feedback More Info

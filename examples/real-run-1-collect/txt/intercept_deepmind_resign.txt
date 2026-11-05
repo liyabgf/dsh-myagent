@@ -1,0 +1,289 @@
+
+
+Skip to main content
+
+Sofia Liguori quit her position at Google’s DeepMind because of the AI company’s Pentagon contract.
+Photo: Courtesy of Sofia Liguori
+
+Sofia Liguori, a research engineer working at DeepMind, resigned in protest this week from Google’s pioneering artificial intelligence laboratory. Unlike a wave of other AI researchers who have quit over fears AI might someday turn against humanity, Liguori stepped down over concern about her employer’s current practices.
+
+Disenchanted and disturbed by Google’s military contracts with the U.S. and Israel, Liguori says she could no longer stand working at a company that was going to help kill people or help build technology that “automatically makes it easier to escalate the brutality of war.”
+
+Related
+
+The Pentagon Asked OpenAI for Artificial Intelligence Designed to Rarely Say No
+
+Liguori joined DeepMind in 2023 and began working on AI systems aimed at more efficiently routing power through the electrical grid, a peacetime engineering problem. But as she learned of Google’s Project Nimbus contract, which furnishes Israel’s military and top weapons manufacturers with a suite of advanced artificial intelligence tools, she began to question her role in the company, and the company’s role in the world. The day after Google announced its classified military AI contract with the Pentagon in April, Liguori staged a personal sick-out, using a combination of sick leave and holiday time off to cease her work.
+
+In a letter she sent internally informing DeepMind and her colleagues of her resignation, Liguori urged them to “stay human” in the face of military work. “I no longer believe that our technology will have a net positive impact on society. I think there’s a fantasy world where AI can help decarbonize grids, cut waste, protect ecosystems, and benefit humanity,” she wrote. “But it’s not this world, and it’s not this type of general purpose AI we are racing to develop. Racing to deploy agentic AI in this society and historical moment is a terrible idea, and will definitely be a net evil.”
+
+The Intercept spoke to Liguori, an Italian national living in London, where DeepMind is headquartered, about how she came to view her employer as dangerously powerful. During a series of interviews by phone and via text, which have been edited and condensed for length and clarity, she explained her moral opposition to military work, the role of unionization in dissent, and what hope engineers and scientists might have for influencing their companies.
+
+Most Read
+
+Radical Centrists Like Haley Stevens Are the Real Extremists in the Democratic Party
+
+Natasha Lennard
+
+Trump Scrambles to Halt Military Aid to Israel to Deprive El-Sayed of a Talking Point
+
+Nick Turse
+
+Troy Jackson Ousts Susan Collins in Maine, Replacing 30-Year Republican Senator With a Progressive
+
+Noah Hurowitz, Austin Campbell
+
+What was it about DeepMind that made you want to work there?
+
+I had a high opinion of DeepMind; it was a dream company. It had this aura of being a research-oriented place where you could sit close not just to computer scientists, but real scientists and researchers and people with backgrounds in biology, in physics, in mathematics, in ecology, in anthropology.
+
+You joined in 2023, by which point the company had already been involved in Project Nimbus. Were you aware of that project at the time?
+
+Not really. The first year when I joined, I was very new and very isolated in my team. Google DeepMind is a huge company and if you’re not in the right channels, you end up being very siloed. I didn’t know about Project Nimbus, but when the Gaza war escalated, I discovered it. I immediately looked for some internal resistance movement to join, but I didn’t find anything.
+
+I discovered [Google employee advocacy group] No Tech for Apartheid, but I thought it was mainly a U.S. organization. I didn’t know how to connect with colleagues that share concerns, so the only thing that I did was buy a Palestine hoodie and go to the office with that.
+
+Related
+
+Israeli Weapons Firms Required to Buy Cloud Services From Google and Amazon
+
+In the summer of 2024, I went on maternity leave because my daughter was born, and during maternity leave I was watching news from Gaza every day. I was really suffering experiencing maternity and watching a livestreamed genocide, and every time I was thinking of my company’s complicity in that. I thought about not coming back to work at all.
+
+When I was due to come back, I met a colleague that had basically taken my role in my team before maternity leave, and they were actually leaving for ethical reasons. They put me in contact with the union movement and No Tech for Apartheid. And so I found other colleagues fighting against this.
+
+How and when did you learn of the company’s contracts with the U.S. military?
+
+By the time they started engaging with the U.S. Department of War, [Editor’s note: July 2025] I was already involved in activism. By this winter we saw the GenAI.mil contract materializing, and for me, this was a very clear indication of the company’s intentions. At the same time Google ramped up the security level authorization for Cloud: IL6, which is the level required to handle classified workloads.
+
+Related
+
+AI Almost Started a U.S.–China War — and No One Seems to Care
+
+The combination of the two — signing this non-classified deal with the Department of War, and ramping up security level — really meant that we wanted to use AI for war, on the battlefield. Even if the internal narrative was, “No, don’t worry, it’s just for administrative purposes, just to process documents.”
+
+What was happening internally?
+
+Internally there was a lot of conversation in specific channels where people were complaining, but leadership never really answered anything. I had some of my posts deleted.
+
+What had you written, and did you ever get any sort of answer as to why this stuff was deleted?
+
+I had several posts deleted because they contained the word “genocide,” and I was told that genocide is an intrinsically violent word, and so I was violating internal policies. Even when my posts weren’t deleted, I often had conversations with my manager and HR telling me that my tone was not appropriate because I was too aggressive and that I should raise my concerns in different ways.
+
+They basically wanted us to send [internal HR] tickets to raise our concerns. The problem is that when you do that, you receive semi-automated answers with absolutely no content, nobody is engaged on the concern you have raised. There’s no discussion at all, you don’t even interact with a human. It’s a lot of administrative and bureaucratic steps you have to follow to raise concerns. What I wanted was discussion and what I wanted was very clear answers from leadership.
+
+They tell you this is not the place to raise concerns, try to go through this other channel. This is the common technique. They always tell you to do something else, try to make you tired, and you will never get an answer.
+
+[Editor’s note: The Intercept asked Google about Liguori’s criticism of both the contract and how discussion is handled internally. Spokesperson Tom Hewett responded: “We work with public sector organisations worldwide and follow a consistent process for reviewing and entering these contracts, including compliance with our acceptable use policies and AI principles. We also have dedicated channels for employees to safely raise any concerns – ranging from business ethics to misconduct – and have strict workplace policies in place to prevent retaliation of any kind.”]
+
+I think the reason why you would be opposed to Project Nimbus is pretty straightforward: genocide. What were your specific concerns about or opposition to the Department of War contract?
+
+I’m against the use of AI for targeting and in warfare in general, not only for autonomous weapons. I’m against AI for war, and I don’t think a commercial company like Google should have anything to do with that.
+
+AI for targeting is very dangerous; it creates a system where it’s easier to escalate the brutality of war. The first problem is the opacity introduced in the definition of targets and the dehumanization that follows. In principle, if you have to define targets, if you want to define Hamas combatants, you have to think what it actually means and come up with a definition.
+
+But with these systems, you can bypass the definition. The system itself comes out with a definition. You don’t even question it, you just blindly rely on the definition as the ultimate truth. The person just becomes a set of aggregated data points. All individuality is lost, all humanity is lost in in this process.
+
+Related
+
+Facing Years in Prison for Drone Leak, Daniel Hale Makes His Case Against U.S. Assassination Program
+
+It becomes a system that dehumanizes people. It becomes a rubber stamp because the human brain cannot process all this information. You keep a person that formally approves it, but they don’t, they cannot, meaningfully evaluate the output. This links to the accountability gap: Everyone in the kill chain can plausibly say that they didn’t decide.
+
+What did you do to protest the Department of War contract internally?
+
+Mainly messaging on corporate channels to inform colleagues, and speaking with them in person. I tried to channel the widespread dissatisfaction and indignation over the contract into the collective movement we are building, into our union effort. [Editor’s note: DeepMind employees voted to unionize in May.] Many people still don’t know there are other colleagues organizing against these contracts and for a more ethical Google DeepMind.
+
+Related
+
+The AI Doomsday Future Is Not Inevitable
+
+When you are alone and you lose faith in your company, and you stop believing your work makes a positive difference, you can only become disillusioned and frustrated, and you ultimately end in acceptance and cynicism, or you leave. Finding you are not alone, and joining a collective movement, gives a much better option. It gave me the strength to stay, at least for a year.
+
+I also co-organized a demonstration in February in front of the office. The scope was broader than just the Department of War, but the December GenAI.mil launch had given me a deep sense of urgency, and that’s why I organized the demonstration. I knew something like the classified deal was coming, and I knew this meant legitimizing Nimbus-style collaborations to become the standard. The demonstration was for Gaza and for any use of AI in war. We had banners with “No AI in the kill chain” and “No Gemini for Genocide.”
+
+Has your work as a research engineer contributed to your concerns about this technology being used to kill? How has your technical knowledge informed your opposition?
+
+Understanding how these systems work makes it easier to see where the problem is. Understanding statistical aggregation, and how easy it is to just delegate responsibility, delegate decision-making, makes a difference. But I think it’s more important to do some philosophical reasoning here.
+
+Do you have concerns about the reliability of the technology?
+
+I am concerned about unreliability. But I don’t think you should ever look at unreliability separate from a discussion of why AI in warfare is wrong by itself.
+
+A lot of the time what I hear is a focus on error, for example, the Minab school attack. If we focus only on the error, we are basically saying that if there was no error, these systems for automated targeting are OK.
+
+Were there people within Deep Mind who were supportive of this contract or military work generally?
+
+Yes, it was actually a very debated topic. I think there is broad consensus on the Anthropic red lines, which are fully autonomous weapons and mass surveillance.
+
+Related
+
+Pete Hegseth’s Military of the Future: Defined by AI and an Utter Lack of Oversight
+
+But on whether to use AI for military purposes, this is a much more debated topic, and a lot of people buy the narrative of us-versus-them: That we need to defend ourselves against Russia, against China, and so on.
+
+What was your thought process on deciding to leave the company over this?
+
+It was a very challenging year. I came back as a new mom with a full-time job, a baby to handle, I had some health issues, and I was committing to activism basically on the side. Many people told me, you can slow down, but I couldn’t. I couldn’t stay in the company and just go on with business as usual. I really felt we needed to stop the Department of War contract because I perceive that contract as normalizing what happened in Gaza — the kind of tech-powered, AI-powered, brutal war that was tested in Gaza was getting approved to become the standard of war.
+
+I don’t think petitions have a great effect in general. The [DeepMind] petition summarized my disillusionment from us not having done more during the year to prevent this from happening. For me, really, we should have gone on strike this year. We should have stopped working.
+
+We’re independent of corporate interests — and powered by members. Join us.
+
+Become a member
+
+Join Our Newsletter
+
+Thank You For Joining!
+
+Original reporting. Fearless journalism. Delivered to you.
+
+Will you take the next step to support our independent journalism by becoming a member of The Intercept?
+
+Become a member
+
+By signing up, I agree to receive emails from The Intercept and to the Privacy Policy and Terms of Use.
+
+Join Our Newsletter
+
+Original reporting. Fearless journalism. Delivered to you.
+
+I'm in
+
+In the U.S., there is a lot of defense of these contracts on the basis that it’s important for national security. That might be persuasive if you’re American. But Americans are a pretty small minority on the planet. I’m curious what your perspective is on that kind of rationale as someone who lives in another country, who is a citizen of another country.
+
+There’s been discussion about that as well. A lot of Europeans were actually scared of that, because the current Trump administration is not very friendly even to Europeans. What feels like national security for U.S., people feels like a threat for Europeans.
+
+Are you aware of other colleagues at DeepMind who are going to follow what you’re doing and quit?
+
+Some have quit already, some publicly and some silently. There have been many people leaving because of ethical reasons. Not all of them publicized it.
+
+Do you think it’s possible for workers to change something like the Pentagon contract? What is the worker movement inside Google/DeepMind missing that would allow for that kind of change?
+
+I think it’s possible, but it requires a real commitment and readiness to take some risk. Ultimately, I think we need a workforce ready to strike to oppose these contracts. Currently, many people are too scared to even express an opinion publicly. The company was very effective at creating a pervasive sense of fear, which induces self-censorship.
+
+What I tried to show my colleagues this year was exactly that the boundaries we perceive and we retreat behind are not the real boundaries — that we can speak out and keep our jobs. Most of the times the reaction is intimidation in meetings, mentions of policy violations, but nothing else follows. Obviously, there are some boundaries, but they are much farther then the perceived ones.
+
+I also took a day off and demonstrated in front of the office in February, together with University College London BDS [Boycott, Divestment, Sanctions movement] staff and a few other colleagues. I faced literally no consequences for that because it’s a trade union activity in my spare time, and in the U.K., we are protected for such an action. This can be a form of soft strike.
+
+As I write in my letter, if we fail to challenge these restrictions, we internalize them and become diminished versions of ourselves. And I think that in an era of increasing surveillance and authoritarianism, that’s something to reflect on. I have felt much freer since I found the courage to speak out and take some risks. It’s empowering. Fighting this fear is a big part of our task in the union movement we are trying to create in Google DeepMind.
+
+The next step would be a real strike. I always tell my union friends that if I see any Google workers strike, I can die happy.
+
+Share on Facebook
+
+Share on Bluesky
+
+Share on X
+
+Share on LinkedIn
+
+Share on WhatsApp
+
+IT’S EVEN WORSE THAN WE THOUGHT.
+
+What we’re seeing right now from Donald Trump is a full-on authoritarian takeover of the U.S. government.
+
+This is not hyperbole.
+
+Court orders are being ignored. MAGA loyalists have been put in charge of the military and federal law enforcement agencies. The Department of Government Efficiency has stripped Congress of its power of the purse. News outlets that challenge Trump have been banished or put under investigation.
+
+Yet far too many are still covering Trump’s assault on democracy like politics as usual, with flattering headlines describing Trump as “unconventional,” “testing the boundaries,” and “aggressively flexing power.”
+
+The Intercept has long covered authoritarian governments, billionaire oligarchs, and backsliding democracies around the world. We understand the challenge we face in Trump and the vital importance of press freedom in defending democracy.
+
+We’re independent of corporate interests. Will you help us?
+
+IT’S BEEN A DEVASTATING year for journalism — the worst in modern U.S. history.
+
+We have a president with utter contempt for truth aggressively using the government’s full powers to dismantle the free press. Corporate news outlets have cowered, becoming accessories in Trump’s project to create a post-truth America. Right-wing billionaires have pounced, buying up media organizations and rebuilding the information environment to their liking.
+
+In this most perilous moment for democracy, The Intercept is fighting back. But to do so effectively, we need to grow.
+
+That’s where you come in. Will you help us expand our reporting capacity in time to hit the ground running in 2026?
+
+We’re independent of corporate interests. Will you help us?
+
+I’M BEN MUESSIG, The Intercept’s editor-in-chief. It’s been a devastating year for journalism — the worst in modern U.S. history.
+
+We have a president with utter contempt for truth aggressively using the government’s full powers to dismantle the free press. Corporate news outlets have cowered, becoming accessories in Trump’s project to create a post-truth America. Right-wing billionaires have pounced, buying up media organizations and rebuilding the information environment to their liking.
+
+In this most perilous moment for democracy, The Intercept is fighting back. But to do so effectively, we need to grow.
+
+That’s where you come in. Will you help us expand our reporting capacity in time to hit the ground running in 2026?
+
+We’re independent of corporate interests. Will you help us?
+
+Contact the author:
+
+Sam Biddle
+
+sam.biddle@theintercept.com
+
+@sambiddle.99
+
+on Signal
+
+@sambiddle.com
+
+on Bluesky
+
+@samfbiddle
+
+on X
+
+Related
+
+AI Almost Started a U.S.–China War — and No One Seems to Care
+
+Apocalypse Now: Naomi Klein and Astra Taylor Investigate the End-Timers Alliance
+
+GOP Rep. Called Israeli–U.S. Defense Tech Integration “Dangerous.” The House Passed It Anyway.
+
+U.S. Companies Honed Their Surveillance Tech in Israel. Now It’s Coming Home.
+
+Latest Stories
+
+The Intercept Briefing
+
+How Democrats Changed Everything
+
+The Intercept Briefing
+
+- Nov. 4
+
+The Intercept breaks down a historic midterms sweep and hears from voters on what they want next.
+
+The War on Immigrants
+
+ICE Was Secretly Ordered to Stop All Immigration Raids on Election Day
+
+Karl Loftus
+
+- Nov. 4
+
+“Yesterday was the least amount of activity observed from ICE ERO throughout the entire year so far,” said an activist who monitors immigration enforcement nationwide.
+
+Midterms 2026
+
+The Progressive Agenda: End Iran War, Rein in AI, Get Dems to Actually Do Something
+
+Akela Lacy
+
+- Nov. 4
+
+The party’s left flank argued they have a responsibility to carry out transformative change — not make excuses for inaction.
+
+Join The Conversation
+
+Enter your email to keep reading for free.
+
+This is not a paywall.
+
+By signing up, I agree to receive emails from The Intercept and to the Privacy Policy and Terms of Use.
+
+No ads. No corporate BS. Skip the propaganda and donate to keep The Intercept going strong:
+
+No ads. No corporate BS. Skip the propaganda and donate to keep The Intercept going strong:
+
+We’re independent of corporate interests. Will you join us?
+

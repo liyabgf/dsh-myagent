@@ -1,0 +1,76 @@
+
+
+Technology
+
+A power-related incident at Google Cloud's London infrastructure disrupted banking services, business operations and court hearings on 20 October 2026. Google subsequently reported that services had recovered for most customers, although a small number continued to experience problems.
+
+Google attributed the outage to a 'power event' in its 'europe-west2-b' zone, part of its London cloud region. Customers of Revolut, Halifax, Lloyds Bank, Bank of Scotland and HSBC reported problems during the disruption.
+
+In an update at 07:03 Pacific Daylight Time (PDT) on 20 October, Google said engineers were still addressing issues affecting 'a very small number of customers'.
+
+What Caused the Google Cloud Outage?
+
+Google's status dashboard listed the start as 23:08 PDT on 19 October, which corresponds to the following morning in Britain.
+
+The company said the power event made Google Cloud services unavailable in the affected zone. Some services elsewhere in the 'europe-west2' region also experienced elevated errors and intermittent network problems.
+
+By 04:58 PDT, Google said it had mitigated the power event and was prioritising the recovery of existing workloads. Customers could still encounter difficulties creating new workloads.
+
+A subsequent update reported recovery for most workloads from 05:10 PDT. Google advised customers who continued experiencing problems to open a support case so its team could investigate the remaining issues.
+
+Bank Customers Struggle To Reach Their Money
+
+According to the BBC, customers reported difficulties accessing money abroad and completing a property purchase. Shortly after 08:00 British Summer Time (BST), an outage-monitoring platform had received more than 1,500 reports concerning Revolut services.
+
+That figure represented reports submitted to the platform, not a confirmed count of affected customers.
+
+A Revolut spokesperson told the broadcaster that the Google Cloud outage had disrupted some services. Customers of Lloyds Bank, Halifax and Bank of Scotland, which belong to Lloyds Banking Group, also reported problems with certain online banking functions.
+
+One customer said she could not see a transfer from a relative. The app's automated support assistant told her there were no incoming transactions pending, making it more difficult to establish whether the money had arrived.
+
+HSBC customers also reported trouble accessing their accounts, The Guardian reported. A spokesperson subsequently said: 'Our services have returned to normal following earlier access issues.' The bank added that it would continue monitoring the situation.
+
+Read more
+
+Police Receive Over 100 Reports on iPhone Duo Pre-Order Charges as Apple Reviews Suspect Transactions
+
+London Restaurateur Who Urged Netanyahu To Destroy Gaza Buildings Now Pleads for Help Saving His Business
+
+Top US Banks Had Policies That Could Restrict Customers Over Political and Religious Views, Regulator Finds
+
+Major Banks Closed MAGA Accounts Over 'Reputation Risk', Federal Report Finds
+
+Court Video Links and Customer Orders Hit
+
+The disruption extended beyond banking apps. According to The Guardian, the video system used for remote court appearances across England and Wales failed throughout the morning.
+
+Defendants, lawyers and other participants use the system to join hearings remotely, including defendants held in custody. The failure was believed to have delayed several hearings.
+
+Small businesses also encountered operational problems. Guy Baybutt, of Preston's family-run The Veg Box Company, told the BBC that the firm could not access its website to download and process orders.
+
+The company supplies fruit, vegetables and other produce to customers across the country. Its account illustrated how the disruption affected businesses trying to fulfil orders, as well as people attempting to use their bank accounts.
+
+Questions Remain Over the Power Failure
+
+Professor Feng Li, associate dean for research and innovation at Bayes Business School, told the BBC that the incident highlighted the economy's dependence on a small number of cloud providers.
+
+He said the cause of Google's power problem remained unclear, adding: 'Large cloud systems are complex, and failures will happen.'
+
+Google said it would publish an incident analysis after completing its internal investigation. Its status updates identified the power event as the immediate cause of the outage but did not explain what triggered the power problem.
+
+Read more
+
+Google Maps Adds UK Fuel Prices To Help Drivers Find Cheaper Petrol and Diesel
+
+ASOS Investigates App Security Breach After Chilling 'Engage With Us' Extortion Alert Hits Users
+
+HSBC Banker Banned From the City of London After Racking Up £5,900 in Unpaid Fares
+
+Why British Airways Flight BA295 Declared an Emergency Squawk 7700 Over Ireland and Diverted to London?
+
+© Copyright IBTimes 2026. All rights reserved.
+
+Request a Correction
+
+Editorial Guidelines
+

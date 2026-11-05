@@ -1,0 +1,1990 @@
+ 
+ 
+ 
+ 
+   
+ 
+  
+ 
+ 
+ 
+ 
+ 
+    
+ 
+ 
+    
+  
+    
+   
+ 
+  
+ 
+  
+  
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 1 of 24 
+IN THE UNITED STATES DISTRICT COURT 
+FOR THE DISTRICT OF COLUMBIA 
+United States of America, et al.,  
+Plaintiffs,  
+v.  
+Google LLC,  
+Defendant.  
+Case No. 1:20-cv-03010-APM  
+HON. AMIT P. MEHTA 
+ State of Colorado, et al.,  
+ 
+Plaintiffs,  
+ 
+v.  
+ 
+Google LLC,          
+Defendant.  
+Case No. 1:20-cv-03715-APM  
+HON. AMIT P. MEHTA 
+PLAINTIFFS’ FIRST STATUS REPORT ON 
+GOOGLE’S COMPLIANCE WITH THE FINAL JUDGMENT 
+Pursuant to Section VII.E of the Final Judgment, ECF No. 1462, Plaintiffs in the above-
+captioned cases jointly file this Status Report.1 
+I. INTRODUCTION 
+Section VII.E requires Plaintiffs, with input from the Technical Committee (“TC”), to file 
+a status report within 90 days of the Effective Date of the Final Judgment to update the Court “as 
+to the enforcement of and Google’s compliance with this Final Judgment,” with additional status 
+reports due on future dates to be set by the Court. 
+1 Unless otherwise stated, all references to “sections” herein are to sections of the Final 
+Judgment. 
+ 
+ 
+  
+ 
+  
+    
+   
+    
+ 
+   
+   
+ 
+  
+  
+   
+ 
+ 
+  
+ 
+ 
+  
+   
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 2 of 24 
+Pursuant to Section VII.A, on January 21, 2026, this Court appointed the Parties’ 
+nominees to the TC, those three individuals composing the TC’s “Standing Committee 
+Members.” ECF No. 1474 at 2. The Standing Committee Members became fully engaged on 
+March 30, 2026, and in the five weeks since have focused on identifying the remaining two 
+members of the TC and setting up the TC itself, both precursors to the substantive work of 
+implementing the Final Judgment and ensuring Google’s compliance therewith. 
+Part II below describes progress to date establishing the TC, including the appointments 
+of all the members of the TC (“TC Members”), finalization of the agreements needed for the TC 
+Members to perform their work, and setting up of TC operations. Part III describes ongoing 
+efforts by Plaintiffs and the Standing Committee Members to implement and enforce the Final 
+Judgment. Part IV describes Google’s compliance with the Final Judgment to date, which also 
+reflects information provided by Google’s counsel and efforts by Plaintiffs and the TC to 
+monitor Google’s compliance. 
+II. ESTABLISHING THE TECHNICAL COMMITTEE 
+Under the Final Judgment, the Standing Committee Members are required to “identify to 
+the Plaintiffs and Google the persons that they in turn propose to select as the remaining 
+members of the TC.” Final J. § VII.A.3.c. Since their appointment, the Standing Committee 
+Members have worked diligently and expeditiously to identify candidates for the fourth and fifth 
+TC Member positions, as well as to set up the TC organization and begin work to implement the 
+Final Judgment. 
+A. Finalization and Signing of the Foundational Agreements 
+Before the Standing Committee Members could begin work, certain foundational 
+agreements were required. Pursuant to Sections VII.A.6–8, TC Members must sign a Technical 
+Committee Services Agreement (“TC Services Agreement”), Confidentiality Agreement, 
+2 
+ 
+ 
+   
+    
+ 
+  
+  
+  
+ 
+  
+  
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+  
+  
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 3 of 24 
+Indemnity Agreement, and Source Code/Algorithm Agreement. The first three of these 
+agreements were necessary prerequisites before the TC Members could begin their work.2 
+From January to March 2026, Plaintiffs, Google, and the Standing Committee Members 
+engaged in extensive negotiations regarding the terms of the TC Services Agreement, 
+Confidentiality Agreement, and Indemnity Agreement. As of March 30, all three Standing 
+Committee Members had signed these agreements.3 
+The Source Code/Algorithm Agreement is still in progress. Google provided its first draft 
+of the agreement to Plaintiffs on April 14, 2026. Plaintiffs are currently reviewing the draft and 
+will work with Google to resolve any disputes. The Parties will notify the Court if any disputes 
+regarding the Source Code/Algorithm Agreement require the Court’s assistance to resolve. 
+B. Selection and Appointment of the Fourth and Fifth TC Members 
+Since March 30, the Standing Committee Members have worked to identify their 
+selections for the remaining two TC Member positions. Pursuant to the Court’s April 24, 2026 
+order, the deadline for Plaintiffs to apply to the Court for appointment of the remaining two TC 
+Members is May 18, 2026. ECF No. 1510 at 2. As part of this effort, the Standing Committee 
+Members engaged in a comprehensive, nationwide search for candidates who have expertise in 
+one or more of the subject-matter areas set forth in Section VII.A.2 and who are willing and able 
+to execute the critical and significant responsibilities with which the TC is charged. On Friday, 
+2 Although the Parties believed the Source Code/Algorithm Agreement should also be signed as 
+expeditiously as possible, they recognized that the agreement was not necessary for the Standing 
+Committee Members to select the remaining two TC Members, and therefore that agreement was 
+handled separately from the other three agreements. 
+3 In previously filed motions to extend, Plaintiffs noted that they countersigned the TC Services 
+Agreement and Confidentiality Agreement on March 30, 2026, and had requested and were 
+awaiting Google’s countersigned pages from the Indemnity Agreement. ECF No. 1504 at 1 n.2; 
+ECF No. 1509 at n.1. Google provided the countersigned signature pages on April 27, 2026. 
+3 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+  
+ 
+  
+ 
+ 
+  
+  
+   
+ 
+ 
+   
+  
+  
+ 
+    
+   
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 4 of 24 
+May 1, 2026, the Standing Committee Members simultaneously identified to Plaintiffs and 
+Google their selections for the fourth and fifth TC Member positions. The Parties are currently 
+evaluating these selections as part of an abbreviated objection period of five (5) business days, 
+which will end on May 8, 2026. See ECF No. 1509 at 2. Once that period ends, and absent 
+objection, Plaintiffs intend to promptly file a motion to appoint the selected individuals. 
+C. Setting Up TC Operations 
+In its remedies opinion, the Court stated that the six-year term of the Final Judgment 
+“accounts for the court’s expectation that it will take one year to establish the [TC] and the 
+processes necessary for execution.” Rem. Op. at 219. As discussed below, in the five weeks 
+since March 30, the Standing Committee Members have made substantial progress in setting up 
+the TC’s operations so that the TC can effectuate the Court’s expected timeline and carry out its 
+duties under the Final Judgment as quickly as possible. 
+1. Progress on Setting Up TC Operations 
+To date, the Standing Committee Members have made great progress in setting up the 
+TC’s operations, including: 
+▪ establishing an independent legal entity for ease of operating and administering the 
+activities of the TC, including any required contracting and employment of staff; 
+▪ searching for and hiring a controller, to handle accounting and financial operations; 
+▪ searching for and hiring a head of human resources, to handle staffing and related 
+needs; 
+▪ searching for candidates to meet other hiring needs for core staff functions, including 
+program management and IT; 
+▪ creating a secure digital work environment, including purchasing a domain specific to 
+the TC; 
+▪ developing template materials and processes for staff and confidentiality; and 
+▪ designing an initial organizational working structure. 
+4 
+ 
+ 
+ 
+  
+  
+ 
+ 
+ 
+ 
+  
+   
+   
+ 
+  
+    
+  
+   
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 5 of 24 
+The Standing Committee Members further created an initial operating budget to cover existing 
+and expected expenses, including TC Member compensation, staff and recruiting, technical 
+infrastructure (including hardware and software), facilities and travel expenses, and legal 
+expenses (including for entity formation). The Standing Committee Members initially submitted 
+invoices for these expenses to Google on April 8, 2026, and they confirmed receipt of funds on 
+April 28, 2026. 
+The Standing Committee Members have also begun drafting an organizational plan and 
+proposed annual budget, as required by the TC Services Agreement. The organizational plan is 
+intended to specify the manner in which the TC will discharge its duties and obligations under 
+the Final Judgment, including to: (1) investigate, mediate, report, respond to, or recommend 
+resolution of third-party complaints concerning Google’s compliance with the Final Judgment, 
+including how the TC will fulfill its obligations under the Final Judgment; (2) provide 
+information regarding compliance with the Final Judgment to Plaintiffs; (3) account for the TC’s 
+time and expenses; and (4) discharge, address, process, consider, or respond to any other 
+operational issue necessary or appropriate for the TC to fulfill its duties and obligations under the 
+Final Judgment. The proposed annual budget may include allocations for property and liability 
+insurance, equipment, facilities, travel expenses, and compensation for the TC’s staff. 
+The Standing Committee intends to solicit additional input from the fourth and fifth TC 
+Members once they are appointed to ensure these documents represent the views of the full TC. 
+Both the organizational plan and proposed annual budget are subject to Plaintiffs’ approval. The 
+TC will furnish a copy of the annual budget to Google once it is approved. 
+2. Developing a Protected Information Access and Security Plan 
+Under the Confidentiality Agreement, the TC must present to Plaintiffs a Protected 
+Information Access and Security Plan specifying how the TC will meet its record-keeping and 
+5 
+ 
+ 
+ 
+ 
+   
+ 
+  
+ 
+  
+ 
+   
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 6 of 24 
+notification obligations, maintain the security of information gathered by the TC, and comply 
+with applicable laws and regulations. This plan is subject to approval by Plaintiffs prior to its 
+implementation. In addition, a copy will be provided to Google, and Google will have the 
+opportunity to object and raise any objections with the Court. 
+The Standing Committee Members are developing the Protected Information Access and 
+Security Plan. As part of this process, one of the Standing Committee Members’ first orders of 
+business after signing the foundational agreements was to identify certain relevant information 
+from Google that the TC would like to consider when developing the plan. Specifically, the 
+Standing Committee Members sought: (1) any specific recommendations Google had regarding 
+security standards applicable to the Protected Information Access and Security Plan; (2) a list of 
+laws and regulations Google considers applicable to the plan; and (3) an interview with a Google 
+employee knowledgeable about security standards and applicable laws or regulations. 
+To assist the Standing Committee Members while they were beginning operations, 
+Plaintiffs notified Google of the TC’s inquiry via email on April 2, 2026. Plaintiffs thereafter 
+followed up with Google regularly by email and phone. Although Google has represented that 
+they have identified the person most knowledgeable on the requested topics, as of this filing on 
+May 4, 2026, Google has not identified that individual to Plaintiffs or the TC, provided his/her 
+availability for an interview, or provided any of the other information that the TC has sought on 
+this issue. 
+Nevertheless, the Standing Committee Members are working diligently to prepare the 
+requisite plan while awaiting Google’s response, and Plaintiffs will continue to seek a resolution 
+with Google on this matter to ensure the TC is able to develop an effective Protected Information 
+Access and Security Plan. 
+6 
+ 
+ 
+  
+ 
+ 
+ 
+   
+    
+  
+ 
+  
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 7 of 24 
+3. Issues Related to TC Operations Currently Under Discussion 
+At this time, several topics related to TC procedures are under discussion between 
+Plaintiffs, acting in consultation with the Standing Committee Members, and Google. Plaintiffs 
+are working closely with the Standing Committee Members to gather their input on these issues 
+and inform the discussions. Although Plaintiffs do not believe these topics are ripe for the Court, 
+Plaintiffs briefly identify them here for the Court’s general awareness, as the topics relate to and 
+may have implications for the TC’s operations. 
+Several of the topics under discussion between the Parties concern TC accounting and 
+funding by Google. Under the Final Judgment, Google must fund the TC’s operations, including 
+TC Member compensation, staff compensation, and other expenses. See, e.g., Final 
+J. §§ VII.A.6.a, VII.A.7.i–j. The TC, in turn, is required to “account for all reasonable expenses 
+incurred.” Final J. § VII.A.7.j. Under the TC Services Agreement, the TC must follow 
+procedures agreed upon by the TC, Plaintiffs, and Google for presenting such costs and expenses 
+to Google. The TC will also need to provide Google with a copy of the approved annual budget, 
+as discussed above. Plaintiffs and Google have held initial discussions regarding the general 
+processes for funding requests and payment, including the level of detail to be provided, to 
+ensure that the TC receives the necessary funding in a timely manner to avoid unnecessary 
+impediments to its work enforcing the Court’s Final Judgment. 
+Another topic under discussion concerns the TC’s hiring of staff. Under 
+Section VII.A.7.i, “[t]he TC may hire at the cost and expense of Google, with prior notice to 
+Google and subject to approval by the Plaintiffs, such staff or consultants (all of whom must 
+meet the qualifications of Sections VII.A.2.a–c) as are reasonably necessary for the TC to carry 
+out its duties and responsibilities under this Final Judgment.” Final J. § VII.A.7.i. Plaintiffs and 
+7 
+ 
+ 
+ 
+ 
+  
+  
+  
+      
+ 
+   
+  
+  
+ 
+ 
+ 
+    
+  
+  
+ 
+    
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 8 of 24 
+Google are discussing the timing of such notices to Google, as well as the nature and scope of 
+information to be included. 
+The Parties will notify the Court to the extent any disputes regarding the above topics 
+require the Court’s assistance to resolve. 
+III. IMPLEMENTING THE FINAL JUDGMENT’S REMEDIES 
+A. Syndication Remedies (Sections V.B and VI.B) 
+Sections V.B and VI.B of the Final Judgment require Plaintiffs and the TC, with input 
+from Google, to create and submit to the Court template search syndication and Search Text 
+Ads4 syndication licenses. Pursuant to the Court’s April 5, 2026 order, Plaintiffs must file these 
+templates “sixty (60) days after the date on which the remaining two [TC] Members are 
+appointed by the Court.” ECF No. 1505 at 2. 
+Plaintiffs have briefed the Standing Committee Members regarding the syndication 
+remedies and are working with the Standing Committee Members to prepare for drafting the 
+initial syndication license templates. Additionally, the Standing Committee Members have begun 
+gathering the information necessary for drafting these license templates. On April 27, 2026, the 
+Standing Committee Members exercised the TC’s right under Section VII.A.7.c to demand from 
+Google certain documents and information relating to Google’s current and recent search 
+syndication and Search Text Ads syndication agreements, as well as to invite other input Google 
+may wish to provide regarding the required syndication license templates. On May 1, 2026, 
+Google submitted to the TC a production of documents responsive to the demand. Google has 
+also notified Plaintiffs that it is in the process of compiling additional information in response to 
+the TC’s demand. 
+4 The term “Search Text Ads” is defined in Section IX.Y of the Final Judgment. 
+8 
+ 
+ 
+   
+ 
+   
+ 
+ 
+ 
+   
+ 
+ 
+     
+   
+  
+ 
+  
+ 
+ 
+    
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 9 of 24 
+B. Qualified Competitors (Section IX.V) 
+To benefit from the Court’s data sharing and syndication remedies, an entity must 
+become a Qualified Competitor under the Final Judgment.5 To do that, the entity must: (1) meet 
+Plaintiffs’ approved data security standards, as recommended by the TC; (2) agree to regular data 
+security and privacy audits by the TC; (3) make a sufficient showing to Plaintiffs, in consultation 
+with the TC, of a plan to invest and compete in or with the general search engine and/or Search 
+Text Ads markets; and (4) pose no risk to the national security of the United States. See Final 
+J. § IX.V. Accordingly, a top priority is establishing the procedures for certifying Qualified 
+Competitors. Such procedures will include, for example, determining the certification criteria, 
+creating the application process, identifying the information that must be provided and how it 
+will be evaluated, and developing processes for managing Qualified Competitor audits. 
+Even after Qualified Competitors are approved, the TC must still complete many other 
+requirements before the Qualified Competitors can start receiving data and syndication services 
+under the Final Judgment, as discussed herein. 
+Given the work remaining, Plaintiffs have agreed with the Court that Qualified 
+Competitors would likely begin to receive access to data and syndication services by late 
+fall 2026 or early winter 2027 at the earliest. See Hr’g Tr. (Apr. 8, 2026) 5:22–6:22, 7:11–19. 
+Relatedly, potential Qualified Competitors have already expressed interest and made inquiries to 
+Plaintiffs about the application process and timeline. Plaintiffs and the TC intend to provide 
+further information on when and how to become a Qualified Competitor, as well as on when and 
+how to submit complaints to the TC pursuant to Sections VII.A.7.e and VII.C.3, through a TC-
+5 The term “Qualified Competitor” is defined in Section IX.V. 
+9 
+ 
+ 
+ 
+ 
+   
+  
+  
+  
+ 
+     
+ 
+  
+   
+ 
+   
+    
+   
+  
+   
+   
+    
+  
+  
+  
+ 
+    
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 10 of 24 
+administered website or other publicly available source once the remaining TC Members are 
+appointed and the TC is fully operational. 
+C. Data Sharing Remedies (Section IV) 
+Pursuant to Section IV.B, Google is required to make certain User-side Data available to 
+Qualified Competitors.6 To that end, Section IV.C.1 requires “Plaintiffs, in consultation with the 
+TC, [to] promptly determine the appropriate User-side Data privacy and security safeguards to be 
+applied before Google shares the data,” after which point Google has six months to implement 
+the safeguards. Final J. § IV.C.1. Under Section IV.C.3, within six months of the Effective Date 
+of the Final Judgment (i.e., by August 3, 2026), Plaintiffs and the TC, with input from Google, 
+are required to create and submit to the Court a template license governing the use of data shared 
+pursuant to Section IV. 
+Plaintiffs have been working to effectuate the data sharing remedies. Since the Standing 
+Committee Members became fully engaged on March 30, Plaintiffs have briefed them regarding 
+these remedies and provided access to materials, so the members can familiarize themselves with 
+the data required to be shared as well as the privacy and security safeguards considered at trial. 
+Plaintiffs anticipate that the TC will seek additional information and data from Google to 
+evaluate potential privacy and security safeguards after the remaining TC Members are 
+appointed and a Protected Information Access and Security Plan is in place. 
+D. Search Text Ads Auction Remedy (Section VI.A) 
+Under Section VI.A, “[w]ithin a reasonable period of time after the [TC]’s appointment, 
+Plaintiffs [must] submit a proposal to the Court, informed by the [TC]’s views, by which Google 
+[must] periodically provide the [TC] and Plaintiffs a report outlining all changes to its Search 
+6 The term “User-side Data” is defined in Section IX.EE. 
+10 
+ 
+ 
+ 
+   
+       
+ 
+  
+    
+  
+  
+ 
+   
+ 
+  
+  
+   
+   
+ 
+    
+  
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 11 of 24 
+Text Ads auction meeting certain parameters and, for each change, (1) Google’s public 
+disclosure of that change or (2) a statement why no public disclosure is necessary.” Final 
+J. § VI.A. Plaintiffs have briefed the Standing Committee Members regarding this remedy and 
+provided access to relevant materials. Plaintiffs anticipate that once the full TC is engaged, the 
+TC will seek additional information, data, and access to algorithms related to the Search Text 
+Ads auction remedy. To that end, it is imperative that the Source Code/Algorithm Agreement be 
+finalized and signed. 
+E. Google’s Access to Confidential Information 
+As set forth in Joint Status Report submitted May 1, 2026, the Parties have sought the 
+Court’s assistance in resolving a dispute regarding access by Google and its counsel to 
+confidential third-party information provided to the TC. Plaintiffs have respectfully requested 
+that these issues be addressed on an expedited basis. 
+IV. GOOGLE’S COMPLIANCE WITH THE FINAL JUDGMENT 
+A. Monitoring Google’s Compliance with the Final Judgment 
+Without limiting Plaintiffs’ general enforcement authority, Sections VII.A.7, VII.C.3, and 
+VII.D grant Plaintiffs and the TC specific authority to monitor Google’s compliance with the 
+Final Judgment and investigate complaints regarding the same. Section VIII further requires 
+Plaintiffs to report to the Court the date on which Google has substantially implemented all 
+provisions of this Final Judgment. In furtherance of the Final Judgment, Plaintiffs will continue 
+to monitor ongoing compliance during the term of the Final Judgment, including periodic 
+reviews of public reporting about Google. 
+11 
+ 
+ 
+ 
+   
+  
+ 
+   
+    
+  
+  
+    
+ 
+   
+    
+  
+  
+  
+     
+ 
+ 
+  
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 12 of 24 
+Although the Section IV–VI remedies discussed above are still being implemented, the 
+Court’s Section III contractual remedies have been in effect since February 3, 2026.7 Under 
+Section III of the Final Judgment, Google must comply with certain contractual injunctions. By 
+email dated February 27, 2026, Google’s counsel notified Plaintiffs that Google believed it had 
+taken all steps necessary to comply with Section III. Google’s counsel has further notified 
+Plaintiffs that Google is in the process of conducting preparatory work to comply with the data-
+sharing and syndication requirements in Sections IV–VI. 
+As part of the effort to monitor Google’s compliance, Plaintiffs have obtained, pursuant 
+to Section VII.D.2 of the Final Judgment, a copy of a recent agreement between Google and a 
+third party. Plaintiffs are reviewing the terms of the agreement and their compliance with the 
+Final Judgment. 
+B. Selection of Google’s Internal Compliance Officer (Sections VII.B.1–2) 
+Section VII.B.1 requires Google to designate an internal Compliance Officer “within 
+thirty (30) days of entry of this Final Judgment,” who will have “responsibility for administering 
+Google’s antitrust compliance program and help[] to ensure compliance with this Final 
+Judgment.” Under Section VII.B.2, Plaintiffs must approve Google’s selection, and following a 
+vacancy in the position, Google has 15 days to identify a replacement to Plaintiffs. 
+Google identified its initial Compliance Officer selection to Plaintiffs on January 5, 2026. 
+After interviewing the proposed Compliance Officer, Plaintiffs notified Google that they did not 
+approve of the initial selection. On February 6, 2026, Google confirmed that it was considering 
+alternative Compliance Officer candidates. On March 4, 2026, Google identified its alternate 
+7 Pursuant to Section VIII of the Final Judgment, the Court’s prohibitory injunctions took effect 
+sixty (60) days after the date of entry of the Final Judgment. 
+12 
+ 
+ 
+    
+  
+  
+  
+  
+  
+    
+ 
+ 
+  
+   
+   
+  
+   
+   
+   
+ 
+ 
+  
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 13 of 24 
+candidate, whom Plaintiffs interviewed on March 13, 2026. After confirming that the candidate 
+would be responsible for ensuring that the duties and responsibilities provided to the Compliance 
+Officer under the Final Judgment are carried out, including but not limited to supervising and 
+working with relevant Google employees involved in assisting the Compliance Officer in 
+performance of these duties, Plaintiffs advised Google on March 26, 2026 that they approved of 
+the alternate candidate as Compliance Officer. Google’s Compliance Officer, as approved by 
+Plaintiffs, is Ms. Terry Morrison-Wells, Alphabet’s Head of Enterprise Risk Management. 
+C. Other Required Actions by Google (Sections VII.B.4–5) 
+Under Sections VII.B.4–5, Google and its Compliance Officer are required to undertake 
+various internal actions, including: (1) distributing a copy of the Final Judgment to all officers 
+and directors of Google within 45 days after the date of entry of the Final Judgment; (2) ensuring 
+that Google’s officers and directors are annually briefed on the meaning and requirements of the 
+Final Judgment and U.S. antitrust laws; (3) establishing and maintaining a website to facilitate 
+the communication and submission of complaints and inquiries to Google’s Compliance Officer; 
+and (4) appointing a senior business executive to update the Court on Google’s compliance with 
+the Final Judgment at regular status conferences or as otherwise ordered. 
+By email dated February 27, 2026, Google’s counsel confirmed to Plaintiffs that Google 
+(1) distributed a copy of the Final Judgment to all officers and directors of Google on January 20, 
+2026;8 (2) appointed a senior business executive within 30 days of entry of the Final Judgment; 
+and (3) was working to establish other compliance processes, including building the necessary 
+8 Forty-five (45) days from the date of entry of the Final Judgment was January 19, 2026, a 
+federal holiday. 
+13 
+ 
+ 
+ 
+ 
+ 
+           
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 14 of 24 
+website for submitting complaints to the Compliance Officer and developing internal complaint 
+management processes. 
+On  April  28, 2026, Google’s counsel  provided Plaintiffs with a website mockup  for  
+complaints submitted pursuant to Section  VII.C.2.  On April 30, 2026, Google’s counsel notified 
+Plaintiffs that Google is also working to set up the  complaint management processes necessary to 
+address any such complaints  and  expects to be ready to receive complaints as soon as Plaintiffs 
+approve the website mechanism and the website goes live. Plaintiffs are reviewing Google’s 
+proposed website mechanism  pursuant to  Section  VII.C.2.a  and will continue to work with 
+Google to implement the necessary internal  processes  required by the Final Judgment.  
+Dated: May 4, 2026 Respectfully submitted,  
+/s/ Grant M. Fergusson _ 
+Claire M. Maddox (D.C. Bar #498356) 
+Travis R. Chapman (D.C. Bar #90031151) 
+Danielle Hauck 
+Grant M. Fergusson (D.C. Bar #90004882) 
+Karl E. Herrmann (D.C. Bar #1022464) 
+U.S. Department of Justice 
+Antitrust Division 
+Technology & Digital Platforms Section 
+450 Fifth Street NW, Suite 7100 
+Washington, DC 20530 
+Telephone: (202) 549-7155 
+Claire.Maddox@usdoj.gov 
+Travis.Chapman@usdoj.gov 
+Counsel for Plaintiff United States of America 
+14 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 15 of 24 
+By: /s/ Amanda Wentz 
+Amanda J. Wentz 
+Assistant Attorney General 
+Office of the Arkansas Attorney General 
+101 West Capitol Avenue 
+Little Rock, Arkansas 72201 
+Phone: (501) 682-1178 
+Amanda.Wentz@ArkansasAG.gov 
+Counsel for Plaintiff State of Arkansas 
+By: /s/ Carolyn D. Jeffries 
+Rob Bonta, Attorney General 
+Paula Blizzard, Senior Assistant Attorney 
+General 
+Michael Jorgenson, Supervising Deputy 
+Attorney General 
+Brian Wang, Deputy Attorney 
+General 
+Carolyn D. Jeffries, Deputy Attorney 
+General (DC Bar No. 1600843) 
+Office of the Attorney General 
+California Department of Justice 
+455 Golden Gate Avenue, Suite 11000 
+San Francisco, California 94102 
+Cari.Jeffries@doj.ca.gov 
+Counsel for Plaintiff State of California 
+By: /s/ Lee Istrail 
+James Uthmeier, Attorney General 
+R. Scott Palmer, Special Counsel, Complex 
+Enforcement Chief, Antitrust Division 
+Lee Istrail, Assistant Attorney General 
+Office of the Attorney General, State of 
+Florida 
+PL-01 The Capitol 
+Tallahassee, Florida 32399 
+Lee.Istrail@myfloridalegal.com 
+Scott.Palmer@myfloridalegal.com 
+Counsel for Plaintiff State of Florida 
+By: /s/ Charles Thimmesch 
+Christopher Carr, Attorney General 
+Logan B. Winkles, Deputy Attorney 
+General 
+Ronald J. Stay, Jr., Senior Assistant 
+Attorney General 
+Charles Thimmesch, Senior Assistant 
+Attorney General 
+Office of the Attorney General, State of 
+Georgia 
+40 Capitol Square, SW 
+Atlanta, Georgia 30334-1300 
+cthimmesch@law.georgia.gov 
+Counsel for Plaintiff State of Georgia 
+By: /s/ Jesse Moore 
+Theodore Edward Rokita, Attorney General 
+Scott L. Barnhart, Chief Counsel and 
+Director, Consumer Protection Division 
+Jesse Moore, Deputy Attorney General 
+Christi Foust, Deputy Attorney General 
+Office of the Attorney General, State of 
+Indiana 
+Indiana Government Center South, Fifth 
+Floor 
+302 West Washington Street 
+Indianapolis, Indiana 46204 
+Jesse.Moore@atg.in.gov 
+Counsel for Plaintiff State of Indiana 
+15 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 16 of 24 
+By: /s/ Jonathan E. Farmer 
+Russell Coleman, Attorney General 
+J. Christian Lewis, Commissioner of the 
+Office of Consumer Protection 
+Philip R. Heleringer, Executive 
+Director of the Office of Consumer 
+Protection 
+Jonathan E. Farmer, Deputy Executive 
+Director of the Office of Consumer 
+Protection 
+Office of the Attorney General, 
+Commonwealth of Kentucky 
+1024 Capital Center Drive, Suite 200 
+Frankfort, Kentucky 40601 
+Philip.Heleringer@ky.gov 
+Counsel for Plaintiff 
+Commonwealth of Kentucky 
+By: /s/ Asyl Nachabe 
+Liz Murrill, Attorney General 
+Asyl Nachabe, Assistant Attorney General 
+Office of the Attorney General, State of 
+Louisiana 
+Public Protection Division 
+909 Poydras St. Suite 1850 
+New Orleans, LA 70112 
+(225) 326-6435 
+NachabeA@ag.louisiana.gov 
+Counsel for Plaintiff State of Louisiana 
+By: /s/ Scott Mertens 
+Dana Nessel, Attorney General 
+Scott Mertens, Assistant Attorney General 
+Michigan Department of Attorney General 
+P.O. Box 30736 
+Lansing, Michigan 48909 
+MertensS@michigan.gov 
+Counsel for Plaintiff State of Michigan 
+By: /s/ Alison Esbeck 
+Alison Esbeck 
+Assistant Attorney General 
+Missouri Attorney General’s Office 
+815 Olive Street | Suite 200 
+Saint Louis, Missouri 63101 
+Alison.esbeck@ago.mo.gov 
+Phone: 314-340-4977 
+Counsel for Plaintiff State of Missouri 
+By: /s/ Anna Schneider 
+Anna Schneider 
+Special Assistant Attorney General, 
+Senior Counsel, 
+Montana Office of Consumer Protection 
+P.O. Box 200151 
+Helena, MT 59602-0150 
+Phone: (406) 444-4500 
+Anna.schneider@mt.gov 
+Counsel for Plaintiff State of Montana 
+By: /s/ Mary Frances Jowers 
+Alan Wilson, Attorney General 
+W. Jeffrey Young, Chief Deputy 
+Attorney General 
+C. Havird Jones, Jr., Senior Assistant 
+Deputy Attorney General 
+Mary Frances Jowers, Assistant Deputy 
+Attorney General 
+Office of the Attorney General 
+State of South Carolina 
+1000 Assembly Street 
+Rembert C. Dennis 
+Building 
+P.O. Box 11549 
+Columbia, South Carolina 29211-1549 
+mfjowers@scag.gov 
+Counsel for Plaintiff State of South Carolina 
+16 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 17 of 24 
+By: /s/ Diamante Smith 
+Ken Paxton, Attorney General 
+Brent Webster, First Assistant Attorney 
+General 
+Ralph Molina, Deputy First Assistant 
+Attorney General 
+Austin Kinghorn, Deputy Attorney General 
+for Civil Litigation 
+Thomas York, Division Chief, Antitrust 
+Division 
+Diamante Smith, Assistant Attorney 
+General, Antitrust Division 
+Office of the Attorney General, 
+State of Texas 
+P.O. Box 12548 
+Austin, Texas 78711-2548 
+(512) 936-1162 
+Diamante.Smith@oag.texas.gov 
+Counsel for Plaintiff State of Texas 
+By: /s/ Caitlin M. Madden 
+Joshua L. Kaul, Attorney General 
+Caitlin M. Madden, Assistant 
+Attorney General 
+Wisconsin Department of Justice 
+17 W. Main St. 
+Post Office Box 7857 
+Madison, Wisconsin 53707-7857 
+caitlin.madden@Wisconsin.gov 
+Counsel for Plaintiff State of Wisconsin 
+17 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 18 of 24 
+PHILIP WEISER 
+Attorney General of Colorado 
+/s/ Jonathan B. Sallet 
+Jonathan B. Sallet, DC Bar No. 336198 
+Steven M. Kaufmann 
+Elizabeth W. Hereford 
+Conor J. May 
+Colorado Office of the Attorney General 
+1300 Broadway, 7th Floor 
+Denver, CO 80203 
+Telephone: (720) 508-6000 
+E-Mail: Jon.Sallet@coag.gov 
+Steve.Kaufmann@coag.gov 
+Elizabeth.Hereford@coag.gov 
+Conor.May@coag.gov 
+William F. Cavanaugh, Jr. 
+PATTERSON BELKNAP WEBB & 
+TYLER LLP 
+1133 Avenue of the Americas 
+New York, NY 10036 
+Telephone: (212) 336-2793 
+E-Mail: wfcavanaugh@pbwt.com 
+Counsel for Plaintiff State of Colorado 
+MIKE HILGERS 
+Attorney General of Nebraska 
+Justin C. McCully, Assistant Attorney 
+General 
+Nebraska Department of Justice 
+Office of the Attorney General 
+2115 State Capitol 
+Lincoln, NE 68509 
+Telephone: (402) 471-9305 
+E-Mail: Justin.mccully@nebraska.gov 
+William F. Cavanaugh, Jr. 
+PATTERSON BELKNAP WEBB & 
+TYLER LLP 
+1133 Avenue of the Americas 
+New York, NY 10036 
+Telephone: (212) 336-2793 
+E-Mail: wfcavanaugh@pbwt.com 
+Counsel for Plaintiff State of Nebraska 
+KRISTIN K. MAYES 
+Attorney General of Arizona 
+Robert A. Bernheim, Unit Chief Counsel 
+Jayme Weber, Senior Litigation Counsel 
+Arizona Office of the Attorney General 
+400 West Congress, Ste. S-215 
+Tucson, Arizona 85701 
+Telephone: (520) 628-6507 
+E-Mail: Robert.Bernheim@azag.gov 
+Jayme.Weber@azag.gov 
+Counsel for Plaintiff State of Arizona 
+BRENNA BIRD 
+Attorney General of Iowa 
+Noah Goerlitz, Assistant Attorney General 
+Office of the Attorney General of Iowa 
+1305 E. Walnut St., 2nd Floor 
+Des Moines, IA 50319 
+Telephone: (515) 725-1018 
+E-Mail: Noah.goerlitz@ag.iowa.gov 
+Counsel for Plaintiff State of Iowa 
+LETITIA JAMES 
+Attorney General of New York 
+Elinor R. Hoffmann 
+Morgan J. Feder 
+Michael D. Schwartz 
+Office of the New York State Attorney 
+General 
+28 Liberty Street 
+New York, NY 10005 
+Telephone: (212) 416-8513 
+E-Mail: Elinor.hoffmann@ag.ny.gov 
+Morgan.feder@ag.ny.gov 
+Michael.schwartz@ag.ny.gov 
+Counsel for Plaintiff State of New York 
+18 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 19 of 24 
+JEFF JACKSON 
+Attorney General of North Carolina 
+Kunal Janak Choksi 
+Joshua Daniel Abram 
+North Carolina Department of Justice 
+114 W. Edenton St. 
+Raleigh, NC 27603 
+Telephone: (919) 716-6000 
+E-Mail: kchoksi@ncdoj.gov 
+jabram@ncdoj.gov 
+Counsel for Plaintiff State of North 
+Carolina 
+JONATHAN SKRMETTI 
+Attorney General of Tennessee 
+J. David McDowell 
+Austin Ostiguy 
+Tyler Corcoran 
+Office of the Attorney General and 
+Reporter 
+P.O. Box 20207 
+Nashville, TN 37202 
+Telephone: (615) 741-8722 
+E-Mail: David.McDowell@ag.tn.gov 
+austin.ostiguy@ag.tn.gov 
+Tyler.Corcoran@ag.tn.gov 
+Counsel for Plaintiff State of Tennessee 
+DEREK E. BROWN 
+Attorney General of Utah 
+Matthew Michaloski, Assistant Attorney 
+General 
+Marie W.L. Martin, Division Director 
+Utah Office of Attorney General 
+160 E 300 S, 5th Floor 
+P.O. Box 140811 
+Salt Lake City, Utah 84114 
+Telephone: (801) 440-9825 
+E-Mail: mmichaloski@agutah.gov 
+mwmartin@agutah.gov 
+Counsel for Plaintiff State of Utah 
+STEPHEN J. COX 
+Attorney General of Alaska 
+Jeff Pickett 
+Senior Assistant Attorney General 
+State of Alaska, Department of Law 
+Office of the Attorney General 
+1031 W. Fourth Avenue, Suite 200 
+Anchorage, Alaska 99501 
+Telephone: (907) 269-5275 
+E-Mail: Jeff.pickett@alaska.gov 
+Counsel for Plaintiff State of Alaska 
+WILLIAM TONG 
+Attorney General of Connecticut 
+Nicole Demers 
+Office of the Attorney General of 
+Connecticut 
+165 Capitol Avenue, Suite 5000 
+Hartford, CT 06106 
+Telephone: (860) 808-5202 
+E-Mail: Nicole.demers@ct.gov 
+Counsel for Plaintiff State of Connecticut 
+KATHLEEN JENNINGS 
+Attorney General of Delaware 
+Michael Andrew Undorf 
+Delaware Department of Justice 
+Fraud and Consumer Protection Division 
+820 N. French St., 5th Floor 
+Wilmington, DE 19801 
+Telephone: (302) 683-8816 
+E-Mail: Michael.undorf@delaware.gov 
+Counsel for Plaintiff State of Delaware 
+BRIAN SCHWALB 
+Attorney General of the District of 
+Columbia 
+19 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 20 of 24 
+Elizabeth Gentry Arthur 
+Office of the Attorney General for the 
+District of Columbia 
+400 6th Street NW 
+Washington, DC 20001 
+Telephone: (202) 724-6514 
+E-Mail: Elizabeth.arthur@dc.gov 
+Counsel for Plaintiff District of Columbia 
+DOUGLAS MOYLAN 
+Attorney General of Guam 
+Norman Lee Miller, Jr. 
+Office of the Attorney General of Guam 
+590 S. Marine Corps Drive, Suite 901 
+Tamuning, Guam 96913 
+Telephone: (671) 475-2710 
+E-Mail: nmillerjr@oagguam.org 
+Counsel for Plaintiff Territory Guam 
+ANNE E. LOPEZ 
+Attorney General of Hawai‘i 
+Rodney I. Kimura 
+Department of the Attorney General, State 
+of Hawai‘i 
+425 Queen Street 
+Honolulu, HI 96813 
+Telephone (808) 586-1180 
+E-Mail: Rodney.i.kimura@hawaii.gov 
+Counsel for Plaintiff State of Hawai‘i 
+RAÚL LABRADOR 
+Attorney General of Idaho 
+John K. Olson 
+Office of the Idaho Attorney General 
+Consumer Protection Division 
+954 W. Jefferson St., 2nd Floor 
+P.O. Box 83720 
+Boise, ID 83720 
+Telephone: (208) 332-3549 
+E-Mail: John.olson@ag.idaho.gov 
+Counsel for Plaintiff State of Idaho 
+KWAME RAOUL 
+Attorney General of Illinois 
+Elizabeth Maxeiner 
+Brian Yost 
+Jennifer Coronel 
+Office of the Attorney General of Illinois 
+115 S. LaSalle St. 
+Chicago, IL 60603 
+Telephone: (773) 590-7935 
+E-Mail: Elizabeth.maxeiner@ilag.gov 
+Brian.yost@ilag.gov 
+Jennifer.coronel@ilag.gov 
+Counsel for Plaintiff State of Illinois 
+KRIS W. KOBACH 
+Attorney General of Kansas 
+Christopher Teters 
+Kansas Office of the Attorney General 
+120 S.W. 10th Avenue, 2nd Floor 
+Topeka, KS 66612 
+Telephone: (785) 296-3751 
+E-Mail: chris.teters@ag.ks.gov 
+Counsel for Plaintiff State of Kansas 
+AARON M. FREY 
+Attorney General of Maine 
+Christina M. Moylan 
+Office of the Attorney General of Maine 
+6 State House Station 
+August, ME 04333 
+Telephone: (207) 626-8800 
+E-Mail: Christina.moylan@maine.gov 
+Counsel for Plaintiff State of Maine 
+ANTHONY G. BROWN 
+Attorney General of Maryland 
+20 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 21 of 24 
+Schonette J. Walker 
+Melissa English 
+Office of the Attorney General of 
+Maryland 
+200 St. Paul Place, 19th Floor 
+Baltimore, MD 21202 
+Telephone: (410) 576-6480 
+E-Mail: swalker@oag.state.md.us 
+menglish@oag.state.md.us 
+Counsel for Plaintiff State of Maryland 
+ANDREA CAMPBELL 
+Attorney General of Massachusetts 
+Jennifer E. Greaney 
+Office of the Attorney General of 
+Massachusetts 
+One Ashburton Place, 18th Floor 
+Boston, MA 02108 
+Telephone: (617) 963-2981 
+E-Mail: Jennifer, greaney@mass.gov 
+Counsel for Plaintiff Commonwealth of 
+Massachusetts 
+KEITH ELLISON 
+Attorney General of Minnesota 
+Zach Biesanz 
+Senior Enforcement Counsel 
+Office of the Minnesota Attorney General 
+Antitrust Division 
+445 Minnesota Street, Suite 600 
+St. Paul, MN 55101 
+Telephone: (651) 757-1257 
+E-Mail: Zach.biesanz@ag.state.mn.us 
+Counsel for Plaintiff State of Minnesota 
+AARON D. FORD 
+Attorney General of Nevada 
+Michelle C. Badorine 
+Lucas J. Tucker 
+Nevada Office of the Attorney General 
+100 N. Carson Street 
+Carson City, NV 89701 
+Telephone: (775) 684-1164 
+E-Mail: mbadorine@ag.nv.gov 
+ltucker@ag.nv.gov 
+Counsel for Plaintiff State of Nevada 
+JOHN FORMELLA 
+Attorney General of New Hampshire 
+Brandon Garod 
+Office of Attorney General of New 
+Hampshire 
+1 Granite Place South 
+Concord, NH 03301 
+Telephone: (603) 271-1217 
+E-Mail: Brandon.h.garod@doj.nh.gov 
+Counsel for Plaintiff State of New 
+Hampshire 
+JENNIFER DAVENPORT 
+Acting Attorney General of New Jersey 
+Yale A. Leber 
+Abiola G. Miles 
+Deputy Attorneys General 
+New Jersey Attorney General’s Office 
+25 Market Street, P.O. Box 106 
+Trenton, NJ 08625 
+Telephone: (609) 376-2383 
+E-Mail: Yale.Leber@law.njoag.gov 
+Abiola.Miles@law.njoag.gov 
+Counsel for Plaintiff State of New Jersey 
+RAÚL TORREZ 
+Attorney General of New Mexico 
+Judith E. Paquin Cholla Khoury 
+Assistant Attorney General 
+New Mexico Office of the Attorney 
+General 
+408 Galisteo St. 
+Santa Fe, NM 87504 
+21 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+  
+  
+  
+ 
+  
+  
+ 
+ 
+ 
+ 
+  
+  
+  
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 22 of 24 
+Telephone: (505) 490-4885 
+E-Mail: jpaquin@nmag.gov 
+ckhoury@nmag.gov 
+Counsel for Plaintiff State of New Mexico 
+DREW WRIGLEY 
+Attorney General of North Dakota 
+Elin S. Alm 
+Assistant Attorney General 
+Consumer Protection and Antitrust 
+Division 
+Office of the Attorney General of North 
+Dakota 
+1720 Burlington Drive, Suite C 
+Bismarck, ND 58504 
+Telephone: (701) 328-5570 
+E-Mail: ealm@nd.gov 
+Counsel for Plaintiff State of North 
+Dakota 
+DAVID YOST 
+Attorney General of Ohio 
+Beth Ann Finnerty, Section Chief, 
+Antitrust 
+Sarah Mader, Assistant Attorney General, 
+Antitrust 
+Office of the Attorney General of Ohio 
+30 E Broad Street, 26th Floor 
+Columbus, OH 43215 
+Telephone: (614) 466-4328 
+E-Mail: Beth.Finnerty@ohioago.gov 
+Sarah.Mader@ohioago.gov 
+Counsel for Plaintiff State of Ohio 
+GENTNER DRUMMOND 
+Attorney General of Oklahoma 
+Cameron R. Capps 
+Office of the Oklahoma Attorney General 
+313 NE 21st Street 
+Oklahoma City, OK 73105 
+Telephone: (405) 522-0858 
+E-Mail: Cameron.capps@oag.ok.gov 
+Counsel for Plaintiff State of Oklahoma 
+DAN RAYFIELD 
+Attorney General of Oregon 
+Gina Ko, Assistant Attorney General 
+Oregon Department of Justice 
+100 SW Market Street 
+Portland, OR 97201 
+Telephone: (503) 934-4400 
+E-Mail: Gina.Ko@doj.oregon.gov 
+Counsel for Plaintiff State of Oregon 
+DAVID W. SUNDAY, JR. 
+Attorney General of Pennsylvania 
+Tracy W. Wertz 
+Joseph S. Betsko 
+Pennsylvania Office of Attorney General 
+Strawberry Square 
+Harrisburg, PA 17120 
+Telephone: (717) 787-4530 
+E-Mail: jbetsko@attorneygeneral.gov 
+twertz@attorneygeneral.gov 
+Counsel for Plaintiff Commonwealth of 
+Pennsylvania 
+LOURDES L. GÓMEZ TORRES 
+Secretary of Justice 
+TANIA L. FERNÁNDEZ-MEDERO 
+Assistant Secretary of Justice 
+SAMUEL WISCOVITCH-CORALI 
+Deputy Undersecretary 
+Pablo Tufiño-Soto 
+Senior Attorney 
+Antitrust Division 
+Puerto Rico Department of Justice 
+P.O. Box 9020192 
+22 
+ 
+ 
+  
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 23 of 24 
+San Juan, Puerto Rico 00902-0192 
+Telephone: (787) 721-2900, Ext. 1205 
+E-Mail: ptufino@justicia.pr.gov 
+Counsel for Plaintiff Territory Puerto 
+Rico 
+PETER NERONHA 
+Attorney General of Rhode Island 
+Stephen Provazza 
+Rhode Island Office of the Attorney 
+General 
+150 South Main Street 
+Providence, RI 02903 
+Telephone: (401) 274-4400 
+E-Mail: SProvazza@riag.ri.gov 
+Counsel for Plaintiff State of Rhode Island 
+MARTIN J. JACKLEY 
+Attorney General of South Dakota 
+Yvette K. Lafrentz 
+Office of the Attorney General of South 
+Dakota 
+1302 E. Hwy 14, Suite 1 
+Pierre, SD 57501 
+Telephone: (605) 773-3215 
+E-Mail: Yvette.lafrentz@state.sd.us 
+Counsel for Plaintiff State of South 
+Dakota 
+CHARITY R. CLARK 
+Attorney General of Vermont 
+Christopher J. Curtis, Assistant Attorney 
+General 
+Office of the Attorney General of 
+Vermont 
+109 State St. 
+Montpelier, VT 05609 
+Telephone: (802) 828-3170 
+E-Mail: christopher.curtis@vermont.gov 
+Counsel for Plaintiff State of Vermont 
+JAY JONES 
+Attorney General of Virginia 
+Tyler T. Henry 
+Senior Assistant Attorney General 
+Antitrust Unit 
+Office of the Attorney General of Virginia 
+202 N. 9th Street 
+Richmond, VA 23219 
+Telephone: (804) 692-0485 
+E-Mail: thenry@oag.state.va.us 
+Counsel for Plaintiff State of Virginia 
+NICHOLAS W. BROWN 
+Attorney General of Washington 
+Amy N.L. Hanson 
+Senior Managing Assistant Attorney 
+General 
+800 Fifth Avenue, Suite 2000 
+Seattle, WA 98104 
+Telephone: (206) 464-5419 
+E-Mail: Amy.hanson@atg.wa.gov 
+Counsel for Plaintiff State of Washington 
+JOHN B. McCUSKEY 
+Attorney General of West Virginia 
+Douglas Lee Davis 
+Office of the Attorney General, State of 
+West Virginia 
+1900 Kanawha Boulevard East 
+Building 6, Suite 401 
+P.O. Box 1789 
+Charleston, WV 25305 
+Telephone: (304) 558-8986 
+E-Mail: Douglas.l.davis@wvago.gov 
+Counsel for Plaintiff State of West 
+Virginia 
+KEITH KAUTZ 
+Attorney General of Wyoming 
+23 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1512 Filed 05/04/26 Page 24 of 24 
+William T. Young 
+Wyoming Attorney General’s Office 
+2320 Capitol Avenue 
+Kendrick Building 
+Cheyenne, WY 82002 
+Telephone: (307) 777-7847 
+E-Mail: William.young@wyo.gov 
+Counsel for Plaintiff State of Wyoming 
+24 

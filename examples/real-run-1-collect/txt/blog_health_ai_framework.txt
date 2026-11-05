@@ -1,0 +1,55 @@
+
+
+We're sharing our framework for building safer and more helpful AI for health.
+
+Dr Sarah Montgomery-Taylor
+
+Clinical Evaluation Lead, Google for Health
+
+Nov 04, 2026
+
+Many of us have turned to AI with a health question or received care from a doctor who’s using it. The adoption of technology for health is accelerating and impacts billions of people every day. But how can we assess if these tools are safe and helpful?
+
+In partnership with health experts Dr. Elizabeth McGlynn and Dr. Dana Gelb Safran, we published a whitepaper detailing an end-to-end evaluation approach to assess AI use cases for addressing people’s health needs. The framework evaluates models across three areas: accuracy, safety, and usefulness. It combines closed-question benchmarks, autoraters, and expert human review to assess common and high-risk health scenarios.
+
+We built and continue to utilize this framework to assess whether our models provide useful, accurate responses that promote safe interactions in health contexts. By sharing our methodology, we hope to promote transparency in how we approach this important area, and seek to support the entire health ecosystem — from developers to researchers to clinicians — in building AI tools people can trust.
+
+Posted in:
+
+Related stories
+
+Health
+
+Equipping healthcare professionals with practical AI skills
+
+By
+
+Dr. Michael Howell
+
+Health
+
+Partnering with Singapore to bring frontier AI to public health
+
+By
+
+Ben King
+
+Health
+
+Applying technology to understand and treat disease
+
+By
+
+Yossi Matias
+
+&
+Pushmeet Kohli
+
+Health
+
+Study in The Lancet suggests AI could improve patient-physician relationships.
+
+By
+
+Mike Schaekermann
+

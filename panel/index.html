@@ -1,0 +1,2128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>myagent</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #16181d; --muted: #6b7280; --line: #e5e7eb; --card: #f9fafb;
+    --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --accent: #1d4ed8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --fg: #e7e9ee; --muted: #9aa1ac; --line: #2a2e36; --card: #1a1d23;
+            --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --accent: #93c5fd; }
+  }
+  * { box-sizing: border-box }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: baseline }
+  h1 { font-size: 17px; margin: 0; letter-spacing: .02em }
+  h2 { font-size: 14px; margin: 0 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em }
+  main { padding: 16px 20px 60px; max-width: 1180px }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 12px; color: var(--muted); white-space: nowrap }
+  .pill b { color: var(--fg); font-weight: 600 }
+  .bad { color: var(--bad) } .ok { color: var(--ok) } .warn { color: var(--warn) }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 16px }
+  nav button, .btn { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 8px;
+                     padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer }
+  nav button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600 }
+  .btn:hover { border-color: var(--accent) }
+  .btn.danger:hover { border-color: var(--bad); color: var(--bad) }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center }
+  ul.list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+  ul.list li { padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: pointer }
+  ul.list li:last-child { border-bottom: 0 }
+  ul.list li:hover { background: var(--card) }
+  ul.list li[aria-current="true"] { background: var(--card); box-shadow: inset 3px 0 0 var(--accent) }
+  .title { font-weight: 600 }
+  .meta { color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px }
+  .stage { font-size: 12px; border-radius: 6px; padding: 1px 7px; border: 1px solid var(--line) }
+  .stage.running { color: var(--accent); border-color: var(--accent) }
+  .stage.attention { color: var(--warn); border-color: var(--warn) }
+  .stage.done { color: var(--ok); border-color: var(--ok) }
+  .stage.failed, .stage.blocked { color: var(--bad); border-color: var(--bad) }
+  section.card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 16px; background: var(--card) }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 6px 0; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace }
+  textarea, input[type="text"], select { width: 100%; background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+                                          border-radius: 8px; padding: 8px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace }
+  textarea { min-height: 120px; resize: vertical }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start }
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr) } }
+  .muted { color: var(--muted) }
+  .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; font-size: 13px }
+  .kv dt { color: var(--muted) } .kv dd { margin: 0; word-break: break-all }
+  code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--fg); color: var(--bg);
+           padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw }
+  #toast.show { opacity: .95 }
+  table.plain { width: 100%; border-collapse: collapse; font-size: 13px }
+  table.plain th, table.plain td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top }
+  table.plain th { color: var(--muted); font-weight: 600; font-size: 12px }
+  .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 12px }
+  .btn.small { padding: 3px 9px; font-size: 12px }
+  .filelist { list-style: none; margin: 6px 0; padding: 0; font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace }
+  .filelist li { display: flex; gap: 10px; align-items: baseline; padding: 2px 0; border-bottom: 1px dashed var(--line) }
+  .filelist .size { color: var(--muted); margin-left: auto; white-space: nowrap }
+  .linklike { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-align: left }
+  #v2-banner, #chat-banner { border: 1px solid var(--warn); color: var(--warn); border-radius: 10px; padding: 10px 12px;
+                margin-bottom: 14px; font-size: 13px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap }
+  #v2-banner b, #chat-banner b { font-weight: 600 }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; font-size: 12px; color: var(--muted); white-space: nowrap }
+  .chip b { color: var(--fg); font-weight: 600 }
+  .said { border-left: 3px solid var(--accent); padding: 5px 10px; margin: 6px 0; background: var(--bg); border-radius: 0 8px 8px 0 }
+  .view { max-height: 340px; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px }
+  /* `!important` is not sloppiness here, it is the whole point: this is a utility class whose only job is to hide, and
+     an ID rule beats a class rule on specificity regardless of source order. `#v2-banner, #chat-banner { display: flex }`
+     above therefore won, both banners stayed on screen permanently, the 重试 button appeared to do nothing (it toggled
+     the class correctly), the console stayed clean, an incognito window made no difference — and all 172 panel tests
+     passed, because they assert on `classList` and jsdom does not evaluate cascade specificity the way a browser does.
+     Found only by a person looking at the page. Every other `.hidden` user is class-styled, so this also protects the
+     next element that gets an ID rule with a `display` in it. */
+  .hidden { display: none !important }
+</style>
+</head>
+<body>
+<header>
+  <h1>myagent</h1>
+  <span class="pill" id="mode">受理模式 <b>—</b></span>
+  <span class="pill" id="counts">Ticket <b>—</b></span>
+  <span class="pill" id="slots">工作槽 <b>—</b></span>
+  <span class="pill" id="health">状态 <b>—</b></span>
+  <span class="pill" id="main-session" title="主 Session 是你的前台：报告的通知会留在它的历史里，派活也从它开始。挂载时不创建，按需创建。">主 Session <b>—</b></span>
+  <span class="pill" id="paths" title="状态目录 / 工作根 / 收件目录">路径 <b>—</b></span>
+  <!-- Shown from every page, and only when it is non-zero: a message from an unmapped identity is HELD, not refused,
+       so nothing else on this panel will ever bring it up again — no Decision, no Ticket, no toast. Its remedy is a
+       settings edit the operator has to know to make, and burying that on one tab is how a held message stays held. -->
+  <span class="pill hidden" id="chat-waiting" title="聊天来源留住了几条来自未映射身份的消息：它们没有变成 Trigger，也没有被拒绝，文件还在频道目录里。把身份加进映射表，下一次扫描就会受理。详情在「来源」页。">聊天等待 <b>—</b></span>
+  <!-- Shown from every page, and only when it is non-zero, for the reason the pill beside it exists: a request the
+       queue gave up on is silent everywhere else. It has no Decision, no Ticket, no toast, and the effect row it came
+       in on is deleted, so nothing else on this panel will ever bring it up again — and unlike a held message it is
+       gone, not waiting. Hidden when `state` has no `counts.lost` at all, because "this bundle cannot answer" is not
+       a zero. Details in 「来源」页. -->
+  <span class="pill hidden" id="lost-count" title="队列彻底放弃过几个请求：重试 5 次都失败，效果行已删，此后没有任何一轮 pass 会再看它一眼。系统不会自动重放它们。两条路径（已被认出的行、读不出的载荷）分开列在「来源」页的「丢失的请求」里。">丢失 <b>—</b></span>
+  <span class="row" style="margin-left:auto">
+    <button class="btn hidden" id="create-main">创建主 Session</button>
+    <button class="btn" id="pause">暂停 / 继续</button>
+    <button class="btn" id="pass">立即执行一轮</button>
+  </span>
+</header>
+<main>
+  <!-- One banner carries the whole explanation: five panes each saying "the plugin is old" is five copies of a
+       sentence the operator has to read once, and it buries the one thing they can do about it. -->
+  <div id="v2-banner" class="hidden">
+    <span><b>宿主机上的 myagent 插件比这个页面旧。</b>
+      「工作」「产物」「依赖」「历史」「归属」这几节因此读不到数据，其余各节照常工作。
+      重新载入插件（或重启宿主）之后点「重试」，不用刷新整页。</span>
+    <button class="btn small" id="v2-retry">重试</button>
+  </div>
+  <!-- The chat section's own banner, and never shown together with the one above: a host old enough to lack `projects`
+       is old enough to lack the chat view too, and then that banner is the one that speaks, so exactly one is visible.
+       Two generations of "the plugin is older than the page" get two wordings because each has to name its OWN missing
+       sections — a banner that names the wrong ones sends the operator looking in the wrong place. -->
+  <div id="chat-banner" class="hidden">
+    <span><b>宿主机上的 myagent 插件还没有聊天这一块。</b>
+      「来源」页的聊天一节（未映射消息的等待队列、身份映射表、回复计数）因此读不到数据，其余各节照常工作。
+      页面每次请求都从磁盘读，插件不是：重新载入插件（或重启宿主）之后点「重试」，不用刷新整页。</span>
+    <button class="btn small" id="chat-retry">重试</button>
+  </div>
+  <nav id="tabs">
+    <button data-tab="tickets" aria-selected="true">Ticket</button>
+    <button data-tab="works">工作</button>
+    <button data-tab="new">派活</button>
+    <button data-tab="decisions">门禁记录</button>
+    <button data-tab="sources">来源</button>
+    <button data-tab="schedules">排期</button>
+    <button data-tab="settings">设置</button>
+    <button data-tab="prompts">提示词</button>
+  </nav>
+
+  <div id="tab-tickets">
+    <div class="row" style="margin-bottom:10px">
+      <select id="filter" style="width:auto">
+        <option value="open">进行中</option>
+        <option value="attention">等人回答</option>
+        <option value="ended">已结束</option>
+        <option value="all">全部</option>
+      </select>
+      <button class="btn" id="refresh">刷新</button>
+      <span class="muted" id="ticket-hint"></span>
+    </div>
+    <div class="grid">
+      <ul class="list" id="tickets"></ul>
+      <section class="card" id="detail"><span class="muted">选择一个 Ticket。</span></section>
+    </div>
+  </div>
+
+  <div id="tab-works" class="hidden">
+    <div class="grid">
+      <div>
+        <section class="card">
+          <h2>项目</h2>
+          <p class="muted">项目把同类的工作归到一起，是「这个客户」「这个产品」那一层。点开一个只看它的。</p>
+          <ul class="list" id="projects"></ul>
+          <label for="pj-name">新建项目</label>
+          <input type="text" id="pj-name" maxlength="120" placeholder="例如：竞品观察">
+          <label for="pj-note">备注（可留空）</label>
+          <input type="text" id="pj-note" maxlength="2000" placeholder="这个项目是干什么的">
+          <div class="row" style="margin-top:8px"><button class="btn" id="pj-create">新建项目</button></div>
+        </section>
+        <section class="card">
+          <h2>工作</h2>
+          <p class="muted" id="works-hint">工作是一条同类活的流水：Ticket 创建后归进去，按归入的先后排队。</p>
+          <ul class="list" id="works"></ul>
+          <label for="wk-name">新建工作</label>
+          <input type="text" id="wk-name" maxlength="120" placeholder="例如：周报">
+          <label for="wk-project">所属项目（可留空）</label>
+          <select id="wk-project"><option value="">不属于任何项目</option></select>
+          <label for="wk-scope">范围（可留空：这条流水里每个 Ticket 都默认遵守的边界）</label>
+          <textarea id="wk-scope" style="min-height:60px"></textarea>
+          <label for="wk-note">备注（可留空）</label>
+          <input type="text" id="wk-note" maxlength="2000" placeholder="这条流水是什么">
+          <div class="row" style="margin-top:8px"><button class="btn" id="wk-create">新建工作</button></div>
+        </section>
+      </div>
+      <section class="card" id="work-detail"><span class="muted">选择左边一个项目或工作。</span></section>
+    </div>
+  </div>
+
+  <div id="tab-new" class="hidden">
+    <section class="card">
+      <h2>派一个活</h2>
+      <p class="muted">和定时任务、投递到收件目录的文件走同一道门禁。observe 模式下只记录、不执行。</p>
+      <label for="n-recipe">从配方开始（可选）</label>
+      <select id="n-recipe"><option value="">空白开始</option></select>
+      <p class="muted" id="n-recipe-hint">配方就是 examples/ 里那几个文件，选一个会把标题、请求和范围填好，你再改。</p>
+      <label for="n-title">标题</label>
+      <input type="text" id="n-title" maxlength="200" placeholder="例如：整理本周竞品动态">
+      <label for="n-request">要做的事（写给一个不能反问你的同事）</label>
+      <textarea id="n-request" style="min-height:160px" placeholder="产出什么、放在哪里、怎样算做完"></textarea>
+      <label for="n-scope">范围（可留空，用默认：只在自己的目录里工作）</label>
+      <textarea id="n-scope" style="min-height:60px"></textarea>
+      <label>随任务带过去的文件（绝对路径，一行一个）</label>
+      <div id="n-attachments" class="stack" style="margin-top:0"></div>
+      <div class="row" style="margin-top:6px">
+        <button class="btn small" id="add-attachment">加一个文件</button>
+        <span class="muted">起跑前会被复制进 Ticket 自己的目录；路径读不到就让 Ticket 失败，不会硬跑。</span>
+      </div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="create">创建 Ticket</button></div>
+      <pre id="new-result" class="muted"></pre>
+    </section>
+  </div>
+
+  <div id="tab-decisions" class="hidden">
+    <section class="card">
+      <h2>门禁记录</h2>
+      <p class="muted">每个 Trigger 的判定：accepted 开 Ticket，observed 只记录，ignored 附原因。</p>
+      <ul class="list" id="decisions"></ul>
+    </section>
+  </div>
+
+  <div id="tab-sources" class="hidden">
+    <section class="card"><h2>来源</h2><div id="sources"></div></section>
+    <section class="card"><h2>健康</h2><div id="health-detail"></div></section>
+    <section class="card"><h2>队列</h2><div id="effects"></div><p class="muted" id="effects-note"></p></section>
+    <section class="card">
+      <h2>丢失的请求</h2>
+      <!-- The remedy is stated here, in markup, so it does not depend on a read that may have failed: the operator who
+           gets here because something is broken is the one who must not find an empty box. -->
+      <p class="muted">队列对一个请求重试 5 次（15s、30s、60s 退避）仍失败就<b>放弃</b>它，并删掉自己那一行——此后没有任何一轮
+        pass 会再看它一眼，重启也不会把它捡回来。放弃时会留下一条记录，这一节就是读它的地方。
+        它<b>不是</b>门禁判定：门禁可能根本没跑到出结论，所以这里没有 Decision、也没有 Ticket。</p>
+      <p class="muted"><b>这里没有「重放」按钮，因为它做不到。</b>没有任何路由能把一条已经放弃的请求重新塞回队列，
+        一个只能失败的按钮比没有按钮更坏。<b>系统也不会自动重放它。</b>能做的只有两件事：修好让它失败的原因，
+        然后让来源再产出一次同样的请求（收件目录里再放一个文件、排期到点再触发、让对方再发一次）——门禁会重新跑一遍，
+        <code>lost</code> 行<b>不算重复</b>，所以不会被短路成「这条已经处理过了」；或者在「派活」页手动画一条，
+        那是<b>新的一条</b>请求，不是重放这一条。</p>
+      <div id="lost"></div>
+    </section>
+    <section class="card">
+      <h2>聊天</h2>
+      <p class="muted">平台桥把消息写进频道目录，就成了这里的一条请求；报告原路写回同一个目录的 <code>out/</code>。
+        身份必须被<b>映射</b>才成为发起者：没映射的消息<b>留住</b>（不产生 Trigger，也不拒绝，文件留在原处），
+        加进映射表之后下一次扫描就受理它——拒绝是不可逆的，留住不是。</p>
+      <div id="chat"></div>
+    </section>
+  </div>
+
+  <div id="tab-schedules" class="hidden">
+    <section class="card">
+      <h2>排期</h2>
+      <p class="muted">到点自动派活，走的是和手动派活同一道门禁。时区 <b id="sched-zone">—</b> · 上次触发 <span id="sched-last">—</span></p>
+      <ul class="list" id="schedules"></ul>
+      <div class="row" style="margin-top:10px"><button class="btn" id="sched-new">新建排期</button></div>
+    </section>
+    <section class="card hidden" id="sched-editor">
+      <h2 id="sched-editor-title">新建排期</h2>
+      <label for="s-id">标识</label>
+      <input type="text" id="s-id" maxlength="40" placeholder="digest">
+      <p class="muted" id="s-id-hint">小写字母开头，只能含小写字母、数字和短横线。它是「下次触发」记在哪个键下的依据，改了就会重算。</p>
+      <label for="s-name">名字（可留空，留空就用请求的第一行）</label>
+      <input type="text" id="s-name" maxlength="120" placeholder="每日摘要">
+      <label for="s-kind">触发方式</label>
+      <select id="s-kind">
+        <option value="daily">每天某个时刻</option>
+        <option value="weekly">每周某几天</option>
+        <option value="every">每隔一段时间</option>
+        <option value="cron">cron 表达式</option>
+      </select>
+      <div id="s-fields"></div>
+      <label for="s-prompt">要做的事（写给一个不能反问你的同事）</label>
+      <textarea id="s-prompt" style="min-height:140px" placeholder="产出什么、放在哪里、怎样算做完"></textarea>
+      <label for="s-scope">范围（可留空，用默认：只在自己的目录里工作）</label>
+      <textarea id="s-scope" style="min-height:60px"></textarea>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="s-enabled" checked> 启用</label>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="sched-preview">预览下次触发</button>
+        <button class="btn" id="sched-save">保存</button>
+        <button class="btn" id="sched-cancel">取消</button>
+      </div>
+      <pre id="sched-preview-out" class="muted"></pre>
+      <pre id="sched-error" class="bad"></pre>
+    </section>
+  </div>
+
+  <div id="tab-settings" class="hidden">
+    <section class="card">
+      <h2>设置</h2>
+      <p class="muted">整份 JSON 直接改，保存即生效；改动会影响在跑的 Ticket 时，系统会把变化告诉它们。字段含义见 README。</p>
+      <textarea id="settings" style="min-height:340px"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="save-settings">保存</button>
+        <button class="btn" id="reload-settings">重新读取</button>
+        <span class="muted" id="settings-revision"></span>
+      </div>
+      <pre id="settings-error" class="bad"></pre>
+    </section>
+  </div>
+
+  <div id="tab-prompts" class="hidden">
+    <section class="card">
+      <h2>提示词</h2>
+      <p class="muted">留空即用内置文本。保存后，下一轮就绑定到在跑的 Session，不需要重启。</p>
+      <label for="p-worker">worker（Ticket 工作者）</label>
+      <textarea id="p-worker" style="min-height:220px"></textarea>
+      <label for="p-orchestrator">orchestrator（主 Session）</label>
+      <textarea id="p-orchestrator" style="min-height:220px"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="save-prompts">保存</button>
+        <button class="btn" id="reset-prompts">恢复内置</button>
+        <span class="muted" id="prompt-revision"></span>
+      </div>
+      <pre id="prompt-error" class="bad"></pre>
+    </section>
+  </div>
+</main>
+<div id="toast"></div>
+<script>
+(() => {
+  'use strict'
+  const HEADER = { 'content-type': 'application/json', 'x-myagent-request': '1' }
+  const $ = id => document.getElementById(id)
+  const el = (tag, attrs = {}, ...kids) => {
+    const node = document.createElement(tag)
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') node.className = v
+      else if (k === 'html') node.innerHTML = v
+      else if (k.startsWith('on')) node.addEventListener(k.slice(2), v)
+      else if (v !== undefined && v !== null) node.setAttribute(k, v)
+    }
+    for (const kid of kids.flat()) node.append(kid?.nodeType ? kid : document.createTextNode(kid ?? ''))
+    return node
+  }
+  /**
+   * Escape for interpolation into innerHTML — which is the only place it is needed.
+   *
+   * It used to be `String(text ?? '')`, i.e. it did not escape at all while its name said it did, and it was fed the
+   * accept mode, the main Session id, the state directory and health details straight into `innerHTML`. Those come
+   * from the operator-editable settings document, so a settings file containing markup injected into the panel.
+   * Same-origin and self-inflicted, but a helper that promises a guarantee and does not deliver it is how the next
+   * person gets hurt.
+   *
+   * Text nodes built by `el()` must NOT go through this: they are inert already, and escaping them would show the
+   * operator `&amp;` where they wrote `&`. Slicing an escaped string is also wrong — it can cut an entity in half —
+   * so the places that truncate now slice the raw text and let the text node do the escaping.
+   */
+  const escapeText = text => String(text ?? '').replace(/[&<>"']/g, character => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
+  let toastTimer
+  const toast = text => {
+    const node = $('toast'); node.textContent = text; node.classList.add('show')
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => node.classList.remove('show'), 3200)
+  }
+  /** One API call; a non-2xx body carries `error`, which is what the operator reads. */
+  const api = async (path, init) => {
+    const response = await fetch(`/myagent/api/${path}`, { ...init, headers: HEADER })
+    const body = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(body.error || `${response.status} ${response.statusText}`)
+    return body
+  }
+  const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body ?? {}) })
+  const put = (path, body) => api(path, { method: 'PUT', body: JSON.stringify(body ?? {}) })
+  const when = iso => iso ? new Date(iso).toLocaleString('zh-CN', { hour12: false }) : '—'
+
+  let state = null, selected = null, tab = 'tickets'
+  /** id → Work / TicketSummary / Project, for the labels no record carries: a row reads a name, not an id. */
+  let worksIndex = new Map(), ticketIndex = new Map(), projectsIndex = new Map()
+  const m0 = s => (s && s.machine) || {}
+
+  // --------------------------------------------------- what this host can do
+
+  /**
+   * Whether the plugin running in the host has the routes this page uses.
+   *
+   * The page is read from disk on every request, the plugin is not: an operator who saved this file without reloading
+   * the bundle gets a page whose new sections ask for routes that do not exist yet. `null` means "could not tell" —
+   * a fence refusal or a locked database says nothing about versions, and guessing there would either hide a feature
+   * that works or explain away one that does not.
+   */
+  let backend = null
+
+  /**
+   * Whether the loaded plugin answers the chat part of `GET state`.
+   *
+   * Recomputed on every state read rather than latched, and never probed with a request of its own: the chat view rides
+   * on `state`, which every bundle answers, so "the host is older than the page" arrives as one missing KEY instead of a
+   * refused route — no extra request, no toast on every refresh, and reloading the plugin heals the page without
+   * reloading the page. That is the failure `docs/v2/05-panel-v2-ui.md` §4 measured on the live host, avoided rather
+   * than handled.
+   */
+  let chatStale = false
+
+  /**
+   * Whether the loaded plugin answers the lost-request half of `GET state`.
+   *
+   * The same probe as `chatStale`, for the same reason and with the same payoff: one key present or absent, no request
+   * of its own to be refused. It also GATES `GET lost` — a bundle that does not put `counts.lost` in `state` does not
+   * have the route either, so an older host is never asked for it and never answers 404. The COUNT rides the poll the
+   * page already makes; only the detail (up to twenty payloads of a thousand untrusted characters each) costs a
+   * request of its own, and it is fetched when a person goes to look rather than on a timer.
+   */
+  let lostStale = false
+
+  const renderBanner = () => {
+    const node = $('v2-banner')
+    if (node !== null) node.classList.toggle('hidden', backend !== false)
+    const chat = $('chat-banner')
+    // One banner, never two: `backend === false` already implies this gap, and that banner is the one that speaks then.
+    if (chat !== null) chat.classList.toggle('hidden', backend === false || !chatStale)
+  }
+
+  /** One cheap read only a current plugin answers; called on boot, on 刷新, and when the operator says they reloaded. */
+  const probeBackend = async () => {
+    try { await api('projects'); backend = true }
+    catch (error) { if (/No route for/.test(error.message)) backend = false }
+    renderBanner()
+  }
+
+  /** The one line a section shows instead of a 404 of its own; the banner above carries the why and the fix. */
+  const staleLine = () => el('p', { class: 'muted' }, '宿主的插件比这个页面旧，这一节读不到；重载插件后点顶部的「重试」。')
+
+  /**
+   * Say a failure out loud, unless it is the one this page has already explained. Without this, a host whose plugin is
+   * older than the page turns every five-second refresh into a fresh toast about something the operator cannot fix
+   * from here — and the toast covers the panel they are trying to read.
+   */
+  const shout = error => {
+    if (backend === false && /No route for/.test(error.message)) return
+    toast(error.message)
+  }
+
+  // --------------------------------------------------------------- header
+
+  const renderHeader = () => {
+    if (!state) return
+    const problems = Object.entries(state.health || {}).filter(([, v]) => v && v.ok === false)
+    $('mode').innerHTML = `受理模式 <b class="${state.settings.acceptMode === 'auto' ? 'ok' : 'warn'}">${escapeText(state.settings.acceptMode)}</b>${state.paused ? ' · <b class="warn">已暂停</b>' : ''}`
+    $('counts').innerHTML = `Ticket <b>${state.counts.open}</b> 进行中 · <b class="${(state.counts.attention ?? 0) > 0 ? 'warn' : ''}">${state.counts.attention ?? 0}</b> 等人 · <b>${state.counts.ended}</b> 已结束`
+    const slots = state.counts.workerSlots || {}
+    $('slots').innerHTML = `工作槽 <b>${slots.used ?? 0}/${slots.max ?? 0}</b> · 队列 <b>${Object.values(state.counts.effects || {}).reduce((a, b) => a + b, 0)}</b>`
+    $('health').innerHTML = problems.length === 0
+      ? '状态 <b class="ok">正常</b>'
+      : `状态 <b class="bad">${problems.length} 个问题</b>`
+    $('health').title = problems.map(([name, v]) => `${name}: ${v.detail || ''}`).join('\n') || '没有问题'
+    const main = state.mainSession || {}
+    $('main-session').innerHTML = main.exists
+      ? `主 Session <b class="ok">${escapeText(main.id || m0(state).mainSessionId)}</b>${main.busy ? ' · <b>运行中</b>' : ''}`
+      : '主 Session <b class="warn">未创建</b>'
+    $('create-main').classList.toggle('hidden', Boolean(main.exists))
+    const m = state.machine || {}
+    $('paths').innerHTML = `状态 <b>${escapeText(m.stateDir || '')}</b>`
+    $('paths').title = `state: ${m.stateDir}\nwork: ${m.workRoot}\ninbox: ${m.inboxDir}\nmain session: ${m.mainSessionId}`
+    const pill = $('chat-waiting')
+    if (pill !== null) {
+      const waiting = chatStale ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
+      // Hidden at zero instead of showing a zero: a pill that is always there is one the eye skips, and the only thing
+      // this one ever has to say is "somebody is waiting for you to map them".
+      pill.classList.toggle('hidden', !(waiting > 0))
+      // A text node, not innerHTML — the number is a count, but the discipline is worth keeping where it costs nothing.
+      pill.replaceChildren('聊天等待 ', el('b', { class: 'warn' }, String(waiting)))
+    }
+    const lostPill = $('lost-count')
+    if (lostPill !== null) {
+      // A missing key means "this bundle has no lost view", which is NOT a zero — the same distinction the section
+      // below makes, and the one this panel keeps getting caught by: a count that could not be read must never be
+      // drawn as "nothing was lost".
+      const lost = (state.counts || {}).lost
+      const total = lost === undefined ? 0 : (lost.rows ?? 0) + (lost.payloads ?? 0)
+      // Hidden at zero, and red rather than amber when it is not: a held message can still be admitted, a given-up one
+      // is gone, and the eye skips a pill that is always there.
+      lostPill.classList.toggle('hidden', !(total > 0))
+      // A text node, not innerHTML — same discipline as the pill above, where it costs nothing.
+      lostPill.replaceChildren('丢失 ', el('b', { class: 'bad' }, String(total)))
+    }
+    if (state.setupProblem) toast(state.setupProblem)
+  }
+
+  // -------------------------------------------------------------- tickets
+
+  const stageClass = stage => /running|progress/.test(stage) ? 'running'
+    : /waiting|attention|blocked/.test(stage) ? 'attention'
+    : /done|ready/.test(stage) ? 'done' : /failed|dropped|stopped/.test(stage) ? 'failed' : ''
+
+  const renderTickets = list => {
+    const node = $('tickets'); node.replaceChildren()
+    $('ticket-hint').textContent = `${list.length} 条`
+    if (list.length === 0) { node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '没有 Ticket。'))) ; return }
+    for (const ticket of list) {
+      const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
+      node.append(el('li', { 'aria-current': selected === ticket.id ? 'true' : 'false', onclick: () => open(ticket.id) },
+        el('div', { class: 'row' },
+          el('span', { class: 'title' }, ticket.title),
+          el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)),
+        el('div', { class: 'meta' },
+          el('span', {}, `${ticket.via} · ${ticket.sender}`),
+          el('span', {}, when(ticket.updatedAt)),
+          ticket.workId ? el('span', {}, `${work ? work.name : `工作 ${ticket.workId}`} · 第 ${ticket.workSeq ?? '—'} 位`) : null,
+          ticket.waitsForPerson ? el('span', { class: 'warn' }, '等人回答') : null,
+          ticket.summary ? el('span', {}, ticket.summary.slice(0, 90)) : null)))
+    }
+  }
+
+  // ------------------------------------------------------- one Ticket
+
+  /** What the operator typed but has not sent; a refresh must never eat it. */
+  const draft = { answer: '', note: '', stopReason: '', depUp: '', depId: '', depOn: 'done', work: '' }
+  /** Whether the full report/input history is shown, and which file is open. Both outlive a refresh. */
+  let expanded = false
+  let viewing = null
+  let detailTimer = null
+  /** A stop needs a reason, and a native prompt() is the one dialog this page does not use. */
+  let stopping = false
+  /** Which upstream edge is waiting for a second click, because dropping an edge is not something to do by accident. */
+  let confirmDrop = null
+  /** How much of the event log has been asked for, and what the last answer's newest fact was. Both outlive a refresh. */
+  let eventLimit = 20
+  let eventKey = null
+
+  const stopPolling = () => { if (detailTimer !== null) { clearInterval(detailTimer); detailTimer = null } }
+  const humanSize = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(1)} MB`
+  const clockOf = iso => iso ? new Date(iso).toLocaleTimeString('zh-CN', { hour12: false }) : ''
+  /** atob gives Latin-1; a Chinese report decoded that way is mojibake, so the bytes go through a real decoder. */
+  const decode = base64 => typeof base64 === 'string'
+    ? new TextDecoder().decode(Uint8Array.from(atob(base64), char => char.charCodeAt(0)))
+    : ''
+  const copy = async text => {
+    try { await navigator.clipboard.writeText(text); toast('已复制') } catch { toast('复制不了，请手动选中') }
+  }
+
+  /** Every Work, so a Ticket's 归属 is a name and the classify box has something to offer. Names are a courtesy. */
+  const readWorks = async () => {
+    try {
+      const body = await api('works')
+      worksIndex = new Map((body.works || []).map(work => [work.id, work]))
+    } catch { /* the id still identifies the Work; a failed lookup must not blank the list it labels */ }
+  }
+
+  /** Every Ticket, because an edge points at one the current filter may not show. */
+  const readTicketIndex = async () => {
+    try {
+      const body = await api('tickets?state=all&limit=200')
+      ticketIndex = new Map((body.tickets || []).map(ticket => [ticket.id, ticket]))
+    } catch { /* the edge form falls back to an id typed by hand */ }
+  }
+
+  const open = async id => {
+    selected = id
+    expanded = false; viewing = null; stopping = false; confirmDrop = null
+    eventLimit = 20; eventKey = null; depsCache = null
+    draft.answer = ''; draft.note = ''; draft.stopReason = ''
+    draft.depUp = ''; draft.depId = ''; draft.depOn = 'done'; draft.work = ''
+    if (location.hash !== `#ticket=${id}`) history.replaceState(null, '', `#ticket=${id}`)
+    // The detail view needs two lookups no Ticket record carries: the Work it could be filed into, and the Tickets
+    // an edge could point at. Read before the first render, so the boxes are not empty on arrival.
+    await Promise.all([backend === false ? undefined : readWorks(), readTicketIndex()])
+    await showDetail()
+    renderTickets(currentList)
+  }
+
+  /** Read the selected Ticket and draw it, then keep it fresh while it is still running. */
+  const showDetail = async () => {
+    if (selected === null) return
+    try {
+      const ticket = await api(`tickets/${encodeURIComponent(selected)}`)
+      renderDetail(ticket)
+      void refreshLive(ticket)
+      if (backend !== false) { void refreshDeps(selected); void loadEvents(selected) }
+      stopPolling()
+      // An ended Ticket does not change, so polling it would only spend requests; a live one changes while you watch.
+      if (!ticket.ended) detailTimer = setInterval(() => void pollDetail(), 3000)
+    } catch (error) {
+      stopPolling()
+      $('detail').replaceChildren(el('pre', { class: 'bad' }, error.message))
+    }
+  }
+
+  const pollDetail = async () => {
+    if (selected === null || document.hidden === true || tab !== 'tickets') return
+    try {
+      const ticket = await api(`tickets/${encodeURIComponent(selected)}`)
+      renderDetail(ticket)
+      void refreshLive(ticket)
+      // The dependencies and the log move while a task runs, which is exactly when "why hasn't it started" is asked.
+      if (backend !== false) { void refreshDeps(ticket.id); void loadEvents(ticket.id) }
+      if (ticket.ended) { stopPolling(); void load() }
+    } catch { /* one failed poll is not worth a banner; the next one tries again */ }
+  }
+
+  /** The two things that move while a task runs: what the worker is doing, and what it has produced. */
+  const refreshLive = async ticket => {
+    const id = ticket.id
+    const progress = $('d-progress'), files = $('d-files')
+    if (progress === null || files === null) return
+    try {
+      const live = await api(`tickets/${encodeURIComponent(id)}/progress`)
+      progress.replaceChildren(renderProgress(live))
+    } catch (error) { progress.replaceChildren(el('pre', { class: 'bad' }, error.message)) }
+    try {
+      const body = await api(`tickets/${encodeURIComponent(id)}/files`)
+      files.replaceChildren(...renderFiles(id, body))
+    } catch (error) { files.replaceChildren(el('pre', { class: 'bad' }, error.message)) }
+    renderFileView(id)
+  }
+
+  const renderProgress = live => el('div', {},
+    el('div', { class: 'tools' },
+      el('span', { class: 'chip' }, 'worker Session ', el('b', {}, live.sessionId)),
+      el('button', { class: 'btn small', onclick: () => void copy(live.sessionId) }, '复制 id'),
+      el('span', { class: 'chip' }, live.loaded ? `已载入 · ${live.agentStatus || '—'}` : '未载入（跑完就卸载了）'),
+      live.turn ? el('span', { class: 'chip' }, '第 ', el('b', {}, String(live.turn)), ' 轮') : null,
+      live.lastEventAt ? el('span', { class: 'chip' }, '最后动静 ', el('b', {}, clockOf(live.lastEventAt))) : null),
+    el('p', { class: 'muted', style: 'font-size:12px' },
+      `在 DSH 的会话列表里找「${live.sessionTitle || '—'}」就能看到它干活的全过程；这个宿主没有指向某个会话的网址，所以给不出链接。`),
+    (live.recentTools || []).length === 0 ? null : el('div', { class: 'tools' },
+      el('span', { class: 'muted', style: 'font-size:12px' }, '最近调用：'),
+      ...(live.recentTools || []).map(tool => el('span', { class: 'chip' }, tool.name,
+        tool.at ? el('b', {}, ` ${clockOf(tool.at)}`) : null))),
+    live.lastSaid ? el('div', { class: 'said' }, live.lastSaid) : null,
+    live.assignment && live.assignment.deliveryError
+      ? el('pre', { class: 'bad' }, `投递失败：${live.assignment.deliveryError}`) : null)
+
+  const renderFiles = (id, body) => {
+    if (!body.directory) return [el('span', { class: 'muted' }, '这张 Ticket 还没有目录。')]
+    const out = [el('div', { class: 'muted', style: 'font-size:12px;word-break:break-all' }, body.directory)]
+    const entries = body.files || []
+    if (entries.length === 0) out.push(el('span', { class: 'muted' }, '目录还是空的。'))
+    else {
+      const list = el('ul', { class: 'filelist' })
+      for (const file of entries) {
+        list.append(el('li', {},
+          file.directory
+            ? el('span', { class: 'muted' }, `${file.path}/`)
+            : el('button', { class: 'linklike', onclick: () => { viewing = { path: file.path, text: file.text, loading: true }; renderFileView(id); void openFile(id, file.path) } }, file.path),
+          el('span', { class: 'size' }, file.directory ? '' : `${humanSize(file.size)}${file.text ? '' : ' · 二进制'}`),
+          file.directory ? null : el('button', {
+            class: 'btn small', onclick: () => void downloadFile(id, file.path),
+          }, '下载')))
+      }
+      out.push(list)
+    }
+    if (body.truncated) out.push(el('p', { class: 'muted' }, `至少 ${body.count} 个文件——列表到上限就停了，完整的在上面的目录里。`))
+    return out
+  }
+
+  const openFile = async (id, path) => {
+    try {
+      const body = await api(`tickets/${encodeURIComponent(id)}/file?path=${encodeURIComponent(path)}`)
+      viewing = { path, text: body.text, base64: body.base64, size: body.size, absolute: body.absolute }
+    } catch (error) { viewing = { path, error: error.message } }
+    renderFileView(id)
+  }
+
+  /** Draw the open file. Kept in `viewing` so a refresh re-draws it instead of closing it under the operator. */
+  const renderFileView = id => {
+    const node = $('d-fileview')
+    if (node === null) return
+    node.replaceChildren()
+    if (viewing === null) return
+    const close = el('button', { class: 'btn small', onclick: () => { viewing = null; renderFileView(id) } }, '收起')
+    if (viewing.loading === true) {
+      node.append(el('div', { class: 'tools' }, el('b', {}, viewing.path), close), el('p', { class: 'muted' }, '读取中…'))
+      return
+    }
+    if (viewing.error !== undefined) {
+      node.append(el('div', { class: 'tools' }, el('b', {}, viewing.path), close), el('pre', { class: 'bad' }, viewing.error))
+      return
+    }
+    node.append(el('div', { class: 'tools' }, el('b', {}, viewing.path),
+      el('span', { class: 'muted' }, humanSize(viewing.size || 0)),
+      el('button', { class: 'btn small', onclick: () => void downloadFile(id, viewing.path) }, '下载'), close))
+    if (viewing.text) node.append(el('pre', { class: 'view' }, decode(viewing.base64)))
+    else node.append(el('p', { class: 'muted' }, `不是文本（${viewing.absolute}），用「下载」取。`))
+  }
+
+  const downloadFile = async (id, path) => {
+    try {
+      const body = await api(`tickets/${encodeURIComponent(id)}/file?path=${encodeURIComponent(path)}`)
+      const bytes = Uint8Array.from(atob(body.base64), char => char.charCodeAt(0))
+      const url = URL.createObjectURL(new Blob([bytes]))
+      const link = el('a', { href: url, download: path.split('/').pop() })
+      document.body.append(link); link.click(); link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } catch (error) { toast(error.message) }
+  }
+
+  const renderDetail = ticket => {
+    const node = $('detail')
+    // What the operator was typing and looking at survives the re-render; without this a 3-second poll would eat it.
+    const focus = document.activeElement && document.activeElement.id
+    for (const [key, id] of [['answer', 'd-answer'], ['note', 'd-note'], ['depUp', 'd-dep-up'],
+      ['depId', 'd-dep-id'], ['depOn', 'd-dep-on'], ['work', 'd-work']]) {
+      const field = $(id)
+      if (field !== null) draft[key] = field.value
+    }
+    const stopField = $('d-stop-reason'); if (stopField !== null) draft.stopReason = stopField.value
+    /**
+     * The panes a poll refills are moved instead of rebuilt, so a refresh does not blank what the operator is reading
+     * for as long as the new answer takes to arrive — and the history keeps its own scroll, which is the operator's
+     * place in it.
+     */
+    const panes = {}
+    for (const id of ['d-progress', 'd-files', 'd-fileview', 'd-dep-lists', 'd-events']) {
+      const prior = document.getElementById(id)
+      if (prior !== null && prior.dataset.for === ticket.id) panes[id] = prior
+    }
+    const pane = (id, ...placeholder) => panes[id] ?? el('div', { id, 'data-for': ticket.id }, ...placeholder)
+    // Where the operator is: the page, and inside the history's own scroll box, which a moved node may drop.
+    const scroll = window.scrollY
+    const historyView = document.querySelector('#d-events .view')
+    const historyScroll = historyView === null ? 0 : historyView.scrollTop
+    node.replaceChildren()
+    node.append(el('div', { class: 'row' },
+      el('h2', { style: 'margin:0' }, ticket.title),
+      el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)))
+    const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
+    const rows = [
+      ['Ticket', ticket.id],
+      ['创建', when(ticket.createdAt)], ['更新', when(ticket.updatedAt)],
+      // Which Work this Ticket belongs to, and its place in that Work's history — a Ticket made last month and
+      // filed today is the next in line, and that is a fact about the Work, not about the calendar.
+      ['归属', backend === false ? '读不到：插件比这个页面旧'
+        : ticket.workId ? `${work ? work.name : '工作'}（${ticket.workId.slice(0, 8)}）· 第 ${ticket.workSeq ?? '—'} 位`
+          : '未归入'],
+      ['授权', `${ticket.mandate.sender.id}（${ticket.mandate.sender.kind}）经 ${ticket.mandate.via}，策略版本 ${ticket.mandate.policyVersion}`],
+      ['目录', ticket.directory || '—'],
+      ['来源 Trigger', (ticket.origin && ticket.origin.triggerId) || '—'],
+    ]
+    // Where the answer went back to, for a Ticket whose Trigger carried an address. Rendered only when there is one:
+    // a row reading "nowhere" on every cron and inbox Ticket would be noise, and the tally in 来源 · 聊天 already
+    // explains that case — which is the case that would otherwise be invisible.
+    if (ticket.replyTo) {
+      rows.push(['回复地址', `${ticket.replyTo.kind}/${ticket.replyTo.channel}`
+        + (ticket.replyTo.thread === undefined ? '' : `（thread ${ticket.replyTo.thread}）`)
+        + ' — 报告会被送回这里'])
+    }
+    if (ticket.ended) rows.push(['结束', `${ticket.ended.outcome} · ${when(ticket.ended.at)} · ${ticket.ended.reason || ''}`])
+    node.append(el('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])))
+
+    // Filing is offered on ended Tickets too: putting last month's work into the Work it belonged to is bookkeeping,
+    // not new authorization, and the Engine agrees. Not offered at all when the plugin cannot take the answer —
+    // a button that can only fail is worse than no button, and the banner already says why.
+    const choices = [...worksIndex.values()]
+    if (backend !== false) {
+      const workSelect = el('select', { id: 'd-work', style: 'width:auto' },
+        el('option', { value: '' }, choices.length === 0 ? '还没有工作——先在「工作」页建一个' : '选择一个工作'),
+        ...choices.map(item => el('option', { value: item.id }, item.name)))
+      workSelect.value = draft.work
+      node.append(el('div', { class: 'row', style: 'margin-top:8px' },
+        el('span', { class: 'muted' }, '归入工作'), workSelect,
+        el('button', {
+          class: 'btn small', onclick: () => {
+            const workId = $('d-work').value
+            if (!workId) return toast('先选一个工作')
+            void act(`tickets/${encodeURIComponent(ticket.id)}/work`, { workId })
+          },
+        }, '归入')))
+    }
+
+    node.append(el('h2', { style: 'margin-top:14px' }, '范围'), el('pre', {}, ticket.mandate.scope))
+    const attachments = ticket.attachments || []
+    if (attachments.length > 0) {
+      node.append(el('h2', { style: 'margin-top:14px' }, `随任务带过去的文件（${attachments.length}）`),
+        el('ul', { class: 'filelist' }, ...attachments.map(item => el('li', {},
+          el('span', {}, `attachments/${item.name}`), el('span', { class: 'size' }, item.source)))))
+    }
+    if (ticket.question) node.append(el('h2', { style: 'margin-top:14px' }, '它在问'), el('pre', { class: 'warn' }, ticket.question))
+
+    node.append(el('h2', { style: 'margin-top:14px' }, '此刻'), pane('d-progress', el('span', { class: 'muted' }, '读取中…')))
+    node.append(el('h2', { style: 'margin-top:14px' }, '产出'), pane('d-files', el('span', { class: 'muted' }, '读取中…')))
+
+    // Artifacts are what the worker claimed it made, one entry per normalized path; 产出 is what is on disk now. Both,
+    // because a file that was claimed and is missing is a fact, and so is a file nobody claimed.
+    const artifacts = ticket.artifacts || []
+    node.append(el('h2', { style: 'margin-top:14px' }, `产物（${backend === false ? '—' : artifacts.length}）`),
+      backend === false ? staleLine()
+        : artifacts.length === 0
+          ? el('p', { class: 'muted' }, '还没有登记的产物：报告声称做出的文件会登记在这里，目录里现在有的文件在上面的「产出」里。')
+          : el('ul', { class: 'filelist', id: 'd-artifacts' }, ...artifacts.map(artifact => el('li', {},
+            el('button', {
+              class: 'linklike', onclick: () => {
+                viewing = { path: artifact.path, loading: true }
+                renderFileView(ticket.id)
+                void openFile(ticket.id, artifact.path)
+              },
+            }, artifact.path),
+            el('span', { class: 'muted' }, when(artifact.at)),
+            artifact.note ? el('span', { class: 'muted', style: 'word-break:break-word' }, artifact.note) : null,
+            el('button', { class: 'btn small', onclick: () => void downloadFile(ticket.id, artifact.path) }, '下载')))))
+    node.append(pane('d-fileview'))
+
+    // Dependencies first, then the form that adds one: the operator reads why it is waiting before changing it.
+    const depForm = backend === false ? null : (() => {
+      const depUp = el('select', { id: 'd-dep-up', style: 'width:auto' },
+        el('option', { value: '' }, '选择上游 Ticket'),
+        ...[...ticketIndex.values()].filter(entry => entry.id !== ticket.id)
+          .map(entry => el('option', { value: entry.id }, `${entry.title}（${entry.id.slice(0, 8)}）`)))
+      depUp.value = draft.depUp
+      const depOn = el('select', { id: 'd-dep-on', style: 'width:auto' },
+        el('option', { value: 'done' }, '等它做成（done）'),
+        el('option', { value: 'ended' }, '等它结束（ended，怎么结束都算）'))
+      depOn.value = draft.depOn || 'done'
+      const depId = el('input', { type: 'text', id: 'd-dep-id', placeholder: '或直接填它的 id', value: draft.depId })
+      return el('div', { class: 'stack', style: 'margin-top:10px' },
+        el('label', { for: 'd-dep-up' }, '加一条等待（它要等谁先完成）'),
+        el('div', { class: 'row' }, depUp, depOn),
+        depId,
+        el('div', { class: 'row' },
+          el('button', {
+            class: 'btn', onclick: () => {
+              const upstream = $('d-dep-id').value.trim() || $('d-dep-up').value
+              if (!upstream) return toast('先选一个上游 Ticket，或直接填它的 id')
+              void act(`tickets/${encodeURIComponent(ticket.id)}/dependencies`, { upstream, on: $('d-dep-on').value })
+            },
+          }, '添加依赖')))
+    })()
+    // A fresh node per pane: appending one node twice would move it out of the first.
+    const pending = () => backend === false ? staleLine() : el('span', { class: 'muted' }, '读取中…')
+    node.append(el('h2', { style: 'margin-top:14px' }, '依赖'), pane('d-dep-lists', pending()), depForm)
+    node.append(el('h2', { style: 'margin-top:14px' }, '历史'), pane('d-events', pending()))
+
+    const reports = ticket.reports || []
+    if (reports.length > 0) {
+      const shown = expanded ? reports : reports.slice(-6)
+      node.append(el('h2', { style: 'margin-top:14px' }, `报告（${reports.length}）`))
+      for (const report of shown) {
+        node.append(el('pre', {}, `[${when(report.at)}] ${report.state}: ${report.summary}`
+          + (report.files && report.files.length ? `\n文件: ${report.files.join(', ')}` : '')))
+      }
+    }
+    const inputs = (ticket.inputs || []).filter(input => input.kind !== undefined)
+    if (inputs.length > 0) {
+      const shown = expanded ? inputs : inputs.slice(-6)
+      node.append(el('h2', { style: 'margin-top:14px' }, `输入（${inputs.length}）`))
+      for (const input of shown) {
+        node.append(el('pre', { class: 'muted' },
+          `[${when(input.at)}] ${input.kind}${input.deliveredAt ? ` → 已送达 ${when(input.deliveredAt)}` : ' → 未送达'}: ${input.text}`))
+      }
+    }
+    // Both histories are cut to the newest six, and a cut without a way to see the rest is a lost fact — the button
+    // belongs to whichever of the two is long, not to reports alone.
+    const longest = Math.max(reports.length, inputs.length)
+    if (longest > 6) {
+      node.append(el('button', { class: 'btn small', onclick: () => { expanded = !expanded; renderDetail(ticket) } },
+        expanded ? '只看最近 6 条' : `展开全部 ${longest} 条`))
+    }
+    if (ticket.result) {
+      node.append(el('h2', { style: 'margin-top:14px' }, '结果'), el('pre', {}, ticket.result.summary),
+        (ticket.result.files || []).length === 0 ? null
+          : el('div', { class: 'tools' }, ...(ticket.result.files || []).map(name => el('span', { class: 'chip' }, name))))
+    }
+
+    // Inputs first, then the buttons that act on them: the other way round reads as a button that does nothing.
+    const live = !ticket.ended
+    const answer = el('textarea', { id: 'd-answer', placeholder: '回答它的问题，或给它一个决定', style: 'min-height:70px' })
+    const note = el('textarea', { id: 'd-note', placeholder: '补一个事实：路径、更正、约束（不扩大范围）', style: 'min-height:60px' })
+    answer.value = draft.answer; note.value = draft.note
+    const stopRow = el('div', { class: 'stack hidden', id: 'd-stop' },
+      el('label', { for: 'd-stop-reason' }, '停止原因（会记在 Ticket 上）'),
+      el('input', { type: 'text', id: 'd-stop-reason', value: draft.stopReason || '操作者停止了它' }),
+      el('div', { class: 'row' },
+        el('button', {
+          class: 'btn danger', onclick: () => {
+            const reason = $('d-stop-reason').value
+            stopping = false
+            void act(`tickets/${encodeURIComponent(ticket.id)}/stop`, { reason })
+          },
+        }, '确认停止'),
+        el('button', { class: 'btn', onclick: () => { stopping = false; renderDetail(ticket) } }, '取消')))
+    node.append(el('div', { class: 'stack' },
+      live ? el('label', { for: 'd-answer' }, '回答它') : null, live ? answer : null,
+      live ? el('label', { for: 'd-note' }, '给它补一个事实') : null, live ? note : null,
+      live ? el('div', { class: 'row' },
+        el('button', {
+          class: 'btn', onclick: () => {
+            if (!answer.value.trim()) return toast('先写回答内容')
+            void act(`tickets/${encodeURIComponent(ticket.id)}/answer`, { text: answer.value })
+          },
+        }, '回答'),
+        el('button', {
+          class: 'btn', onclick: () => {
+            if (!note.value.trim()) return toast('先写备注内容')
+            void act(`tickets/${encodeURIComponent(ticket.id)}/note`, { text: note.value })
+          },
+        }, '备注'),
+        el('button', { class: 'btn', onclick: () => void act(`tickets/${encodeURIComponent(ticket.id)}/retry`, {}) }, '重试本轮'),
+        el('button', { class: 'btn danger', onclick: () => { stopping = !stopping; renderDetail(ticket) } }, stopping ? '收回停止' : '停止')) : null,
+      live ? stopRow : null))
+    if (stopping) stopRow.classList.remove('hidden')
+    if (focus !== null && focus !== 'body' && $(focus) !== null) $(focus).focus()
+    if (scroll > 0) window.scrollTo(0, scroll)
+    const historyNow = document.querySelector('#d-events .view')
+    if (historyNow !== null && historyScroll > 0) historyNow.scrollTop = historyScroll
+  }
+
+  const act = async (path, body) => {
+    try { await post(path, body); toast('已提交'); await load(); if (selected) await open(selected) }
+    catch (error) { toast(error.message) }
+  }
+
+  // ------------------------------------------------------- dependencies
+
+  /** One edge, read from the side the operator is standing on: the other end is a Ticket they can open. */
+  const edgeRow = (id, dep, mine) => {
+    const other = mine ? dep.upstream : dep.downstream
+    const entry = ticketIndex.get(other)
+    const buttons = [el('button', { class: 'btn small', onclick: () => { show('tickets'); void open(other) } }, '打开')]
+    if (mine) {
+      buttons.push(confirmDrop === dep.upstream
+        ? el('span', { class: 'row' },
+          el('span', { class: 'muted' }, '不再等它？'),
+          el('button', {
+            class: 'btn small danger', onclick: () => {
+              confirmDrop = null
+              void act(`tickets/${encodeURIComponent(id)}/dependencies/drop`, { upstream: dep.upstream })
+            },
+          }, '确认删除'),
+          el('button', { class: 'btn small', onclick: () => { confirmDrop = null; drawDeps(id) } }, '取消'))
+        : el('button', { class: 'btn small danger', onclick: () => { confirmDrop = dep.upstream; drawDeps(id) } }, '删除'))
+    }
+    return el('li', { style: 'cursor:default' },
+      el('div', { class: 'row' },
+        el('span', { class: 'title' }, entry ? entry.title : '（不在当前列表里）'),
+        el('span', { class: 'chip' }, other),
+        el('span', { class: 'chip' }, dep.on === 'done' ? '等它做成' : '等它结束'),
+        ...buttons),
+      el('div', { class: 'meta' }, el('span', {}, `建于 ${when(dep.createdAt)}`)))
+  }
+
+  /**
+   * The two directions of the graph, labelled as the two directions. `waitsFor` is the answer to "why hasn't this
+   * started" — the server already dropped the edges that have been released, so anything left here is what holds it.
+   */
+  const renderDeps = (id, body) => {
+    const waitsFor = body.waitsFor || []
+    const waitedOnBy = body.waitedOnBy || []
+    return [
+      el('p', { class: waitsFor.length > 0 ? 'warn' : 'muted', style: 'font-weight:600;margin:6px 0 2px' },
+        `它等这些（${waitsFor.length > 0 ? '它们没完成，这张就不会启动' : '没有依赖挡着它'}）`),
+      waitsFor.length === 0
+        ? el('p', { class: 'muted' }, '不等任何 Ticket。')
+        : el('ul', { class: 'list' }, ...waitsFor.map(dep => edgeRow(id, dep, true))),
+      el('p', { class: 'muted', style: 'font-weight:600;margin:10px 0 2px' }, '这些在等它'),
+      waitedOnBy.length === 0
+        ? el('p', { class: 'muted' }, '没有 Ticket 在等它。')
+        : el('ul', { class: 'list' }, ...waitedOnBy.map(dep => edgeRow(id, dep, false))),
+    ]
+  }
+
+  /** The dependencies last read; drawing from the cache is what makes a second-click confirmation immediate. */
+  let depsCache = null
+
+  const drawDeps = id => {
+    const node = $('d-dep-lists')
+    if (node === null || depsCache === null) return
+    node.replaceChildren(...renderDeps(id, depsCache))
+  }
+
+  const refreshDeps = async id => {
+    const node = $('d-dep-lists')
+    if (node === null) return
+    try {
+      depsCache = await api(`tickets/${encodeURIComponent(id)}/dependencies`)
+      node.replaceChildren(...renderDeps(id, depsCache))
+    } catch (error) { node.replaceChildren(el('pre', { class: 'bad' }, error.message)) }
+  }
+
+  // ----------------------------------------------------------- history
+
+  /** `by.kind` in words; `by.id` beside it, because a rule's id and `watchdog` say different things about a rescue. */
+  const BY_KIND = { person: '人', agent: '代理', system: '系统' }
+  /** The facts of one event, as a person reads them rather than as JSON. */
+  const detailLine = detail => detail === undefined ? ''
+    : Object.entries(detail).map(([key, value]) => `${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`).join(' · ')
+
+  const renderEvents = (id, body) => {
+    const node = $('d-events')
+    if (node === null) return
+    const view = el('div', { class: 'view', style: 'max-height:420px' })
+    for (const event of body.events || []) {
+      const detail = detailLine(event.detail)
+      view.append(el('div', { style: 'padding:3px 0;border-bottom:1px dashed var(--line)' },
+        el('div', { class: 'meta', style: 'margin:0' },
+          el('span', {}, `#${event.seq}`),
+          el('span', {}, when(event.at)),
+          el('code', {}, event.type),
+          event.by ? el('span', {}, `${BY_KIND[event.by.kind] ?? event.by.kind}${event.by.id ? ` · ${event.by.id}` : ''}`) : null),
+        detail === '' ? null : el('div', { class: 'muted', style: 'font-size:12px' }, detail)))
+    }
+    node.replaceChildren(view,
+      el('p', { class: 'muted', style: 'font-size:12px' }, `共 ${body.count} 条 · 已显示 ${body.returned} 条 · 最新在前`),
+      // Cutting a log silently is how an operator concludes nothing happened; the rest is one click away.
+      body.returned < body.count
+        ? el('button', { class: 'btn small', onclick: () => { eventLimit += 20; void loadEvents(id) } }, '再读 20 条')
+        : null)
+  }
+
+  const loadEvents = async id => {
+    const node = $('d-events')
+    if (node === null) return
+    try {
+      const body = await api(`tickets/${encodeURIComponent(id)}/events?limit=${eventLimit}`)
+      const key = `${body.count}:${body.returned}:${body.events[0]?.seq ?? ''}`
+      // The log only grows, so the same newest fact and the same counts mean nothing happened since the last read.
+      // Re-drawing anyway would throw away where the operator is in a long history, every three seconds, for nothing.
+      if (key === eventKey) return
+      eventKey = key
+      renderEvents(id, body)
+    } catch (error) { node.replaceChildren(el('pre', { class: 'bad' }, error.message)) }
+  }
+
+  let currentList = []
+  const loadTickets = async () => {
+    // One extra read buys the whole list its Work labels; a row that says "工作 9f3c…" is a row the operator cannot use.
+    const [body, works] = await Promise.all([
+      api(`tickets?state=${$('filter').value}&limit=80`),
+      backend === false ? { works: [] } : api('works').catch(() => ({ works: [] })),
+    ])
+    worksIndex = new Map((works.works || []).map(work => [work.id, work]))
+    currentList = body.tickets
+    renderTickets(currentList)
+    // A Ticket that has left the current filter is still the one the operator is reading, and may still hold words
+    // they have not sent. Keeping the pane as it is costs nothing; blanking it, or re-fetching to explain itself,
+    // would take the draft with it — which is the one thing a refresh must never do.
+  }
+
+  // -------------------------------------------------------------- works
+
+  /** What the operator has drilled into on this page; the five-second refresh has to land them back here. */
+  let worksTab = { project: null, work: null }
+
+  const projectRow = project => el('li', {
+    'aria-current': worksTab.project === project.id ? 'true' : 'false',
+    // Clicking the Project that is already open steps back out of it, which is the only way back to "everything".
+    onclick: () => {
+      worksTab = worksTab.project === project.id ? { project: null, work: null } : { project: project.id, work: null }
+      void loadWorksTab()
+    },
+  },
+  el('div', { class: 'row' }, el('span', { class: 'title' }, project.name)),
+  el('div', { class: 'meta' },
+    el('span', {}, when(project.createdAt)),
+    project.note ? el('span', {}, project.note) : null))
+
+  const workRow = work => el('li', {
+    'aria-current': worksTab.work === work.id ? 'true' : 'false',
+    onclick: () => { worksTab.work = work.id; void loadWorksTab() },
+  },
+  el('div', { class: 'row' }, el('span', { class: 'title' }, work.name)),
+  el('div', { class: 'meta' },
+    work.projectId ? el('span', {}, (projectsIndex.get(work.projectId) || {}).name || work.projectId) : null,
+    el('span', {}, when(work.createdAt)),
+    work.scope ? el('span', {}, work.scope.slice(0, 60)) : null))
+
+  /** A Work's Tickets, in the order they joined it — the queue, which no other ordering in the system expresses. */
+  const ticketRows = tickets => {
+    const list = el('ul', { class: 'list' })
+    if (tickets.length === 0) {
+      list.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
+        '这个工作还没有 Ticket。去「派活」派一个，或在 Ticket 详情页把它「归入工作」。')))
+      return list
+    }
+    const ordered = [...tickets].sort((first, second) => (first.workSeq ?? 0) - (second.workSeq ?? 0))
+    for (const ticket of ordered) {
+      list.append(el('li', { onclick: () => { show('tickets'); void open(ticket.id) } },
+        el('div', { class: 'row' },
+          el('span', { class: 'title' }, `第 ${ticket.workSeq ?? '—'} 位 · ${ticket.title}`),
+          el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)),
+        el('div', { class: 'meta' },
+          el('span', {}, ticket.id),
+          el('span', {}, `更新 ${when(ticket.updatedAt)}`))))
+    }
+    return list
+  }
+
+  const renderProjects = projects => {
+    const node = $('projects'); node.replaceChildren()
+    if (projects.length === 0) {
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
+        '还没有项目。在下面给它起个名字建一个，把同类的工作归到一起。')))
+      return
+    }
+    node.append(...projects.map(projectRow))
+  }
+
+  const renderWorks = works => {
+    const node = $('works'); node.replaceChildren()
+    if (works.length === 0) {
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, worksTab.project === null
+        ? '还没有工作。用下面的表单建一个，再把 Ticket 归进去：它们按归入的先后在这里排队。'
+        : '这个项目下还没有工作。用下面的表单给它建一个。')))
+      return
+    }
+    node.append(...works.map(workRow))
+  }
+
+  const renderWorkDetail = body => {
+    const { work, tickets } = body
+    const rows = [
+      ['工作', work.id],
+      ['项目', work.projectId ? ((projectsIndex.get(work.projectId) || {}).name || work.projectId) : '不属于任何项目'],
+      ['创建', when(work.createdAt)],
+      ['Ticket', `${tickets.length} 张，按归入的先后排`],
+    ]
+    $('work-detail').replaceChildren(
+      el('div', { class: 'row' },
+        el('h2', { style: 'margin:0' }, work.name),
+        work.projectId ? el('button', {
+          class: 'linklike', onclick: () => { worksTab = { project: work.projectId, work: null }; void loadWorksTab() },
+        }, '← 看它的项目') : null),
+      el('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])),
+      el('h2', { style: 'margin-top:14px' }, '范围'),
+      work.scope ? el('pre', {}, work.scope) : el('p', { class: 'muted' }, '没有写范围：这条流水里的 Ticket 各自用自己的范围。'),
+      el('h2', { style: 'margin-top:14px' }, '备注'),
+      work.note ? el('pre', {}, work.note) : el('p', { class: 'muted' }, '没有备注。'),
+      el('h2', { style: 'margin-top:14px' }, `Ticket（${tickets.length}）`),
+      ticketRows(tickets))
+  }
+
+  const renderProjectDetail = body => {
+    const { project, works } = body
+    $('work-detail').replaceChildren(
+      el('div', { class: 'row' },
+        el('h2', { style: 'margin:0' }, project.name),
+        el('button', { class: 'linklike', onclick: () => { worksTab = { project: null, work: null }; void loadWorksTab() } }, '← 看全部')),
+      el('dl', { class: 'kv' },
+        ...[['项目', project.id], ['创建', when(project.createdAt)]]
+          .flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])),
+      el('h2', { style: 'margin-top:14px' }, '备注'),
+      project.note ? el('pre', {}, project.note) : el('p', { class: 'muted' }, '没有备注。'),
+      el('h2', { style: 'margin-top:14px' }, `工作（${works.length}）`),
+      works.length === 0
+        ? el('p', { class: 'muted' }, '这个项目下还没有工作。用左边的表单建一个，项目已经选好了。')
+        : el('ul', { class: 'list' }, ...works.map(workRow)))
+  }
+
+  const loadWorksTab = async () => {
+    // Asking a plugin that has no such route would answer 404 on this tab and on every five-second refresh after it.
+    if (backend === false) {
+      $('works-hint').textContent = '这一页要等宿主的插件重载之后才有数据。'
+      $('projects').replaceChildren(el('li', { style: 'cursor:default' }, staleLine()))
+      $('works').replaceChildren(el('li', { style: 'cursor:default' }, staleLine()))
+      $('work-detail').replaceChildren(el('h2', {}, '项目 / 工作'), staleLine())
+      return
+    }
+    $('works-hint').textContent = worksTab.project === null
+      ? '工作是一条同类活的流水：Ticket 归进去之后按归入的先后排队。'
+      : '只看这个项目里的工作；点项目那行可以退回全部。'
+    try {
+      const asks = [api('projects'), api('works')]
+      if (worksTab.project !== null) asks.push(api(`works?project=${encodeURIComponent(worksTab.project)}`))
+      const [projects, all, filtered] = await Promise.all(asks)
+      worksIndex = new Map((all.works || []).map(work => [work.id, work]))
+      projectsIndex = new Map((projects.projects || []).map(project => [project.id, project]))
+      renderProjects(projects.projects || [])
+      renderWorks(filtered === undefined ? all.works || [] : filtered.works || [])
+      // The Project choices are re-read with the list, and the operator's pick survives that.
+      const select = $('wk-project')
+      const picked = select.value
+      select.replaceChildren(el('option', { value: '' }, '不属于任何项目'),
+        ...(projects.projects || []).map(project => el('option', { value: project.id }, project.name)))
+      if ([...select.options].some(option => option.value === picked)) select.value = picked
+      else if (worksTab.project !== null && [...select.options].some(option => option.value === worksTab.project)) {
+        // Opening a Project is also a way of saying "the next Work belongs here".
+        select.value = worksTab.project
+      }
+      if (worksTab.work !== null) renderWorkDetail(await api(`works/${encodeURIComponent(worksTab.work)}`))
+      else if (worksTab.project !== null) renderProjectDetail(await api(`projects/${encodeURIComponent(worksTab.project)}`))
+      else $('work-detail').replaceChildren(el('span', { class: 'muted' }, '选择左边一个项目或工作；里面的 Ticket 点一下就回到 Ticket 页打开。'))
+    } catch (error) { shout(error) }
+  }
+
+  // ------------------------------------------------------------ decisions
+
+  const loadDecisions = async () => {
+    const body = await api('decisions?limit=80')
+    const node = $('decisions'); node.replaceChildren()
+    if (body.decisions.length === 0) { node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '还没有判定。'))) ; return }
+    for (const decision of body.decisions) {
+      const cls = decision.outcome === 'accept' ? 'ok' : decision.outcome === 'observe' ? 'warn' : 'bad'
+      const dismissed = String(decision.detail || '').includes('[dismissed]')
+      node.append(el('li', { onclick: () => { if (decision.ticketId) { show('tickets'); void open(decision.ticketId) } } },
+        el('div', { class: 'row' }, el('span', { class: `stage ${cls === 'ok' ? 'done' : cls}` }, decision.outcome),
+          el('span', { class: 'title' }, decision.title || decision.triggerId),
+          // A refusal the operator has looked at is marked, so the list stays a list of things to look at.
+          decision.outcome === 'accept' ? null : el('button', { class: 'btn', style: 'margin-left:auto',
+            onclick: async event => {
+              event.stopPropagation()
+              if (dismissed) return toast('这条已经忽略过了')
+              try { await post(`decisions/${encodeURIComponent(decision.id)}/dismiss`, {}); toast('已忽略'); await loadDecisions() }
+              catch (error) { toast(error.message) }
+            } }, dismissed ? '已忽略' : '忽略')),
+        el('div', { class: 'meta' }, el('span', {}, when(decision.at)), el('span', {}, decision.reasonText || decision.reason),
+          decision.detail ? el('span', {}, decision.detail) : null)))
+    }
+  }
+
+  // -------------------------------------------------------------- sources
+
+  const table = (head, rows) => el('table', { class: 'plain' },
+    el('thead', {}, el('tr', {}, ...head.map(title => el('th', {}, title)))),
+    el('tbody', {}, ...rows.map(cells => el('tr', {}, ...cells.map(cell => el('td', {}, cell))))))
+
+  const loadSources = async () => {
+    // Drawn first, from the state this refresh already carries: it needs no request of its own, so a slow or failing
+    // read of the queue below must not be able to delay or blank the section an operator came here for.
+    renderChat()
+    // Same, and for the same reason: the counts come from `state`, so the number an operator watches here is never
+    // held up behind — or blanked by — the queue read below. The DETAIL is a request of its own, and is not made here.
+    renderLost()
+    const node = $('sources'); node.replaceChildren()
+    const rows = Object.entries(state?.sources || {}).map(([name, status]) => {
+      const counts = Object.entries(status.counts || {}).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${v}`).join(' · ')
+      return [
+        name,
+        el('span', { class: status.ok ? 'ok' : 'bad' }, status.ok ? '正常' : '异常'),
+        status.detail || '—',
+        status.next ? when(new Date(status.next).toISOString()) : '—',
+        status.lastTriggerAt ? when(status.lastTriggerAt) : '还没有',
+        counts || '—',
+      ]
+    })
+    node.append(rows.length === 0
+      ? el('span', { class: 'muted' }, '没有来源。')
+      : table(['来源', '状态', '详情', '下次', '最近触发', '计数'], rows))
+
+    const health = $('health-detail'); health.replaceChildren()
+    const entries = Object.entries(state?.health || {})
+    health.append(entries.length === 0 ? el('span', { class: 'muted' }, '没有健康记录。') : table(['部件', '状态', '详情', '时间'],
+      entries.map(([name, entry]) => [
+        name, el('span', { class: entry.ok ? 'ok' : 'bad' }, entry.ok ? '正常' : '有问题'),
+        entry.detail || '—', entry.at ? when(entry.at) : '—',
+      ])))
+
+    const effects = $('effects'); effects.replaceChildren()
+    try {
+      const counts = (await api('effects')).counts || {}
+      const kinds = Object.entries(counts)
+      effects.append(kinds.length === 0
+        ? el('span', { class: 'ok' }, '队列是空的：没有等着做的事。')
+        : table(['要做的事', '件数'], kinds.map(([kind, count]) => [kind, String(count)])))
+      // A queue that never empties is the one failure this page has to say out loud.
+      $('effects-note').textContent = kinds.length === 0 ? ''
+        : '队列非空不一定是问题：启动、投递、通知都排队做，失败了会按 15s、30s、60s 退避重试，最多 5 次；一直不清零才是问题，原因在上面的健康表里。'
+    } catch (error) { effects.replaceChildren(el('pre', { class: 'bad' }, error.message)) }
+  }
+
+  // --------------------------------------------------------- lost requests
+
+  /**
+   * The detail from `GET lost`, and how much of it was asked for.
+   *
+   * Kept between renders because the COUNT is read every five seconds on `state` while the detail is not: it is up to
+   * twenty payloads of a thousand untrusted characters each, and a refresh that re-fetched that every five seconds
+   * would be paying, forever, for text nobody is re-reading. So the number that has to be watched rides the poll the
+   * page already makes, and the text is fetched when a person goes to look.
+   */
+  let lostDetail = null
+  /** Why the detail is missing, when it is: drawn as a sentence, never as an empty box. */
+  let lostError = null
+  let lostLimit = 50
+  let lostReadAt = null
+  /** The total as this page first saw it, which is what "is that number growing" grows from. */
+  let lostFirst = null
+  /** What was last drawn, so a refresh that changes nothing leaves an operator's reading position alone. */
+  let lostDrawn = null
+
+  const lostTotal = () => {
+    const lost = (((state || {}).counts) || {}).lost
+    return lost === undefined ? null : (lost.rows ?? 0) + (lost.payloads ?? 0)
+  }
+
+  const loadLost = async () => {
+    // Gated on the state key rather than probed with a request of its own: a bundle that does not answer `counts.lost`
+    // does not have this route, and asking it would be a 404 the operator can do nothing about.
+    if (lostStale) return
+    try {
+      lostDetail = await api(`lost?limit=${lostLimit}`)
+      lostReadAt = new Date().toISOString()
+      lostError = null
+    } catch (error) {
+      // Held and drawn rather than swallowed: the counts above came from `state` and are still true, and the reason the
+      // list under them is missing has to be a sentence — `shout` keeps it out of a toast when it is the one failure
+      // this page has already explained.
+      lostError = error.message
+      shout(error)
+    }
+    renderLost(true)
+  }
+
+  const renderLost = force => {
+    const node = $('lost')
+    if (node === null) return
+    const counts = (((state || {}).counts) || {}).lost
+    const total = lostTotal()
+    /**
+     * Redrawn only when something this section says has changed, because it sits on a page the five-second refresh
+     * redraws: rebuilding it under an operator who is reading a raw payload costs them their selection and their
+     * scroll for nothing. Everything in it is either a count or an ABSOLUTE timestamp, so nothing goes stale by being
+     * left alone — a relative "3 分钟前" would, and that is why there is none.
+     */
+    const signature = [lostStale, total, counts === undefined ? '' : counts.rows, lostLimit, lostError,
+      lostDetail === null ? '-' : `${lostDetail.total}:${lostDetail.shown}:${(lostDetail.payloads || []).length}`, lostReadAt].join('|')
+    if (force !== true && signature === lostDrawn) return
+    lostDrawn = signature
+    node.replaceChildren()
+
+    if (counts === undefined) {
+      // Its own explanation and its own retry, rather than a line pointing at the banner above: that banner speaks for
+      // a host too old to have `projects`, and a host new enough to have them can still be too old for this. A line
+      // pointing at a banner that is not there sends the operator looking for nothing.
+      node.append(
+        el('p', { class: 'warn' }, '宿主的插件比这个页面旧：GET state 里没有 counts.lost，这一节读不到丢失的请求。'),
+        el('p', { class: 'muted' }, '这不代表「没有丢失的请求」，它代表「读不到」。页面每次请求都从磁盘读，插件不是：'
+          + '重新载入插件（或重启宿主）之后点「重试」，不用刷新整页。'),
+        el('div', { class: 'row' }, el('button', {
+          class: 'btn small',
+          onclick: async () => { await load(true); await loadLost() },
+        }, '重试')))
+      return
+    }
+
+    // ---- 1. how many, on the two paths, kept apart because they are two different facts
+    node.append(el('div', { class: 'tools' },
+      el('span', { class: 'chip' }, '被认出然后丢掉的行 ', el('b', { class: counts.rows > 0 ? 'bad' : '' }, String(counts.rows))),
+      el('span', { class: 'chip' }, '读不出的载荷 ', el('b', { class: counts.payloads > 0 ? 'bad' : '' }, String(counts.payloads)))))
+    if (total === 0) {
+      // Reachable only because `counts` arrived: a section that could not be read is the branch above, and a detail that
+      // failed is the branch below. Saying "nothing was lost" from either of those is the one mistake this card must
+      // not make, and it is the shape this panel has been caught by repeatedly.
+      node.append(el('p', { class: 'ok' }, '没有丢失的请求：队列没有彻底放弃过任何一条。'))
+      return
+    }
+    if (lostFirst === null) lostFirst = total
+    node.append(total > lostFirst
+      ? el('p', { class: 'warn', style: 'font-weight:600' },
+        `这个数字在涨：这个页面打开时是 ${lostFirst} 条，现在是 ${total} 条（多了 ${total - lostFirst} 条）。`
+        + '一条坏载荷只加一条；每触发一次就加一条，说明有个生产者在持续失败——去看上面的健康表和「排期」。')
+      : el('p', { class: 'muted' }, `自这个页面打开以来这个数字没有增加（一直是 ${total} 条）。`
+        + '刷新整页会重置这个比较，所以它说的是这次会话，不是历史；下面每条的时间才是历史。'))
+
+    // ---- 2. which
+    if (lostError !== null) {
+      node.append(el('p', { class: 'warn' }, '上面两个数字来自 GET state，它们是真的；明细这一次没读到：'),
+        el('pre', { class: 'bad' }, lostError),
+        el('div', { class: 'row' }, el('button', { class: 'btn small', onclick: () => void loadLost() }, '重新读取')))
+      return
+    }
+    if (lostDetail === null) {
+      node.append(el('p', { class: 'muted' }, '明细还没读：明细不跟着 5 秒刷新走，它是最多 20 段、每段上千字的原文。'),
+        el('div', { class: 'row' }, el('button', { class: 'btn small', onclick: () => void loadLost() }, '读取明细')))
+      return
+    }
+
+    const rows = lostDetail.rows || []
+    node.append(el('h2', { style: 'margin-top:14px' }, `被认出、然后被丢掉的请求（${lostDetail.total}）`),
+      el('p', { class: 'muted' }, '这些载荷是一个读得懂的 Trigger：失败发生在 receive 内部，不在载荷的形状上。'
+        + '所以每一行都有它自己的 id、来源和种类，也算进那个来源的进气计数（上面的「来源」表里显示为 lost）。'))
+    node.append(rows.length === 0
+      ? el('p', { class: 'muted' }, '这一类没有：丢掉的都是下面那种读不出的载荷。')
+      : table(['时间', '请求', '来源', '种类', 'id', '放弃的原因', '队列 key'], rows.map(row => [
+        when(row.at), row.title || '（载荷里没有标题）', row.source, row.kind, row.id,
+        el('pre', { class: 'bad' }, row.error), row.effectKey,
+      ])))
+    if (lostDetail.shown < lostDetail.total) {
+      // A truncation with a way to see the rest, which is what the events list does: the number that is missing is the
+      // one an operator needs in order to know anything is missing.
+      node.append(el('p', { class: 'muted' }, `一共 ${lostDetail.total} 条，这里显示最新的 ${lostDetail.shown} 条（最新的在前）。`),
+        el('div', { class: 'row' }, el('button', {
+          class: 'btn small',
+          onclick: () => { lostLimit += 50; void loadLost() },
+        }, `再读 50 条（现在读到 ${lostLimit} 条为止）`)))
+    }
+
+    const payloads = lostDetail.payloads || []
+    const bounds = lostDetail.bounds || {}
+    node.append(el('h2', { style: 'margin-top:14px' }, `读不出的载荷（${payloads.length}）`),
+      el('p', { class: 'muted' }, '这些连「它是一个 Trigger」都读不出来：没有 id、没有来源、没有种类。'
+        + '所以它们不在 triggers 表里，也不在任何来源的进气计数里——把它们塞进那张表，就会在专门回答「工作从哪来」的'
+        + `地方凭空多出一个叫 lost 的来源。留下的只有原文（最多 ${bounds.keep ?? '?'} 条、每条最多 ${bounds.chars ?? '?'} 字），`
+        + '因为原文是唯一还剩的东西。'))
+    node.append(payloads.length === 0
+      ? el('p', { class: 'muted' }, '这一类没有：丢掉的请求都被认出来了，都在上面那张表里。')
+      : el('ul', { class: 'list' }, ...payloads.map(entry => {
+        const payload = entry.payload ?? ''
+        return el('li', { style: 'cursor:default' },
+          el('div', { class: 'meta' },
+            el('span', {}, when(entry.at)),
+            el('span', {}, `队列 key ${entry.effectKey}`),
+            // A cut says it was cut AND says there is no way to see the rest: the Store kept a thousand characters and
+            // nothing anywhere has the remainder, so offering one would be a control that cannot succeed.
+            entry.chars > payload.length
+              ? el('span', { class: 'warn' }, `原文 ${entry.chars} 字，只存下前 ${payload.length} 字——剩下的没有存下来，任何地方都读不到`)
+              : el('span', { class: 'ok' }, `原文 ${entry.chars} 字，完整`)),
+          el('pre', { class: 'bad' }, entry.error),
+          /**
+           * The text itself, as a text node — never `innerHTML`, never `escapeText`.
+           *
+           * This is the most untrusted string on the page: bytes of unknown provenance from a producer that could not
+           * even write a parseable record, which is exactly the case where markup, a control byte and half a multi-byte
+           * character are likely. `el()` makes it a text node, so it is inert by construction; running it through
+           * `escapeText` first would show the operator `&amp;` where the producer wrote `&`, and would cut the evidence
+           * they came here to read (S36 — six call sites were deliberately de-escaped for exactly that).
+           */
+          el('pre', {}, payload))
+      })))
+
+    /**
+     * The counts are read every five seconds and the detail is not, so the detail can be behind — and a table that
+     * quietly showed fewer losses than the number above it would be a list that looks complete. Announced instead,
+     * which makes the lag the sharpest growth signal on the page: it names what arrived since the operator last looked.
+     */
+    const behind = (counts.rows - (lostDetail.total ?? 0)) + (counts.payloads - payloads.length)
+    if (behind > 0) {
+      node.append(el('p', { class: 'warn' }, `这份明细比上面的数字旧：读到它之后又丢了 ${behind} 条。点「重新读取」。`))
+    }
+
+    node.append(el('p', { class: 'muted', style: 'margin-top:10px' },
+      `明细读取于 ${when(lostReadAt)}。上面两个数字跟着 5 秒刷新走，明细不走：修好原因之后点一次「重新读取」。`),
+    el('div', { class: 'row' }, el('button', { class: 'btn small', onclick: () => void loadLost() }, '重新读取')))
+  }
+
+  // ------------------------------------------------------------------ chat
+
+  /**
+   * What the operator has typed into the mapping form but not saved. This section is redrawn by the five-second
+   * refresh while they are sitting on it, and a refresh that eats a half-written mapping is the same defect this page
+   * has already been fixed for three times (an answer, a stop reason, a schedule form).
+   */
+  const identityDraft = { platform: '', actor: '', note: '' }
+  /**
+   * Which mapping is waiting for a second click, one per irreversible thing it could do.
+   *
+   * All three change who may originate work, so none of them is a one-click act — and a native confirm() is the one
+   * dialog this page never opens. `confirmUnsafe` is the sharpest of the three: mapping an id to a name that is not on
+   * `allowedSenders` lets the held message reach the gate, the gate refuses it, the Trigger is stored as `ignored`, and
+   * since a Trigger id is a pure function of the message it can never be re-evaluated — the message is burned by the
+   * very act that was supposed to admit it (S9 / N4, the reason holding exists).
+   */
+  let confirmMap = null
+  let confirmUnsafe = null
+  let confirmUnmap = null
+
+  const chatBlock = () => (((state.settings || {}).sources || {}).chat) || {}
+
+  /**
+   * Empty the mapping form in the draft AND in the page.
+   *
+   * Both, because a re-render reads the inputs back into the draft before it rebuilds them — which is what keeps a
+   * half-written mapping alive across the five-second refresh, and would also resurrect a form that was only cleared
+   * in the draft.
+   */
+  const clearIdentityForm = () => {
+    identityDraft.platform = ''; identityDraft.actor = ''; identityDraft.note = ''
+    for (const id of ['c-platform', 'c-actor', 'c-note']) {
+      const field = $(id)
+      if (field !== null) field.value = ''
+    }
+  }
+
+  /** The whole settings document with one map replaced, so no other key — channels included — silently disappears. */
+  const saveIdentities = identities => {
+    const settings = state.settings
+    return put('settings', {
+      ...settings,
+      sources: { ...settings.sources, chat: { ...settings.sources.chat, identities } },
+    })
+  }
+
+  /**
+   * Save the map, then ask the system to look at the directories again at once.
+   *
+   * The second half is the point of the first: a held message is admitted by the NEXT scan, and a panel that saved a
+   * mapping and then kept showing the message as waiting would leave the operator guessing whether holding works at
+   * all. `POST pass` polls every Source and waits for the scan, so what comes back on screen is the answer rather than
+   * a promise. A pass that cannot be asked for is not worth an error of its own: the Source polls on its own timer, so
+   * the mapping takes effect either way, only up to one poll interval later.
+   */
+  const saveMap = async (identities, message) => {
+    try { await saveIdentities(identities) } catch (error) { return toast(error.message) }
+    confirmMap = null; confirmUnsafe = null; confirmUnmap = null
+    clearIdentityForm()
+    toast(message)
+    try { await post('pass', {}) } catch { /* the Source's own poll does it anyway */ }
+    await load()
+  }
+
+  /**
+   * Whether the gate will accept the name in the form, answered while it is being typed.
+   *
+   * Live rather than after the save, because getting it wrong is the one irreversible mistake available here: mapping an
+   * id to a name that is not on `allowedSenders` lets the message through to the gate, the gate refuses it, and the
+   * Trigger is stored as `ignored` — and since a Trigger id is a pure function of the message, that message can never be
+   * re-evaluated, not even after the operator fixes the name (S9 / N4, the reason holding exists).
+   */
+  const actorCheck = () => {
+    const node = $('c-actor-check')
+    if (node === null) return
+    const actor = (($('c-actor') || {}).value ?? '').trim()
+    const policy = ((state || {}).chat || {}).policy || {}
+    const allowed = policy.allowedSenders || []
+    node.replaceChildren()
+    if (actor === '') {
+      node.append(el('span', { class: 'muted' }, '门禁比对的就是这个名字，不是平台 id。'))
+      return
+    }
+    if (!allowed.includes(actor)) {
+      node.append(el('span', { class: 'warn' }, `「${actor}」不在 allowedSenders（${allowed.length === 0 ? '名单是空的' : allowed.join('、')}）里：`
+        + '映射之后这条消息会被门禁拒绝，而拒绝是不可逆的——Trigger 存成 ignored，同一条消息再也不会被重新评估。'
+        + '先把这个名字加进 allowedSenders（「设置」页），或者映射到一个已经在名单里的名字。'))
+      return
+    }
+    node.append(el('span', { class: 'ok' }, `「${actor}」在 allowedSenders 里，门禁会受理它的请求。`),
+      policy.acceptMode === 'observe'
+        ? el('span', { class: 'warn' }, ' 但受理模式是 observe：只记录，不执行。')
+        : null)
+  }
+
+  /** Add or replace one mapping. Replacing asks for a second click first, and says what it costs. */
+  const mapIdentity = async commit => {
+    const platform = ((($('c-platform') || {}).value ?? '')).trim()
+    const actor = ((($('c-actor') || {}).value ?? '')).trim()
+    const note = ((($('c-note') || {}).value ?? '')).trim()
+    if (platform === '') return toast('先写平台 id')
+    if (actor === '') return toast('先写它在 myagent 里的名字')
+    const identities = { ...(chatBlock().identities || {}) }
+    const prior = identities[platform]
+    if (commit !== true) {
+      if (prior !== undefined) { confirmMap = platform; renderChat(); return }
+      // The gate compares the NAME, and refusing there is the one outcome holding was invented to avoid: it stores the
+      // Trigger as `ignored`, and the message can never be re-evaluated. So a name that is not on the list is asked
+      // about twice, with the consequence written out — the live line above the button is easy to read past.
+      const allowed = (((state.chat || {}).policy || {}).allowedSenders) || []
+      if (!allowed.includes(actor)) { confirmUnsafe = platform; renderChat(); return }
+    }
+    // An empty note is left out rather than stored empty: the schema is strict, and "no note" is not an empty one.
+    identities[platform] = { actor, ...(note === '' ? {} : { note }) }
+    await saveMap(identities, prior === undefined
+      ? `已加入映射：${platform} → ${actor}（已请来源立刻再看一次目录）`
+      : `已改映射：${platform} → ${actor}（授权版本已移动，在跑的 Ticket 会被告知）`)
+  }
+
+  /** Take one mapping away: the same document minus that one key, so every other identity and setting stays put. */
+  const unmapIdentity = platform => {
+    const identities = { ...(chatBlock().identities || {}) }
+    delete identities[platform]
+    void saveMap(identities, `已删除映射：${platform}（它此后的消息会被留住，不会被受理）`)
+  }
+
+  /**
+   * The chat Source's whole surface: what it is doing, what it is holding, who it accepts, and where answers went.
+   *
+   * Everything here comes from the one `state` read the page already makes — the Source's own status, its health line,
+   * the settings block, and the server's composed `chat` view — so this section asks for nothing and cannot be left
+   * behind by a route the host does not have.
+   */
+  const renderChat = () => {
+    const node = $('chat')
+    if (node === null) return
+    // Read what the operator has typed BEFORE rebuilding, so the refresh hands it back to them.
+    for (const [key, id] of [['platform', 'c-platform'], ['actor', 'c-actor'], ['note', 'c-note']]) {
+      const field = $(id)
+      if (field !== null) identityDraft[key] = field.value
+    }
+    node.replaceChildren()
+    if (chatStale) { node.append(staleLine()); return }
+    const chat = state.chat || {}
+    const policy = chat.policy || {}
+    const waiting = chat.waiting || {}
+    const channels = chatBlock().channels || []
+    const identities = chatBlock().identities || {}
+    const status = (state.sources || {}).chat
+    const allowed = policy.allowedSenders || []
+
+    node.append(el('div', { class: 'tools' },
+      el('span', { class: 'chip' }, '来源 ', status === undefined
+        ? el('b', { class: 'bad' }, '没在跑')
+        : el('b', { class: status.ok ? 'ok' : 'bad' }, status.ok ? '正常' : '异常')),
+      el('span', { class: 'chip' }, policy.enabled ? '已启用' : el('b', { class: 'warn' }, '已停用')),
+      policy.paused ? el('span', { class: 'chip' }, el('b', { class: 'warn' }, '已暂停')) : null,
+      policy.deny ? el('span', { class: 'chip' }, el('b', { class: 'warn' }, '已拒绝（deny）')) : null,
+      el('span', { class: 'chip' }, `受理模式 ${policy.acceptMode === 'observe' ? 'observe（只记录，不执行）' : policy.acceptMode || '—'}`),
+      el('span', { class: 'chip' }, `allowedSenders ${allowed.length === 0 ? '（名单是空的：谁都不能发起工作）' : allowed.join('、')}`),
+      status && status.detail ? el('span', { class: 'chip' }, status.detail) : null,
+      status && status.lastTriggerAt ? el('span', { class: 'chip' }, `最近触发 ${when(status.lastTriggerAt)}`) : null))
+
+    // ---- the waiting queue: the security-critical block, and the one with an action attached
+    node.append(el('h2', { style: 'margin-top:14px' }, '未映射的消息'))
+    const ids = waiting.ids || []
+    const more = waiting.more ?? 0
+    const count = waiting.count
+    const lines = []
+    /** A message that asserted no identity at all, which the Source names by its path: the fix is the file, not the map. */
+    const noFrom = id => /\(no from\)$/.test(id)
+    if (status === undefined) {
+      lines.push(el('p', { class: 'warn' }, '这个来源现在没在跑，所以读不到它留住了什么——这不表示「队列为空」。'
+        + '原因在上面的健康表里（source:chat）。'))
+    } else if (policy.enabled !== true) {
+      lines.push(el('p', { class: 'warn' }, '来源已停用：频道目录里的消息不会被读取，也不会被受理。'
+        + '停用不是清空——重新启用之后，下一次扫描就会读到还留在目录里的那些。'),
+      el('p', { class: 'muted' }, '所以这里没有任何等待中的消息，也不表示「没有消息」，它表示「没人在看」。'))
+    } else if (policy.paused === true || policy.deny === true) {
+      lines.push(el('p', { class: 'warn' }, policy.paused === true
+        ? '来源已暂停：消息留在原处，不产生 Trigger 也不产生判定；解除之后，被留住的那条和下一条一起被受理。'
+        : '来源被拒绝（deny）：与暂停同一种效果——产出侧什么都不产生，消息留在原处，解除后一起受理。'),
+      count > 0 ? el('p', { class: 'muted' }, `最后一次扫描留住了 ${count} 条；暂停期间不再重读目录，所以这个数不会自己更新。`) : null)
+    } else if (channels.length === 0) {
+      lines.push(el('p', { class: 'warn' }, '还没有频道：这个来源没有在读任何目录，所以不会有消息进来——这不表示「队列是空的」。'),
+        el('p', { class: 'muted' }, '加一个频道：「设置」页 sources.chat.channels，每条要 id（小写字母开头，只能含小写字母、数字和短横线）'
+          + '和 directory（消息所在的目录；回复写进它的 out/）。'))
+    } else if (channels.every(channel => channel.enabled === false)) {
+      lines.push(el('p', { class: 'warn' }, `${channels.length} 个频道全都停用着：这个来源没有在读任何目录，所以这里也不会有等待中的消息。`))
+    } else if (count === undefined) {
+      lines.push(el('p', { class: 'muted' }, '这个来源还没扫描过（刚启动）：等一次扫描，或者点顶部的「立即执行一轮」。'))
+    } else if (count > 0 || ids.length > 0) {
+      lines.push(el('p', { class: 'warn', style: 'font-weight:600' },
+        `${count > 0 ? count : ids.length + more} 条消息在等，来自未映射的身份：它们没有变成 Trigger，也没有被拒绝，文件还在频道目录里。`),
+      el('ul', { class: 'list' }, ...ids.map(id => el('li', { style: 'cursor:default' },
+        el('div', { class: 'row' },
+          // A text node: this string can be a file name from the channel directory, which is not the operator's text.
+          el('span', { class: 'title' }, id),
+          noFrom(id)
+            ? el('span', { class: 'muted' }, '这条消息没有 from 字段：改法是编辑那个文件给它加上 from:，不是加映射。')
+            : el('button', {
+              class: 'btn small', style: 'margin-left:auto', onclick: () => {
+                // The operator's next action, one click from the id that needs it. Written into the field rather than
+                // into the draft: the re-render below reads the inputs back into the draft first, so a prefill that
+                // only touched the draft would be overwritten by the empty field it was about to fill.
+                const field = $('c-platform')
+                if (field !== null) field.value = id
+                renderChat()
+                // Land on the field that still needs an answer, not on the one just filled in for them.
+                const name = $('c-actor')
+                if (name !== null) name.focus()
+              },
+            }, '映射它'))))),
+      more > 0 ? el('p', { class: 'muted' }, `还有 ${more} 个身份没有列出来（健康板一行只点名前 5 个）。剩下的就在频道目录里：`
+        + '一个顶层 *.md 文件就是一条消息，文件名即消息的身份；把它们加进下面的映射表，下一次扫描会连它们一起受理。') : null,
+      el('p', { class: 'muted' }, '留住而不是拒绝，是为了让「加映射」这个动作还来得及：Trigger 的 id 是消息身份的纯函数，'
+        + '一旦被门禁拒绝存成 ignored，同一条消息就永远不会被重新评估。'))
+    } else {
+      lines.push(el('p', { class: 'ok' }, '没有等着的消息：目录里每条消息的发送者都在下面的映射表里。'))
+    }
+    // The Source's own words when it has a problem: a channel directory that others can write to (which means anybody
+    // there can submit work as any mapped identity) and a directory that cannot be read are both facts about this
+    // section that no number above expresses, and both are the server's sentence rather than this page's guess at it.
+    const entry = (state.health || {})['source:chat']
+    if (entry && entry.ok === false && entry.detail) lines.push(el('pre', { class: 'bad' }, entry.detail))
+    node.append(...lines)
+
+    // ---- channels
+    node.append(el('h2', { style: 'margin-top:14px' }, `频道（${channels.length}）`),
+      channels.length === 0
+        ? el('p', { class: 'muted' }, '还没有频道：「设置」页 sources.chat.channels 里加一条。')
+        : table(['频道', '目录', '状态'], channels.map(channel => [
+          channel.id, channel.directory,
+          channel.enabled === false
+            ? el('span', { class: 'warn' }, '停用（不读，也不回）')
+            : el('span', { class: 'ok' }, '启用'),
+        ])))
+
+    // ---- the identity map: platform id → the name it speaks as → why it is on the table
+    const mapped = Object.entries(identities)
+    node.append(el('h2', { style: 'margin-top:14px' }, `身份映射（${mapped.length}）`),
+      el('p', { class: 'muted' }, '这张表回答「你是谁」，不回答「你可以做什么」：授权范围仍然只来自设置与排期，'
+        + '一个已映射但不是操作者的发送者不能给自己写 scope。改这张表会移动 policyVersion，并通知在跑的 Ticket。'),
+      mapped.length === 0
+        ? el('p', { class: 'warn' }, '映射表是空的：任何平台 id 的消息都会被留住，一条也不会被受理。')
+        : table(['平台 id', '发起者', '备注', '门禁', ''], mapped.map(([platform, item]) => {
+          const actor = (item || {}).actor
+          return [
+            platform, actor, (item || {}).note || '—',
+            allowed.includes(actor)
+              ? el('span', { class: 'ok' }, '会受理')
+              : el('span', { class: 'warn' }, '不在 allowedSenders 里：会被拒绝，而且不可逆'),
+            confirmUnmap === platform
+              ? el('span', { class: 'row' },
+                el('button', { class: 'btn small danger', onclick: () => unmapIdentity(platform) }, '确认删除'),
+                el('button', { class: 'btn small', onclick: () => { confirmUnmap = null; renderChat() } }, '取消'))
+              : el('button', { class: 'btn small', onclick: () => { confirmUnmap = platform; renderChat() } }, '删除'),
+          ]
+        })))
+
+    // ---- the form that acts on the queue above
+    node.append(el('div', { class: 'stack', style: 'margin-top:10px' },
+      el('label', { for: 'c-platform' }, '平台 id（消息文件里的 from，或者桥给出的账号 id）'),
+      el('input', { type: 'text', id: 'c-platform', maxlength: '120', placeholder: 'U01ABCDEF', value: identityDraft.platform }),
+      el('label', { for: 'c-actor' }, '它在 myagent 里的名字'),
+      el('input', {
+        type: 'text', id: 'c-actor', maxlength: '120', placeholder: 'alice', value: identityDraft.actor,
+        oninput: () => actorCheck(),
+      }),
+      el('p', { class: 'muted', id: 'c-actor-check', style: 'margin:4px 0' }),
+      el('label', { for: 'c-note' }, '备注（可留空；写给下一个改这张表的人，它不授权任何东西）'),
+      el('input', { type: 'text', id: 'c-note', maxlength: '500', placeholder: '操作者本人', value: identityDraft.note }),
+      confirmMap === null && confirmUnsafe === null
+        ? el('div', { class: 'row' }, el('button', { class: 'btn', onclick: () => void mapIdentity(false) }, '加入映射表'))
+        : el('div', { class: 'row' },
+          el('span', { class: confirmUnsafe === null ? 'muted' : 'warn' }, confirmUnsafe === null
+            ? `${confirmMap} 已经映射到 ${((identities[confirmMap] || {}).actor)}。改掉它会移动授权版本，并通知在跑的 Ticket。`
+            : `「${identityDraft.actor.trim()}」不在 allowedSenders 里：保存之后，这个身份的消息会被门禁拒绝，`
+              + '而拒绝是不可逆的——Trigger 存成 ignored，同一条消息再也不会被重新评估。仍要保存吗？'),
+          el('button', { class: 'btn danger', onclick: () => void mapIdentity(true) },
+            confirmUnsafe === null ? '确认改这条' : '确认加入'),
+          el('button', {
+            class: 'btn', onclick: () => { confirmMap = null; confirmUnsafe = null; renderChat() },
+          }, '取消'))))
+    actorCheck()
+
+    // ---- the reply tally, with the number that would otherwise be uninterpretable explained
+    const sends = (state.counts || {}).sends || {}
+    node.append(el('h2', { style: 'margin-top:14px' }, '回复计数'),
+      el('div', { class: 'tools' },
+        el('span', { class: 'chip' }, '已排队 ', el('b', {}, String(sends.queued ?? 0))),
+        el('span', { class: 'chip' }, '无处可发 ', el('b', {}, String(sends.nowhere ?? 0)))),
+      el('p', { class: 'muted' }, '「已排队」是报告被送回请求来的那个平台：走效果队列，所以失败会重试、会去重、有记录。'),
+      el('p', { class: 'muted' }, '「无处可发」不是错误。它数的是值得告诉某人、但它的 Trigger 没有带回复地址的报告——'
+        + '排期和收件目录来的活就是这样，它们本来就没有回去的路。规则是「什么都不做也必须看得见」，'
+        + '所以这里给一个数，而不是一片安静；某一张 Ticket 到底有没有地址，在它自己详情页的「回复地址」行里。'),
+      el('p', { class: 'muted' }, `两个数都是本次挂载以来的（挂载于 ${when(state.mountedAt)}），插件重载会归零。`
+        + '已经发出去的回复在频道目录的 out/ 里；重试到彻底放弃的那一句在 Ticket 目录的 REPLY-UNDELIVERED.md 里，'
+        + '并在它自己的历史里留下一条 reply_lost。'))
+  }
+
+  // ------------------------------------------------------------- settings
+
+  const loadSettings = () => {
+    $('settings').value = JSON.stringify(state?.settings ?? {}, null, 2)
+    $('settings-revision').textContent = `修订 ${state?.settingsRevision ?? '—'}`
+    $('settings-error').textContent = ''
+  }
+
+  const loadPrompts = async () => {
+    try {
+      const body = await api('prompts')
+      $('p-worker').value = body.roles.find(r => r.role === 'worker')?.override ?? ''
+      $('p-orchestrator').value = body.roles.find(r => r.role === 'orchestrator')?.override ?? ''
+      $('p-worker').placeholder = body.roles.find(r => r.role === 'worker')?.base ?? ''
+      $('p-orchestrator').placeholder = body.roles.find(r => r.role === 'orchestrator')?.base ?? ''
+      const pinned = body.roles.filter(r => r.pinsBase).map(r => r.role)
+      $('prompt-revision').textContent = `修订 ${body.revision} · 上限 ${body.maxChars} 字符 · 留空即用内置文本`
+        + (pinned.length > 0 ? ` · 注意：${pinned.join('/')} 的覆盖与内置文本相同，会把该角色钉在当前版本上` : '')
+      $('prompt-error').textContent = ''
+    } catch (error) { $('prompt-error').textContent = error.message }
+  }
+
+  // ----------------------------------------------------------------- load
+
+  // ------------------------------------------------------------- schedules
+
+  const WEEKDAYS = [[1, '一'], [2, '二'], [3, '三'], [4, '四'], [5, '五'], [6, '六'], [7, '日']]
+  let schedules = []
+  let editingId = null
+  /** Which schedule is waiting for a second click, because a native confirm() is the one dialog this page avoids. */
+  let confirmDelete = null
+
+  /** Only the fields the schema accepts: the server's view carries `next` and `describe`, and it is strict. */
+  const toRecord = view => ({
+    id: view.id, name: view.name ?? '', enabled: view.enabled !== false,
+    prompt: view.prompt, scope: view.scope ?? '', timing: view.timing,
+  })
+
+  const renderTimingFields = timing => {
+    const kind = $('s-kind').value
+    const node = $('s-fields'); node.replaceChildren()
+    const zone = timing?.timeZone ?? ''
+    const zoneField = id => [
+      el('label', { for: id }, '时区（留空用宿主的时区）'),
+      el('input', { type: 'text', id, value: zone, placeholder: 'Asia/Shanghai' }),
+    ]
+    if (kind === 'every') {
+      node.append(el('label', { for: 's-seconds' }, '间隔秒数（60 到 2592000）'),
+        el('input', { type: 'number', id: 's-seconds', min: '60', max: String(30 * 86400), value: String(timing?.seconds ?? 3600) }))
+    } else if (kind === 'cron') {
+      node.append(el('label', { for: 's-expr' }, 'cron 表达式（5 段：分 时 日 月 周）'),
+        el('input', { type: 'text', id: 's-expr', value: timing?.expression ?? '0 9 * * 1-5', placeholder: '*/15 9-17 * * 1-5' }),
+        ...zoneField('s-zone-c'))
+    } else {
+      const time = (timing && timing.kind !== 'every' && timing.kind !== 'cron') ? timing.time : '09:00'
+      node.append(el('label', { for: 's-time' }, '时刻（HH:mm 或 HH:mm:ss）'),
+        el('input', { type: 'text', id: 's-time', value: time, placeholder: '09:00' }))
+      if (kind === 'weekly') {
+        const days = timing?.weekdays ?? [1, 2, 3, 4, 5]
+        node.append(el('label', {}, '星期（ISO：1 是周一，7 是周日）'), el('div', { class: 'row' },
+          ...WEEKDAYS.map(([n, label]) => el('label', { class: 'row' },
+            el('input', { type: 'checkbox', class: 's-day', value: String(n), ...(days.includes(n) ? { checked: '' } : {}) }), label))))
+      }
+      node.append(...zoneField('s-zone'))
+    }
+  }
+
+  const collectTiming = () => {
+    const kind = $('s-kind').value
+    if (kind === 'every') return { kind: 'every', seconds: Number($('s-seconds').value) }
+    if (kind === 'cron') {
+      const zone = $('s-zone-c').value.trim()
+      return { kind: 'cron', expression: $('s-expr').value.trim(), ...(zone ? { timeZone: zone } : {}) }
+    }
+    const zone = $('s-zone').value.trim()
+    const time = $('s-time').value.trim()
+    if (kind === 'weekly') {
+      const weekdays = [...document.querySelectorAll('.s-day')].filter(box => box.checked).map(box => Number(box.value))
+      return { kind: 'weekly', time, weekdays, ...(zone ? { timeZone: zone } : {}) }
+    }
+    return { kind: 'daily', time, ...(zone ? { timeZone: zone } : {}) }
+  }
+
+  const collectSchedule = () => ({
+    id: $('s-id').value.trim(), name: $('s-name').value.trim(), enabled: $('s-enabled').checked,
+    prompt: $('s-prompt').value, scope: $('s-scope').value.trim(), timing: collectTiming(),
+  })
+
+  const openEditor = schedule => {
+    editingId = schedule?.id ?? null
+    $('sched-editor-title').textContent = schedule ? `编辑排期：${schedule.id}` : '新建排期'
+    $('s-id').value = schedule?.id ?? `sched-${schedules.length + 1}`
+    // The id is where the next run is remembered; changing it would silently recompute when this schedule fires.
+    $('s-id').readOnly = Boolean(schedule)
+    $('s-id-hint').textContent = schedule
+      ? '编辑时不可改：它是「下次触发」记在哪个键下的依据，改了这条排期会从头重算。'
+      : '小写字母开头，只能含小写字母、数字和短横线，最多 40 字符。'
+    $('s-name').value = schedule?.name ?? ''
+    $('s-enabled').checked = schedule ? schedule.enabled !== false : true
+    $('s-prompt').value = schedule?.prompt ?? ''
+    $('s-scope').value = schedule?.scope ?? ''
+    $('s-kind').value = schedule?.timing?.kind ?? 'daily'
+    renderTimingFields(schedule?.timing)
+    $('sched-preview-out').textContent = ''
+    $('sched-error').textContent = ''
+    $('sched-editor').classList.remove('hidden')
+  }
+
+  /** Ask the server what this draft would do; it validates it and names the next few runs. */
+  const preview = async () => {
+    const body = await post('schedules/preview', collectSchedule())
+    const runs = (body.next || []).map(iso => `  ${when(iso)}`)
+    $('sched-preview-out').textContent = [
+      body.describe ?? '', ...(runs.length > 0 ? ['接下来三次：', ...runs] : []), body.warning ?? '',
+    ].filter(Boolean).join('\n')
+    return body
+  }
+
+  const saveSchedules = async list => {
+    const settings = state.settings
+    await put('settings', {
+      ...settings,
+      sources: { ...settings.sources, cron: { ...settings.sources.cron, schedules: list } },
+    })
+  }
+
+  const renderSchedules = () => {
+    const node = $('schedules'); node.replaceChildren()
+    if (schedules.length === 0) {
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '还没有排期。')))
+      return
+    }
+    for (const schedule of schedules) {
+      const act = async (label, work) => {
+        try { await work(); toast(label); await loadSchedules() } catch (error) { toast(error.message) }
+      }
+      node.append(el('li', {},
+        el('div', { class: 'row' },
+          el('span', { class: `stage ${schedule.enabled ? 'running' : ''}` }, schedule.enabled ? '启用' : '停用'),
+          el('span', { class: 'title' }, schedule.name || schedule.id),
+          el('span', { style: 'margin-left:auto' },
+            el('button', { class: 'btn', onclick: () => openEditor(schedule) }, '编辑'), ' ',
+            el('button', {
+              class: 'btn', onclick: () => act(schedule.enabled ? '已停用' : '已启用', () => saveSchedules(
+                schedules.map(item => item.id === schedule.id ? { ...toRecord(item), enabled: !schedule.enabled } : toRecord(item)))),
+            }, schedule.enabled ? '停用' : '启用'), ' ',
+        confirmDelete === schedule.id
+          ? el('span', { class: 'row' },
+            el('span', { class: 'muted' }, `删除 ${schedule.id}？它已记的下次触发会一起丢掉。`),
+            el('button', {
+              class: 'btn danger', onclick: () => {
+                confirmDelete = null
+                void act('已删除', () => saveSchedules(schedules.filter(item => item.id !== schedule.id).map(toRecord)))
+              },
+            }, '确认删除'),
+            el('button', { class: 'btn', onclick: () => { confirmDelete = null; renderSchedules() } }, '取消'))
+          : el('button', { class: 'btn', onclick: () => { confirmDelete = schedule.id; renderSchedules() } }, '删除'))),
+        el('div', { class: 'meta' },
+          el('span', {}, schedule.describe ?? ''),
+          el('span', {}, schedule.enabled ? `下次 ${when(schedule.next)}` : '不会触发'),
+          el('span', {}, `标识 ${schedule.id}`))))
+    }
+  }
+
+  const loadSchedules = async () => {
+    const body = await api('schedules')
+    schedules = body.schedules || []
+    $('sched-zone').textContent = body.zone || '—'
+    $('sched-last').textContent = body.lastTriggerAt ? when(body.lastTriggerAt) : '还没有'
+    renderSchedules()
+  }
+
+  /**
+   * Read the whole system and draw the page the operator is on.
+   * @param reprobe also ask again whether this host's plugin has the routes this page uses — which is what the 刷新
+   *   button and the banner's 重试 are for. The five-second refresh does not: a probe on a timer is the polling the
+   *   degraded state is supposed to stop.
+   */
+  const load = async (reprobe = false) => {
+    if (reprobe) await probeBackend()
+    try {
+      state = await api('state')
+      // The chat section's capability probe IS this read: one key present or absent, no route of its own to refuse.
+      // Asked of `policy` rather than of `chat`, so "this plugin has no chat view" and "it sent one this page cannot
+      // read" give the same answer — and a view that arrived without a policy can never be rendered as a Source that
+      // is switched off, which is a claim about the deployment rather than about the page.
+      chatStale = (state.chat || {}).policy === undefined
+      // Asked of the key rather than of a route, so an older bundle degrades by this being absent and the section
+      // below never asks it for `GET lost` at all — no request, no 404, and no toast on every five-second refresh.
+      lostStale = (state.counts || {}).lost === undefined
+      renderBanner()
+      renderHeader()
+      if (tab === 'tickets') await loadTickets()
+      else if (tab === 'works') await loadWorksTab()
+      else if (tab === 'decisions') await loadDecisions()
+      else if (tab === 'sources') await loadSources()
+      else if (tab === 'schedules') await loadSchedules()
+    } catch (error) { shout(error) }
+  }
+
+  const show = name => {
+    tab = name
+    for (const button of $('tabs').children) button.setAttribute('aria-selected', String(button.dataset.tab === name))
+    for (const panel of ['tickets', 'works', 'new', 'decisions', 'sources', 'schedules', 'settings', 'prompts']) {
+      $(`tab-${panel}`).classList.toggle('hidden', panel !== name)
+    }
+    if (name === 'settings') loadSettings()
+    if (name === 'prompts') void loadPrompts()
+    // Entering the page reads the lost detail once. The five-second refresh does not: it redraws the COUNTS from the
+    // `state` it already fetched, and re-reading twenty payloads of raw text nobody is re-reading is not a refresh.
+    if (name === 'sources') { void loadSources(); void loadLost() }
+    if (name === 'schedules') void loadSchedules()
+    if (name === 'decisions') void loadDecisions()
+    if (name === 'works') void loadWorksTab()
+    if (name === 'tickets') { void loadTickets(); if (selected !== null) void showDetail() }
+    // Polling a Ticket nobody is looking at only spends requests.
+    if (name !== 'tickets') stopPolling()
+  }
+
+  /** A notification opens the panel at `#ticket=<id>`; that has to land on the Ticket, not on the default tab. */
+  const applyHash = () => {
+    const match = /^#ticket=(.+)$/.exec(location.hash)
+    if (match === null) return
+    const id = decodeURIComponent(match[1])
+    show('tickets')
+    if (id !== selected) void open(id)
+  }
+
+  for (const button of $('tabs').children) button.addEventListener('click', () => show(button.dataset.tab))
+  $('filter').addEventListener('change', () => void loadTickets())
+  $('refresh').addEventListener('click', () => void load(true))
+  // The banner's one button: the operator reloaded the plugin, and the page finds out without a full reload.
+  $('v2-retry').addEventListener('click', async () => {
+    await load(true)
+    if (tab === 'tickets' && selected !== null) await showDetail()
+    else if (tab === 'works') await loadWorksTab()
+  })
+  // The chat banner's own button. `load(true)` re-probes the routes AND re-reads `state`, which is where this section's
+  // capability lives, so one click answers both generations of "the plugin was reloaded".
+  $('chat-retry').addEventListener('click', async () => { await load(true) })
+  $('pause').addEventListener('click', async () => {
+    const next = { ...state.settings, paused: !state.settings.paused }
+    try { await put('settings', next); toast(next.paused ? '已暂停：不再启动新的工作' : '已继续'); await load() }
+    catch (error) { toast(error.message) }
+  })
+  $('pass').addEventListener('click', async () => { try { await post('pass', {}); toast('已看过来源并跑了一轮'); await load() } catch (error) { toast(error.message) } })
+
+  // ------------------------------------------------------------ works forms
+  $('pj-create').addEventListener('click', async () => {
+    const name = $('pj-name').value.trim()
+    if (!name) return toast('先写项目名')
+    const note = $('pj-note').value.trim()
+    try {
+      // An empty optional field is left out: the schema is strict, and "no note" is not the same as an empty one.
+      const project = await post('projects', { name, ...(note ? { note } : {}) })
+      toast(`项目已建：${project.name}`)
+      $('pj-name').value = ''; $('pj-note').value = ''
+      worksTab = { project: worksTab.project, work: null }
+      await loadWorksTab()
+    } catch (error) { toast(error.message) }
+  })
+
+  $('wk-create').addEventListener('click', async () => {
+    const name = $('wk-name').value.trim()
+    if (!name) return toast('先写工作名')
+    const projectId = $('wk-project').value
+    const scope = $('wk-scope').value.trim()
+    const note = $('wk-note').value.trim()
+    try {
+      const work = await post('works', {
+        name, ...(projectId ? { projectId } : {}), ...(scope ? { scope } : {}), ...(note ? { note } : {}),
+      })
+      toast(`工作已建：${work.name}`)
+      $('wk-name').value = ''; $('wk-scope').value = ''; $('wk-note').value = ''
+      // Opening what was just made is the point of making it: its Tickets are the next thing to look at.
+      worksTab = { project: work.projectId ?? worksTab.project, work: work.id }
+      await loadWorksTab()
+    } catch (error) { toast(error.message) }
+  })
+
+  // ------------------------------------------------------- schedule editor
+  $('sched-new').addEventListener('click', () => openEditor(null))
+  $('s-kind').addEventListener('change', () => renderTimingFields(null))
+  $('sched-preview').addEventListener('click', async () => {
+    $('sched-error').textContent = ''
+    try { await preview() } catch (error) { $('sched-error').textContent = error.message }
+  })
+  $('sched-cancel').addEventListener('click', () => $('sched-editor').classList.add('hidden'))
+  $('sched-save').addEventListener('click', async () => {
+    $('sched-error').textContent = ''
+    const draft = toRecord(collectSchedule())
+    try {
+      // The server validates it and shows the runs before anything is stored.
+      await preview()
+      const known = schedules.map(toRecord)
+      const at = known.findIndex(item => item.id === (editingId ?? draft.id))
+      const next = at === -1 ? [...known, draft] : known.map((item, index) => (index === at ? draft : item))
+      await saveSchedules(next)
+      toast(editingId === null ? '排期已新建' : '排期已保存')
+      $('sched-editor').classList.add('hidden')
+      await load()
+    } catch (error) { $('sched-error').textContent = error.message }
+  })
+
+  $('create-main').addEventListener('click', async () => {
+    try { const body = await post('main-session', {}); toast(`主 Session 已创建：${body.sessionId}`); await load() }
+    catch (error) { toast(error.message) }
+  })
+  const attachmentPaths = () => [...$('n-attachments').querySelectorAll('input')]
+    .map(input => input.value.trim()).filter(path => path !== '')
+
+  const addAttachmentField = value => {
+    const input = el('input', { type: 'text', placeholder: '/绝对/路径/文件.csv', value: value || '' })
+    $('n-attachments').append(el('div', { class: 'row' }, input,
+      el('button', { class: 'btn small', onclick: event => event.target.closest('.row').remove() }, '去掉')))
+  }
+
+  $('add-attachment').addEventListener('click', () => addAttachmentField(''))
+
+  /** The shipped recipes, so a request is edited rather than written from nothing. */
+  const loadRecipes = async () => {
+    try {
+      const recipes = await api('recipes')
+      const select = $('n-recipe')
+      select.replaceChildren(el('option', { value: '' }, '空白开始'))
+      recipes.forEach((recipe, index) => {
+        select.append(el('option', { value: String(index) },
+          recipe.kind === 'request' ? `请求：${recipe.title || recipe.name}` : `排期：${recipe.name}`))
+      })
+      select.onchange = () => {
+        const recipe = recipes[Number(select.value)]
+        if (recipe === undefined) return
+        if (recipe.kind === 'request') {
+          $('n-title').value = recipe.title || ''
+          $('n-request').value = recipe.text || ''
+          $('n-scope').value = recipe.scope || ''
+          $('n-recipe-hint').textContent = `已填入 ${recipe.name}，改完再创建。`
+        } else {
+          // A settings recipe is a schedule, not a request: the schedule editor is where it belongs.
+          show('schedules')
+          void loadSchedules().then(() => openEditor({ ...recipe.schedule, id: `${recipe.schedule.id}-copy` }))
+          $('n-recipe-hint').textContent = `已把 ${recipe.name} 的排期带进「排期」页的编辑器（标识加了 -copy，不会和原来那条撞）。`
+        }
+      }
+    } catch { /* no recipes shipped is not an error worth a banner */ }
+  }
+
+  $('create').addEventListener('click', async () => {
+    const title = $('n-title').value.trim(), request = $('n-request').value.trim(), scope = $('n-scope').value.trim()
+    if (!title || !request) return toast('标题和要做的事都得填')
+    const attachments = attachmentPaths()
+    try {
+      const body = await post('tickets', {
+        title, request, ...(scope ? { scope } : {}), ...(attachments.length > 0 ? { attachments } : {}),
+      })
+      $('new-result').textContent = JSON.stringify(body, null, 2)
+      $('n-title').value = ''; $('n-request').value = ''; $('n-scope').value = ''
+      $('n-attachments').replaceChildren()
+      toast(body.ticketId ? `已开 Ticket ${body.ticketId.slice(0, 8)}` : `已记录：${body.disposition}（${body.reason || ''}）`)
+      await load()
+      if (body.ticketId !== undefined) { show('tickets'); await open(body.ticketId) }
+    } catch (error) { $('new-result').textContent = error.message }
+  })
+  $('save-settings').addEventListener('click', async () => {
+    let value
+    try { value = JSON.parse($('settings').value) } catch (error) { $('settings-error').textContent = `不是合法 JSON：${error.message}`; return }
+    // Saving settings is the one write that can be followed by the host having been reloaded, so it re-probes too.
+    try { await put('settings', value); $('settings-error').textContent = ''; toast('设置已保存并生效'); await load(true); loadSettings() }
+    catch (error) { $('settings-error').textContent = error.message }
+  })
+  $('reload-settings').addEventListener('click', loadSettings)
+  $('save-prompts').addEventListener('click', async () => {
+    try {
+      const body = await put('prompts', { worker: $('p-worker').value, orchestrator: $('p-orchestrator').value })
+      $('prompt-error').textContent = ''; toast(`提示词已保存（修订 ${body.revision}）`); await loadPrompts()
+    } catch (error) { $('prompt-error').textContent = error.message }
+  })
+  $('reset-prompts').addEventListener('click', async () => {
+    try { await put('prompts', { worker: '', orchestrator: '' }); toast('已恢复内置提示词'); await loadPrompts() }
+    catch (error) { $('prompt-error').textContent = error.message }
+  })
+
+  void loadRecipes()
+  /**
+   * The probe goes first. Asking a plugin for routes it does not have and only then working out that it is older is
+   * what turns one missing feature into a pane full of 404s and a toast on every refresh.
+   */
+  const boot = async () => {
+    await probeBackend()
+    await load()
+    applyHash()
+  }
+  void boot()
+  window.addEventListener('hashchange', applyHash)
+  document.addEventListener('visibilitychange', () => {
+    // Coming back to a tab that was hidden re-reads at once, rather than showing what was there when it was left.
+    if (document.hidden !== true && tab === 'tickets' && selected !== null) void showDetail()
+  })
+  setInterval(() => { if (tab !== 'settings' && tab !== 'prompts' && tab !== 'new') void load() }, 5000)
+})()
+</script>
+</body>
+</html>

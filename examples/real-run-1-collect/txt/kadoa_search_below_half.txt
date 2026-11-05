@@ -1,0 +1,108 @@
+
+
+Skip to content
+
+NewInsight: Anthropic: second-most revenue per employee, only loss
+
+29 Oct 2026
+
+For the first time ever, Google Search is less than 50% of Alphabet's revenue
+
+In the quarter to Sep 2026, Google Search made $63.4B of Alphabet's $128B in revenue, or 49.7%. It is the first quarter below half since Alphabet began reporting Search revenue separately. Search revenue still grew 12% year over year; Google Cloud's grew 103%. In the 31 quarters before, Search was between 52.8% and 62.0%. Over the same years, Google Cloud grew from 4.4% of revenue to 24.1%.
+
+The quarter to Sep 2026
+
+Search share49.7%↓Down 5.6 pts year over year
+
+Search revenue$63.4B↑Up 12% year over year
+
+Everything else$64.2B↑Up 40% year over year
+
+Google Cloud$30.7B↑Up 103% year over year
+
+Search and Google Cloud, share of Alphabet's revenue
+
+Each quarter's revenue from Google Search & other and from Google Cloud, as a share of Alphabet's total revenue. Everything else is YouTube ads, subscriptions and devices, Google Network and Other Bets.
+
+Dec 2018 to Sep 2026
+
+| Quarter | Search | Google Cloud | YouTube ads | Subscriptions, platforms and devices | Google Network | Other Bets | Total revenue | Search share | Google Cloud share
+
+| Sep 2026 | $63.4B | $30.7B | $11.2B | $14.3B | $7.5B | $372M | $128B | 49.7% | 24.1%
+
+| Jun 2026 | $63.3B | $24.8B | $11.1B | $12.9B | $7.3B | $382M | $120B | 52.8% | 20.7%
+
+| Mar 2026 | $60.4B | $20.0B | $9.9B | $12.4B | $7.0B | $411M | $110B | 55.0% | 18.2%
+
+| Dec 2025 | $63.1B | $17.7B | $11.4B | $13.6B | $7.8B | $370M | $114B | 55.4% | 15.5%
+
+| Sep 2025 | $56.6B | $15.2B | $10.3B | $12.9B | $7.4B | $344M | $102B | 55.3% | 14.8%
+
+| Jun 2025 | $54.2B | $13.6B | $9.8B | $11.2B | $7.4B | $373M | $96.4B | 56.2% | 14.1%
+
+| Mar 2025 | $50.7B | $12.3B | $8.9B | $10.4B | $7.3B | $450M | $90.2B | 56.2% | 13.6%
+
+| Dec 2024 | $54.0B | $12.0B | $10.5B | $11.6B | $8.0B | $400M | $96.5B | 56.0% | 12.4%
+
+| Sep 2024 | $49.4B | $11.4B | $8.9B | $10.7B | $7.5B | $388M | $88.3B | 55.9% | 12.9%
+
+| Jun 2024 | $48.5B | $10.3B | $8.7B | $9.3B | $7.4B | $365M | $84.7B | 57.2% | 12.2%
+
+| Mar 2024 | $46.2B | $9.6B | $8.1B | $8.7B | $7.4B | $495M | $80.5B | 57.3% | 11.9%
+
+| Dec 2023 | $48.0B | $9.2B | $9.2B | $10.8B | $8.3B | $657M | $86.3B | 55.6% | 10.6%
+
+| Sep 2023 | $44.0B | $8.4B | $8.0B | $8.3B | $7.7B | $297M | $76.7B | 57.4% | 11.0%
+
+| Jun 2023 | $42.6B | $8.0B | $7.7B | $8.1B | $7.8B | $285M | $74.6B | 57.1% | 10.8%
+
+| Mar 2023 | $40.4B | $7.5B | $6.7B | $7.4B | $7.5B | $288M | $69.8B | 57.8% | 10.7%
+
+| Dec 2022 | $42.6B | $7.3B | $8.0B | $8.8B | $8.5B | $226M | $76.0B | 56.0% | 9.6%
+
+| Sep 2022 | $39.5B | $6.9B | $7.1B | $6.9B | $7.9B | $209M | $69.1B | 57.2% | 9.9%
+
+| Jun 2022 | $40.7B | $6.3B | $7.3B | $6.6B | $8.3B | $193M | $69.7B | 58.4% | 9.0%
+
+| Mar 2022 | $39.6B | $5.8B | $6.9B | $6.8B | $8.2B | $440M | $68.0B | 58.3% | 8.6%
+
+| Dec 2021 | $43.3B | $5.5B | $8.6B | $8.2B | $9.3B | $181M | $75.3B | 57.5% | 7.4%
+
+| Sep 2021 | $37.9B | $5.0B | $7.2B | $6.8B | $8.0B | $182M | $65.1B | 58.2% | 7.7%
+
+| Jun 2021 | $35.8B | $4.6B | $7.0B | $6.6B | $7.6B | $192M | $61.9B | 57.9% | 7.5%
+
+| Mar 2021 | $31.9B | $4.0B | $6.0B | $6.5B | $6.8B | $198M | $55.3B | 57.6% | 7.3%
+
+| Dec 2020 | $31.9B | $3.8B | $6.9B | $6.7B | $7.4B | $196M | $56.9B | 56.1% | 6.7%
+
+| Sep 2020 | $26.3B | $3.4B | $5.0B | $5.5B | $5.7B | $178M | $46.2B | 57.0% | 7.5%
+
+| Jun 2020 | $21.3B | $3.0B | $3.8B | $5.1B | $4.7B | $148M | $38.3B | 55.7% | 7.9%
+
+| Mar 2020 | $24.5B | $2.8B | $4.0B | $4.4B | $5.2B | $135M | $41.2B | 59.5% | 6.7%
+
+| Dec 2019 | $27.2B | $2.6B | $4.7B | $5.3B | $6.0B | $172M | $46.1B | 59.0% | 5.7%
+
+| Sep 2019 | $24.7B | $2.4B | $3.8B | $4.0B | $5.3B | $155M | $40.5B | 61.1% | 5.9%
+
+| Jun 2019 | $23.6B | $2.1B | $3.6B | $4.1B | $5.2B | $162M | $38.9B | 60.7% | 5.4%
+
+| Mar 2019 | $22.5B | $1.8B | $3.0B | $3.6B | $5.0B | $170M | $36.3B | 62.0% | 5.0%
+
+| Dec 2018 | $23.3B | $1.7B | $3.6B | $4.8B | $5.6B | $154M | $39.3B | 59.4% | 4.4%
+
+Alphabet's revenue by segment, each quarter
+
+In billions of dollars. Search's share fell while its revenue kept growing.
+
+Dec 2018 to Sep 2026
+
+About the data
+
+Search is the line Alphabet reports as "Google Search & other": ads on Google Search and on other Google properties such as Gmail, Maps and Google Play. YouTube ads, the ad network, subscriptions, devices, Google Cloud and Other Bets are counted in everything else.
+
+Search revenue still grew: the share fell because the rest of Alphabet grew faster.
+
+More insights
+

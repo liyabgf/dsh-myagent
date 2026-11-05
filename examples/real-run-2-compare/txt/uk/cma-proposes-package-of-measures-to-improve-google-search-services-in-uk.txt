@@ -1,0 +1,101 @@
+Cookies on GOV.UK
+
+We use some essential cookies to make this website work.
+
+We'd like to set additional cookies to understand how you use GOV.UK, remember your settings and improve government services.
+
+We also use cookies set by other sites to help us deliver content from their services.
+
+You have accepted additional cookies. You can change your cookie settings at any time.
+
+You have rejected additional cookies. You can change your cookie settings at any time.
+
+View cookies
+
+Skip to main content
+
+Press release
+
+CMA proposes package of measures to improve Google search services in UK
+
+Measures are first to be consulted on under the digital markets competition regime.
+
+From:
+
+Competition and Markets Authority
+
+Published:
+28 January 2026
+
+The Competition and Markets Authority (CMA) has today proposed a package of measures to help businesses and consumers make active and informed choices when using Google's search services in the UK. This includes making sure publishers, including news and other content producers, get a fairer deal over how their content is used in Google's AI Overviews.
+
+Google Search accounts for more than 90% of all general search queries in the UK – with millions of people relying on it as a key gateway to the internet. More than 200,000 firms in the UK collectively spent more than £10 billion on Google's search advertising last year. These services matter to the UK's economy and society – so it is vital that competition works well.
+
+In October 2025, the CMA designated Google with strategic market status (SMS) in search services. The designation allows the CMA to introduce targeted rules or ‘conduct requirements' for Google's business if proportionate for the purposes of fair dealing, open choices or trust and transparency.
+
+To provide certainty for stakeholders, the CMA published possible measures it might take in a roadmap in June 2025. The CMA is now consulting on the proposed conduct requirements below. The measures have been designed to support innovation and growth, ensuring people benefit from a high-quality digital experience:
+
+Publisher controls: Making sure content publishers get a fairer deal by giving them more choice and transparency over how their content is used in Google's AI Overviews. Publishers will be able to opt out of their content being used to power AI features such as AI Overviews or to train AI models outside of Google search. Google will also be required to take practical steps to ensure publisher content is properly attributed in AI results.
+
+Fair ranking: Making sure Google's approach to ranking search results is fair and transparent for businesses, with an effective process for raising and investigating issues. Google will be required to demonstrate to the CMA and its users that it ranks search results fairly, including in its AI Overviews and AI Mode.
+
+Choice screens: Making it easier for people to switch the search services they use by making default choice screens on Android mobiles a legal requirement and introducing choice screens on the Chrome browser.
+
+Data portability: Making it easier for people and businesses to make use of Google search data.
+
+Sarah Cardell, Chief Executive of the CMA, said:
+
+Today is an important milestone as we consult on the first conduct requirements under the digital markets competition regime in the UK.
+
+These targeted and proportionate actions would give UK businesses and consumers more choice and control over how they interact with Google's search services - as well as unlocking greater opportunities for innovation across the UK tech sector and broader economy. They would also provide a fairer deal for content publishers, particularly news organisations, over how their content is used in Google's AI Overviews.
+
+Before proceeding, the CMA is required to consult on these proposals and the deadline for feedback is 25 February 2026. A final decision will be taken following consideration of the feedback received. More information can be found on the CMA's Search page and in a blog by Will Hayter, Executive Director for Digital Markets.
+
+Notes to editors
+
+To designate a firm with SMS, the CMA must decide that it has substantial and entrenched market power and a position of strategic significance in a digital activity. Google having SMS does not imply that it has acted anti-competitively.
+
+Once the CMA has designated a firm as having SMS, it is then able (subject to a legal framework that includes further public consultation and showing that measures are proportionate) to introduce interventions (such as those as set out in today's consultation launch) to unlock competition, increase innovation, and protect consumers.
+
+For media enquiries, contact the CMA press office.
+
+Email
+
+press@cma.gov.uk
+
+Telephone numbers
+
+Phone:
+020 3738 6460
+
+Out of hours:
+020 3738 6878
+
+Opening hours
+
+Monday to Friday, 9am to 5:30pm. On bank holidays, use our out of hours number.
+
+Find out about call charges
+
+Share this page
+
+The following links open in a new tab
+
+Share on Facebook
+
+(opens in new tab)
+
+Share on X
+
+(opens in new tab)
+
+Is this page useful?
+
+Maybe
+
+Thank you for your feedback
+
+Help us improve GOV.UK
+
+To help us improve GOV.UK, we'd like to know more about your visit today.
+Please fill in this survey (opens in a new tab).

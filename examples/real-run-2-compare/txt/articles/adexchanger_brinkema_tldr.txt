@@ -1,0 +1,168 @@
+:
+
+Sign In
+
+Home Platforms The Court Just Unsealed Judge Brinkema's Remedies Decision In The Google Ad Tech Antitrust Case. Here's Your TL;DR
+
+Google remedies
+
+The Court Just Unsealed Judge Brinkema's Remedies Decision In The Google Ad Tech Antitrust Case. Here's Your TL;DR
+
+By
+Allison Schiff
+
+Wednesday, September 16th, 2026 – 7:24 pm
+
+SHARE:
+
+Jason Mraz once sang about having the remedy. A federal judge has now handed one (actually, several) to Google – and, well, "it all amounts to nothing in the end." Or, at least, that's the fear.
+
+On Tuesday, two weeks after Judge Leonie Brinkema filed her full remedies opinion under seal in US v. Google (ad tech edition), the court released the document publicly unredacted and exactly as written. Both sides had 14 days to flag confidential business information and propose redactions, but neither did.
+
+So, what's in there?
+
+In short, Google has to build API integrations connecting AdX and DFP to Prebid. It must submit AdX bids to rival publisher ad servers on the same terms as DFP gets them. It's gotta share bid data – wins and losses – with publishers. And AdWords can no longer bid directly into DFP or favor Google's own ad tech tools.
+
+A court-appointed "technical monitor" will keep watch, and all of these requirements apply globally, not just in the US.
+
+That's the CliffsNotes version. The longer one requires a little history first.
+
+A refresher
+
+The Department of Justice sued Google in January 2023 alleging that it maintained a monopoly in open web display advertising, specifically calling out the relationship between DFP (its publisher ad server) and AdX (its ad exchange).
+
+After a trial in 2024, the court found Google guilty of operating a monopoly and illegally tying DFP with AdX, as well as of deploying multiple auction manipulation tactics – among them, first look, last look and unified pricing rules – to neutralize header bidding and competition from rival ad servers.
+
+During the remedies phase last year, both sides submitted competing proposals for what Google should be forced to do to restore competition in the market.
+
+In addition to behavioral changes, the DOJ called for structural relief, specifically a divestiture of AdX. Google, meanwhile, argued that targeted behavioral commitments were sufficient to address the harm – no breakup required.
+
+And Judge Brinkema agreed.
+
+On September 2, she issued a brief public order confirming that Google would not have to sell AdX.
+
+On top of her conclusion that behavioral remedies were enough to address Google's anticompetitive conduct, her reasoning included concerns about the length and uncertainty of an appeal process and potential harm to small businesses and publishers that rely on Google's ad tech infrastructure, not to mention the overall disruption a forced sale would cause.
+
+And now that Judge Brinkema's full 106-page remedies decision is public, we can see exactly what that will entail.
+
+Google's to-do list
+
+There's nothing surprising here. The remedies were all argued publicly during the remedies phase. But the details are super interesting.
+
+One of the most significant behavioral remedies is an interoperability mandate that requires Google to build API integrations connecting AdX and DFP to Prebid, which is the open-source framework behind header bidding.
+
+(Oh, the irony. Prebid was literally created to give publishers a way to solicit competing bids from multiple exchanges outside of Google's control – and Google declined to participate with it for years, viewing it as a threat. Now Google is being ordered to join.)
+
+AdX must also submit real-time bids to rival publisher ad servers on the same terms it gives DFP. The court was explicit that these integrations must be "functionally equivalent." Building something technically compliant but deliberately worse won't fly.
+
+Moving on, the DOJ wanted DFP's full auction logic to be open-sourced, but the court said no. Instead, Google has to publish technical documentation explaining how DFP selects a winner – how ad candidates are priced, for example, and how bid adjustments are made – and also share real-time bid data with all publishers.
+
+On the buy side, AdWords is prohibited from bidding directly into DFP, from favoring Google's own ad tech tools and from using first-party data in ways that advantage Google's own pipes.
+
+DV360, however, faces no such restrictions. The court found that the government never made a sufficient connection between DV360 and the anticompetitive conduct at the heart of the case. (Depending on who you ask, that's a pretty big miss.)
+
+Lastly, the technical monitor will serve for six years – not the 15 years requested by the DOJ – and get full access to Google's employees, systems and source code.
+
+The final judgment hasn't been entered yet. Both parties have until October 2 to submit their proposed final judgments, after which the remedy takes effect 60 days from the date Judge Brinkema signs the official order – although you can bet Google will appeal the moment that happens.
+
+And if history is any guide, that's when the real fight begins.
+
+Update 9/17/26: An earlier version of this article said that the final judgment "takes effect in 60 days," which was in error. Thanks to Pesach Lattin for the flag.
+
+Tagged in:
+
+featured
+
+//
+
+Google ad tech antitrust trial
+
+//
+
+Google remedies
+
+//
+
+Leonie Brinkema
+
+//
+
+prebid
+
+Next In Platforms
+
+What The FTC Can Learn From Google's Ad Tech Case As It Pursues Amazon
+
+Related Stories
+
+Google antitrust trial
+
+Google's Proposed Fix To Its Ad Tech Monopoly Is At Odds With The DOJ's Remedies
+
+Platforms
+
+With GAM Going Direct To Buyers, SPO Is The New Normal
+
+Platforms
+
+The Trade Desk's Auction Evolutions Bring High Drama To The Prebid Summit
+
+Must Read
+
+Commerce
+
+Criteo Is A Survivor, But Expanding Beyond Retail Media Will Be Its Toughest Challenge Yet
+
+Criteo has weathered considerable storms in its day, including a painful moment in March 2020 when its market cap bottomed out below $500 million. Can it pull off yet another turnaround?
+
+CTV
+
+Sports Leagues Can't Stop Putting Ad Revenue Ahead Of Fan And Player Interests
+
+Disaffection and outright anger toward US sports institutions run deeper than logo-cluttered fields. Leagues and teams are sacrificing player safety and fan enjoyment for marketing dollars.
+
+Publishers
+
+With Search Traffic Down 70%, People Inc. Bets On Revenue Beyond Site Visits
+
+People Inc.'s referral traffic from Google search is down 70% over the past two years, and by 26% in Q3 alone. But its digital revenue is still growing, albeit slowly.
+
+Commerce
+
+Chord Buys Its Rival Zenlytic To Build An Agentic Version Of A CDP
+
+On Tuesday, Chord, a six-year-old commerce tech startup, acquired Zenlytic, an AI startup with an anthropomorphized data analyst agent named "Zoë," for $5 million.
+
+ad tech acquisition
+
+Affle Acquires Perion For $420 Million, Because ‘Synergies'
+
+If you ask the executive leadership of Affle and Perion why the two companies are merging, the answer you'll get is "synergies."
+
+earnings
+
+Fox Doesn't Want To Talk About Roku, But It's Got Lots To Say About Tubi And Politics
+
+A combo of Tubi, sports and political ads powered Fox's growth this last quarter, even as Fox News lost viewers and the Roku deal awaits DOJ clearance.
+
+Popular
+
+Platforms
+
+Google Earned More Than $100 Billion In Ad Revenue Last Quarter, But Is It Even An Ad Business?
+
+Platforms
+
+Affle Acquires Perion For $420 Million, Because ‘Synergies'
+
+Marketers
+
+DoorDash Acquires Instacart As Consolidation Comes For Mobility Media
+
+Platforms
+
+Reddit Is Going Login Only. Blame Google
+
+AI
+
+Meta Has A New Ad Ranking System Built On LLMs, Plus Upgrades To Andromeda And GEM

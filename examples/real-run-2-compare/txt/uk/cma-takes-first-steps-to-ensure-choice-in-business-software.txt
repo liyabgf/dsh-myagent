@@ -1,0 +1,143 @@
+Cookies on GOV.UK
+
+We use some essential cookies to make this website work.
+
+We'd like to set additional cookies to understand how you use GOV.UK, remember your settings and improve government services.
+
+We also use cookies set by other sites to help us deliver content from their services.
+
+You have accepted additional cookies. You can change your cookie settings at any time.
+
+You have rejected additional cookies. You can change your cookie settings at any time.
+
+View cookies
+
+Skip to main content
+
+Press release
+
+CMA takes first steps to ensure choice in business software
+
+CMA proposes to designate Microsoft with strategic market status in its business software ecosystem.
+
+From:
+
+Competition and Markets Authority
+
+Published:
+16 October 2026
+
+iStock
+
+Investigation is assessing Microsoft's position in business software and how this impacts businesses and public sector organisations
+
+CMA invites views on areas where it will gather further evidence and consider possible action to promote customer choice
+
+Update on cloud services engagement shows Microsoft and Amazon are taking material steps to promote choice, with more to come
+
+The Competition and Markets Authority (CMA) is proposing to designate Microsoft with strategic market status (SMS) in its business software ecosystem and will now consult before making a final decision. It has also published an indicative roadmap outlining areas for possible future interventions to improve outcomes for UK businesses and public sector organisations.
+
+Areas identified by the CMA for further investigation and potential action include looking at how Microsoft bundles its software, as well as making it easier for developers to integrate their products with Microsoft's business software ecosystem.
+
+Business software in the UK
+
+Microsoft's business software (including Word, Excel, Outlook, PowerPoint, Teams and increasingly Copilot, as well as its security, server and operating system products) is used by over a million businesses and public sector organisations across the UK, with around 20 million monthly users. These products support critical workplace functions, so it is important that customers have genuine choice and that competition drives innovation and productivity.
+
+The business software sector is changing rapidly, with increased AI functionality and a shift towards agentic AI in familiar workplace tools. UK customers will benefit most when they can access the best tools in the market and mix and match software and AI services from a broad range of competing suppliers. For government and critical organisations, the ability to choose, switch and combine digital services (especially AI), without being overly dependent on a single technology provider, is also increasingly important for resilience and strategic autonomy.
+
+The CMA's findings – which inform today's proposed designation decision – include:
+
+Microsoft has a strong position across each of the 5 areas of digital activity that the CMA investigated (personal computer operating systems, productivity software suites, security software, server operating systems and relational database management systems)
+
+Microsoft's strength in business software comes from the barriers customers face when switching, limiting their choice and weakening the constraints of other software developers
+
+Commercial practices and integration advantages can incentivise customers to adopt Microsoft's products, creating additional barriers that other software developers cannot easily overcome
+
+A proportionate, pro-innovation approach
+
+The CMA has published an indicative roadmap setting out the areas where it proposes to gather further evidence and consider possible interventions if Microsoft is designated. The roadmap focuses on areas where greater choice and stronger competition could lead to lower prices for businesses and public sector organisations whilst supporting innovation and growth.
+
+The CMA has identified areas for further investigation to inform potential action. These areas include:
+
+Assessing whether customers can freely choose the best AI tools and functionalities for their needs, and whether alternative AI providers have a level playing field to compete with Microsoft's Copilot
+
+Examining whether the way Microsoft bundles and integrates its security products limits customer choice
+
+Determining whether customers have effective choice over which cloud to deploy their software licenses on and the impact of Microsoft's licensing practices have on such choice
+
+Sarah Cardell, Chief Executive of the CMA, said:
+
+Business software and cloud services underpin workplaces across the UK, from small firms to vital public services. The evidence shows Microsoft has a long-standing and significant presence in the UK's business software market.
+
+Organisations should be able to choose the products that work best for them, switch provider when they want to and combine services from different suppliers. We want to ensure businesses have the freedom to choose how they use Microsoft's products alongside alternatives. We're now consulting on whether to designate Microsoft with strategic market status. If we do, our focus would be on promoting competition and giving businesses greater freedom to choose and combine products in business software.
+
+We've also been engaging with AWS and Microsoft outside a formal designation process to deliver greater customer choice in cloud services. Meaningful improvements have already been made, with more to come and we're continuing to work with both companies to agree further actions.
+
+The CMA welcomes views on its proposed designation decision and accompanying roadmap. More information on the CMA's work is available on the Microsoft business software ecosystem page.
+
+Update on cloud services monitoring
+
+The CMA announced in March that it is engaging with a broad range of stakeholders to ensure that Amazon Web Services (AWS) and Microsoft are delivering on steps they announced to support customer choice in cloud, and to identify what other action may be needed. The CMA has continued to work closely with both Microsoft and AWS, including monitoring of internal data and product developments, driving material developments from both companies, including:
+
+Connecting their data centres with rivals, beginning with Google
+
+Completely removing data transfer fees for customers changing cloud providers, and reducing these fees where customers use more than one cloud provider
+
+Introducing a new mechanism for competitors and customers to request greater interoperability
+
+Rolling out AI tools to automate technical steps required to switch
+
+However, the CMA has been clear that more can be done to address remaining barriers to switching between cloud providers and using multiple cloud services. The CMA will continue to work with AWS and Microsoft to address these. For example, the CMA has agreed with both businesses to focus on improving how identity and access management (IAM) works across clouds and to ensure that cloud architectures designed for portability can be deployed and migrated across cloud providers without unnecessary barriers. These steps demonstrate a flexible, targeted approach focused on securing faster benefits for the UK.
+
+The CMA will continue this approach whilst keeping the possibility of launching a full SMS investigation under review. Today's update can be found on the decision page and the CMA will publish a further update in Spring 2027.
+
+Notes to editors:
+
+The CMA's findings are provisional and subject to consultation before a final decision on designation is made by the February 2027 statutory deadline.
+
+SMS designation does not assume wrongdoing. If Microsoft were designated, it could allow the CMA to consider targeted and proportionate interventions to support competition, subject to meeting the relevant legal tests. These could include conduct requirements or pro‑competition interventions.
+
+The UK's Digital Markets Competition Regime is flexible and highly targeted, with the CMA able to design proportionate, bespoke interventions to address specific aspects of the way a firm engages in a digital activity. It includes a participative engagement process involving diverse stakeholders, from the largest firms to challengers and consumer groups.
+
+For media enquiries, contact the CMA press office.
+
+Email
+
+press@cma.gov.uk
+
+Telephone numbers
+
+Phone:
+020 3738 6460
+
+Out of hours:
+020 3738 6878
+
+Opening hours
+
+Monday to Friday, 9am to 5:30pm. On bank holidays, use our out of hours number.
+
+Find out about call charges
+
+Share this page
+
+The following links open in a new tab
+
+Share on Facebook
+
+(opens in new tab)
+
+Share on X
+
+(opens in new tab)
+
+Is this page useful?
+
+Maybe
+
+Thank you for your feedback
+
+Help us improve GOV.UK
+
+To help us improve GOV.UK, we'd like to know more about your visit today.
+Please fill in this survey (opens in a new tab).

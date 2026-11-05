@@ -1,0 +1,52 @@
+
+
+Skip to content
+
+This article was published on May 5, 2026
+
+TL;DR
+
+Google DeepMind’s UK workers voted 98 per cent to unionise after Google signed a classified Pentagon AI deal for “any lawful purpose,” becoming the first frontier AI lab to organise collectively. The union demands include ending military AI use, restoring Google’s scrapped weapons pledge, and creating an independent ethics body.
+
+In 2018, four thousand Google employees signed a petition against Project Maven, a Pentagon contract that used the company’s AI to analyse drone surveillance footage. Google did not renew the contract. It published a set of AI principles pledging not to develop weapons or surveillance technology that violates international norms. It built an AI ethics team. The episode was treated as proof that tech workers could shape the moral boundaries of the companies they worked for. Eight years later, Google has signed a classified AI deal with the Pentagon for “any lawful governmental purpose,” removed its weapons pledge from its published principles, and fired the leaders of the ethics team it created in response to Project Maven. The researchers who built the AI now being offered to the military have responded in the only way the company has left them: they have voted to unionise.
+
+The vote
+
+Workers at Google DeepMind’s UK offices voted in April to join the Communication Workers Union and Unite the Union, with 98 per cent of ballots cast in favour. They sent a letter to management this week requesting formal recognition of the unions as their official representatives. If recognised, they would become the first frontier AI laboratory in the world to have unionised workers. The vote was not primarily about pay, benefits, or working conditions. It was about the Pentagon. More than 580 Google employees, including 20 directors and vice presidents and senior DeepMind researchers, had already signed a letter urging CEO Sundar Pichai to refuse the classified military AI deal. Over 100 DeepMind employees separately signed an internal letter demanding that no DeepMind research or models be used for weapons development or autonomous targeting. The company signed the deal anyway.
+
+The union demands are specific: an end to the use of Google AI by the Israeli military and the US military, the restoration of the company’s scrapped commitment not to build AI weapons or surveillance tools, the creation of an independent ethics oversight body, and the individual right for researchers to refuse to contribute to projects on moral grounds. These are not typical union demands. They are governance demands, imposed from below because the governance structures that were supposed to exist from above, the AI principles, the ethics board, the internal review processes, were dismantled or overridden when they conflicted with revenue.
+
+The deal
+
+Google signed the classified Pentagon deal for “any lawful purpose” while simultaneously withdrawing from a $100 million drone swarm competition after an internal ethics review, a contradiction that researchers described as incoherent. The classified deal gives the Pentagon access to Google’s AI models on air-gapped networks where Google cannot monitor what queries are run, what outputs are generated, or what decisions are made. DeepMind research scientist Alex Turner criticised the agreement publicly, posting that Google “can’t veto usage” and is relying on “aspirational language with no legal restrictions.” The contract includes advisory guardrails discouraging mass surveillance and autonomous weapons without human oversight, but the government can request adjustments to safety settings, and on a classified network, there is no independent verification that any guardrail is honoured.
+
+Google’s deal is reportedly more permissive than OpenAI’s, which retains “full discretion” over its safety mechanisms. Only Anthropic refused to grant the Pentagon unrestricted access, insisting that its models not be used for autonomous weapons or mass domestic surveillance. The Pentagon designated Anthropic a supply-chain risk in response, ordered the military to stop using its products, and signed deals with seven other companies, including Google, that agreed to the terms Anthropic rejected. The message to AI researchers is plain: the company that maintained ethical limits was punished, and the companies that removed theirs were rewarded.
+
+The history
+
+The 2018 Project Maven protest succeeded because Google’s business did not depend on military contracts. The company could afford to walk away from a few million dollars in Pentagon revenue without material impact on its advertising-driven business model. In 2026, the classified AI market is worth tens of billions of dollars, the Pentagon has demonstrated that it will retaliate against companies that refuse to cooperate, and Google’s competitors have already signed equivalent deals. The structural conditions that made worker leverage possible in 2018 no longer exist. Google removed its explicit pledge not to develop AI for weapons from its published principles in February 2025, a quiet edit that eliminated the internal standard employees had used to challenge military projects.
+
+The firing of Timnit Gebru and Margaret Mitchell, the co-leads of Google’s Ethical AI team, in 2020 and 2021 was the first signal that internal dissent on AI ethics would not be tolerated. The firing of 28 employees who protested Project Nimbus, the $1.2 billion contract providing cloud computing and AI services to the Israeli government, in 2024 was the second. By 2026, the pattern is clear: Google will pursue military and government AI contracts regardless of internal objection, and employees who object publicly will be removed. The union vote is the workers’ response to that pattern. If individual protest results in dismissal, collective bargaining is the remaining mechanism for exerting influence over how the technology they build is used.
+
+The context
+
+Meta and Microsoft have collectively cut 23,000 jobs while increasing AI capital expenditure by tens of billions, converting human payroll into GPU infrastructure. The restructuring of Big Tech around AI is eliminating roles across customer support, content moderation, quality assurance, and engineering while concentrating investment in the researchers and engineers who build the models. DeepMind’s workers are among the most valuable employees in the AI industry, and their decision to unionise reflects an awareness that their leverage is temporary: as models become more capable, the number of researchers needed to advance the frontier may shrink, and the window for workers to shape how their work is used narrows with every generation of model that requires fewer humans to build.
+
+Chinese courts have ruled that replacing workers with AI is not legal grounds for dismissal, establishing a precedent that the most aggressive AI-deploying economy in the world has limits on how the technology can be used to eliminate human roles. The ruling illustrates a global divergence: governments are beginning to define the boundaries of AI’s impact on workers, but the boundaries differ by jurisdiction, and the ethical use of AI in military applications has no comparable legal framework in any country. DeepMind’s union is operating in a gap between employment law, which protects the right to organise, and defence procurement, where governments have broad discretion over which AI capabilities they acquire and how they use them.
+
+The question
+
+The practical impact of a DeepMind union depends on whether Google recognises it voluntarily. UK law provides a statutory recognition process if the employer refuses, but that process can take months and requires demonstrating majority support within a defined bargaining unit. Even with recognition, the union’s ability to influence military contracts is limited: collective bargaining in the UK covers pay, hours, and working conditions, not corporate strategy or government procurement decisions. The union’s leverage is reputational and retention-based. If enough senior researchers leave, or credibly threaten to leave, over military AI contracts, the cost to Google’s research capabilities could exceed the revenue from the contracts themselves. But that calculation depends on whether the researchers are irreplaceable, and in a market where every AI lab is hiring, the answer is less clear than it was in 2018.
+
+What the DeepMind union represents is something larger than a labour dispute. It is the first organised attempt by the people who build frontier AI to claim a formal role in deciding how that AI is used. The question the union raises is whether the researchers who create the most powerful technology in the world have any right to constrain its application, or whether that right belongs entirely to the companies that employ them and the governments that buy from them. In 2018, Google’s workers won that argument without a union. In 2026, they have concluded that they cannot win it without one. Whether they are right will depend not on the outcome of a recognition ballot but on whether the company values the researchers who build its AI more than it values the military contracts their AI enables. The union is a bet that it does. The Pentagon deal is evidence that it does not.
+
+Get the TNW newsletter
+
+Get the most important tech news in your inbox each week.
+
+Also tagged with
+
+Google
+
+Google
+

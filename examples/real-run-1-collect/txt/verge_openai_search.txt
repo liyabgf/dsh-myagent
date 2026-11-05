@@ -1,0 +1,144 @@
+
+
+Skip to main content
+
+The homepage
+
+The homepage
+
+Navigation Drawer
+
+Login
+/
+Sign Up
+
+Subscribe
+
+Comments Drawer
+
+Comments
+
+Loading comments
+
+Getting the conversation ready...
+
+OpenAI says ChatGPT is catching up to Google in search
+
+ChatGPT processes one-fifth the volume of search queries as Google, per OpenAI.
+
+ChatGPT processes one-fifth the volume of search queries as Google, per OpenAI.
+
+by Hayden Field
+
+Nov 3, 2026, 6:30 PM UTC
+
+Image: The Verge
+
+Hayden Field
+
+is The Verge’s senior AI reporter. An AI beat reporter for more than five years, her work has also appeared in CNBC, MIT Technology Review, Wired UK, and other outlets.
+
+In many circles, “Ask Chat” has replaced “Google it,” and that’s reflected in a new announcement from OpenAI: the volume of search queries run through ChatGPT now equals 20 percent of the volume run through Google.
+
+Adam Fry, OpenAI’s consumer product lead for ChatGPT, made the announcement at a press event on Monday. He said the company defines a search as any time a user inputs a query that results in a web search, as opposed to tasks like defining a term or a simple how-to explanation. (Fry did not specify the source of the Google search volume number.)
+
+Having one-fifth as many searches as Google is still a long way from overtaking it, but for comparison, Microsoft CEO Satya Nadella said during Google’s 2023 antitrust trial that Bing had about 3 percent of the search engine market share after trying for more than a decade. During the trial, Google described AI as a potential disruptor, arguing ChatGPT was poised to seriously compete with it — now, OpenAI seems to agree. (OpenAI likely uses Microsoft Bing for a significant part of its searches, along with its in-house search index, although there is still some speculation that it routes some queries through Google.)
+
+The news comes amid an ongoing search engine shake-up, as Google continues to reduce conventional referrals to third-party sites and invests heavily in AI tools — not just AI Overview but also additional generative AI capabilities, including personalized search results with visualizations and charts. But as search queries increasingly route through OpenAI and other AI labs’ services, other companies are investing in the same types of AI-focused search experience, even if they call it something else: for OpenAI, it’s “Intelligent UI,” or creating a visual and interactive interface within a chatbot response. “That’s where the future of this technology goes. You’re talking to a canvas,” Fry said.
+
+Much like Google, OpenAI sees a potential path to profitability through ads, particularly as it approaches an IPO potentially slated for early next year. OpenAI has defended its ads in the past, and Fry told reporters they hadn’t produced a lasting backlash. “Ads have not negatively impacted the product or the usage of the product,” he said, adding that “most people do not seem to mind ads in the product.”
+
+OpenAI announced last month that the company would begin introducing images of sponsored products and services in ChatGPT rather than just a company’s name, logo, and a link to its product like before.
+
+“Ads have maybe shown us that we could be doing this more, actually,” Fry said.
+
+Follow topics and authors from this story to see more like this in your personalized homepage feed and to receive email updates.
+Hayden Field
+
+Most Popular
+
+Most Popular
+
+Sam Altman addresses RAM comments: people should ‘put as much as they want in their computers’
+
+Those Jeff Bezos hair transplant photos are very fake
+
+Anker’s new window-mounted camera monitors the outside of your home from within it
+
+Bambu’s nine-nozzle H3C foretells the future of 3D printing
+
+The Legend of Zelda: Ocarina of Time never gets old
+
+Advertiser Content From
+
+This is the title for the native ad
+
+More in AI
+
+Gemini for Home now plugs into AT&T’s smart security system
+
+Nothing teases a screen-free AI device ahead of launch next month
+
+ChatGPT will now make you animated GIFs
+
+My therapist thinks I should chuck the Amazon Bee Frontier out a window
+
+Data centers lost the midterms
+
+Uber only fulfilled 4 rides from AI agents last quarter
+
+Gemini for Home now plugs into AT&T’s smart security system
+
+Emma Roth8:23 PM UTC
+
+Nothing teases a screen-free AI device ahead of launch next month
+
+Stevie Bonifield6:26 PM UTC
+
+ChatGPT will now make you animated GIFs
+
+Emma Roth6:00 PM UTC
+
+My therapist thinks I should chuck the Amazon Bee Frontier out a window
+
+Victoria Song6:00 PM UTC
+
+Data centers lost the midterms
+
+Lauren Feiner4:05 PM UTC
+
+Uber only fulfilled 4 rides from AI agents last quarter
+
+Andrew J. Hawkins3:58 PM UTC
+
+Advertiser Content From
+
+This is the title for the native ad
+
+Top Stories
+
+3:02 PM UTC
+
+The fight for tech accountability starts now
+
+6:00 PM UTC
+
+My therapist thinks I should chuck the Amazon Bee Frontier out a window
+
+11:00 AM UTC
+
+The Legend of Zelda: Ocarina of Time never gets old
+
+4:10 PM UTC
+
+Rian Johnson explains why he had to build his own iPhone camera app
+
+3:33 PM UTC
+
+Not even $200 million could help Elon Musk buy Texas
+
+Notifications Drawer
+
+Sign in to see your notifications or create an account to join the conversation.
+Sign in
+

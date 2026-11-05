@@ -1,0 +1,309 @@
+
+
+You turn to us for voices you won't hear anywhere else.
+
+Sign up for Democracy Now!'s Daily Digest to get our latest headlines and stories delivered to your inbox every day.
+
+Menu
+Home
+
+Daily Shows
+
+Web Exclusives
+
+Topics
+
+Columns
+
+Editions
+English
+
+Español
+Follow
+Daily Digest
+
+RSS & Podcasts
+
+Android App
+
+iPhone App
+Democracy Now!
+About
+
+Events
+
+Contact
+
+Stations
+
+Get Involved
+
+Education
+
+Jobs
+
+For Broadcasters
+
+Hot Topics
+
+2026 Election
+
+Iran
+
+Artificial Intelligence
+
+Brazil
+
+Israel & Palestine
+
+Yemen
+
+Immigration
+
+Gaza
+
+Donald Trump
+
+Venezuela
+
+Meet AI Engineer Who Resigned from DeepMind over “Google’s Complicity in the Gaza Genocide”
+
+StoryOctober 29, 2026
+
+Watch Full Show
+Watch Full Show
+
+Listen
+
+Media Options
+
+Listen
+
+Media Options
+Download Video
+
+Download Audio
+
+Other Formats
+
+Media Options
+Download Video
+
+Download Audio
+
+Other Formats
+
+This is viewer supported news. Please do your part today.
+Donate
+
+Related
+Topics
+
+Guests
+
+Links
+
+Transcript
+
+Topics
+Technology
+
+Artificial Intelligence
+
+Military
+
+Israel & Palestine
+
+Guests
+
+Sofia Liguori
+research engineer who resigned from Google DeepMind in protests of its military contracts with the U.S. and Israel.
+
+Links
+Sofia Liguori's resignation letter
+
+This is viewer supported news. Please do your part today.
+Donate
+
+Several tech workers at Google’s AI unit DeepMind have resigned in protest over the tech giant’s work with the U.S. and Israeli militaries. Last week, DeepMind research engineer Sofia Liguori announced her resignation in a letter to her colleagues titled “Stay Human.” She denounced what she called “Google’s complicity in the Gaza genocide” and the increasing integration of Google’s technology into military and surveillance systems.
+
+“I felt I could not, in good faith, send this message of building AI to benefit humanity while ignoring that our company was complicit in a genocide,” Liguori tells Democracy Now! “The problem is that when the focus is on the model capabilities and on the potential for agents 'going rogue,' we are shifting the attention from a specific human choice … which is this unrestrained, unregulated integration of the systems without red lines.”
+
+This is viewer supported news. Please do your part today.
+Donate
+
+Related Story
+StoryApr 05, 2024Lavender & Where’s Daddy: How Israel Used AI to Form Kill Lists & Bomb Palestinians in Their Homes
+
+Topics
+Technology
+
+Artificial Intelligence
+
+Military
+
+Israel & Palestine
+
+Guests
+
+Sofia Liguori
+research engineer who resigned from Google DeepMind in protests of its military contracts with the U.S. and Israel.
+
+Links
+Sofia Liguori's resignation letter
+
+Transcript
+This is a rush transcript. Copy may not be in its final form.
+
+AMY GOODMAN: This is Democracy Now!, democracynow.org. I’m Amy Goodman.
+
+Several tech workers at Google’s AI unit DeepMind have resigned in protest over Google’s work with the U.S. and Israeli militaries. Last week, DeepMind research engineer Sofia Liguori announced her resignation. In a letter to her colleagues titled “Stay Human,” she denounced what she called, quote, “Google’s complicity in the Gaza genocide and the increasing integration of Google’s technology into military and surveillance systems.”
+
+Democracy Now!’s Anjali Kamat and I spoke with Sofia Liguori yesterday. She joined us from London. I started by asking her to explain why she resigned and the process she went through in her decision to leave Google.
+
+SOFIA LIGUORI: Sure. Thank you for having me, first of all. I’m very honored.
+
+Yeah. When I discovered about Google complicity in Gaza genocide, I knew I couldn’t stay there and continue with business as usual. I actually discovered about the Nimbus contract, which is the deal that Google has with the Israeli government and the IDF, a deal that includes cloud and AI services for — used by the military for war. I discovered about this deal when Google fired employees in the U.S. protesting over the deal in 2024. And at the beginning, in London, there was no internal movement. No Tech for Apartheid was at the time mainly a U.S. movement. And so, I felt really powerless. I just bought a Palestine hoodie. I went to the office with it, but I really didn’t know what to do. I felt isolated. I felt powerless.
+
+Then I went on maternity leave. And during maternity leave, I was watching the news every day, watching a live-streamed genocide, and I knew that my company was complicit. So, my first thought was resigning straightaway, not even coming back from maternity leave. But what changed my mind was that as the time to come back was coming, I met a colleague. They were on their way out from the company exactly for ethical reasons. And they put me in contact with UTAW, a union movement that had in the meantime developed inside Google DeepMind. So I decided to stay and try to break the silence around Nimbus, around the increasing number of military and surveillance involvements, and try to organize and push back against the company direction.
+
+AMY GOODMAN: Can you — for people who are not familiar with what Google does, can you explain what Nimbus is in plain, lay language, and then also what DeepMind does?
+
+SOFIA LIGUORI: Sure. This is very important to understand. So, Nimbus is a $1.2 billion contract signed by Google and Amazon together in 2021, actually — it’s a pretty old contract — to provide cloud services, which include the cloud infrastructure to run every possible workload and to store data, and also provides AI services. And it’s a contract that is directed to the Israeli government, but also to the army, to the IDF.
+
+Nothing about this contract was ever disclosed publicly. And actually, all the public statement that Google did around this contract has been disproved, as it was basically a lie. What we know about this contract is mostly from leaks and investigative reporting, especially from The Intercept. And what we know is that it provides the full suite of AI tools, including Gemini. Gemini is the large language model specifically developed by Google DeepMind. And we also know for sure that it has been used in war. We don’t have an exact list of all the applications it contributed to, but Israeli officials themselves recognize the importance of cloud capabilities and of the Nimbus project for the war in Gaza.
+
+And we also know that Google had been advised by human internal lawyers and also an external consultancy firm about the potential for human rights violations when signing the contract, and they were advised not to include AI services and not to — and to incorporate AI principles into the contract. What Google instead did is signing a contract which has no restrictions about terms of usage and leaves the company with very little visibility into how the products are used. This means that we are giving away this very powerful infrastructure with these very powerful AI models, and at the same times we are giving away any possibility to restrict usage, monitor usage, limit usage in any way. And this is a very convenient contract designed for executives to escape accountability.
+
+AMY GOODMAN: You know, I think it’s interesting that among those who investigated all of this was Yuval Abraham. He did it at the time for +972 Magazine, Local Call and The Guardian, and found that as part of the $1.2 billion deal, Google and Amazon are prohibited from restricting how Israel uses their products, and are obligated to secretly notify Israel if a foreign court orders them to hand over data stored on the company’s cloud platforms. Of course, Yuval Abraham is the co-director of the new film out, NAZA, about the use of AI, the programs Lavender and “Where’s Daddy?” and the killing of thousands of Palestinians in Gaza. It has electrified the world. And Yuval and Rachel Szor, the co-directors, Israel is now threatening to strip them of Israeli citizenship. But, Sofia, if you can talk about what your role was in the company and the response of your co-workers? How many have left? What kind of internal discussion and discord is there in Google?
+
+SOFIA LIGUORI: So, my role in the company was actually I was working in a “good” area of the company. I was working on sustainability-related projects. My specific project was on AI application to optimal power flow. But I increasingly felt that even if my project was good, we were doing ethic washing for the company. I felt I could not, in good faith, send this message even of building AI to benefit humanity while ignoring that our company was complicit in a genocide.
+
+And I sent letters to colleagues to ask to talk about these topics. I messaged on internal channels to raise awareness around these contracts and so on. And I have to say, like, most of the times, I found solidarity from colleagues, but whispered. Like, people are very scared to show their dissent publicly. They are very scared of retaliation. And the reason is that it’s very hard to talk about these topics. You have to face intimidation if you do so. Every time you mention these topics, you end up having a meeting with HR, a meeting with your manager. Your posts get removed from internal channels. They use internal policies to find excuses to silence dissent, basically.
+
+ANJALI KAMAT: And, Sofia, you write in your resignation letter, quote, “I no longer believe that our technology will have a net positive impact on society. I think there’s a fantasy world where AI can help decarbonise grids, cut waste, protect ecosystems, and benefit humanity. But it’s not this world, and it’s not this type of general-purpose AI we are racing to develop. Racing to deploy agentic AI in this society and in this historical moment is a terrible idea, and will definitely be a net evil.” Sofia, we’ve seen a wave of resignations from employees concerned that AI might someday turn against humanity, but you resigned over the current usage of AI in war. Can you talk about how your resignation is different?
+
+SOFIA LIGUORI: Yeah. This is a very, very important topic to touch. I think that, like, AI poses concrete risk to society, but — and these risks come, first of all, from the way we are deciding to integrate these tools into every aspect of society, including very sensitive and critical domains, such as military infrastructure, financial systems, giving access to a lot of civilian data. And I think it is true that as models become more powerful, it is increasingly dangerous to integrate these systems.
+
+The problem is that when the focusing on the model capabilities and on the potential for agents going rogue, we are shifting the attention from a specific human choice, which is very irresponsible and needs to carry responsibility and accountability, which is this unrestrained, unregulated integration of the systems without red lines, without any — like, without appropriate safety measures. And we’re shifting the attention from there to the model itself being very powerful. And we even, a lot of times, dress these models with a consciousness, and we transform these in super — like, very powerful gods, in a way.
+
+And I think that people that have concerns around AI safety, we should talk with each other, in a way, because I think, like, there is — it’s convenient for leadership, surely, as like an interest in this, like, “superintelligent god killing us all” narrative, but I think employees raising concerns around AI safety a lot of the times have real concerns. And these real concerns are actually very related to our concerns about having red lines, having transparency around contracts, having external — maintaining oversight, having persistent monitoring, and these kind of demands.
+
+AMY GOODMAN: You know, I think that’s very interesting, beyond Google, as tech companies embrace artificial intelligence, this workplace surveillance and increased automation. If you can describe the rise of the tech worker movement, the power of groups like No Tech for Apartheid, No Azure for Apartheid, and also, at Meta — you worked at Google — but a new initiative will collect workers’ mouse movements, keystrokes and some screenshots to help train AI models to replace them in the future. This is leading Meta workers to reach out to United Tech and Allied Workers, a branch of the Communication Workers Union, to discuss unionization efforts. If you can talk about the organizing and the surveillance?
+
+SOFIA LIGUORI: Yeah. I think it’s — so, workers are trying to organize because we are actually the first barrier to counteract these very — these powerful corporations, which regulation is struggling to limit in power, basically. And I’ve been very energized by UTAW movement and our unionization effort and the joint work with No Tech for Apartheid and international collaboration.
+
+So, what I’ve seen arising this year, exactly around anti-militarization, anti-surveillance, and not only at work, but more broadly, we don’t want AI to facilitate surveillance application, because it’s a real concrete danger for the civic society and for democracies.
+
+AMY GOODMAN: Sofia Liguori, research engineer who resigned last week from Google DeepMind, Google’s artificial intelligence lab, in protest of its military contracts with the United States and Israel. To see the full interview, you can go to Democracy Now! and YouTube.
+
+Also, tune in on election night, Tuesday, November 3rd, for Democracy Now!’s four-hour live election night special, starting 8 p.m. Eastern on election night, Tuesday, November 3rd.
+
+Oh, and Steal This Story, Please!, the documentary about Democracy Now!, is now available on many streaming platforms, from Amazon Prime to YouTube to Apple TV to Google Play and others. Go to StealThisStory.org to see where you can watch it. I’m Amy Goodman. Thanks for joining us.
+
+The original content of this program is licensed under a Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States License. Please attribute legal copies of this work to democracynow.org. Some of the work(s) that this program incorporates, however, may be separately licensed. For further information or additional permissions, contact us.
+
+Up Next
+Lavender & Where’s Daddy: How Israel Used AI to Form Kill Lists & Bomb Palestinians in Their Homes
+
+Related
+
+StoryApr 05, 2024
+
+Lavender & Where’s Daddy: How Israel Used AI to Form Kill Lists & Bomb Palestinians in Their Homes
+
+Daily News Digest
+Our Daily Digest brings Democracy Now! to your inbox each morning.
+
+Speaking Events
+
+Nov
+
+11
+
+New York, NY
+
+Amy Goodman at DOC NYC Winner's Circle Screening/Q&A, Steal This Story, Please!
+
+More events ›
+
+30th Anniversary Event
+Watch: Celebrating 30 Years of Independent Global News with Democracy Now!
+
+Special guests Angela Davis, Bruce Springsteen, Patti Smith, Michael Stipe and more came together to celebrate 30 years of Democracy Now! at a sold out Riverside Church event in NYC on March 23, 2026.
+
+Recent News
+
+Abdul El-Sayed Becomes First Muslim Senator as Democrats Rout GOP Across the U.S. in Rebuke to Trump
+
+“The Earth Shook Last Night”: Talarico Wins Senate, Hinojosa Becomes First Latina Governor in Texas
+
+“Over a Decade of Organizing”: Keisha Lance Bottoms Elected First Black Woman Governor in U.S. History
+
+“Democracy Itself Is on the Ballot”: Voters Weigh 150+ Ballot Initiatives, from Wealth Tax to Abortion
+
+Election Protection: NAACP on Voter Suppression & Deployment of Federal Poll Monitors
+
+Headlines for November 4
+WatchRead
+
+Voters Deliver Stunning Rebuke of Trump with Democrats Regaining Control of Congress
+
+Historic Night in Texas as Democrats Win Senate Seat and Governorship
+
+Progressive Michigan Democrat Dr. Abdul El-Sayed Elected First Muslim Senator
+
+Democrat Annie Andrews Wins South Carolina Senate Seat in a Stunning Upset
+
+Mississippi’s Senate Race Remains Too Close to Call
+
+Democrat Troy Jackson Unseats Five-Term GOP Senator Susan Collins
+
+New Hampshire Democrat Chris Pappas Becomes First Openly Gay Senator
+
+Adam Hamilton Becomes First Kansas Democrat Elected to the Senate Since 1932
+
+Democrat Amy Acton Defeats Vivek Ramaswamy in Ohio Governor’s Race
+
+Democrat Deb Haaland Becomes First Native American Female Governor in U.S. History
+
+Midterm Elections Result in Several Historic Firsts
+
+The Democratic Socialists of America Score Big Wins in Congress
+
+Voters Approve Ballot Measures Expanding Reproductive Rights
+
+Trump Announces U.S. to Stop Providing Israel $4 Billion in Annual Military Aid
+
+DOJ Tells Alaska Democrats They May Be Targets of Federal Probe over Alleged “Spoiler” Candidate
+
+Trump Administration Presses for Long-Term U.S. Military Occupation of Venezuela
+
+View AllView All
+
+Most popular
+
+1
+
+“Ungrounding”: Eyal Weizman on Gaza Genocide & Israel’s “Permanent Architecture of Control”
+
+2
+
+Sen. Chris Murphy Calls Trump’s Plans to Renew Attacks on Iran “Insane”
+
+3
+
+“Princes and Thieves” Author Matthew Cole on Jared Kushner & the “Secret Plot to Remake Middle East”
+
+4
+
+Israeli Elections to Global Movements: Tariq Ali, Rashid Khalidi on New Book “The Neck and the Sword”
+
+Non-commercial news needs your support
+
+We rely on contributions from our viewers and listeners to do our work.
+Please do your part today.
+Make a donation
+
+Top
+

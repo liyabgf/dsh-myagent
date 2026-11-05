@@ -1,0 +1,49 @@
+# Commission sends preliminary findings to Alphabet under the Digital Markets Act
+ref=IP/25/811
+
+Today, the European Commission sent two sets of preliminary findings to Alphabet for failing to comply with the Digital Markets Act (DMA), regarding two services for which it has been designated as a gatekeeper.
+
+Firstly, the Commission has informed Alphabet of its preliminary view that certain features and functionalities of Google Search treat Alphabet's own services more favourably compared to rival ones, thus not ensuring the transparent, fair and non-discriminatory treatment of third-party services as required by the DMA.
+
+In addition, the Commission has informed Alphabet of its preliminary view that its app marketplace Google Play does not comply with the DMA, as app developers are prevented from freely steering consumers to other channels for better offers.
+
+Preliminary findings regarding self-preferencing in Google search
+
+Under the DMA, gatekeepers must not treat their own services more favourably in ranking than similar services of third parties. Such ranking must be done in a transparent, fair and non-discriminatory way.
+
+As noted in its compliance reports, Alphabet has implemented a series of changes to Google Search.
+
+However, following the Commission's investigation and feedback from interested third parties during several workshops, the Commission takes the preliminary view that Alphabet self-preferences its own services over those of third parties, thereby failing to comply with the DMA. In particular:
+
+Alphabet treats its own services, such as shopping, hotel booking, transport, or financial and sports results, more favourably in Google Search results than similar services offered by third parties.
+
+More specifically, Alphabet gives its own services more prominent treatment compared to others by displaying them at the top of Google Search results or on dedicated spaces, with enhanced visual formats and filtering mechanisms.
+
+Preliminary findings on Alphabet's steering rules for Google Play
+
+Under the DMA, app developers that distribute their apps via Google Play should be able, free of charge, to inform customers of alternative cheaper possibilities, to steer them to those offers and to allow them to make purchases.
+
+The Commission preliminarily finds that Alphabet fails to comply with that obligation. More specifically, on the basis of the evidence currently at its disposal, the Commission has concerns that:
+
+Alphabet technically prevents certain aspects of steering, for instance, by preventing app developers from steering customers to the offers and distribution channels of their choice.
+
+Whilst Alphabet can receive a fee for facilitating the initial acquisition of a new customer by an app developer via Google Play, the fees charged by Alphabet go beyond what is justified. For example, Alphabet charges developers a high fee over an unduly long period of time for every purchase of digital goods and services.
+
+Next steps
+
+By sending preliminary findings, the Commission informs Alphabet of its preliminary view that the company is in breach of the DMA.
+
+This does not prejudge the outcome of the investigation. Alphabet now has the possibility to exercise its rights of defence by examining the documents in the Commission's investigation file and replying in writing to these preliminary findings.
+
+If the Commission's preliminary views are ultimately confirmed, the Commission would adopt a non-compliance decision.
+
+The Commission continues its engagement with Alphabet to identify effective solutions that comply with Articles 6(5) or 5(4) of the DMA.
+
+Background
+
+The DMA aims to ensure contestable and fair markets in the digital sector. It regulates gatekeepers, which are large digital platforms that provide an important gateway between business users and consumers and whose position can grant them the power to create a bottleneck in the digital economy.
+
+Alphabet was designated as a gatekeeper for the Google search service and the Google Play app store for Android by Commission decision of 5 September 2023.
+
+For more information and latest news on the DMA, please check the Commission website.
+

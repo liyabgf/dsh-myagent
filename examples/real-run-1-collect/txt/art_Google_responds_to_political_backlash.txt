@@ -1,0 +1,82 @@
+
+
+Skip Navigation
+
+Markets
+
+Business
+
+Investing
+
+Tech
+
+Politics & Policy
+
+Video
+
+Watchlist
+
+Investing Club
+
+PRO
+
+Livestream
+
+Key Points
+
+Politicians including Sen. Bernie Sanders of Vermont and New York Mayor Zohran Mamdani criticized Google following reports that the company would restrict search at schools that ban AI.
+
+Google said that Gemini, Gemini Notebook and search will be turned off by default, and schools can choose to turn one or all of them back on.
+
+Chris Phillips, vice president for education at Google, told the New York Times that "Search and AI are deeply integrated."
+
+In this article
+
+META
+
+David Tramontan | SOPA Images | Lightrocket | Getty Images
+
+Google is playing defense on Tuesday after a political backlash to its new policy surrounding use of artificial intelligence in schools.
+
+In a blog post titled "Designing responsible AI for learning," Google said it's bringing AI into its Classroom offering with a product called Guided Learning. The New York Times published a story saying that the company will turn off search for schools that reject AI entirely.
+
+Following the Times' story, prominent left-leaning politicians, including Sen. Bernie Sanders from Vermont and New York Mayor Zohran Mamdani voiced their outrage on social media.
+
+"Google is trying to use its monopoly power to force AI into our public schools," Mamdani wrote on X. Sanders wrote that "Google is threatening schools," referring to the policy as "extortion."
+
+Google responded later in the day. In a post on X, the company said its new policy was meant to give schools more choice over how students interact with AI. Google said its Gemini chatbot, Gemini Notebook and search are turned off by default, and that "schools are in control," with the ability to turn them as they see fit.
+
+"We are also updating Search for schools to make it better for learning," Google wrote. "Specifically, AI Mode and AI Overviews will offer step-by-step guided learning through problems, so that students don't get quick answers to schoolwork."
+
+The company's post didn't explicitly respond to the claim that access to search requires use of AI. However, Chris Phillips, vice president for education at Google, told the Times that "Search and AI are deeply integrated."
+
+A Google spokesperson referred CNBC to the X post when asked for comment.
+
+Google's broader practices have come under fire in recent years, with the company losing antitrust cases over its search and advertising businesses. Former Federal Trade Commission Chair Lina Khan aggressively pursued Google and other tech giants, including Meta and Amazon.
+
+Khan said in a post on X on Tuesday that Google's new AI for learning policy highlights "the danger of allowing an unregulated monopolist to control an essential service."
+
+It's the latest controversy related to the impact of technology on children and the role leading internet companies are playing in delivering information.
+
+In August, Meta reached a landmark $16.7 billion settlement in its child safety trial after a number of state attorneys general accused the company of misrepresenting the extent of child mental health harms caused by apps like Facebook and Instagram.
+
+The same month, OpenAI launched ChatGPT for Teens after state attorneys general launched an investigation into the company's safety practices, with Florida Attorney General James Uthmeier, a Republican, filing a lawsuit in June.
+
+The nonprofit Common Sense Media recently gave Google's AI overviews an "unacceptable risk" rating. Last month, Sens. Richard Blumenthal, D-Conn., and Josh Hawley, R-Mo., launched an inquiry over Google's push of AI into classrooms.
+
+Google introduced AI overviews as a search function in May 2024.
+
+— CNBC's MacKenzie Sigalos contributed to this report.
+
+WATCH: Meta settled its child safety lawsuit. Now comes the hard part.
+
+watch now
+
+VIDEO9:1309:13
+
+Meta settled its child safety lawsuit. Now comes the hard part.
+
+TechCheck
+
+Choose CNBC as your preferred source on Google and never miss a moment from the most trusted name in business news.
+

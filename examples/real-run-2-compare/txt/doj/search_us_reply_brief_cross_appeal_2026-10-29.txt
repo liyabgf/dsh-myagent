@@ -1,0 +1,1744 @@
+     
+    
+ 
+  
+  
+     
+      
+    
+ 
+   
+    
+         
+           
+        
+        
+     
+    
+   
+    
+  
+   
+    
+   
+   
+      
+  
+   
+  
+   
+   
+   
+  
+ 
+ 
+ 
+      
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 1 of 34ORAL ARGUMENT NOT YET SCHEDULED 
+Nos. 26-5023, 26-5047, 26-5049 
+IN THE 
+United States Court of Appeals 
+for the District of Columbia Circuit 
+UNITED  STATES  OF  AMERICA,  et  al.,  
+Plaintiffs-Appellees-Cross-Appellants,  
+v.  
+GOOGLE  LLC,  
+Defendant-Appellant-Cross-Appellee.  
+O
+n Appeal from the 
+United States District Court for the District of Columbia 
+Nos. 1:20-cv-3010, 1:20-cv-3715 (Hon. Amit P. Mehta) 
+REPLY BRIEF ON CROSS-APPEAL FOR THE UNITED STATES 
+AND CO-PLAINTIFF STATES 
+DANIEL  E.  HAAR  
+NICKOLAI  G.  LEVIN  
+PATRICK  M.  KUHLMANN  
+MATTHEW  A.  WARING   
+ Attorneys  
+U.S.  DEPARTMENT  OF  JUSTICE  
+ANTITRUST  DIVISION  
+950  Pennsylvania  Ave.,  N.W.  
+Room  3224  
+Washington,  D.C.  20530-0001  
+(202)  532-4186  
+matthew.waring@usdoj.gov  
+STANLEY E. WOODWARD, JR. 
+Associate Attorney General 
+EMILY CLAIRE MIMNAUGH 
+Deputy Associate Attorney 
+General 
+STEPHANIE A. GRECO 
+Deputy Assistant Attorney 
+General, Litigation 
+ETHAN S. HOFFMAN 
+C ounsel to the Assistant Attorney 
+General 
+TRAVIS R. CHAPMAN 
+GRANT FERGUSSON 
+RYAN T. KARR 
+CLAIRE M. MADDOX 
+MICHAEL G. MCLELLAN 
+Attorneys 
+U.S.  DEPARTMENT  OF  JUSTICE  
+ANTITRUST  DIVISION  
+(additional counsel in signature block) 
+ 
+ 
+   
+ 
+ 
+     
+   
+       
+   
+        
+      
+            
+       
+            
+         
+   
+            
+        
+         
+    
+   
+     
+     
+ 
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 2 of 34 
+TABLE OF CONTENTS 
+Page 
+TABLE OF AUTHORITIES...................................................................... ii 
+GLOSSARY .............................................................................................. iv 
+INTRODUCTION AND SUMMARY OF ARGUMENT ........................... 1 
+ARGUMENT ............................................................................................. 2 
+I. Google Misdescribes The District Court’s Factual Findings 
+And The Record. ........................................................................ 2 
+A. The Court Did Not Find that a Remedy Without a Payment 
+Ban Would Be Effective............................................................. 2 
+1. The court did not expressly find the remedy effective. ............ 2 
+2. The court did not make a functional effectiveness 
+determination. ........................................................................... 7 
+B. The Court Did Not Find that a Payment Ban Would Reduce 
+Competition in the Relevant Markets. ................................... 13 
+II. This Court Should Vacate And Remand The Payment-Ban 
+Decision.................................................................................... 21 
+CONCLUSION ........................................................................................ 23 
+CERTIFICATE OF COMPLIANCE........................................................ 28 
+CERTIFICATE OF SERVICE................................................................. 29 
+i 
+ 
+ 
+ 
+ 
+   
+ 
+ 
+    
+      
+    
+          
+      
+        
+       
+      
+     
+         
+       
+      
+      
+      
+     
+        
+          
+            
+     
+            
+    
+        
+ 
+            
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 3 of 34 
+TABLE OF AUTHORITIES 
+Page(s) 
+Cases 
+FTC v. Actavis, Inc., 
+570 U.S. 136 (2013)..............................................................................13 
+Ginsburg v. InBev NV/SA, 
+623 F.3d 1229 (8th Cir. 2010)........................................................2, 5, 6 
+*International Salt Co. v. United States, 
+332 U.S. 392 (1947).................................................................... 7, 22, 23 
+Major League Baseball Players Ass’n v. Garvey, 
+532 U.S. 504 (2001)................................................................................5 
+Massachusetts v. Microsoft Corp., 
+373 F.3d 1199 (D.C. Cir. 2004) ......................................................20, 21 
+Tampa Electric Co. v. Nashville Coal Co., 
+365 U.S. 320 (1961)..............................................................................15 
+United States v. American Tobacco Co., 
+221 U.S. 106 (1911)..............................................................................20 
+United States v. AT&T, Inc., 
+916 F.3d 1029 (D.C. Cir. 2019) ............................................................16 
+*United States v. E.I. du Pont de Nemours & Co., 
+366 U.S. 316 (1961).................................................. 1, 2, 5, 6, 11, 17, 20 
+United States v. Google LLC, 
+No. 25-5016, 2025 WL 880552 (D.C. Cir. Mar. 21, 2025) ...................12 
+United States v. Malenya, 
+736 F.3d 554 (D.C. Cir. 2013) ................................................................2 
+* Authorities upon which we chiefly rely are marked with asterisks. 
+i
+i 
+ 
+ 
+   
+ 
+ 
+     
+         
+       
+      
+ 
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 4 of 34 
+TABLE OF AUTHORITIES—Continued 
+Page(s) 
+*United States v. Microsoft Corp., 
+253 F.3d 34 (D.C. Cir. 2001)............................................................5, 15 
+United States v. United Shoe Machinery Corp., 
+391 U.S. 244 (1968)..............................................................................19 
+iii 
+ 
+ 
+ 
+ 
+    
+    
+    
+ 
+ 
+ 
+ 
+ 
+             
+      
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 5 of 34 
+GLOSSARY 
+GenAI Generative Artificial Intelligence† 
+GSE General Search Engine 
+OEM Original Equipment Manufacturer 
+† This brief uses “GenAI” to match the district court proceedings; it 
+includes generative use of Super Intelligence. 
+i
+v 
+ 
+ 
+ 
+     
+          
+        
+          
+       
+           
+        
+            
+ 
+          
+            
+           
+            
+              
+            
+          
+           
+        
+          
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 6 of 34 
+INTRODUCTION AND SUMMARY OF ARGUMENT 
+Google does not dispute the key legal principles governing this 
+cross-appeal: Relief in government antitrust enforcement actions must 
+effectively redress the violation and restore competition in the relevant 
+market(s). Google.Third.Br.65-66, 69. A remedy’s effectiveness depends 
+on whether it restores the competitive process in the relevant market(s), 
+not its short-term market outcomes. Google.Third.Br.86. And courts 
+may not forgo an effective remedy because of harm to private interests. 
+Google.Third.Br.69. 
+Instead, Google relies on findings that the district court never 
+made: Google claims the court found that its remedy would be effective 
+and that a payment ban would likely harm competition and consumers. 
+But those findings are not in the remedies opinion. The court cited 
+United States v. E.I. du Pont de Nemours & Co., 366 U.S. 316, 326-27 
+(1961) (requring effective relief), and it hoped that a remedy without a 
+payment ban would effectively restore competition. But the court made 
+no finding that competition would likely be restored. To the contrary, 
+the court expressed serious unresolved doubts about whether 
+competition would return without a payment ban. And the possible 
+1
+ 
+ 
+ 
+ 
+           
+   
+          
+          
+          
+ 
+        
+   
+           
+     
+           
+        
+          
+          
+           
+         
+  
+          
+            
+            
+            
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 7 of 34 
+harms to competition the court feared were in other markets—not in 
+the relevant markets. 
+Because the court’s analysis did not “apply the correct legal 
+standard,” the court abused its discretion. United States v. Malenya, 
+736 F.3d 554, 559 (D.C. Cir. 2013). Remand is necessary. 
+ARGUMENT 
+I. Google Misdescribes The District Court’s Factual Findings 
+And The Record. 
+A. The Court Did Not Find that a Remedy Without a 
+Payment Ban Would Be Effective. 
+Du Pont required the court to find that the ordered remedy 
+“reasonably assure[d]” that competition would be restored before 
+considering private interests. 366 U.S. at 326-27. But Google cannot 
+point to an express effectiveness finding, and the court’s isolated 
+comments on other remedies do not add up to one. 
+1. The court did not expressly find the remedy 
+effective. 
+a. The court never stated the remedy would be effective 
+without a payment ban. To the contrary, the court expressly declined to 
+make such a finding, citing Ginsburg v. InBev NV/SA, 623 F.3d 1229, 
+1235 (8th Cir. 2010), for the proposition that it should “balance the 
+2
+ 
+ 
+ 
+ 
+           
+         
+            
+       
+          
+          
+            
+           
+        
+          
+            
+    
+          
+  
+          
+         
+          
+      
+         
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 8 of 34 
+benefit to competition” from a ban “against the hardship or competitive 
+disadvantage [it] may cause” to third parties, JA1684(Rem.Op.121), and 
+stating that the ban’s potential effects on third parties in other markets 
+were “reason enough not to proceed.” JA1688(Rem.Op.125). 
+Indeed, the court expressly doubted whether a remedy without a 
+ban would be effective. The court “recognize[d] what eschewing a 
+payment ban may mean for competition”: it would “leav[e] in place the 
+very forces” that froze the search ecosystem and “could blunt the 
+effectiveness of the remedies imposed.” JA1690(Rem.Op.127). The court 
+left this question of effectiveness open, allowing Google’s payments to 
+continue “for now” while recognizing that it might need to “revisit a 
+payment ban” later. JA1691(Rem.Op.128). 
+b. Google is wrong that there was an express effectiveness 
+determination. Google.Third.Br.65. 
+Google relies mainly on the court’s summary statement in the 
+final-judgment opinion that the remedies opinion had “determined the 
+scope of remedies sufficient to ‘pry open’” the relevant markets. 
+Google.Third.Br.65 (quoting JA1840(F.J.Op.2)). But the final-judgment 
+opinion made no factual findings on the remedy’s effectiveness—it 
+3
+ 
+ 
+ 
+ 
+         
+          
+        
+            
+        
+      
+          
+        
+       
+        
+           
+          
+        
+      
+          
+            
+       
+    
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 9 of 34 
+simply explained the court’s “reasons for adopting, rejecting, or 
+modifying the specific provisions of the parties’ most recent proposed 
+final judgments.” JA1841(F.J.Op.3). Thus, as Google acknowledges, the 
+question is whether the remedies opinion found that the remedy will be 
+effective. Google.Third.Br.66. And Google never cites an actual 
+effectiveness finding in the remedies opinion. 
+Google suggests that the court’s willingness to revisit a payment 
+ban later “if competition is not substantially restored,” 
+JA1691(Rem.Op.128), expressed the court’s “expectation” that its 
+ordered remedies would be effective. Google.Third.Br.66-67. But the 
+opposite is true. That statement—coming on the heels of the court’s 
+expressed wariness about “eschewing a payment ban” and mere “hope” 
+that new entrants would somehow overcome Google’s monetization 
+advantage, JA1690-91(Rem.Op.127-28)—shows a court concerned about 
+remedial failure, not confident of remedial success. Google also notes 
+that the court rejected certain remedies that it found would not promote 
+competition, Google.Third.Br.66.&.n.11, but those findings do not 
+establish the decree’s effectiveness. 
+4
+ 
+ 
+ 
+ 
+          
+      
+        
+         
+          
+           
+             
+          
+           
+     
+         
+          
+         
+             
+              
+         
+          
+         
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 10 of 34 
+Google observes that the court cited the requirement of effective 
+relief. Google.Third.Br.66, 69 (citing JA1622(Rem.Op.59) & 
+JA1862.n.5(F.J.Op.24.n.5)). But in analyzing the payment ban, the 
+court relied improperly on Ginsburg—which Google does not defend, 
+other than by arguing incorrectly that Plaintiffs “invited” the court’s 
+error. Infra pp.6-7. Moreover, a court that “recite[s]” correct legal rules 
+still errs if “[t]he substance of the court’s discussion reveals” it did not 
+correctly apply those rules. Major League Baseball Players Ass’n v. 
+Garvey, 532 U.S. 504, 510 (2001) (per curiam). Here, the remedies 
+opinion’s substance violated du Pont. 
+Furthermore, even a blanket statement that the remedy is 
+effective would have been insufficient. A district court must “explain[] 
+how its remedies decree would accomplish” the applicable remedial 
+goals. United States v. Microsoft Corp., 253 F.3d 34, 103 (D.C. Cir. 2001) 
+(en banc). But the court never did so for some of the goals: unfettering 
+the market, by restoring competition and redressing the anticompetitive 
+effect of the Apple payments, and denying Google its monopoly-derived 
+“revenue” fruit. U.S.Pls.’Br.131-34. This Court thus cannot satisfy its 
+5
+ 
+ 
+ 
+ 
+           
+      
+       
+          
+          
+        
+           
+        
+        
+           
+          
+        
+           
+            
+        
+        
+ 
+            
+     
+        
+    
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 11 of 34 
+own “duty” to ensure the decree “will effectively redress” the violations. 
+Du Pont, 366 U.S. at 323. 
+c. Contrary to Google’s assertion, Google.Third.Br.79, Plaintiffs 
+never invited balancing of private interests against effective relief. After 
+stating the proposition that courts should “balance the benefit to 
+competition against the hardship to competitive disadvantage the 
+remedy may cause,”1 the court asked Plaintiffs whether “that is a 
+principle I ought to be thinking of.” JA1546(Rem.Tr.4904:8-12). 
+Plaintiffs’ counsel said “yes,” id.(Rem.Tr.4904:13), which was correct 
+because a court can balance benefits and harms to competition. And 
+Plaintiffs’ counsel later stated that private hardships in other markets 
+were “not something you need to ignore,” JA1548(Rem.Tr.4906:5-7), 
+which was true because they could be considered in choosing “among 
+two or more effective remedies.” Du Pont, 366 U.S. at 327. 
+Plaintiffs did not, however, prioritize avoiding private hardships 
+above effective relief. Indeed, Plaintiffs argued that distributors’ 
+1 G
+oogle alters its quotation of the court to match Ginsburg’s 
+language (“hardship [or] competitive disadvantage”), 
+Google.Third.Br.79, but the transcript states “hardship to competitive 
+disadvantage.” JA1546(Rem.Tr.4904:9-10) (emphasis added). 
+6
+ 
+ 
+ 
+ 
+ 
+           
+         
+        
+           
+            
+         
+           
+    
+ 
+         
+ 
+           
+         
+           
+       
+          
+          
+         
+       
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 12 of 34 
+objections to a payment ban improperly “ask[ed] the Court to weigh 
+private interests against the public interest” in effectively restoring 
+competition. JA1544(Rem.Tr.4902:3-9) (citing Int’l Salt Co. v. United 
+States, 332 U.S. 392, 401 (1947)). And Plaintiffs consistently made clear 
+that the remedy must “focus on prying open these markets” harmed by 
+Google’s conduct and that third-party harms outside the relevant 
+markets should not be “the driving purpose or motivation behind [the 
+court’s] decision.” JA1548(Rem.Tr.4906:8-11); accord 
+JA1545(Rem.Tr.4903:10-13). 
+2. The court did not make a functional effectiveness 
+determination. 
+Google next contends that, even if the court did not expressly 
+determine effectiveness, its isolated findings on the purposes of 
+different remedies add up to an overall finding of “effective[ness] in 
+combination.” Google.Third.Br.67. Google’s argument again fails. The 
+court found that the data-sharing and syndication remedies would yield 
+important benefits—as Google acknowledges. But the court did not find 
+that those measures, without a payment ban, would effectively 
+accomplish all the required remedial objectives. U.S.Pls.’Br.131-34, 145-
+46. 
+7
+ 
+ 
+ 
+ 
+          
+      
+           
+       
+  
+          
+           
+         
+        
+         
+           
+       
+   
+           
+          
+ 
+            
+           
+            
+         
+           
+       
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 13 of 34 
+a. To unfetter the relevant markets, a remedy must break 
+Google’s stranglehold over efficient search distribution. U.S.Pls.’Br.145-
+46. Google is wrong that the court found that the contractual, data-
+sharing, and syndication remedies achieve this objective. 
+Google.Third.Br.69-70. 
+First, the court was clear that although contractual remedies were 
+necessary for Google’s rivals to have any chance of obtaining efficient 
+distribution, such remedies would not be sufficient to unlock 
+distribution on their own. JA1669-73(Rem.Op.106-10). The court found 
+that, absent additional relief, distributors would likely continue to 
+choose Google as the default based on the quality and monetization 
+advantages Google unlawfully accumulated through years of 
+exclusionary conduct.2 JA1671(Rem.Op.108). 
+Second, the court did not find that rivals’ improved quality from 
+data-sharing and syndication would enable them effectively to “vie for 
+2 A
+micus Apple proclaims it now has “the kind of contractual 
+flexibility that [it] previously sought in 2009 and 2012,” which will 
+“ensure open and active competition.” Apple.Br.8, 10, 12. But it is no 
+surprise Apple wants to continue sharing Google’s monopoly profits, 
+and there is no basis for concluding that Apple will meaningfully 
+consider other GSEs without a payment ban. 
+8
+ 
+ 
+ 
+ 
+         
+          
+         
+         
+      
+          
+         
+        
+            
+        
+         
+          
+    
+         
+          
+         
+       
+       
+          
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 14 of 34 
+distribution.” Google.Third.Br.70. On the contrary, the court found that 
+without a payment ban, distributors’ financial “incentiv[e] to stick with 
+Google” “could blunt the effectiveness of the remedies imposed,” 
+including data-sharing and syndication, by continuing to block rivals 
+from efficient distribution. JA1690(Rem.Op.127) (emphasis added). 
+That blunting matters because the sharing remedies are limited in 
+duration and scope: Qualified Competitors receive only a “one-time 
+disclosure” of certain search-index data, JA1711(Rem.Op.148), and at 
+least two disclosures of certain user-side data, which “will be subject to 
+privacy-enhancing techniques that will diminish their full utility.” 
+JA1721, 1724(Rem.Op.158, 161). After those disclosures, if rivals are 
+unable to obtain meaningful distribution, the “feedback effects” of scale 
+will resume. See Econ.&.Bus.Professors.Br.19. 
+Google claims that higher-quality rivals will have “greater access 
+to distribution” because “quality is what drove Google’s own success.” 
+Google.Third.Br.71. But that ignores the court’s findings that Google’s 
+payments—funded by its monopoly rents—significantly contributed to 
+its distribution advantage, JA1658-60(Rem.Op.95-97), by making it 
+“financially infeasible” for distributors to switch their defaults to other 
+9
+ 
+ 
+ 
+ 
+       
+          
+          
+           
+    
+         
+         
+          
+       
+          
+          
+       
+          
+         
+          
+           
+           
+    
+       
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 15 of 34 
+GSEs. JA1029(Liab.Op.201). Even higher-quality rivals cannot obtain 
+defaults if distributors find it “financially infeasible” to switch. As 
+Microsoft explains, “[e]ven if rivals improve quality using the shared 
+data, they cannot compete on price” without a payment ban “given 
+Google’s entrenched advantage.” Microsoft.Br.15. 
+Google also posits that improving rivals’ search quality would 
+“improve their prospects” to attract users and improve their 
+monetization of searches, which would enable them to match Google’s 
+payments someday. Google.Third.Br.71. That again overreads the 
+court’s findings. The court held that data-sharing and syndication were 
+justified given the quality and monetization gaps that Google’s conduct 
+enhanced, JA1696, 1734(Rem.Op. 133, 171); JA1869(F.J.Op.31), and 
+that the need for data-sharing was “heightened” without a payment 
+ban. JA1695(Rem.Op.132). But the court never found that data-sharing 
+and syndication would enable rivals to match Google financially. And 
+Google’s own expert testified that if Google could continue paying for 
+defaults, Google was “probably” “going to outbid” rivals even “in the 
+medium-to-longer run.” JA1531(Rem.Tr.4327:6-8); cf. JA1358-
+59(Rem.Tr.726:22-727:4) (Perplexity executive’s testimony that “it will 
+10
+ 
+ 
+ 
+ 
+              
+          
+           
+         
+        
+        
+       
+         
+           
+        
+          
+       
+          
+            
+         
+          
+    
+          
+        
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 16 of 34 
+take a long time for any challenger that has a better product for users 
+to be able to directly replace[] [Google] dollar for dollar”). 
+The closest the court came to suggesting that rivals could obtain 
+significant distribution in the face of Google’s “massive financial 
+advantage,” JA1690(Rem.Op.127), was when it expressed “hope” that 
+GenAI firms would prevent Google from “simply outbid[ding] 
+competitors for distribution if superior products emerge.” 
+JA1691(Rem.Op.128). Even if that hope were justified, but see 
+OpenAI.Br.26 (OpenAI has been “stymied in [its] efforts to gain default 
+distribution anywhere”), du Pont requires “reasonabl[e] assur[ance]” of 
+effective relief and resolving doubts in the government’s favor—not just 
+hope. 366 U.S. at 326, 334. 
+b. Google’s argument also fails because the court never found 
+that a remedy without a payment ban would fully deny Google the 
+revenue fruit of its unlawful conduct, see JA1684(Rem.Op.121), or 
+remedy the loss of potential competition from Google’s payments to 
+Apple. See JA1683(Rem.Op.120). 
+On the revenue fruit, Google rebuts a strawman—i.e., that the 
+remedy must deny Google some quantum of revenue. 
+11
+ 
+ 
+ 
+ 
+         
+         
+       
+          
+        
+            
+            
+       
+            
+    
+        
+         
+        
+           
+         
+      
+         
+              
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 17 of 34 
+Google.Third.Br.89-91. The relevant “fruit” was not limited to Google’s 
+monopoly profits themselves; rather, it encompassed Google’s ability to 
+“reinvest th[at] revenue,” JA1658(Rem.Op.95), by “us[ing] these 
+monopoly profits to secure the next iteration of exclusive distribution 
+deals.” JA1659(Rem.Op.96); see U.S.Pls.’Br.133. A payment ban would 
+deprive Google of that ability by preventing Google from buying up the 
+distribution that rivals need to compete. Thus, even if a ban might 
+increase Google’s short-term profits, Google.Third.Br.89-90, it would 
+deny the revenue fruit by precluding Google from using those profits to 
+control efficient distribution channels. 
+Google denies, meanwhile, that the court found any 
+anticompetitive effect from its payments to Apple—only a “disincentive” 
+for Apple to compete. Google.Third.Br.89.n.14 (brackets omitted). Not 
+so. The court explained that Apple’s disincentive to enter the market 
+was among the “main anticompetitive effects” of Google’s conduct, 
+JA1641(Rem.Op.78); JA1069-70(Liab.Op.241-42), a finding this Court 
+acknowledged in Apple’s intervention appeal. United States v. Google 
+LLC, No. 25-5016, 2025 WL 880552, at *3 (D.C. Cir. Mar. 21, 2025) (per 
+12
+ 
+ 
+ 
+ 
+        
+       
+       
+            
+         
+       
+        
+        
+          
+    
+           
+      
+            
+         
+ 
+              
+          
+       
+            
+          
+         
+     
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 18 of 34 
+curiam).3 Google’s suggestion that this reasoning would improperly 
+“condemn” “[a]ny meaningful payment” to a counterparty, 
+Google.Third.Br.89.n.14, disregards the court’s findings why Google’s 
+paying Apple was not like a common payment for services: Apple was 
+an important potential competitor that had invested in “search 
+development,” JA0932(Liab.Op.104); see U.S.Pls.’Br.104, and had the 
+capability and incentive to develop a GSE. JA1069(Liab.Op.241); 
+JA1643(Rem.Op.80). And Apple’s own witness “confirmed” that the 
+“significant amount of money” from Google skewed Apple’s incentives to 
+compete. JA1643(Rem.Op.80) (quoting JA1487(Rem.Tr.3825:15-20)). 
+B. The Court Did Not Find that a Payment Ban Would 
+Reduce Competition in the Relevant Markets. 
+Google also is wrong that the court found that “a payment ban 
+would likely undermine competition and harm consumers” in the 
+3 G
+oogle is wrong that, to redress this harm, a payment ban would 
+have to “actually cause Apple to build its own GSE.” 
+Google.Third.Br.77. The Apple payments were anticompetitive because 
+they “prevent[ed] the risk of competition,” FTC v. Actavis, Inc., 570 U.S. 
+136, 157 (2013), by deterring Apple from entering the general-search 
+market. Stopping the payments redresses that effect, irrespective of 
+what Apple chooses to do. 
+13
+ 
+ 
+ 
+ 
+         
+          
+             
+        
+       
+       
+         
+        
+           
+  
+          
+       
+            
+          
+   
+           
+          
+              
+   
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 19 of 34 
+relevant markets. Google.Third.Br.73. The court found that a payment 
+ban could restore competition but rejected it for other reasons. 
+1. The court recognized that in refusing a payment ban, it was 
+“forgoing a remedy that could help restore competition,” 
+JA1689(Rem.Op.126), and “bring about a much-needed thaw.” 
+JA1683(Rem.Op.120). While the court disagreed with Plaintiffs’ 
+prediction of the specific market-share shift from a ban, 
+JA1683.n.11(Rem.Op.120.n.11), it did not doubt a ban’s potential 
+benefits, stating that “the bases for a payment ban are sound.” 
+JA1684(Rem.Op.121). 
+The court rejected a payment ban due to potential “downstream 
+harms”—not any lack of procompetitive benefit. JA1567(Rem.Op.4). 
+That contrasted with its denial of other remedies because they had “not 
+been shown to enhance” or “promote” competition in the relevant 
+markets. JA1568(Rem.Op.5). 
+Moreover, the court stated it might “revisit a payment ban” later. 
+JA1691(Rem.Op.128). That would make no sense if, as Google contends, 
+the court found “the net effect” of a ban “would be a reduction in 
+competition.” Google.Third.Br.73. 
+14
+ 
+ 
+ 
+ 
+            
+          
+         
+         
+        
+            
+        
+          
+    
+       
+         
+          
+           
+           
+             
+               
+         
+         
+         
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 20 of 34 
+2. The court posited two possible outcomes of a payment ban. 
+First, distributors might continue setting Google as the default “[o]n 
+‘day one’ post-judgment,” which would increase Google’s profits and 
+“likely advantage Google, at least in the short term.” JA1684-
+85(Rem.Op.121-22). Second, distributors might select rival GSEs as 
+defaults, which could cause distributors to “earn less than they do now.” 
+JA1685(Rem.Op.122). Google wrongly contends that the court found 
+that both outcomes would likely reduce long-term competition in the 
+general-search-services market. See Google.Third.Br.73-74. 
+The first outcome—a short-term increase in Google’s profits— 
+would not involve reduced competition in a relevant market. JA1684-
+85(Rem.Op.121-22). The health of the competitive process does not turn 
+on temporary effects to Google’s bottom line, but rather on rivals’ 
+“opportunities” to “enter into or remain in th[e] market” and reach 
+users. See Microsoft, 253 F.3d at 69 (quoting Tampa Elec. Co. v. Nash. 
+Coal Co., 365 U.S. 320, 328 (1961)). Thus, even if a payment ban did not 
+immediately “promote competition” in the sense of producing different 
+defaults on “day one,” JA1684(Rem.Op.121), it would enhance the 
+competitive process, by suspending the massive payments that “shape 
+15
+ 
+ 
+ 
+ 
+          
+         
+   
+ 
+           
+         
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 21 of 34 
+the market” “in Google’s favor” and giving rivals a meaningful 
+opportunity to obtain efficient distribution as they improve their 
+quality. JA1683(Rem.Op.120).4 
+Google’s  opposition  to  a  payment  ban  underscores  the  point.  A  
+rational  business  generally  “will  seek  to  maximize  its  total  profits.”  
+United  States  v.  AT&T,  Inc.,  916  F.3d  1029,  1043  (D.C.  Cir.  2019).  
+Thus,  if  a  payment  ban  would  increase  Google’s  profits  while  reducing  
+competition,  Google.Third.Br.74,  84,  it  would  be  irrational  for  Google  to  
+oppose  it.  The  rational  explanation  for  Google’s  stance,  then,  is  that  its  
+payments  for  defaults  inhibit  actual  and  potential  competition  against  
+Google,  and  Google  makes  money  from  this  reduction  of  competition.  As  
+amici  explained,  if  Google’s  payments  for  defaults  do  not  “exclude  actual  
+or  potential  competitors,”  Google  is  “acting  as  an  irrational  economic  
+actor  that  is  paying  tens  of  billions  of  dollars  for  little  benefit.”  
+Econ.&.Bus.Professors.Br.12.  
+The  second  possible  outcome  the  court  identified  likewise  does  not  
+involve  reduced  competition  in  a  relevant  market.  The  court  found  only  
+4 If
+ Google used increased profits to “improve its products,” 
+JA1685(Rem.Op.122), that too would be better for competition and 
+consumers. 
+16
+ 
+ 
+ 
+ 
+          
+          
+         
+       
+       
+          
+         
+          
+       
+           
+       
+  
+         
+          
+ 
+            
+           
+         
+         
+            
+           
+           
+  
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 22 of 34 
+that any lowering of payments to distributors would have “downstream 
+effects” in other markets. JA1686(Rem.Op.123). As the court had stated 
+earlier, its concern was that “fix[ing] one market”—the relevant 
+general-search-services market—through a payment ban would run 
+“the risk of harming others.” JA1543(Rem.Tr.4901:20-25) (emphasis 
+added). Namely, the ban could mean “[l]ost competition and innovation 
+from small developers in the browser market,” JA1686(Rem.Op.123), or 
+“reduce[d] competition in the U.S. mobile phone market” from Android 
+OEMs. JA1687(Rem.Op.124). Apple might produce “[f]ewer products 
+and less product innovation.” Id. Or there might be “[h]igher mobile 
+phone prices and less innovative phone features.” 
+JA1688(Rem.Op.125).5 
+Google’s assertion that these potential effects would “limit[] the 
+accessibility of GSEs” and thereby “reduc[e] query output in the 
+5 G
+oogle criticizes Plaintiffs for “cit[ing] no case holding that a 
+district court abuses its discretion by rejecting an antitrust remedy due 
+to concerns about harm to actors in related markets,” 
+Google.Third.Br.83, but never explains why actors in related markets 
+receive greater protection than actors in the relevant market (as in du 
+Pont). A district court cannot deny effective relief to avoid “[e]conomic 
+hardship” to third parties—wherever it occurs. Du Pont, 366 U.S. at 
+327. 
+17
+ 
+ 
+ 
+ 
+        
+          
+           
+          
+               
+      
+           
+          
+       
+          
+         
+        
+   
+         
+        
+           
+           
+   
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 23 of 34 
+[relevant] GSE market,” Google.Third.Br.76, lacks support. The court 
+made no such finding—unsurprisingly, since users who switch from one 
+smartphone or browser to another (or decide against purchasing a new 
+phone) would not necessarily search less. Indeed, the only search-output 
+finding Google cites is that a GSE gets more search traffic when it is the 
+default. Google.Third.Br.85 (citing JA0857(Liab.Op.29)). And Google 
+does not argue that a payment ban would eliminate search defaults. 
+Google also suggests that the second outcome would produce a 
+Microsoft/Google “duopoly.” Google.Third.Br.75. But the court found 
+otherwise: if distributors “look[ed] to other GSEs to earn revenue 
+share,” that could both “stimulat[e] competition among Google’s rivals 
+to secure default distribution” and “encourage new entrants.” 
+JA1683(Rem.Op.120); see JA1410-11(Rem.Tr.2169:10-2170:8) 
+(“Microsoft would have to compete with high-quality search products.”); 
+JA1405-06(Rem.Tr.2147:24-2148:1) (same). And even if a payment ban 
+did produce a short-term duopoly, that would be better for consumers 
+and advertisers than if “Google does not face true market competition” 
+at all. JA1029(Liab.Op.201). 
+18
+ 
+ 
+ 
+ 
+          
+           
+            
+          
+           
+           
+            
+    
+            
+        
+           
+        
+         
+        
+       
+      
+       
+         
+             
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 24 of 34 
+Finally, even assuming arguendo that a payment ban might cause 
+some reduction in competition in a relevant market, a remand would 
+still be necessary to weigh any such reduction against the ban’s benefits 
+to competition to determine its “net effect.” Google.Third.Br.73. And if 
+the court concluded the ban would harm competition on balance, it 
+would need to find another way to meet its “inescapable responsibility” 
+to decree effective relief. United States v. United Shoe Mach. Corp., 391 
+U.S. 244, 250 (1968). 
+3. Google highlights the court’s fear that a payment ban would 
+reduce “consumer welfare” in the general-search-services market by 
+leading to greater use of rival GSEs, which currently have lower 
+quality. Google.Third.Br.73. But as Google concedes, effectiveness looks 
+to long-term effects. Google.Third.Br.86. Far from presuming that “the 
+government knows [consumers’] interests better than they do,” 
+Google.Third.Br.86, focusing on the long-term competitive process 
+implements Congress’s determination that competition—not enforcers’ 
+or courts’ choices—best protects consumer welfare. U.S.Pls.’Br.138-41. 
+Google contends that the court permissibly focused on short-term 
+effects because “the court did find that its package of remedies would be 
+19
+ 
+ 
+ 
+ 
+         
+        
+          
+         
+     
+         
+         
+         
+           
+          
+             
+          
+           
+         
+         
+ 
+            
+         
+         
+         
+          
+   
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 25 of 34 
+effective in restoring competition” in the long term. Google.Third.Br.79; 
+see Google.Third.Br.86 (“[h]aving made that finding” of effectiveness, 
+the court properly addressed “‘short-term’ harm to consumers”). But the 
+court never made such an effectiveness determination, see supra pp.2-
+13, so Google’s argument fails. 
+Google argues that Plaintiffs improperly relied on “cases involving 
+mergers and acquisitions” and that “the district court’s payment-ban 
+analysis tracked” the analysis affirmed in Massachusetts v. Microsoft 
+Corp., 373 F.3d 1199 (D.C. Cir. 2004) (en banc). Google.Third.Br.79, 82.6 
+Both contentions are wrong. First, United States v. American Tobacco 
+Co. was a monopolization case, 221 U.S. 106, 184 (1911), and du Pont 
+relied on American Tobacco with respect to “deeply rooted” principles 
+governing all antitrust cases. Du Pont, 366 U.S. at 327. Second, 
+Massachusetts did not reject remedies potentially necessary for effective 
+relief based on third-party harms or short-term effects. Massachusetts 
+6 G
+oogle’s complaint that U.S. Plaintiffs did not cite Massachusetts 
+in the cross-appeal section of their brief, Google.Third.Br.82, is 
+misplaced. U.S. Plaintiffs cited Massachusetts earlier in discussing the 
+legal principles for antitrust remedies—including that a decree should 
+“restor[e] conditions in which the competitive process is revived.” See 
+U.S.Pls.’Br.113, 115-17. 
+20
+ 
+ 
+ 
+ 
+          
+          
+            
+        
+        
+         
+         
+         
+         
+       
+            
+          
+  
+         
+ 
+           
+           
+           
+          
+            
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 26 of 34 
+simply affirmed the rejection of remedies that would have harmed long-
+term competition, would not serve their purpose, or were unnecessary 
+because other measures redressed the harm. See 373 F.3d at 1209, 1212 
+(code-removal remedy would not promote competition), 1218-19 (API 
+disclosure would have “undermine[d] Microsoft’s incentive to innovate” 
+and led competitors to “mimic” Microsoft’s products), 1225 (proposed 
+Web-services remedy had not been shown to “reduce Microsoft’s 
+monopoly”), 1227 (rejecting a broader prohibition on discounts because 
+“Massachusetts has not shown that any additional restraint is 
+necessary”), 1229 (open-source Internet-Explorer remedy would not 
+help “the process of competition”). Here, by contrast, the court rejected a 
+remedy it acknowledged might be necessary for effective relief. Supra 
+p.3. 
+II. This Court Should Vacate And Remand The Payment-Ban 
+Decision. 
+This Court should vacate and remand for the district court to 
+determine, under the correct legal standard, whether a payment ban is 
+necessary for effective relief. This Court should make clear that the 
+district court must make that determination before any efforts to 
+mitigate harm to private interests or effects in other markets. If the 
+21
+ 
+ 
+ 
+ 
+            
+           
+         
+           
+           
+  
+          
+         
+          
+       
+             
+         
+         
+           
+  
+         
+          
+          
+         
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 27 of 34 
+court concludes that the current decree is not effective under the proper 
+legal framework, then it will have discretion to consider a complete 
+payment ban or alternative payment prohibitions as appropriate. Int’l 
+Salt, 332 U.S. at 400-01 (district courts “are invested with large 
+discretion to model their judgments to fit the exigencies of the 
+particular case”). 
+Google wrongly argues that, if this Court vacates the data-sharing 
+and syndication remedies for insufficient causation findings (which it 
+should not, U.S.Pls.’Br.109-22), a payment ban could not be ordered. 
+Under the applicable proportionality standard, see U.S.Pls.’Br.115-16, 
+there could be a sufficient causal connection for a payment ban even if 
+not for the affirmative data-sharing and syndication remedies. Indeed, 
+Google itself recognized that the court can prohibit distribution 
+restrictions “of the same type or class” as Google’s illegal agreements. 
+JA1254(Google.Remedies.PCOL.15). 
+Moreover, a ruling in Google’s favor on data-sharing and 
+syndication would make a payment ban even more imperative. The 
+court found that prohibiting Google’s exclusive deals “will not unleash 
+competition” by itself. JA1671(Rem.Op.108). Thus, if data sharing or 
+22
+ 
+ 
+ 
+ 
+ 
+            
+      
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 28 of 34 
+syndication  were  vacated,  additional  relief  would  be  needed,  or  
+Plaintiffs  would  have  “won  a  lawsuit  and  lost  a  cause.”  Int’l  Salt,  332  
+U.S.  at  401.   
+The  need  for  an  effective  remedy  is  vital  given  the  “dynamic  
+moment”  of  GenAI.  Google.Third.Br.58.  Contrary  to  Google’s  argument,  
+Google.Third.Br.93,  the  record  below  amply  established  how  Google’s  
+revenue-share  payments  would  stifle  GenAI’s  threat  to  Google  by  
+limiting  distribution  of  rival  GenAI  products.  JA1316-19(U.S.Pls.’Rem.  
+PFOF.100-03)  (citing  testimony  from  GenAI  executives  and  both  sides’  
+experts).  The  court  expressly  recognized  the  need  to  prevent  Google  
+from  “us[ing]  the  same  anticompetitive  playbook  for  its  GenAI  
+products,”  JA1662(Rem.Op.99),  which  includes  its  paying  distributors  
+to  prevent  effective  competition.  
+C
+ONCLUSION 
+T
+his Court should vacate and remand the denial of a payment ban 
+to apply the correct legal framework. 
+23
+ 
+ 
+ 
+ 
+      
+     
+    
+    
+   
+    
+  
+    
+    
+   
+   
+     
+   
+   
+   
+   
+   
+  
+ 
+ 
+ 
+ 
+    
+   
+  
+   
+   
+   
+  
+ 
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 29 of 34 
+Dated: October 29, 2026 Respectfully s ubmitted, 
+s/ Matthew A. Waring 
+DANIEL E. HAAR 
+NICKOLAI G. LEVIN 
+PATRICK M. KUHLMANN 
+MATTHEW A. WARING 
+Attorneys 
+U.S.  DEPARTMENT  OF  JUSTICE  
+ANTITRUST  DIVISION  
+950  Pennsylvania  Ave.,  N.W.  
+Room  3224  
+Washington,  D.C.  20530-0001  
+(202)  532-4186  
+mat
+thew.waring@usdoj.gov 
+Counsel for the United States 
+STANLEY E. WOODWARD, JR. 
+Associate Attorney General 
+EMILY CLAIRE MIMNAUGH 
+Deputy Associate Attorney 
+General 
+STEPHANIE A. GRECO 
+Deputy Assistant Attorney 
+General, Litigation 
+ETHAN S. HOFFMAN 
+Counsel to the Assistant 
+Attorney General 
+TRAVIS R. CHAPMAN 
+GRANT FERGUSSON 
+RYAN T. KARR 
+CLAIRE M. MADDOX 
+MICHAEL G. MCLELLAN 
+Attorneys 
+U.S.  DEPARTMENT  OF  JUSTICE  
+ANTITRUST  DIVISION  
+24
+ 
+ 
+ 
+ 
+   
+   
+ 
+    
+ 
+     
+    
+     
+    
+   
+   
+ 
+ 
+      
+ 
+     
+    
+     
+   
+     
+ 
+    
+   
+     
+     
+     
+ 
+    
+ 
+ 
+      
+ 
+    
+    
+    
+   
+    
+    
+ 
+    
+  
+   
+   
+ 
+      
+   
+   
+   
+ 
+ 
+      
+ 
+ 
+    
+    
+    
+     
+  
+    
+     
+ 
+ 
+      
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 30 of 34 
+/s/ Lee Istrail 
+James Uthmeier, Attorney 
+General 
+Lee Istrail, Assistant Attorney 
+General 
+R. Scott Palmer, Special Counsel, 
+Complex Enforcement Chief 
+Office of the Attorney General, 
+State of Florida 
+PL-01 The Capitol 
+Tallahassee, Florida 32399 
+Lee.Istrail@myfloridalegal.com 
+Counsel for the State of Florida 
+/s/ Diamante Smith 
+Ken Paxton, Attorney General 
+Ralph Molina, Deputy First 
+Assistant Attorney General 
+William D. Wassdorf, Deputy 
+Attorney General for Civil 
+Litigation 
+Thomas York, Division Chief, 
+Antitrust Division 
+Diamante Smith, Assistant 
+Attorney General, Antitrust 
+Division 
+Office of the Attorney General, 
+State of Texas 
+P.O. Box 12548 
+Austin, Texas 78711-2548 
+Diamante.Smith@oag.texas.gov 
+Counsel for the State of Texas 
+/s/ Carolyn D. Jeffries 
+Rob Bonta, Attorney General 
+Paula L. Blizzard, Senior Assistant 
+Attorney General 
+Brian D. Wang, Deputy Attorney 
+General 
+Carolyn D. Jeffries, Deputy 
+Attorney General 
+Office of the Attorney General 
+California Department of Justice 
+455 Golden Gate Avenue, Suite 
+11000 
+San Francisco, California 94102 
+Cari.Jeffries@doj.ca.gov 
+Counsel for the State of California 
+/s/ Amanda J. Wentz 
+Amanda J. Wentz 
+Senior Assistant Attorney General 
+Office of the Arkansas Attorney 
+General 
+101 West Capitol Avenue 
+Little Rock, Arkansas 72201 
+Amanda.Wentz@ArkansasAG.gov 
+Counsel for the State of Arkansas 
+25
+ 
+ 
+ 
+ 
+   
+    
+    
+ 
+    
+   
+ 
+ 
+      
+           
+    
+  
+     
+    
+ 
+    
+ 
+     
+   
+    
+  
+    
+   
+ 
+ 
+ 
+      
+ 
+     
+    
+    
+   
+      
+  
+     
+  
+    
+  
+ 
+     
+ 
+ 
+   
+    
+    
+ 
+     
+   
+   
+     
+    
+ 
+ 
+      
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 31 of 34 
+/s/ Logan Winkles 
+Chris Carr, Attorney General 
+Logan Winkles, Deputy Attorney 
+General 
+40 Capitol Square SW 
+Atlanta, GA 30334 
+lwinkles@law.ga.gov 
+C
+ounsel for the State of Georgia 
+/s/ Jonathan E. Farmer 
+Jonathan E. Farmer 
+Deputy Executive Director of 
+Consumer Protection 
+Office of the Attorney General of 
+Kentucky 
+1024 Capital Center Drive, Suite 
+200 
+Frankfort, KY 40601 
+Jonathan.Farmer@ky.gov 
+C
+ounsel for the Commonwealth of 
+Kentucky 
+/s/ Scott L. Barnhart 
+Theodore Edward Rokita, Attorney 
+General 
+Scott L. Barnhart, Chief Counsel 
+and Director, Consumer Protection 
+Division 
+Jacob Patterson, Deputy Attorney 
+General 
+Office of the Attorney General, 
+State of Indiana 
+Indiana Government Center South, 
+Fifth Floor 
+302 West Washington Street 
+Indianapolis, Indiana 46204 
+Scott.Barnhart@atg.in.gov 
+Jacob.Patterson@atg.in.gov 
+C
+ounsel for the State of Indiana 
+/s/ Asyl Nachabe 
+Liz Murrill, Attorney General 
+Asyl Nachabe, Assistant Attorney 
+General 
+Office of the Attorney General 
+State of Louisiana 
+Public Protection Division 
+909 Poydras St. Suite 1850 
+New Orleans, LA 70112 
+NachabeA@ag.louisiana.gov 
+C
+ounsel for the State of Louisiana 
+26 
+ 
+ 
+ 
+                
+    
+   
+  
+   
+   
+   
+   
+  
+ 
+      
+   
+  
+   
+     
+      
+     
+  
+ 
+      
+ 
+       
+   
+    
+  
+    
+     
+  
+   
+   
+  
+ 
+      
+ 
+      
+    
+     
+   
+     
+    
+   
+    
+   
+   
+ 
+ 
+ 
+      
+  
+ 
+                
+      
+   
+   
+     
+     
+    
+   
+ 
+ 
+       
+ 
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 32 of 34 
+/s/ Scott Mertens 
+Dana Nessel, Attorney General 
+Scott Mertens, Assistant 
+Attorney General 
+Michigan Department of 
+Attorney General 
+P.O. Box 30736 
+Lansing, Michigan 48909 
+MertensS@michigan.gov 
+C
+ounsel for the State of Michigan 
+/s/ Christian B. Corrigan 
+Christian B. Corrigan 
+Solicitor General, State of 
+Montana 
+Anna K. Schneider 
+Bureau Chief, Montana Office of 
+Consumer Protection 
+P.O. Box 200151 
+Helena, MT 59602-0150 
+Christian.Corrigan@mt.gov 
+C
+ounsel for the State of Montana 
+/s/ Gabe Johnson-Karp 
+Joshua L. Kaul, Attorney General 
+Gabe Johnson-Karp, Assistant 
+Attorney General 
+Wisconsin Department of Justice 
+17 W. Main St. 
+Post Office Box 7857 
+Madison, Wisconsin 53707-7857 
+Gabe.Johnson-Karp@wisdoj.gov 
+C
+ounsel for the State of Wisconsin 
+/s/ Alison Esbeck 
+Alison Esbeck 
+Assistant Attorney General 
+Missouri Attorney General’s Office 
+815 Olive Street | Suite 200 
+Saint Louis, Missouri 63101 
+Alison.Esbeck@ago.mo.gov 
+C
+ounsel for the State of Missouri 
+/s/ Mary Frances G. Jowers 
+Alan Wilson, Attorney General 
+Mary Frances G. Jowers, Assistant 
+Deputy Attorney General 
+Office of the Attorney General, 
+State of South Carolina 
+1000 Assembly Street 
+Rembert C. Dennis Building 
+P.O. Box 11549 
+Columbia, South Carolina 29211-
+1549 
+mfjowers@scag.gov 
+C
+ounsel for the State of South 
+Carolina 
+27 
+ 
+ 
+ 
+   
+           
+           
+             
+           
+   
+           
+           
+            
+         
+  
+ 
+      
+   
+     
+ 
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 33 of 34 
+CERTIFICATE OF COMPLIANCE 
+1. This brief complies with the type-volume limit of this Court’s 
+order dated April 30, 2026, because, excluding the parts exempted by 
+Fed. R. App. P. 32(f) and Circuit Rule 32(e)(1), this brief contains 3,971 
+words and the reply brief on cross-appeal for the Colorado Plaintiffs 
+contains 3,999 words. 
+2. This brief complies with the typeface requirements of Fed. R. 
+App. P. 32(a)(5) and the type-style requirements of Fed. R. App. 
+P. 32(a)(6) because the brief has been prepared in Microsoft Word for 
+Microsoft 365 using 14-point Century Schoolbook font, a proportionally 
+spaced typeface. 
+s/ Matthew A. Waring 
+Matthew A. Waring 
+Counsel for the United States 
+28
+ 
+ 
+ 
+ 
+   
+             
+            
+       
+ 
+     
+   
+     
+ 
+ 
+USCA Case #26-5023 Document #2200979 Filed: 10/29/2026 Page 34 of 34 
+CERTIFICATE OF SERVICE 
+I certify that on October 29, 2026, I caused the foregoing brief to 
+be filed through this Court’s CM/ECF system, which will serve a notice 
+of electronic filing on all registered users. 
+s/ Matthew A. Waring 
+Matthew A. Waring 
+Counsel for the United States 
+29
+ 

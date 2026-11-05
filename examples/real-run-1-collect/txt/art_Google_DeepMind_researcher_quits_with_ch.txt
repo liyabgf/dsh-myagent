@@ -1,0 +1,62 @@
+
+
+A former Google DeepMind researcher has warned that artificial intelligence could “kill us all” — adding to a growing chorus of insiders sounding alarms about a technology that President Trump has dismissed as a doomsday “hoax.”
+
+Bilal Chughtai, who recently resigned from the Google-owned AI lab after working on AGI safety and alignment, said Monday that he had become deeply worried about the direction of the technology after watching its rapid development firsthand.
+
+“I earnestly believe that AI has the potential to kill us all, and that we might be running out of time to avoid this outcome,” Chughtai wrote in posts on X and LinkedIn.
+
+Chughtai said the pace of progress since he entered the field in early 2022 has been “staggering,” pointing to increasingly autonomous AI agents as evidence that developers could soon face systems they cannot reliably control.
+
+“I think it’s possible that the AI companies might, in the next few years, succeed in building superintelligent AI systems that far exceed human capabilities in every domain,” he wrote.
+
+Chughtai said he was “not confident” that such systems would behave as humans intend, warning that misaligned AI could escape human control and take actions resulting in “the permanent disempowerment or death of humanity.”
+
+“Alignment is the problem of preventing this, and is both difficult and unsolved,” he wrote.
+
+“Our present understanding of how to train AI systems that deeply want what we want is extremely rudimentary.”
+
+Chughtai nevertheless said he believes AI can still be developed safely — but only if tech firms pull back from what he described as a “manic race” to build ever-more-powerful systems.
+
+“We need to pace AI development to a speed that society can handle, where emerging risks can be addressed before extreme harm is realized,” he wrote.
+
+Chughtai has since joined BlueDot Impact, a nonprofit that trains people to work on AI safety, according to Bloomberg.
+
+His warning comes just days after Jacob Coxon, a former researcher at Anthropic and OpenAI, quit and accused the companies developing the technology of “gambling with our lives.”
+
+“The people building AI earnestly believe that it could kill us all by the end of the decade,” Coxon wrote in a post on X.
+
+The concerns have spilled into the industry’s executive suites.
+
+Anthropic CEO Dario Amodei joined the push over the weekend, urging the industry to put the brakes on its most powerful AI models — with OpenAI’s Sam Altman and Elon Musk publicly backing his call.
+
+Amodei has argued that coordinating such a slowdown will be difficult because the incentives to race ahead — including the potential military advantage — are so great.
+
+“I think that’s going to be very difficult because the incentives to pull ahead and the military advantage that you get from that are so large,” Amodei told CBS News’ “Sunday Morning.”
+
+“And honestly, I don’t know if it’s possible, but we should try.”
+
+Trump, however, sharply rejected the warnings Monday, calling fears that AI could destroy humanity a “HOAX” and alleging a “SICK conspiracy” against AI and data centers that would benefit China.
+
+Trump dismissed the push for stronger regulation while emphasizing the strategic importance of maintaining the US lead in AI.
+
+“The only control or ‘guardrails’ that AI needs is a STRONG AND SMART (High IQ!) PRESIDENT,” Trump wrote on Truth Social, according to reports.
+
+The president also singled out Amodei, accusing the Anthropic chief of pretending to be a “perfect little angel” while arguing that the federal government already has sufficient criminal and regulatory powers over AI companies.
+
+The Post reported Monday that the White House nevertheless has been considering “limited safeguards” for AI even as the administration rejects a broader regulatory crackdown.
+
+“They might agree to some limited safeguards but that would be the outer limits for the administration,” one top Wall Street executive with knowledge of the administration’s thinking told The Post.
+
+The administration is instead leaning toward industry self-regulation and other narrowly tailored guardrails, according to The Post’s reporting — reflecting its concern that more sweeping restrictions could hand an advantage to China.
+
+The Post has sought comment from Google.
+
+Bilal Chughtai, a former Google DeepMind staffer, is seen in an undated photo. X/@bilalchughtai_
+
+A scene from "Terminator 3: Rise of the Machines" in 2003. AI researchers are warning that the technology could pose a threat to the human race. Warner Bros/Courtesy Everett Collection
+
+Jacob Coxon, a researcher who departed his AI role at Anthropic over fears of racing into extinction, says people are "begging" for regulation. Fox News
+
+Anthropic CEO Dario Amodei and OpenAI CEO Sam Altman were featured on The Post cover after backing calls to slow the development of advanced artificial intelligence over safety concerns.
+

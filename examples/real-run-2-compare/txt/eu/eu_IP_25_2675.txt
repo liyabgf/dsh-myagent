@@ -1,0 +1,29 @@
+# Commission opens investigation into potential Digital Markets Act breach by Google in demoting media publishers' content in search results
+ref=IP/25/2675
+
+Today, the European Commission has formally launched proceedings to assess whether Google applies fair, reasonable and non-discriminatory conditions of access to publishers' websites on Google Search, which is an obligation under the Digital Markets Act (DMA).
+
+The Commission's monitoring work has shown indications that Google, based on its ‘site reputation abuse policy', is demoting news media and other publishers' websites and content in Google search results when those websites include content from commercial partners. According to Google, this policy aims to tackle practices that are allegedly meant to manipulate ranking in search results.
+
+The Commission's investigation focuses specifically on Google's ‘site reputation abuse policy', and how that policy applies to publishers. This policy appears to directly impact a common and legitimate way for publishers to monetise their websites and content.
+
+Therefore, the Commission is investigating whether Alphabet's demotions of publishers' websites and content in Google Search may impact publishers' freedom to conduct legitimate business, innovate, and cooperate with third-party content providers.
+
+The initiation of proceedings does not prejudge a finding of non-compliance. It merely indicates that the Commission will further pursue the case.
+
+Next Steps
+
+Should the Commission find evidence of non-compliance, the Commission will inform Alphabet of its preliminary findings and explain the measures that it considers taking or that Alphabet should take to effectively address the Commission's concerns.
+
+The Commission will aim to conclude its investigation within 12 months from the opening of the proceedings.
+
+In case of an infringement, the Commission can impose fines up to 10% of the company's total worldwide turnover. Such fines can go up to 20% in case of repeated infringement. Moreover, in case of systematic infringements, the Commission may also adopt additional remedies such as obliging a gatekeeper to sell a business or parts of it, or banning the gatekeeper from acquisitions of additional services related to the systemic non-compliance.
+
+Background
+
+The DMA aims to ensure contestable and fair markets in the digital sector. It regulates gatekeepers, which are large digital platforms that provide an important gateway between business users and consumers, whose position can grant them the power to create a bottleneck in the digital economy.
+
+On 6 September 2023, the Commission designated Alphabet's online search engine Google Search as a core platform service under the DMA. Alphabet had to fully comply with all DMA obligations for its online search engine Google Search by 7 March 2024.
+
+Today's opening of proceedings against Alphabet is due to concerns that Alphabet may not comply with the Article 6(12) DMA and Article 6(5) DMA obligations to apply transparent, fair and non-discriminatory conditions to Google Search's ranking.
+

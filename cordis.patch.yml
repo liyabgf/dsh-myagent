@@ -1,0 +1,119 @@
+# myagent bundle layer: the plugin itself, and the agent preset every worker Session runs under.
+#
+# The plugin row carries no config, so every path resolves under DSH's own home (<DSH_HOME>/state/myagent, its work/ and
+# inbox/). A profile that wants them elsewhere overrides this entry's config; changing stateDir remounts the plugin,
+# because that is where the database and its lock live.
+#
+# Only the worker has a preset of its own. The main Session is the operator's own front desk, created with the profile's
+# default preset, so it keeps whatever that profile gives it and only adds myagent's tools and prompt section.
+- insert:
+    - id: myagent
+      name: myagent
+    # The preset of every worker Session (WORKER_PRESET in src/app/sessions.ts). It is DSH's `standard` preset minus
+    # everything that asks or shows a person something, changes the profile, schedules work, or reaches for a goal:
+    # a worker runs unattended, so a tool that waits for a person would hang it, and it reports through
+    # `myagent_report` instead. A foreground command moves to a background job after 5 seconds, and a wait for a job
+    # ends after 5 seconds too, so nothing holds back a message the Session takes at its next step. Subagents spawn
+    # under this same preset, so they inherit the same non-interactive surface.
+    - id: myagent-worker-preset
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: myagent-worker
+        name: myagent worker
+        description: myagent 的 Ticket 工作 Session 专用，不供手动选择。无人值守运行：不含向人提问、展示、计划模式、插件管理、定时、目标与工作流工具；前台命令超 5 秒转入后台。
+        order: 90
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a worker agent powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          # A foreground command waits at most 5 s, then the shell tool moves it to a background job.
+          - id: shell
+            name: cordis:group
+            group: true
+            isolate:
+              shell: true
+            config:
+              - id: bash-sandbox
+                name: '@deepseek-ai/dsh-bash-sandbox'
+                disabled: !!js process.platform === 'win32'
+                config:
+                  timeoutMs: 5000
+                  maxTimeoutMs: 5000
+              - id: pwsh-sandbox
+                name: '@deepseek-ai/dsh-pwsh-sandbox'
+                disabled: !!js process.platform !== 'win32'
+                config:
+                  timeoutMs: 5000
+                  maxTimeoutMs: 5000
+              - id: tool-bash
+                name: '@deepseek-ai/dsh-tool-bash'
+                disabled: !!js process.platform === 'win32'
+              - id: tool-pwsh
+                name: '@deepseek-ai/dsh-tool-pwsh'
+                disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          # A wait for a job ends after 5 s too; the job's end wakes the worker with its result.
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+            config:
+              waitTimeoutMs: 5000
+              maxWaitTimeoutMs: 5000
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+          - id: delegation
+            name: cordis:group
+            group: true
+            isolate:
+              workflowEngine: true
+            config:
+              - id: tool-subagent-control
+                name: '@deepseek-ai/dsh-tool-subagent-control'
+              - id: tool-subagent
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: spawn
+                  toolName: subagent
+                  modelSelection: true
+                  modelDiscovery: true
+                  agentPreset: myagent-worker
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          # A general assistant worker researches on the web, so both search and fetch stay on.
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000

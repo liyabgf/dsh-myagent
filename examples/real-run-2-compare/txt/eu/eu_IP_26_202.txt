@@ -1,0 +1,23 @@
+# Commission opens proceedings to assist Google in complying with interoperability and online search data sharing obligations under the Digital Markets Act 
+ref=IP/26/202
+
+Today, the European Commission has started two sets of specification proceedings to assist Google in complying with its obligations under the Digital Markets Act (‘DMA'). The specification proceedings formalise the Commission's regulatory dialogue with Google on certain areas of its compliance with two DMA obligations.
+
+The first set of proceedings concerns Google's obligation under Article 6(7) of the DMA to provide third-party developers with free and effective interoperability with hardware and software features controlled by Google's Android operating system. Today's proceedings focus on features used by Google's own Artificial Intelligence (‘AI') services, such as Gemini. The Commission intends to specify how Google should grant third-party AI service providers equally effective access to the same features as those available to Google's own services. The aim is to ensure that third-party providers have an equal opportunity to innovate and compete in the rapidly evolving AI landscape on smart mobile devices.
+
+The second set of proceedings concerns Google's obligation under Article 6(11) of the DMA to grant third-party providers of online search engines access to anonymised ranking, query, click and view data held by Google Search on fair, reasonable and non-discriminatory (‘FRAND') terms. These proceedings focus on the scope of data, the anonymisation method, the conditions of access, and the eligibility of AI chatbot providers to access the data. Effective compliance and access to a useful dataset will allow third-party providers of online search engines to optimise their services and offer users genuine alternatives to Google Search.
+
+Next steps
+
+The Commission will conclude the proceedings within six months of their opening. Within the upcoming three months the Commission will communicate its preliminary findings to Google setting out the draft measures it intends to impose on Google to effectively comply with the DMA. Non-confidential summaries of preliminary findings and the envisaged measures will be published to enable third parties to provide comments.
+
+These proceedings, which by their nature do not take a position on compliance with the DMA, are without prejudice to the powers of the Commission to adopt a decision finding non-compliance with any of the obligations laid down in the DMA by a gatekeeper, including the possibility to impose fines or periodic penalty payments.
+
+Background
+
+The DMA aims to ensure contestable and fair markets in the digital sector. It regulates gatekeepers, which are large digital platforms that provide an important gateway between business users and consumers, whose position can grant them the power to create a bottleneck in the digital economy.
+
+On 6 September 2023, the European Commission designated Google Inc.'s Google Search, Google Play, Google Maps, YouTube, Google Android operating system, Google Chrome, Google Shopping and its online advertising services as core platform services. Google has had to fully comply with all applicable DMA obligations in respect of the designated services since 7 March 2024.
+
+The Commission has published an annual report on the implementation of the DMA and the progress made towards achieving its objectives.
+

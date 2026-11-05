@@ -1,0 +1,51 @@
+# Commission provides guidance to Google for AI interoperability on Android and sharing of Google Search data under the Digital Markets Act
+ref=IP/26/1634
+
+Today, the European Commission has issued two sets of binding specification measures to Google under the Digital Markets Act.
+
+The aim of the first specification measures is to ensure that competitors' Artificial Intelligence (AI) services can compete with Google's own AI services, such as Gemini, by having equal access to features on Google's Android devices.
+
+The aim of the second specification measures is to rebalance the playing field by giving third-party search engines access to search data that only Google Search can collect at scale.
+
+Interoperability with Google Android
+
+Currently, on Android phones, competitors' AI assistants only have restricted access to key functionalities of the Google Android operating system. Without this access, alternative AI assistants are not competing on an equal footing with Google's own AI services that have full access. Third-party AI assistants are therefore limited in how they can offer their innovative services, making them less attractive to 60% of EU users who have an Android device.
+
+Today's decision will ensure that users can activate their preferred AI assistant via voice commands, similar to the "Hey Google" command. Users will be able to use third-party AI assistants to perform actions in apps on their behalf. For instance, they will be able to delegate tasks such as booking a taxi, receive suggestions for relevant replies in chat apps, or ask the AI assistant about a recently visited place. Importantly, the measures incorporate robust safeguards to ensure that the privacy of users, device integrity and security are protected.
+
+Google search data
+
+The second decision specifies how Google should share search data with other search engines. Data sharing is crucial for the development and optimisation of third-party search engines. It helps to create a more level playing field with Google Search, and fosters innovative search services, which includes privacy-focused alternatives.
+
+The decision provides guidance on several key aspects which have made Google's data sharing offer ineffective so far. For example, it specifies that AI chatbots offering search functionalities are eligible to receive shared data, and that, subject to anonymisation, Google should share the same data that it collects to optimise its own search services.
+
+The decision ensures anonymisation of search data. It sets out a multi-layered method to anonymise the shared data, developed in close collaboration with internal and external privacy experts and in line with the draft Joint Guidelines on the interplay of the DMA and GDPR by the Commission and the European Data Protection Board. The decision further allows Google to assess, before sharing any data, whether sharing such data with a specific third party poses serious cyber security and data protection risks. Depending on future market developments, including based on independent third-party evaluation, the Commission may amend today's decision in particular as regards the relevant anonymisation measures.
+
+Lastly, the measures lay out a fair formula to calculate the price of the shared data, and a transparent process for accessing the data.
+
+The aim of these measures is to allow companies to be able to offer European users a wider and more feature-rich range of options to choose from, both when it comes to their AI services on Android and to search services.
+
+Next steps
+
+Specification decisions are legally binding. Google is required to implement the specified measures under the conditions and timelines included in the decisions. Google must start sharing search data with eligible search engine providers from January 2027. Users will start benefitting from the changes to Android as of July 2027.
+
+These decisions fully respect Google's rights of defence and remain subject to independent judicial scrutiny.
+
+Background
+
+The DMA aims to ensure contestable and fair markets in the digital sector. It regulates gatekeepers, which are large digital platforms that provide an important gateway between business users and consumers, whose position can grant them the power to create a bottleneck in the digital economy, and lays down rules to prevent them from unfairly tipping markets in their favour. It also aims to rebalance the playing field in long-entrenched markets, such as search engines.
+
+On 6 September 2023, the European Commission designated Google Search, Google Play, Google Maps, YouTube, Google Android operating system, Google Chrome, Google Shopping and its online advertising services as core platform services. Google has been required to fully comply with all applicable DMA obligations in respect of its designated services since 7 March 2024.
+
+This includes obligations to offer effective interoperability with features of Google Android (pursuant to Article 6(7) DMA), and to grant third-party providers access to anonymised search data (pursuant to Article 6(11) DMA).
+
+Measures adopted following specification proceedings clarify how a DMA obligation should be implemented to ensure compliance. Specification proceedings are distinct from non-compliance investigations, and do not aim to assess the gatekeeper's compliance with the DMA. Therefore, they do not provide for the imposition of fines.
+
+The Commission opened two such specification proceedings concerning the sharing of Google Search's data and interoperability with the Google Android operating system for AI services on 27 January 2026. The Commission communicated its preliminary findings to Google and published the proposed measures inviting third parties to provide feedback on 16 April 2026 and on 27 April 2026, respectively.
+
+For more information
+
+Q&A on the Interoperability with Google Android specification decision
+
+Q&A on the Google Search specification decision
+

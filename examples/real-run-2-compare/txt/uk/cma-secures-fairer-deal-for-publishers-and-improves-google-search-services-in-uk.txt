@@ -1,0 +1,109 @@
+Cookies on GOV.UK
+
+We use some essential cookies to make this website work.
+
+We'd like to set additional cookies to understand how you use GOV.UK, remember your settings and improve government services.
+
+We also use cookies set by other sites to help us deliver content from their services.
+
+You have accepted additional cookies. You can change your cookie settings at any time.
+
+You have rejected additional cookies. You can change your cookie settings at any time.
+
+View cookies
+
+Skip to main content
+
+Press release
+
+CMA secures fairer deal for publishers and improves Google search services in UK
+
+Conduct requirement introduced today gives publishers more control and stronger bargaining power over the use of their content.
+
+From:
+
+Competition and Markets Authority
+
+Published:
+3 June 2026
+
+New conduct requirement imposed under the digital markets competition regime
+
+In a world first, publishers will be able to opt out of their content being used to power AI features in Google search
+
+CMA monitoring AI developments in Google search and may take further action if needed
+
+The Competition and Markets Authority (CMA) has today imposed a new conduct requirement for Google search, meaning it must take specific action under the UK's digital markets competition regime. The requirement will secure a fairer deal for publishers and consumers and improve Google's search services in the UK.
+
+The conduct requirement is imposed following the CMA's decision to designate Google with strategic market status (SMS) in general search services. The designation allows the CMA to introduce targeted rules, known as ‘conduct requirements', for Google's search activities if proportionate for the purposes of ensuring fair dealing, open choices or trust and transparency.
+
+In a world first, publishers will now have effective tools to prevent their content being used to power AI features in search, such as AI Overviews. This will put publishers, like news organisations, in a stronger position to negotiate content deals with Google.
+
+To boost consumer trust, Google is also now required to make sure that publisher content is properly attributed, using clear links, in AI‑generated search results.
+
+Following consultation feedback, Google will now also have to allow publishers to opt-out of allowing their content to be used for the ‘fine-tuning' of AI models. This provides publishers with confidence that they will have control over the full range of AI use-cases of their content.
+
+In May, Google announced significant changes to its search platform to further embed AI technologies, which could fundamentally change how search results are presented to users in the UK. This conduct requirement will apply to those changes. However, the CMA is actively monitoring how Google is implementing these changes - including assessing the implications for businesses. If needed, the CMA will bring forward work on further measures to ensure a fair exchange of value between Google and publishers.
+
+Sarah Cardell, Chief Executive of the CMA, said:
+
+Today, we have introduced a world‑first requirement on Google's search services in the UK, enabling fair treatment, greater transparency and meaningful choice for businesses and consumers.
+
+With features like AI Overviews rapidly reshaping online search, it is crucial that content publishers, including news organisations, have appropriate bargaining power over how their content is used. At the same time, these measures will help tens of millions of UK search users better understand and trust the information presented to them.
+
+It's also important that any action we take in this space can move with the times. Google has recently announced changes to its search business and the requirements we've introduced today are designed to respond to what Google is doing now and in the future. We'll also continue to use the unique flexibility of the UK regime to monitor and address future concerns as they arise and we will be announcing further action in relation to Google's search business in the coming weeks.
+
+The CMA will take an active role overseeing how Google applies the new requirement to its search services. It will have nine months to implement all changes but the CMA expects important parts of the controls to become available to publishers well before that deadline. Google will also be required to submit and publish compliance reports, supported by key data and metrics, explaining changes it has made and how it has complied. These are due every six months for the first year, after which the CMA will review the frequency of reporting. The CMA welcomes feedback from interested parties about these changes they are rolled out.
+
+Since the digital markets competition regime came into force last year, the CMA has launched four strategic market status investigations into major technology companies Google, Apple and Microsoft. Conduct requirements are an important part of the regime, allowing the CMA to take proportionate and evidence-based steps that ensure designated businesses act in a way which improve digital markets and protect competition. The requirement imposed today is part of a series of updates over the coming weeks and months on the CMA's digital markets work.
+
+More information can be found on the CMA's Google search page.
+
+Notes to editors
+
+To designate a firm with SMS, the CMA must decide that it has substantial and entrenched market power and a position of strategic significance in a digital activity. Google having SMS does not imply that it has acted anti-competitively.
+
+Once the CMA has designated a firm as having SMS, it is then able (subject to a legal framework that includes further public consultation and showing that measures are proportionate) to introduce interventions (such as those as set out in today's decision) to unlock competition, increase innovation, and protect consumers.
+
+For media enquiries, contact the CMA press office.
+
+Email
+
+press@cma.gov.uk
+
+Telephone numbers
+
+Phone:
+020 3738 6460
+
+Out of hours:
+020 3738 6878
+
+Opening hours
+
+Monday to Friday, 9am to 5:30pm. On bank holidays, use our out of hours number.
+
+Find out about call charges
+
+Share this page
+
+The following links open in a new tab
+
+Share on Facebook
+
+(opens in new tab)
+
+Share on X
+
+(opens in new tab)
+
+Is this page useful?
+
+Maybe
+
+Thank you for your feedback
+
+Help us improve GOV.UK
+
+To help us improve GOV.UK, we'd like to know more about your visit today.
+Please fill in this survey (opens in a new tab).

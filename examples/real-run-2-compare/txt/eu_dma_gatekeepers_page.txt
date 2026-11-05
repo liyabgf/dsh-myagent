@@ -1,0 +1,149 @@
+Skip to main content
+
+en
+
+Select your language
+
+bgбългарски
+
+esespañol
+
+csčeština
+
+dadansk
+
+deDeutsch
+
+eteesti
+
+elελληνικά
+
+enEnglish
+
+frfrançais
+
+gaGaeilge
+
+hrhrvatski
+
+ititaliano
+
+lvlatviešu
+
+ltlietuvių
+
+humagyar
+
+mtMalti
+
+nlNederlands
+
+plpolski
+
+ptportuguês
+
+roromână
+
+skslovenčina
+
+slslovenščina
+
+fisuomi
+
+svsvenska
+
+Digital Markets Act (DMA)
+
+Gatekeepers Portal
+
+On 6 September 2023 the European Commission designated for the first time six gatekeepers - Alphabet, Amazon, Apple, ByteDance, Meta, Microsoft - under the Digital Markets Act (DMA). On 29 April 2024, the Commission designated Apple with respect to its iPadOS, its operating system for tablets, as a gatekeeper under the DMA. On 13 May 2024, the Commission also designated under the DMA, Booking as a gatekeeper for its online intermediation service Booking.com. On 23 April 2025, Meta was undesignated for its online intermediation service Facebook Marketplace. In total, 23 core platform services provided by those gatekeepers are currently designated.
+
+For more information on submissions, the designation process, how to submit information on acquisitions (Article 14) and how to contact the DMA team if you are a Gatekeeper or potential gatekeeper, please consult Resources for gatekeepers and potential gatekeepers.
+
+Alphabet Inc.
+
+Download the Designation Decision
+
+Core platform services
+
+Google Play | Case DMA.100002
+
+Google Maps| Case DMA.100011
+
+Google Shopping | Case DMA.100011
+
+Google Search | Case DMA.100004
+
+YouTube | Case DMA.100005
+
+Android Mobile | Case DMA.100009
+
+Alphabet's online advertising service | Case DMA.100010
+
+Google Chrome | Case DMA.100008
+
+Amazon.com Inc.
+
+Download the Designation Decision
+
+Core platform services
+
+Marketplace | Case DMA.100018
+
+Amazon Advertising | Case DMA.100016
+
+Apple Inc.
+
+Download the Designation Decision
+
+Core platform services
+
+AppStore | Case DMA.100013
+
+iOS | Case DMA.100025
+
+Safari | Case DMA.100027
+
+iPadOS | Case DMA.100047
+
+Booking
+
+Download the Designation Decision
+
+Core platform services
+
+Online intermediation services | Case DMA.100019
+
+ByteDance Ltd.
+
+Download the Designation Decision
+
+Core platform services
+
+TikTok | Case DMA.100040
+
+Meta Platforms, Inc.
+
+Download the Designation Decision
+
+Core platform services
+
+Facebook | Case DMA.100020
+
+Instagram | Case DMA.100020
+
+WhatsApp | Case DMA.100024
+
+Messenger | Case DMA.100024
+
+Meta Ads | Case DMA.100035
+
+Microsoft Corporation
+
+Download the Designation Decision
+
+Core platform services
+
+LinkedIn | Case DMA.100017
+
+Windows PC OS | Case DMA.100026

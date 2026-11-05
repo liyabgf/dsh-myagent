@@ -1,0 +1,39 @@
+# Commission proposes measures to Google on sharing search engine data with third parties under Digital Markets Act
+ref=IP/26/825
+
+The European Commission has sent preliminary findings to Google outlining proposed measures to comply with the Digital Markets Act (DMA). Under these proposed measures, Google should allow third party search engines to access search data, such as ranking, query, click and view data, on fair, reasonable and non-discriminatory terms.
+
+The aim of the measures is to allow third party online search engines, or ‘data beneficiaries', to optimise their search services and contest Google Search's position.
+
+The proposed measures cover the following matters:
+
+The eligibility of data beneficiaries to receive search data, including that of artificial intelligence (AI) chatbots with search functionalities;
+
+The scope of the search data that Google must share;
+
+The means and frequency by which Google must share search data;
+
+Measures to ensure the anonymisation of personal data;
+
+Parameters for setting fair, reasonable and non-discriminatory prices for search data; and
+
+Processes governing beneficiaries' access to search data.
+
+To ensure that these proposed measures are effective, the Commission invites interested parties to comment on them through a public consultation.
+
+Interested parties have until 1 May to submit their views on the proposed measures. The non-confidential summary of the preliminary findings and the proposed measures is available on the consultation page.
+
+Next steps
+
+The Commission will carefully assess the feedback provided by interested parties and by Google. The Commission may use the input to adjust the measures that will be included in the final decision, which will be binding on Google. This final decision must be adopted by 27 July 2026.
+
+These proceedings are without prejudice to the Commission's powers to adopt a decision finding non-compliance with any of the obligations laid down in the DMA by a gatekeeper.
+
+Background
+
+These preliminary findings are part of a set of specification proceedings opened on 27 January 2026.
+
+The DMA aims to ensure contestable and fair markets in the digital sector. It regulates gatekeepers, which are large digital platforms that provide an important gateway between business users and consumers, whose position can grant them the power to create a bottleneck in the digital economy.
+
+On 6 September 2023, the European Commission designated Alphabet Inc.'s, i.e. Google services such as Google Search, Google Play, Google Maps, YouTube, Android operating system, Google Chrome, Google Shopping and its online advertising services as core platform services. Google has had to fully comply with all applicable DMA obligations in respect of the designated services since 7 March 2024.
+

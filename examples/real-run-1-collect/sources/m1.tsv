@@ -1,0 +1,12 @@
+sec_submissions_alphabet	https://data.sec.gov/submissions/CIK0001652044.json
+blog_google_rss	https://blog.google/rss/
+deepmind_blog_rss	https://deepmind.google/blog/rss.xml
+google_devs_blog_rss	https://developers.googleblog.com/feeds/posts/default
+google_cloud_blog_rss	https://cloud.google.com/blog/rss
+9to5google_rss	https://9to5google.com/feed/
+techcrunch_google_rss	https://techcrunch.com/tag/google/feed/
+verge_google_rss	https://www.theverge.com/rss/google/index.xml
+bing_news_alphabet_rss	https://www.bing.com/news/search?q=Alphabet+Google+earnings&format=rss
+gnews_alphabet_rss	https://news.google.com/rss/search?q=Alphabet+when:30d&hl=en-US&gl=US&ceid=US:en
+hn_algolia_gemini	https://hn.algolia.com/api/v1/search_by_date?query=Gemini&tags=story&numericFilters=points%3E50&hitsPerPage=60
+reddit_r_google_top_month	https://old.reddit.com/r/google/top.json?t=month&limit=40

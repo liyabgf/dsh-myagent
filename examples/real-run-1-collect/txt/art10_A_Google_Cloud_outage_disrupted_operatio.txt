@@ -1,0 +1,111 @@
+
+
+Email
+
+Sign In
+
+World
+
+Ukraine
+
+War with Russia
+
+Investigations
+
+Open questions
+
+Cities that survived
+
+Kyiv
+
+Polytics
+
+Business
+
+Gambling
+
+Agro
+
+Energetics
+
+IT and Telecom
+
+Pharmaceuticals
+
+Logistics and transportation
+
+Metallurgy
+
+Analytics
+
+Finance
+
+Real estate
+
+Technologies
+
+Sport
+
+Esports
+
+proLife
+
+Health
+
+Culture
+
+Beauty
+
+Celebrities
+
+Autoworld
+
+Traveling
+
+Around the World
+
+$ 45.55
+
+€ 51.27
+
+zł 11.69
+
++1° Kyiv
+
++4° Warsaw
+
++19° Washington
+
+News
+
+World
+
+A Google Cloud outage disrupted operations at European banks and services
+
+UA NEWS
+
+20
+October
+2026
+20:10
+
+An outage at the Google Cloud data center in London on October 20 disrupted the operation of many applications and online services across Europe. In particular, service disruptions were reported at a number of banks, courier services, and government agencies.
+
+According to Google, the issues in the europe-west2 region—which is served by the London data center—were caused by an “incident in the power supply system.” The disruptions affected not only Revolut customers but also users of British banks such as Lloyds Bank, Halifax, Bank of Scotland, and HSBC, one of the world’s largest banks. In addition, the DPD courier service temporarily suspended normal operations, and due to malfunctions in the UK court system’s video platform, a number of video hearings were disrupted.
+
+The disruptions in banking systems triggered a chain reaction, complicating operations for thousands of businesses and firms that rely on these financial services.
+
+As of 2:00 p.m. GMT, Google stated that most services had already been restored, and only a small number of users were experiencing residual disruptions.
+
+Source: BBC.
+
+In Cyprus, Revolut users reported difficulties accessing their accounts due to a glitch in the banking app. The disruption affected several features of the service.
+
+In Italy, authorities are investigating an alleged fraud case involving the British digital bank Revolut: cybercriminals allegedly used a certified email address belonging to a division of the Reggio Calabria Prefecture to obtain customers’ personal data.
+
+Read us on
+
+Download our app
+
+×
+

@@ -1,0 +1,432 @@
+ 
+  
+ 
+   
+        
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+_ 
+_ 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+_ ) 
+   
+       
+      
+       
+       
+       
+      
+       
+      
+       
+   
+       
+      
+       
+       
+       
+      
+       
+      
+ 
+ 
+     
+    
+      
+       
+       
+    
+   
+     
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 1 of 8 
+UNITED STATES DISTRICT COURT 
+FOR THE DISTRICT OF COLUMBIA 
+_________________________________________ 
+UNITED STATES OF AMERICA et al., 
+Plaintiffs, 
+v. 
+GOOGLE LLC, 
+Defendant. 
+Case No. 20-cv-03010 (APM)  
+________________________________________
+________________________________________
+STATE OF COLORADO et al., 
+Plaintiffs, 
+v. 
+GOOGLE LLC, 
+Defendant. 
+Case No. 20-cv-03715 (APM)  
+________________________________________
+ORDER 
+Before the court is a dispute regarding Google’s access to confidential third-party 
+information submitted to the Technical Committee (“TC”) under the Final Judgment. 
+The Technical Committee plays a crucial role in the execution of the Final Judgment. 
+See generally Final J., ECF No. 1462 [hereinafter Final J.]. The Final Judgment empowers the 
+Technical Committee to receive complaints against Google from third parties , id. § VII.C.3, and 
+to make recommendations to the court and to Plaintiffs about some of the most consequential 
+aspects of the Final Judgment, including the frequency of user-side data disclosures, id. § IV.B.2; 
+the cap on search syndication, id. § V.B.4; data-sharing and syndication license templates, id. 
+ 
+ 
+    
+ 
+      
+    
+     
+      
+    
+        
+      
+       
+     
+     
+         
+    
+      
+   
+     
+      
+      
+    
+     
+   
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 2 of 8 
+§§ IV.C.3, V.B; and the certification of Qualified Competitors, id. § IX.V, to name a few. In part 
+because of this great role, Google is in turn permitted to “object and be heard by the Court on any 
+recommendation from the TC or Plaintiffs as to the interpretations or substantive requirements” of 
+the Final Judgment. Id. § VII.A.7.k. 
+On May 1, 2026, the parties filed a Joint Status Report to advise that disputes had arisen 
+when trying to harmonize these provisions. B ecause the Technical Committee will receive and 
+rely on confidential third -party information in the course of making its recommendations or 
+processing complaints under the Final Judgment, the parties agreed that some of that information 
+should be shared with Google so that Google can exercise its right to object or respond . 
+Joint Status Report, ECF No. 1511 [hereinafter May 1 JSR], at 4–5. But the parties disagreed as 
+to the form and means by which Google could access such information. 
+The parties presented to the court their proposed approaches and requested resolution on 
+an expedited basis. See May 1 JSR at 4. At a status conference held on May 5, 2026, the parties 
+elaborated their positions, but the court requested more information about the procedures and 
+context in which the disputed issues would play out . See Tr. of Status Hr’g , ECF No. 1513 
+[hereinafter Hr’g Tr.], at 37:1–7. 
+The parties filed a second Joint Status Report on May 20, 2026, that reflected a 
+commendable joint effort to narrow and contextualize the issues for the court . They devised a 
+helpful “order of operations ” by which the parties and the Technical Committee will process 
+recommendations and complaints , and they proposed detailed language prescribing Google’s 
+access to underlying confidential third-party information. Joint Status Report, ECF No. 1520 [May 
+20 JSR], App. A, ECF No. 1520-1 [hereinafter App.]. 
+2 
+ 
+ 
+    
+          
+  
+   
+    
+       
+      
+    
+   
+         
+ 
+      
+   
+       
+      
+     
+     
+        
+         
+     
+  
+ 
+         
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 3 of 8 
+Still, some disagreements remain. The court below explains and resolves these disputes 
+with reference to the parties’ respective proposals and responses as set forth in Appendix A of the 
+May 20, 2026 Joint Status Report. To avoid any doubt, attached to this Order is the court’s own 
+Appendix specifying the language it orders be adopted. 
+Third-party m aterials underlying recommendations (excluding as to Qualified 
+Competitors). The parties agree that Google should have access to Technical Committee 
+recommendations (other than those to certify or recertify Qualified Competitors , which are 
+addressed separately) and that such recommendations should contain “a statement regarding the 
+basis for the recommendation,” including an “identification of the material information relied upon 
+to support” it. App. ¶¶ I.B.1–2. But they remain at odds about the extent of access to “material 
+information” provided by third parties.  
+Google proposes that “Plaintiffs shall provide for review by Google outside counsel and 
+Designated In -House Counsel any third -party submissions, documents, or data that the TC 
+considered in the course of forming its Recommendation ,” id. ¶ I.B.3 (emphasis added) , 
+“automatically and simultaneously with the recommendation,” May 20 JSR at 11. By contrast, 
+Plaintiffs propose that Google have access to third-party information only to the extent the 
+information was “relied upon to support the material aspects” of the recommendation and is not 
+“duplicative or cumulative of information already included” in the basis for the recommendation. 
+Id. ¶¶ I.B.2.c, I.B.3. Google insists that this narrower approach is unduly “subjective,” denies it 
+due process, and impedes “an efficient and fair process.” May 20 JSR at 11–12. 
+The court agrees with Plaintiffs that their proposal “strike[s] a fair and reasonable balance 
+between protecting third-party information and providing Google with information regarding the 
+basis of a given Recommendation.” May 20 JSR at 4. At the status conference, the court expressed 
+3 
+ 
+ 
+    
+     
+       
+   
+  
+   
+ 
+   
+       
+     
+         
+        
+       
+    
+       
+     
+           
+   
+        
+  
+        
+        
+ 
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 4 of 8 
+concern about either the Technical Committee or third parties hesitating to gather or offer 
+information because of Google’s potentially broad access. See Hr’g Tr. at 15:7–16:5, 21:6–22:2, 
+34:2-18. The court maintains those concerns here . The success of the remedies depends on the 
+Technical Committee’s meaningful engagement and participation with third parties . Google’s 
+“automatic[] and simultaneous[]” access to any third-party information on which the Technical 
+Committee might rely risks deterring third parties from making fulsome disclosures in the first 
+place. 
+The court is not persuaded by Google’s concern about the “subjective” elements of 
+Plaintiffs’ proposal. The court trusts that the Technical Committee can fairly separate the wheat 
+from the chaff, and in any event, Google retains the right to request information that it believes 
+might be important that the Technical Committee did not disclose. App. ¶ I.C.6.b. 
+Nor is the court convinced by Google’s protest that this approach will deny it due process. 
+Google has not identified any authority to support the proposition that a defendant in th e present 
+post-judgment posture is entitled to the same kind of disclosure it would receive under the Federal 
+Rules of Civil Procedure governing discovery. Even under Plaintiffs’ terms, Google remains “an 
+active participant in proceedings before the Technical Committee” and retains “insight into what 
+is being submitted to the Technical Committee.” See May 1 JSR at 17. Google will be provided 
+the recommendation, a basis for the recommendation, access to information relied on to support 
+that basis, and opportunities to request more information . See App. at 3 –5. And Google will 
+continue to wield its express right to object to any detail of the Final Judgment’s execution.  
+See Final J. § VII.A.7.k; see also United States v. Google LLC (Google Final J.), No. 20-cv-3010, 
+2025 WL 3496448, at *25 (D.D.C. Dec. 5, 2025). The court does not believe that Google is due 
+any greater process in this posture. 
+4 
+ 
+ 
+   
+  
+    
+  
+  
+ 
+   
+ 
+  
+     
+         
+     
+   
+     
+    
+        
+             
+        
+ 
+       
+       
+     
+ 
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 5 of 8 
+Finally, whatever potential “delay” Plaintiffs’ proposal may cause, see May 20 JSR at 11, 
+is outweighed by the importance of facilitating unencumber ed dialogue between the Technical 
+Committee and interested third parties. For these reasons, Google’s proposed Paragraph I.C.5.iii 
+referring to materials “considered” by the Technical Committee (to which Plaintiffs categorically 
+object) also shall be excluded. 
+Third-party materials underlying recommendations as to Qualified Competitor 
+certification. Though Colorado Plaintiffs agree with United States Plaintiffs that Google should 
+be afforded access to at least some confidential third-party information, Colorado Plaintiffs would 
+categorically withhold certain third-party information underlying recommendations to certify or 
+recertify Qualified Competitors . The Final Judgment requires for certification a “plan to invest 
+and compete in or with” Google in the relevant markets. Final J. § IX.V. Because such a plan 
+likely will “include detailed descriptions of how the company intends to differentiate itself, 
+including its proposed products and services ,” May 1 JSR at 14, and contain “the foundational 
+elements of the very competition that Google has unlawfully restrained,” May 20 JSR at 1 0, 
+Colorado Plaintiffs contend that no one associated with Google, including outside counsel, should 
+have access to it, see id. Only if the court conducts an in camera review (upon an objection from 
+Google) and orders disclosure of the plan should Google be granted access. Id. On the other hand, 
+Google proposes that its outside counsel only receive automatic access to a putative Qualified 
+Competitor’s proposed business plan.  Id. at 16–17.  
+Colorado Plaintiffs’ concerns are well taken. The court acknowledges that detailed plans 
+to compete will likely be acutely sensitive. But the court also is confident that the terms proposed 
+by United States Plaintiffs as to certification recommendations “strike a fair and reasonable 
+balance between protecting third -party information and providing Google with information 
+5 
+ 
+ 
+       
+      
+     
+  
+       
+       
+          
+        
+       
+    
+          
+    
+     
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 6 of 8 
+regarding the basis of a given Recommendation.” Under United States Plaintiffs’ proposal, Google 
+will have access to the information “relied upon” by the Technical Committee in making a 
+certification recommendation only “[t]o the extent Google has a good faith belief that such access 
+is necessary to Google’s ability to evaluate the Certification Recommendation and assess whether 
+it will object.” App. ¶ II.B.8. And the contemplated “order of operations” provides that Google 
+may “raise any unresolved objec tions to the Court.” App. at 13. Such objections presumably 
+include disputes over the disclosure of confidential third-party information. See id. The court is 
+satisfied that these terms balance efficiency, fairness, and the sensitive nature of the plans. 
+The court also takes this approach because it can envision situations in which the bona fides of a 
+putative Qualified Competitor are such that Google would not need access to the plan to assess a 
+certification recommendation. See Google Final J., 2025 WL 3496448, at *5. The court will take 
+up whether disclosure of a “plan to invest and compete in or with” Google in a relevant market is 
+appropriate when it is asked to do so. 
+Third parties’  failure to respond to de -designation request.  The  parties have  agreed that  
+Google  may in certain instances request individuals other  than its  outside  counsel or Designated  
+In-House  Counsel be  granted access to otherwise  confidential third-party information.  
+App.  ¶  I.C.6.a.   In such instances, the parties agree  that Plaintiffs shall  notify the third party of 
+Google’s request and relay the  third party’s response   back to Google.   See  App.  ¶¶  I.C.6.a.i–ii;  
+III.B.12.   They also agree  that, if the third party refuses the  request, Google  may  seek relief from 
+the court.  See  App. ¶  I.C.6.a.iii.   Where  they  diverge  is what happens if  a  third party does not  
+respond  one  way or the other.  Plaintiffs propose  Google  should seek relief from the court  in this  
+instance, too, while  Google proposes  it  “shall  receive the access requested,  unless Plaintiffs notify 
+6 
+ 
+ 
+       
+       
+     
+     
+    
+    
+         
+          
+    
+    
+  
+ 
+      
+   
+        
+     
+  
+ 
+ 
+                                 
+             
+               
+  
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 7 of 8 
+Google  within two business days that they consider Google’s request for   access to be   
+unreasonable.”  App. ¶  I.C.6.a.iv.  
+The court does not agree with either approach. It is not up to Plaintiffs to decide the 
+reasonableness of Google’s request as to a third party’s confidential information. And court 
+involvement is unnecessary where a third party lacks either the interest or diligence to limit the 
+distribution of confidential information it voluntarily submits. Such a third party forfeits its right 
+to object to disclosure.  See May 20 JSR at 16 & n.7 (describing Protective Order, ECF No. 98). 
+That provision shall thus simply read: “If the third party does not respond, Google shall 
+receive the access requested.” This language also shall be adopted in the parallel provision 
+concerning complaints. See App. ¶ III.B.12.a. And a long those lines , Paragraphs I.C.5.a and 
+III.B.11.a, which concern the treatment of third -party information as Highly Confidential under 
+the Protective Order, shall reflect Google’s proposal, except that the phrase “or disclosed as 
+materials considered by the TC” and the reference to Paragraph 3 shall be excluded. 
+* * * 
+For these reasons, the parties shall adopt all of Plaintiffs’ proposed terms (or lack thereof) 
+set forth in Appendix A of their May 20, 2026 Joint Status Report, except as to those provisions 
+related to a third party’s failure to respond to a request for additional access to confidential 
+information. For those provisions, the parties shall adopt the language described above by the 
+court and as set forth in the Appendix to this Order. 
+  Amit P. Mehta  
+  United States District Judge  
+7 
+Dated:  May 29, 2026 
+ 
+ 
+ 
+ 
+  
+  
+  
+   
+   
+       
+  
+ 
+  
+  
+   
+  
+  
+       
+  
+ 
+ 
+Case 1:20-cv-03010-APM Document 1521 Filed 05/29/26 Page 8 of 8 
+APPENDIX 
+Paragraph Language to be adopted 
+I.B.2.c [Plaintiffs’ proposal] 
+I.B.3 [Plaintiffs’ proposal] 
+I.C.5.a Any information from third parties included in a Recommendation pursuant to 
+Paragraph 2 above (“Identified Confidential Third -Party Information”) shall be 
+treated as Highly Confidential under the Protective Order unless the third party 
+(i) has consented in writing to Plaintiffs that the information may be de-designated 
+or (ii) has failed to respond to a de-designation request. 
+I.C.5.b.iii [Google’s proposal rejected] 
+I.C.6.a.iii [Google’s proposal] 
+I.C.6.a.iv If the third party does not respond, Google shall receive the access requested. 
+II.B.8 [Plaintiffs’ proposal] 
+III.B.11.a [Google’s proposal] 
+III.B.12.a [Plaintiffs’ proposal, to the extent that “Paragraph 6(a) above” now refers to the 
+court’s modified version of Google’s proposal in Paragraphs I.C.6.a.iii and iv.] 
+8 

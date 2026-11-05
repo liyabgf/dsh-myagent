@@ -1,0 +1,153 @@
+
+
+Skip to content
+
+Why you can trust ZDNET: ZDNET independently tests and researches products to bring you our best recommendations and advice. When you buy through our links, we may earn a commission.
+
+Patrick O'Rourke
+
+Contributing Writer
+
+Patrick O'Rourke is XDA's News Editor and Entertainment Segment Lead.… Read full bio
+
+Patrick O'Rourke
+
+Contributing Writer
+
+Read full bio
+
+Article updated on November 4, 2026, 12:24 pm EST
+
+25+
+
+Years of Experience
+
+23
+
+Product Reviewers
+
+15k
+
+Sq.Ft of Lab Space
+
+Reviews ethics statement
+
+How we test
+
+HP Googlebook 14
+
+3.3
+/ 5 Good
+
+$1,299 at Best Buy
+
+Pros & Cons
+
+Great overall design
+
+Excellent trackpad
+
+Qualcomm Arm chip
+
+Googlebook OS feels incomplete
+
+Desktop app support is lackluster
+
+Expensive
+
+I’ve tested a few Googlebooks over the last few weeks, including the Asus Googlebook 14 and the Lenovo Googlebook 15, and they tell a very similar story. The laptops are downright gorgeous. In fact, I’d go so far as to say that their overall designs are some of the best I’ve encountered recently in the laptop space, even rivaling the MacBook Air in a variety of ways. The HP Googlebook 14 is one of the best I’ve tested, at least in how it looks and feels.
+
+Also: My week with new Googlebooks: The good, the bad, and the promising
+
+But unfortunately, Googlebook OS, Google’s new operating system that powers the laptops, just isn’t ready for prime time when it comes to app support.
+
+More from ZDNET
+
+Well-suited for ARM
+
+If you’re set on buying a Googlebook, I’d go with one powered by a Snapdragon X Elite chip. With HP’s Googlebook 14, the underlying narrative is similar to my experience with other Googlebooks, but also a bit different. Like the other models I tested, I really like the look of the compact, high-quality-feeling device.
+
+What’s different is that the HP Googlebook 14 runs on Qualcomm’s Arm-based Snapdragon X Elite chip, which uses the same Arm architecture as Android smartphones, so compatible Android apps can run without the Arm-to-x86 translation required on Intel-powered Googlebooks.
+
+What does this mean? Some of the performance issues I’ve encountered with other Googlebooks in certain apps, whether it’s crashes or the laptop’s fans spinning up seemingly for no reason, don’t seem to be happening as often (or at all) with the Snapdragon chip.
+
+The Googlebook 14 also feels snappier overall and offers slightly better battery life compared to the Intel Core Ultra Series 3-powered Googlebooks I’ve reviewed (likely by just an hour or two, in my experience).
+
+Still, a lot of the problems remain. Real desktop app support is nearly nonexistent, and apps that claim to be optimized for Googlebook OS feel more like expanded Android tablet apps. For example, Adobe’s Lightroom and Photoshop feature finicky controls and UIs designed more for touchscreens, despite supposedly being optimized for larger screens and trackpads.
+
+Also: Want the best Wi-Fi laptop? We tested 7 models – here’s what our lab found
+
+Of course, the HP Googlebook 14 has a touchscreen, though I’ve never been fond of controlling apps with touch on a laptop — it just feels awkward (sorry, Apple). Even an app as simple as Spotify has a zoomed-out, hard-to-navigate interface in Googlebook OS.
+
+The list of optimized apps is pretty short and includes CapCut Pad, BandLab, and Luminar, which aren’t currently part of my workflow and, in some cases, aren’t even apps I’m familiar with.
+
+Phone-first apps generally run more smoothly on the Snapdragon X Elite, but that doesn’t make them any more enjoyable to use with a trackpad.
+
+At the same time, Googlebook OS is pretty sleek in other ways. It mixes Windows 11’s taskbar with MacOS’ rounded corners, and Android 17’s colorful and fun Material 3 Expressive aesthetic. It also includes all the expected operating system features, like a file manager. The Settings menu in the top-right feels more touch-oriented and is pulled directly from Android 17, but I quickly got used to it.
+
+Also: I tried all 5 Googlebooks, and they feel like a whole new kind of laptop
+
+Other key features include the Magic Pointer. It’s basically a desktop version of Android’s Circle-to-Search, where you wiggle your cursor over something to bring up a version of Gemini that’s contextually aware of what you’re pointing at. I’ve found I haven’t used the feature as often as I expected; instead, I just type questions into Gemini or ChatGPT, just like I do on other devices.
+
+GooglebookOS also offers deep Android phone integration, letting you easily swap files between the HP Googlebook 14 and my Pixel 11 Pro. The initial setup takes a bit of work, but the drag-and-drop feels genuinely cool once it’s up and running. Overall, Googlebook OS has a lot of cool ideas, but like ChromeOS, its limitations become apparent when you need more than web-based apps. The selection of genuinely desktop-friendly software remains very disappointing.
+
+Lastly, on the benchmarks front, the Snapdragon X Elite-powered HP Googlebook 14 hits 2,549 for single-core and 11,671 for multi-core in Geekbench 7. In 3DMark, it scored 2,114 overall, with an average frame rate of 15.66. In comparison, Lenovo’s Googlebook 15 scored 2,349 in single-core and 10,289 in multi-core. In 3DMark’s Steel Nomad Light, Lenovo’s Googlebook 15 scored 892 overall, with an average framerate of 6.61.
+
+With these benchmarks in mind, and based on my real-world experience with the laptop, the Snapdragon X HP Googlebook 14 seems slightly more powerful than its Intel Ultra Series 3 counterparts.
+
+The best-looking Googlebook
+
+It’s a shame Googlebook OS feels so limiting since the HP Googlebook 14 is a great-looking laptop. It’s blue-colored, squared-off design screams HP in a very utilitarian way, but at the same time, it also evokes the MacBook a bit (I consider this a very good thing).
+
+Also: Apple’s new touchscreen MacBook Pros may be late, but they have one big advantage
+
+Its all-aluminum chassis and sandblasted finish repel grease and grime in a way I’ve really appreciated over the past few weeks. I’m even fond of the chamfered back. It gives the HP Googlebook 14 a unique look, and I find myself running my fingers down the edge when the laptop is closed. The chassis also feels very solid and doesn’t flex much, unlike the Asus Googlebook 14 and Lenovo Googlebook 15, which bend quite a bit.
+
+The keyboard on the HP Googlebook 14 is a bit too cramped for my taste, and I’d prefer more key spacing (although I eventually got used to the smaller design). The keys have the right amount of bounce for a laptop keyboard, making the HP Googlebook 14’s keyboard a joy to type on.
+
+The trackpad feels great, too — it’s responsive and the right size. That said, like the Asus Googlebook 14, I found I needed to turn the tracking speed up a bit so the cursor moved faster.
+
+Related: iPhone Duo review: Hard to recommend, even harder to put down
+
+The HP Googlebook 14 also features a stunning 14-inch 2880×1800 OLED display. It’s bright, vibrant, and very impressive, thanks to its 120Hz refresh rate and peak HDR brightness of 1,200 nits.
+
+Regarding ports, things are a bit disappointing. There’s no full HDMI port like Asus and Lenovo’s Googlebooks, but there are two USB-C 3.2 Gen 2 ports and a 3.5mm headphone jack. I would have liked a full-size HDMI port like the Asus Googlebook 14, especially since it’s 14mm thick like the HP Googlebook 14.
+
+Final thoughts
+
+The HP Googlebook 14 feels great to use, and I’m a big fan of its overall design. But during my time with it, I often wished it ran another operating system. Unfortunately, Googlebook OS has too many app-side shortcomings for me to recommend this laptop over a far more capable Windows 11 laptop or a MacBook, especially at its $1,200 price tag.
+
+Related: Are high-end thermal cameras worth it? I tested a $300 model with my iPhone to find out
+
+Will Googlebook OS’ app situation get better in the coming months? Maybe. As it stands, HP’s Googlebook 14 is really only for hardcore Android users who spend most of their time using web-based apps.
+
+Community Guidelines
+
+Please accept cookies to view the comments powered by Disqus.
+
+Patrick O'Rourke
+
+Contributing Writer
+
+Patrick O'Rourke is XDA's News Editor and Entertainment Segment Lead. Previously, he was Pocket-lint's Editor-in-Chief, MobileSyrup's Editor-in-Chief, and the Technology Editor at the Financial Post and Postmedia. He's covered a range of topics across the tech industry, including smartphones, gadgets, gaming, streaming, and more. He has a BA in journalism from Toronto Metropolitan University.
+
+See full bio
+
+The Latest from Patrick
+
+HP Googlebook 14 review: A gorgeous laptop that deserves a better OS
+
+I found the iPhone 18 Pro’s best camera feature – and it isn’t variable aperture
+
+Wait, no base iPhone 18? Why Apple likely skipped its fan favorite this year
+
+/ ZDNET recommends
+
+The 10 products ZDNET readers bought most last month (including a mini LED TV)
+
+The best phones of 2026: Expert tested and reviewed
+
+The best TVs of 2026: Expert tested and recommended
+
+The best foldable phones of 2026: How the iPhone Duo stacks up
+

@@ -1,0 +1,124 @@
+
+
+Skip to content
+
+Fear & Greed50 Neutral
+Crypto market$2.75T+4.4%24h breadth224 up30 downBitcoin$80,735+4.9%Ethereum$2,431+7.4%Solana$96+4.5%XRP$1.31+4.4%BNB$719+3.7%Top gainersDGAI$0.769+19.1%DRV$0.370+18.2%RAY$1.78+17.4%Top losersTRUMP$1.25−17.8%MELANIA$0.064−13.5%FB$0.300−11.7%StocksNVDA$200−3.1%TSLA$385−3.3%AAPL$350+5.3%MSFT$556+6.7%COIN$152+4.2%
+
+Fear & Greed50 Neutral
+Crypto market$2.75T+4.4%24h breadth224 up30 downBitcoin$80,735+4.9%Ethereum$2,431+7.4%Solana$96+4.5%XRP$1.31+4.4%BNB$719+3.7%Top gainersDGAI$0.769+19.1%DRV$0.370+18.2%RAY$1.78+17.4%Top losersTRUMP$1.25−17.8%MELANIA$0.064−13.5%FB$0.300−11.7%StocksNVDA$200−3.1%TSLA$385−3.3%AAPL$350+5.3%MSFT$556+6.7%COIN$152+4.2%
+
+Advertisement
+
+Crypto Briefing Pro Follow the news about what you own. Add your holdings to find related stories in Pro. Create a free account
+
+Menu
+
+Crypto sections
+
+Bitcoin
+Ethereum
+Altcoins
+DeFi
+Stablecoins
+Regulation
+Security
+
+Create account
+Log in
+
+Español
+
+Google's parent is shipping its custom AI accelerators straight into other companies' data centers, with the bulk of sales expected in 2027
+
+by
+Diego Almada Lopez
+
+Wed 28 Oct 2026 · 03:56 EDT
+·
+3 min read
+
+In Technology
+
+Share
+
+Follow on Google
+
+For years, Google’s Tensor Processing Units were the tech equivalent of a family recipe. Everyone knew they existed, but you only got a taste if you came over for dinner, meaning you rented them through Google Cloud.
+
+That’s changing. Alphabet is now selling its TPU hardware directly to select outside customers, and the first systems have already landed in other companies’ data centers.
+
+From rental model to hardware vendor
+
+Alphabet first disclosed the plan in late April 2026, during its first-quarter earnings call. The company said it would begin selling TPUs to a select group of external buyers.
+
+Until then, the chips mostly powered Google’s own operations. Outsiders who wanted access had to rent capacity through Google Cloud rather than own the hardware outright.
+
+The plan moved quickly from announcement to delivery. On the second-quarter earnings call in July, CFO Anat Ashkenazi confirmed that the first TPU systems reached external customer data centers during that quarter.
+
+Those deliveries allowed Alphabet to recognize its first revenue from direct TPU sales.
+
+The company expects most of the sales tied to these agreements to arrive in 2027. So the revenue line exists now, but the real volume is still a calendar flip away.
+
+Advertisement
+
+Crypto Briefing Pro Follow the news about what you own. Add your holdings to find related stories in Pro. Create a free account
+
+Alphabet has also signaled that this revenue won’t arrive in a smooth, predictable stream. Quarterly TPU hardware results are expected to swing around, which is typical when a business depends on large, chunky equipment orders landing in specific periods.
+
+Who’s buying, and how big it could get
+
+Demand is coming from a few corners. AI labs are the obvious customers, but capital markets firms and high-performance computing users are also in the mix.
+
+AI, tech, and the markets they move—in one daily briefing.
+
+Daily. Free. Join 34,000+ readers across crypto, finance, and policy.
+
+We respect your privacy. Unsubscribe anytime.
+
+The customer list already includes some heavyweight names. Meta began running TPUs for production workloads in its own data centers as of October 2026.
+
+Oracle is also on board. The two companies announced a partnership that will make TPUs available on Oracle Cloud Infrastructure starting in calendar 2027.
+
+That makes Oracle the first hyperscaler outside of Google to offer the chips.
+
+Analyst estimates sketch a steep growth curve. Those projections put external TPU revenue at approximately $8 billion in 2026. For 2027, forecasts range from $51 billion to more than $75 billion, depending on whose model you trust.
+
+Where the sales do show up is inside Google Cloud’s backlog. That backlog reached $514 billion by the end of the second quarter, a figure that now includes these TPU commitments.
+
+Google Cloud revenue climbed 82% year over year to $24.8 billion in Q2 2026, and that figure doesn’t reflect the impact of TPU sales.
+
+Why Alphabet is doing this now
+
+Alphabet’s stated reasoning is twofold. Selling hardware directly expands the company’s addressable market, and the business is meant to help fund and support development of its next-generation silicon.
+
+What this means for Alphabet, Nvidia, and the cloud market
+
+The risks are real. Alphabet is still working on making TPUs more compatible with the software tools developers already use, and that compatibility gap is one of the main reasons customers default to Nvidia.
+
+The Meta deployment is the clearest signal yet that large buyers are willing to run serious workloads on non-Nvidia silicon.
+
+The Oracle deal could shift cloud dynamics too. Making TPUs available on a rival hyperscaler’s infrastructure suggests Alphabet cares more about chip adoption than about keeping the hardware locked inside its own cloud.
+
+Investors will want to see whether Alphabet starts disclosing TPU revenue directly, how the 2027 delivery schedule plays out, and whether more cloud providers follow Oracle’s lead. Quarterly results may look uneven along the way, which Alphabet has already flagged.
+
+Disclosure: This article was edited by Diego Almada Lopez. For more information on how we create and review content, see our Editorial Policy.
+
+Next in Technology
+China proposes AI export curbs to keep core technology at home
+
+AI, tech, and the markets they move—in one daily briefing.
+Daily. Free. Join 34,000+ readers across crypto, finance, and policy.
+
+Free daily briefing
+
+Crypto Briefing Pro
+
+The news about what you hold
+
+Follow your stocks and crypto. Read the news about them from hundreds of publishers in Pro.
+
+Create account
+
+Privacy policy
+

@@ -1,0 +1,56 @@
+
+
+Affiliate links on Android Authority may earn us a commission. Learn more.
+
+General technology
+
+Google spent months pushing AI mode — now it might be doing the opposite
+
+Google was spotted testing Search without AI Mode.
+
+By
+
+•
+
+Nov 3, 2026 — 1:38 PM ET
+
+•
+
+•
+
+Joe Maring / Android Authority
+
+Add Android Authority on Google:
+
+Preferred SourceGoogle Discover
+
+TL;DR
+
+A user spotted Google testing Search without AI Mode on Chrome in Incognito mode.
+
+This follows a $500 million drop in Alphabet’s value due to underperforming ad revenue from AI Mode.
+
+It’s unclear if Google is limiting AI Mode for users it can’t make a profit from, or if it’s considering a return to stripped-down Search.
+
+When Google started its search business in 1998, it stated that its mission was “to organize the world’s information and make it universally accessible and useful.” Even though it still uses those words when it talks about Search, anyone who’s used AI Mode knows that it has strayed far from that original intent. Now there are signs that it might be ready to return to its roots.
+
+On X, Optimize My Firm CEO Len Raleigh posted a screenshot of Google sans AI Mode that he came across while using Incognito mode on Chrome (via Search Engine Roundtable). He speculated that it was “[j]ust a test,” adding, “I still have AI Mode on other machines and on other sessions.” Search Engine Roundtable said it was not able to duplicate the result and neither were we at Android Authority.
+
+While it’s possible that Google is weighing whether it’s worth letting users access AI Mode if they can’t be tracked and targeted with ads, there also exists the heady possibility that we might get back basic search functionality on Google. Either way, the test follows news about the heavy toll AI Mode is taking on Google. Last week, Google parent company Alphabet had its worst day ever on the stock market, losing $500 million, according to NBC News.
+
+On the investor call, Google Chief Business Officer Philipp Schindler attributed the loss to underperforming ad revenue related to AI mode. However, Schindler said that he feels “very good” about the trajectory of AI Mode because of what he said are promising results with including ads in AI Overviews and AI Mode in markets outside the US. Google is also expanding ads in the US with multi-turn ads that will place sponsored results in follow-up questions in AI Mode.
+
+This bullish optimism in the call notwithstanding, AI Mode has cost Google in other ways, including usefulness and public perception. AI Overviews are incorrect 10% of the time, resulting in tens of millions of wrong answers per hour, according to a report by Oumi for The New York Times. Google has gotten so far away from being synonymous with search that Gen Z and Alpha don’t even say that they’re going to Google something. Instead they say they’ll “search it up.”
+
+Interestingly, yesterday Google harkened back to its early days with an Easter egg for The Legend of Zelda: Ocarina of Time that returned users to the 1998 version of the search engine (via IGN). Those more halcyon times seem to be on Google’s mind, and if AI Mode continues to prove to be as unprofitable as it is unpopular, we might get our blue links back.
+
+News
+
+AIGoogleGoogle Search
+
++
+
+Conversation
+
+Read what readers said or add your take.
+

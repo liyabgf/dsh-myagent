@@ -1,0 +1,1594 @@
+ 
+ 
+  
+ 
+   
+        
+    
+        
+       
+        
+         
+        
+       
+        
+       
+  
+        
+    
+        
+       
+        
+         
+        
+       
+        
+       
+  
+ 
+ 
+ 
+ 
+   
+    
+ 
+  
+ 
+  
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 1 of 35 
+UNITED STATES DISTRICT COURT 
+FOR THE DISTRICT OF COLUMBIA 
+_________________________________________ 
+) 
+) 
+) 
+) 
+) 
+UNITED STATES OF AMERICA et al., 
+Plaintiffs, 
+v. 
+GOOGLE LLC, 
+Defendant. 
+) 
+) 
+) 
+) 
+) 
+Case No. 20-cv-3010 (APM) 
+_________________________________________ 
+_________________________________________ 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+) 
+STATE OF COLORADO et al., 
+Plaintiffs, 
+v. 
+GOOGLE LLC, 
+Defendant. 
+Case No. 20-cv-3715 (APM) 
+_________________________________________ 
+FINAL JUDGMENT 
+WHEREAS, Plaintiffs United States of America, and the States and Commonwealths of 
+Arkansas, California, Georgia, Florida, Indiana, Kentucky, Louisiana, Michigan, Missouri, 
+Mississippi, Montana, South Carolina, Texas, and Wisconsin, by and through their respective 
+Attorneys General (“Co-Plaintiff States”), filed their Complaint on October 20, 2020, and their 
+Amended Complaint on January 15, 2021; 
+AND WHEREAS, Plaintiffs Colorado, Nebraska, Arizona, Iowa, New York, North 
+Carolina, Tennessee, Utah, Alaska, Connecticut, Delaware, District of Columbia, Guam, Hawaii, 
+Idaho, Illinois, Kansas, Maine, Maryland , Massachusetts, Minnesota, Nevada, New Hampshire, 
+ 
+   
+  
+  
+    
+ 
+     
+    
+ 
+   
+  
+         
+ 
+  
+ 
+  
+   
+      
+   
+ 
+  
+      
+      
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 2 of 35 
+New Jersey, New Mexico, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, Puerto Rico, 
+Rhode Island, South Dakota, Vermont, Virginia, Washington, West Virginia, and Wyoming 
+(“Colorado Plaintiff States”) filed their Complaint on December 17, 2020; 
+AND WHEREAS, the Court conducted a trial and entered Findings of Fact and 
+Conclusions of Law in both actions on August 5, 2024; 
+AND WHEREAS, the Court entered judgment finding Google liable for violating 
+Section 2 of the Sherman Act by unlawfully maintaining its monopolies in the general search 
+services and general search text advertising markets; 
+AND WHEREAS, the Court conducted a further remedies trial and entered additional 
+Findings of Fact and Conclusions of Law on September 2, 2025; 
+NOW THEREFORE, upon the record at trial and all prior and subsequent proceedings, it 
+is hereby ORDERED, ADJUDGED, AND DECREED: 
+I. JURISDICTION 
+The Court has jurisdiction over the subject matter of this action and over Google LLC. 
+II. APPLICABILITY 
+The Final Judgment applies to Google and to each of its officers, directors, agents, 
+employees, subsidiaries, successors , and assigns ; and to all other persons in active concert or 
+participation with Google who have received actual notice of this Final Judgment by personal 
+service or otherwise. 
+III. PROHIBITORY INJUNCTIONS 
+A. Google shall not condition the licensing of Google Play or any other Google 
+application on the distribution, preload, placement, display, use, or license of the Google Search 
+Application on any device sold in the United States. 
+2 
+ 
+      
+  
+ 
+      
+  
+ 
+      
+  
+ 
+       
+       
+  
+  
+       
+       
+  
+ 
+       
+       
+  
+ 
+    
+        
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 3 of 35 
+B. Google shall not condition the licensing of Google Play or any other Google 
+application on the distribution, preload, placement, display, use, or license of the Chrome Browser 
+Application on any device sold in the United States. 
+C. Google shall not condition the licensing of Google Play or any other Google 
+application on the distribution, preload, placement, display, use, or license of the Google Assistant 
+Application on any device sold in the United States. 
+D. Google shall not condition the licensing of Google Play or any other Google 
+application on the distribution, preload, placement, display, use, or license of any Google GenAI 
+Product on any device sold in the United States. 
+E. Google shall not condition (i) Consideration or (ii) the license of Google Play or 
+any Google software application on a device manufacturer or wireless carrier refraining from 
+developing, distributing, preloading, placing, displaying, using, selling, or li censing any Third-
+Party General Search Service on any device sold in the United States. 
+F. Google shall not condition (i) Consideration or (ii) the license of Google Play or 
+any Google software application on a device manufacturer or wireless carrier refraining from 
+developing, distributing, preloading, placing, displaying, using, selling, or licensing any Third -
+Party Browser on any device sold in the United States. 
+G. Google shall not condition (i) Consideration or (ii) the license of Google Play or 
+any Google software application on a device manufacturer or wireless carrier refraining from 
+developing, distributing, preloading, placing, displaying, using, selling, or licensing any Third -
+Party GenAI Product on any device sold in the United States. 
+H. Google shall not condition the payment for preload, placement, or assignment of 
+an access point for the Google Search Application for one device on any other preload, placement, 
+3 
+ 
+     
+     
+ 
+    
+         
+  
+    
+ 
+    
+       
+     
+   
+ 
+     
+ 
+      
+   
+ 
+      
+    
+     
+ 
+      
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 4 of 35 
+or assignment of an access point for the Google Search Application, the Chrome Browser 
+Application, the Google Assistant Application, or any Google GenAI Product for that device or 
+any other device sold in the United States. 
+I. Google shall not condition the payment for preload, placement, or assignment of 
+an access point for the Chrome Browser Application for one device on any other preload, 
+placement, or assignment of an access point for the Google Search Application, the Chrom e 
+Browser Application, the Google Assistant Application, or any Google GenAI Product for that 
+device or any other device sold in the United States. 
+J. Google shall not condition the payment for preload, placement, or assignment of 
+an access point for the Google Assistant Application or any Google GenAI Product for one device 
+on any other preload, placement, or assignment of an access point for the Google Search 
+Application, the Chrome Browser Application, the Google Assistant Application, or any Google 
+GenAI Product for that device or any other device sold in the United States. 
+K. Google shall not enter or maintain any agreement requiring or conditioning 
+Consideration on the distribution, preload, placement, display, use, license, or assignment of an 
+access point for the Google Search Application, the Chrome Browser Application, the Google 
+Assistant Application, or any Google GenAI Product in the United States unless the agreement 
+terminates no more than one year after the date it is entered. 
+L. Google shall not condition (1) Consideration for a Browser Developer setting 
+Google Search or any Google GenAI Product as the Default Search Engine or default GenAI 
+Product on any browser access point (including alternative modes such as Privacy Mode) on a ny 
+Device on (2) the Browser Developer setting Google Search or any Google GenAI Product as the 
+Default Search Engine or default GenAI Product on any other browser access point on that same 
+4 
+ 
+       
+     
+ 
+         
+         
+   
+       
+       
+      
+     
+     
+ 
+    
+     
+     
+ 
+  
+   
+     
+  
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 5 of 35 
+Device or any other Device in the United States. Any agreement containing a default condition 
+permitted by this provision must expire after one year and must expressly permit the Browser 
+Developer to promote any Third-Party General Search Service and Third-Party GenAI Product. 
+M. Google shall not condition (1) Consideration for Apple setting Google Search or 
+any Google GenAI Product as the Default Search Engine or default GenAI Product with respect 
+to any proprietary Apple feature or functionality, including Safari, Siri, Spotlight, and any Privacy 
+Mode within those products, on one Device on (2) Apple setting Google Search or any Google 
+GenAI Product as the Default Search Engine or default GenAI Product with respect to any 
+proprietary Apple feature or functionality on that same Dev ice or any other Device in the United 
+States. Any agreement containing a default condition permitted by this provision must expire after 
+one year and must expressly permit Apple to promote any Third-Party General Search Service and 
+Third-Party GenAI Product. 
+N. Nothing in this Final Judgment shall prohibit Google from distributing the Google 
+Search Application, the Google Assistant Application, and any Google GenAI Product through a 
+single Application Programming Kit (APK) as long as the licensee has the option t o disable end-
+user access to any of those applications and services that the licensee declines to license. 
+IV. REQUIRED DISCLOSURES OF DATA 
+A. Google’s Web Search Index : Within thirty (30) days of a Qualified Competitor’s 
+certification pursuant to Section IX.V, unless granted additional time, Google shall make available, 
+at marginal cost, to Qualified Competitors the following data related to Google’s Web Search 
+Index: 
+5 
+ 
+    
+  
+ 
+  
+    
+ 
+        
+     
+ 
+   
+ 
+ 
+   
+ 
+   
+    
+    
+           
+ 
+     
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 6 of 35 
+1. for each document in the Google Web Search Index, a unique identifier 
+(DocID) and another notation sufficient to denote all the documents Google considers 
+duplicates of each other; 
+2. a DocID to URL map; and 
+3. for each DocID, the (A) time that the URL was first seen, (B) time that the 
+URL was last crawled, (C) spam score, and (D) device-type flag. 
+This information shall be provided for all websites in the full Web Search Index Google uses for 
+searches on Google.com, the Google Search Application, or any future Google general search 
+products. Nothing in Section IV is intended to transfer intellectual property rights of third parties 
+to index users. 
+B. User-Side Data: For the term of this Final Judgment, Google shall make available, 
+at marginal cost, to Qualified Competitors the following User -side Data on a non -discriminatory 
+basis while safeguarding personal privacy and security: 
+1. User-side Data used to build, create, or operate the GLUE statistical 
+model(s); and 
+2. User-side Data used to train, build, or operate the RankEmbed model(s). 
+Google shall make this data available to Qualified Competitors at least twice, with the exact 
+number and frequency of such disclosures to be determined by the Court after consultation with 
+Plaintiffs and the Technical Committee (TC). Any cap on the number of such disclosures shall be 
+informed, in part, by the utility of the datasets disclosed after appropriate privacy -enhancing 
+techniques have been applied. For clarity, this Section IV.B shall not require disclosure of 
+intellectual property or trade secrets, such as algorithms, ranking signals, or post-trained LLMs. 
+6 
+ 
+  
+   
+      
+    
+     
+    
+    
+    
+ 
+      
+  
+ 
+  
+  
+    
+ 
+        
+       
+     
+        
+   
+       
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 7 of 35 
+C. User-Side Data Sharing Administration: 
+1. Plaintiffs, in consultation with the TC, shall promptly determine the 
+appropriate User-side Data privacy and security safeguards to be applied before Google 
+shares the data specified in Section IV.B with Qualified Competitors. Google shall have 
+up to six (6) months from the date that the Plaintiffs, in consultation with the TC, determine 
+such privacy and security safeguards to implement the technology and provide any notice 
+necessary to comply with this Section IV, and Google shall be deemed to have 
+implemented the technology once Plaintiffs, in consultation with the TC, determine that 
+the technology, including privacy and security safeguards, is fully functional. 
+2. Google shall provide sufficient information about each dataset such that 
+Qualified Competitors can reasonably understand what it contains, including but not 
+limited to a description of what the dataset contains, any sampling methodology used to 
+create the dataset, and any anonymization or privacy-enhancing technique that was applied.  
+Plaintiffs, in consultation with the TC, may impose restrictions on what information 
+Google shares under this Section IV.C.2 for the purposes of (i) promoting data privacy and 
+security and (ii) ensuring privacy and security safeguards are effectively applied. 
+3. The data specified in Sections IV.A and B will be shared pursuant to a 
+license governing use. The terms of the license shall include a requirement that the 
+Qualified Competitor commit not to share or sell the datasets unless authorized by the 
+Technical Committee or the Court and shall use the datasets for the exclusive purpose of 
+serving users through a General Search Engine, Search Text Ads, and/or a Third -Party 
+GenAI Product. Within six (6) months of the Effective Date of this Final Judgment, 
+7 
+ 
+    
+  
+  
+     
+    
+        
+           
+    
+ 
+  
+ 
+ 
+ 
+ 
+ 
+    
+ 
+ 
+     
+ 
+  
+     
+    
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 8 of 35 
+Plaintiffs and the Technical Committee , with input from Google, shall create and submit 
+to the Court a template for such license. 
+V. REQUIRED SYNDICATION OF SEARCH RESULTS 
+A. Search Syndication License: Google shall take steps sufficient to make available to 
+any Qualified Competitor, on financial terms no worse than those offered to any other user of 
+Google’s search syndication products, a syndication license whose term will be five (5) years from 
+the date the license is signed, and which shall require Google, via real -time API(s), to make the 
+following information and data available in response to each query issued or submitted by a 
+Qualified Competitor: 
+1. both desktop and mobile versions of the ranked organic web search results 
+obtained from crawling the web; 
+2. the user-facing query-rewriting features that Google provides under any of 
+its current search syndication agreements as of the date of entry of this Final Judgment, 
+including user -facing Search Features that enable query correction, modification, or 
+expansion; and 
+3. the Local, Maps, Video, Images, and Knowledge Panel Search Feature 
+content that Google provides under any of its current search syndication agreements as of 
+the date of entry of this Final Judgment. 
+B. Search Syndication License Terms: The search syndication license in Section V.A 
+shall have the following additional features: 
+1. Google shall make syndicated content available via an API. 
+2. Google shall provide Qualified Competitors with latency and reliability 
+functionally equivalent to what any other user of Google’s search syndication products 
+8 
+ 
+  
+  
+   
+ 
+       
+     
+ 
+ 
+   
+   
+   
+       
+    
+    
+    
+ 
+    
+    
+   
+ 
+      
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 9 of 35 
+would receive as of the date of entry of this Final Judgment. For the avoidance of doubt, 
+Google’s obligations do not extend to latency and reliability differences that result from 
+differences in product implementation, users, or are otherwise outside of Google’s 
+syndication products. 
+3. Google shall provide the license on a non -discriminatory basis to any 
+Qualified Competitor on terms no less favorable than the most favorable terms Google 
+provides under any current search syndication agreements as of the date of entry of this 
+Final Judgment. 
+4. Qualified Competitors’ use of Google’s syndication services in the first year 
+will be capped at 40% of Qualified Competitors’ annual U.S. queries and decline over the 
+course of a 5 -year period with an expectation that Qualified Competitors will become 
+independent of Google over time through investment in their own search capabilities. The 
+pace of this tapering, the methods for measuring and determining the percentage, and the 
+application of the percentage will be determined by the Court upon consultation w ith 
+Plaintiffs and the Technical Committee in a manner that facilitates competition while 
+incentivizing Qualified Competitors to move promptly to become independent of Google. 
+5. Google may not consent to Qualified Competitors exceeding syndication 
+limits, and Qualified Competitors shall submit to the TC audits of syndication frequency 
+and scope. The frequency and content of these audits shall be determined by the Plaintiffs 
+in consultation with the TC. 
+6. Google may impose no restrictions or conditions on how a Qualified 
+Competitor uses, displays, or integrates information or services obtained under this 
+9 
+ 
+   
+  
+  
+   
+      
+    
+     
+   
+  
+       
+    
+      
+      
+    
+ 
+   
+    
+ 
+  
+    
+        
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 10 of 35 
+Section V beyond the least restrictive terms Google provides under any current search 
+syndication agreements as of the date of entry of this Final Judgment. 
+7. Qualified Competitors may elect, in their sole discretion, which queries 
+(some or all) for which they will request syndicated results and which syndication 
+components to display or use and may do so in any manner they choose, except that Google 
+may impose restrictions on the display or use of syndication components no less favorable 
+than what it provides under any current search syndication agreements as of the date of 
+entry of this Fin al Judgment. Google is also permitted to place its ordinary commercial 
+restrictions on scraping, indexing, or crawling the syndicated results and content. 
+8. It shall be the Qualified Competitor’s sole discretion to determine how 
+much information to share with Google regarding the end user except that Google may 
+require a Qualified Competitor to share information with Google regarding the end user, 
+on terms no less favorable than what any other user of Google’s search syndication 
+products would receive as of the date of entry of this Final Judgment, as is necessary for 
+the purposes of (1) basic search syndication functionality; (2) spam and abu se detection; 
+and (3) legal or regulatory compliance. 
+9. Google may not retain or use (in any way) syndicated queries or other 
+information it obtains under Section V.A for its own products and services beyond the most 
+limited retention and use permitted under any of Google’s current search syndication 
+agreements as of the date of entry of this Final Judgment. 
+10. For the avoidance of doubt, this Final Judgment only requires Google to 
+provide syndication for queries that originate in the United States, from human end users 
+10 
+ 
+   
+  
+      
+     
+   
+ 
+     
+       
+ 
+    
+ 
+ 
+  
+      
+  
+      
+       
+      
+    
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 11 of 35 
+of the Qualified Competitor. Queries from a syndicator of the Qualified Competitor and 
+synthetic queries are not eligible for syndication under the Final Judgment. 
+11. If Google in good faith believes a Qualified Competitor is in breach of the 
+terms of its agreement, it may exercise its rights under the agreement. Google must also 
+provide simultaneous notice to the Technical Committee of the breach and the actions 
+Google is taking in light of the breach. 
+Within sixty (60) days of the Effective Date of this Final Judgment, Plaintiffs and the Technical 
+Committee, with input from Google, shall create and submit to the Court a template for such 
+license. 
+C.  Existing Syndication Agreements: The  provisions  of this Section V shall  have  no 
+effect on any existing Google search syndication  agreements with third parties or on Google’s 
+ability to enter  into search syndication agreements with third parties other  than Qualified  
+Competitors, except that Google  shall  permit any entity with an existing search syndication  
+agreement who becomes a Qualified Competitor, at the Qualified Competitor’s sole discretion, to 
+terminate its existing agreement in favor of the remedies in this Section V.  
+VI. SEARCH TEXT AD AUCTION CHANGES AND SEARCH TEXT ADS 
+SYNDICATION 
+A. Search Text Ads Auction Changes : Within a reasonable period of time after the 
+Technical Committee’s appointment, Plaintiffs shall submit a proposal to the Court, informed by 
+the Technical Committee’s views, by which Google shall periodically provide the Technical 
+Committee and Plaintiffs a report outlining all changes to its Search Text Ads auction meeting 
+certain parameters and, for each change, (1) Google’s public disclosure of that change or (2) a 
+statement why no public disclosure is necessary. Plainti ffs’ proposal shall detail the types of 
+changes that must be disclosed, the frequency of disclosure, the steps to mitigate undue burden on 
+11 
+ 
+      
+       
+      
+ 
+    
+   
+   
+  
+    
+    
+    
+   
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 12 of 35 
+Google, and the steps to ensure  any public  disclosure  of an ad auction change  (if  not already made  
+by Google) avoids  revealing Google’s trade  secrets, in accord with the Court’s instructions in its   
+September 2, 2025, Memorandum Opinion.  Plaintiffs have  the  right to challenge  any disclosure  
+they deem inadequate.  For the avoidance  of doubt, Google  need not report on auction experiments, 
+which are  generally tested on some fraction of Google’s Search Text Ads traffic, but Google  shall  
+disclose changes to the  Search Text Ads auction that result from any such auction experiments.  
+B. Search Text Ads Syndication: Google shall take steps sufficient to make available 
+to any Qualified Competitor a Search Text Ads Syndication License whose term will be five (5) 
+years from the date the license is signed. The Search Text Ads syndication agreement shall have 
+the following additional features: 
+1. Google shall provide Qualified Competitors latency, reliability, and 
+performance functionally equivalent to what Google ordinarily provides to other users of 
+Google’s Search Text Ads syndication products , e.g., AdSense for Search, or any other 
+current or future products offering syndicated Search Text Ads. Search Text Ads 
+syndication licenses to Qualified Competitors shall include all types of Search Text Ads 
+(including any assets, extensions, or similar Search Text Ad variations) available through 
+its syndication products. For the avoidance of doubt, Google’s obligations do not extend 
+to latency, reliability, and performance differences that result from differences in product 
+implementation, users, or are otherwise outside of Google’s syndication products. 
+2.  Google  shall  provide  the Search Text Ads Syndication License  to Qualified  
+Competitors on financial terms no worse  than those  offered to any other user of Google’s  
+Search Text Ads syndication products.  
+12 
+ 
+        
+       
+ 
+     
+  
+  
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 13 of 35 
+3. Google shall not require Qualified Competitors to share more information 
+with Google regarding the end user than it requires from any other user of Google’s Search 
+Text Ads syndication products. 
+4. The only permitted use of the information and data that Qualified 
+Competitors obtain from Google pursuant to this Section VI is to display the ad results to 
+the end user who submitted the associated query, as further detailed in this section, except 
+as permitted by Section VI.B.9. 
+5.  Google  shall  (i) make  the  purchase  of ads syndicated under  this Section 
+VI.B  available  to advertisers on a  non-discriminatory basis  comparable  to, and no  more  
+burdensome  than,  the  availability of Google’s  other  Search Text Ads  and (ii) include 
+Qualified Competitors in its Search Partner Network.  
+6.  Qualified Competitors shall  have  the same formatting flexibility  available 
+to any other  user of Google’s Search Text Ads syndication products, shall  be  free  to use  
+other  providers of syndicated search ads or display  their  own ads, and shall  not be  required  
+to provide  Google  ads with preferential placement over equivalent ads requested from other  
+sources.  Google  may place  only ordinary-course  restrictions  on the use  or display of 
+syndicated ad content, but such restrictions  shall  be  no more  restrictive  than  those applied 
+to any other   user of Google’s Search Text Ads  syndication products.  Google  is also 
+permitted to place  its ordinary commercial restrictions on scraping, indexing, or crawling  
+the syndicated ads.  
+7.  Google  is permitted to retain  or use  data  collected from Qualified  
+Competitors in provisioning of the service   under Section VI   for  Google’s own products  
+and services for  the purpose  of building, improving, and maintaining its ads infrastructure  
+13 
+ 
+     
+ 
+    
+   
+ 
+     
+     
+ 
+      
+ 
+      
+   
+      
+       
+     
+  
+   
+ 
+     
+  
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 14 of 35 
+and shared ads systems.  Google’s use  of Qualified Competitors’  data for  these  purposes 
+will  be  the same  as  Google’s use  of data from other  users of  its Search  Text Ads syndication  
+products.  
+8. Google need not grant Qualified Competitors the right to set a minimum 
+cost per click for syndicated ads unless failing to do so would violate Section VI.B.1. 
+9. For the avoidance of doubt, this Final Judgment only requires Google to 
+provide syndication for queries that originate in the United States, from human end users.  
+Synthetic queries are not eligible for syndication under the Final Judgment.  Queries from 
+a syndicator of the Qualified Competitor are not eligible for syndication under the Final 
+Judgment, unless such Qualified Competitor has been certified as a Competitor to a Google 
+ads platform (e.g., Google Ads). 
+10. If Google in good faith believes a Qualified Competitor is in breach of the 
+terms of its agreement under this Section VI, Google may exercise its rights under the 
+agreement. Before exercising such rights, Google shall first provide simultaneous notice 
+to the Technical Committee and the Plaintiffs of the breach and the actions Google is taking 
+in light of the breach. Google shall provide this notice in time such that Plaintiffs have a 
+reasonable period of time to raise objections. If Plaintiffs object and seek a resolution by 
+the Court, Google may not take any action until the later of (i) two weeks after Plaintiffs 
+seek Court intervention, if the Court does not act, or (ii) until further order of the Court, if 
+the Court intervenes. Google may seek expedited consideration from the Court if the 
+circumstances warrant such treatment. 
+11. Google shall be entitled to propose additional terms to the Search Text Ad 
+syndication agreements with Qualified Competitors as necessary to guarantee ad quality, 
+14 
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 15 of 35 
+protect advertisers, and prevent ad misuse.  Qualified Competitors are  free  to reject these  
+proposed additional terms.  Google  shall  provide  simultaneous notice  to the Technical  
+Committee  and the Plaintiffs of any such  term  and allow Plaintiffs a  reasonable  period of  
+time to raise objections.  If  Plaintiffs object and seek a  resolution by the Court, Google  may 
+not modify its Search Text Ad syndication agreements under this Section VI  until the later 
+of (i)  two weeks after Plaintiffs seek Court intervention,  if the Court does not act, or  
+(ii)  until further  order of  the Court, if the Court intervenes.  Google  may seek expedited 
+consideration from the Court if the circumstances warrant such treatment.  
+12.  Qualified Competitors may elect,  in their  sole  discretion, the queries for  
+which they will request syndicated ad results.  
+Within sixty  (60)  days of the Effective  Date of this Final Judgment, Plaintiffs and the Technical  
+Committee, with input  from Google,  shall  create  and submit  to the Court a  template  for such 
+license.  
+C.  Existing Syndication Agreements: The  provisions  of this Section VI  shall  have  no  
+effect on any  existing Google Search  Text Ad  syndication agreements with third parties or on  
+Google’s ability to enter   in Search Text Ad syndication agreements with third parties other   than  
+Qualified Competitors, except that Google  shall  permit any entity with an existing Search Text Ad  
+syndication agreement who  becomes a  Qualified Competitor, at the Qualified Competitor’s sole   
+discretion, to terminate its existing agreement in  favor of the remedies in this Section VI.  
+15 
+ 
+  
+  
+   
+   
+ 
+     
+  
+      
+     
+ 
+    
+   
+ 
+   
+ 
+       
+    
+ 
+    
+  
+           
+      
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 16 of 35 
+VII. COMPLIANCE, ADMINISTRATION, AND ENFORCEMENT PROCEDURES 
+A. Technical Committee: 
+1. Within sixty (60) days of entry of this Final Judgment, the Court will 
+appoint, pursuant to the procedures below, a five-person Technical Committee to assist in 
+enforcement of and compliance with this Final Judgment. 
+2. The TC members shall be experts in some combination of software 
+engineering, information retrieval, artificial intelligence, economics, behavioral science, 
+and data privacy and data security. No TC member may have a conflict of interest that 
+could prevent them from performing their duties in a fair and unbiased manner. In addition, 
+unless the Court so approves, no TC member: 
+a. may have been employed in any capacity by Google or any 
+Competitor to Google within the six -month period directly predating their 
+appointment to the TC; 
+b. may have been retained by any party as a consulting or testifying 
+expert in this action; or 
+c. may perform any work for Google or any Competitor of Google 
+during the time that they serve on the TC and for one (1) year after ceasing to serve 
+on the TC. 
+3. Within thirty (30) days of entry of this Final Judgment, Plaintiff United 
+States (after consultation with the Co -Plaintiff States), the Colorado Plaintiff States, and 
+Google shall each select one member of the TC, and a majority of those three members 
+will then select the remaining two members. Plaintiff United States’ appointee shall serve 
+as chair.  The selection and approval process shall be as follows: 
+16 
+ 
+    
+   
+  
+        
+    
+      
+      
+ 
+     
+       
+  
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 17 of 35 
+a.  As soon as  practicable  after submission of  this Final Judgment to  
+the Court, the Plaintiffs as a  group  shall  identify to Google  the individuals they  
+propose  to select  as their designees  to  the TC,  and Google  shall  identify  to Plaintiffs 
+the individual it  proposes to select as its designee.  No party may object to a  
+selection on any ground  other  than failure  to satisfy the requirements of Section  
+VII.A.2 above.  Any such objection shall be made within ten (10) business days of  
+receipt of notification of  selection.  
+b.  The  Plaintiffs shall  apply to the Court for  appointment of the persons  
+selected pursuant to Section VII.A.3.a above.  Any  objections to the eligibility of a  
+selected person that the  parties have  failed  to resolve between themselves  will  be  
+decided by the Court based solely on the requirements stated in Section VII.A.2  
+above.  
+c. As soon as practicable after their appointment by the Court, the three 
+members of the TC selected by the Plaintiffs and Google (the “Standing Committee 
+Members”) shall identify to the Plaintiffs and Google the persons that they in turn 
+propose to select as the remaining members of the TC. The Plaintiffs and Google 
+shall not object to these selections on any grounds other than failure to satisfy the 
+requirements of Section VII.A.2 above. Any such objection shall be made within 
+ten (10) business days of receipt of notification of selection and shall be served on 
+the other party as well as on the Standing Committee Members. 
+d. The Plaintiffs shall apply to the Court for appointment of the persons 
+selected by the Standing Committee Members. If the Standing Committee 
+Members cannot agree on the fourth or fifth members of the TC, that member or 
+17 
+ 
+     
+   
+         
+ 
+      
+     
+   
+  
+       
+     
+ 
+  
+  
+    
+         
+   
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 18 of 35 
+members shall be appointed by the Court. Any objection by Plaintiffs or Google to 
+the eligibility of the person selected by the Standing Committee Members which 
+the parties have failed to resolve among themselves shall also be decided by the 
+Court based solely on the requirements stated in Section VII.A.2 above. 
+4. The Standing Committee Members shall serve for an initial term of thirty -
+six (36) months; the remaining members shall serve for an initial term of thirty (30) months.  
+At the end of a TC member’s term, the party that originally selected them may, in its sole 
+discretion, either request re -appointment by the Court to additional terms of the same 
+length, or replace the TC member in the same manner as provided for in Section VII.A.3 
+above. In the case of the fourth and fifth members of the TC, those members sh all be re-
+appointed or replaced in the manner provided in Section VII.A.3 above. 
+5. If any party determines that a member of the TC has failed to act diligently 
+and consistently with the purposes of this Final Judgment, they may petition the Court for 
+removal of that member. If a member of the TC is removed by the Court, resigns, or for 
+any other reason ceases to serve in their capacity as a member of the TC, the person or 
+persons that originally selected the TC member shall select a replacement member in the 
+same manner as provided for in Section VII.A.3 above. 
+6.  Promptly after appointment of the TC  by the Court, the Plaintiffs shall  enter  
+into a  Technical Committee  Services Agreement (“TC Services Agreement”) with each TC 
+member that grants the rights, powers, and authorities necessary to permit the TC  to  
+perform its duties under this Final Judgment.  Google shall  indemnify each TC member  
+and hold them harmless against  any losses, claims, damages, liabilities,  or expenses arising  
+out of, or in connection with, the performance  of the TC’s duties, except to the extent that  
+18 
+ 
+  
+   
+ 
+     
+ 
+   
+      
+ 
+       
+ 
+  
+     
+    
+ 
+     
+    
+ 
+  
+    
+     
+   
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 19 of 35 
+such liabilities, losses, damages, claims, or expenses result from misfeasance, gross 
+negligence, willful or wanton acts, or bad faith by the TC member. The TC Services 
+Agreements shall include the following: 
+a. The TC members shall serve, without bond or other security, at the 
+cost and expense of Google on such terms and conditions as the parties agree, 
+including payment of reasonable fees and expenses. To the extent that the parties 
+cannot agree on the terms of a TC Services Agreement, the parties will submit such 
+disagreement to the Court for resolution. 
+b. The TC Services Agreement shall provide that each member of the 
+TC must comply with the limitations provided for in Section VII.A.2 above. 
+7. The TC shall have the following powers and duties: 
+a. The TC shall have the power and authority to monitor Google’s 
+implementation of and compliance with its obligations under this Final Judgment, 
+in the manner described further herein. 
+b. The TC shall have the power to recommend reasonable data security 
+standards applicable to Qualified Competitors, which shall be approved by the 
+Plaintiffs. 
+c. The TC may, on reasonable notice to Google: 
+i. interview, either informally or on the record, any Google 
+personnel, who may have their individual counsel present; any such 
+interview will be subject to the reasonable convenience of such personnel 
+and without restraint or interference by Google; 
+19 
+ 
+  
+ 
+   
+  
+   
+     
+ 
+     
+  
+  
+      
+    
+     
+     
+  
+ 
+ 
+       
+     
+ 
+    
+       
+  
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 20 of 35 
+ii. inspect and copy any document in the possession, custody, 
+or control of Google personnel; 
+iii. obtain reasonable access to any system or equipment to 
+which Google personnel have access; 
+iv. obtain reasonable access to, and inspect, any physical 
+facility, building, or other premises to which Google personnel have access; 
+and 
+v. require Google personnel to provide documents, data , and 
+other information, and to submit reports to the TC containing such material, 
+in such form as the TC may reasonably direct. 
+d. The TC shall have access to Google’s source code and algorithms, 
+subject to a confidentiality agreement, as approved by the Plaintiffs and to be 
+agreed to by the TC members pursuant to Section VII.A.8 below, and by any staff 
+or consultants who m ay have access to the source code and algorithms. The TC 
+may study, interrogate, and interact with the source code and algorithms in order to 
+perform its functions and duties, including the handling of complaints and other 
+inquiries from third parties. 
+e. The TC shall receive complaints from Google’s Compliance Officer 
+(as described in Section VII.B below), third parties, or the Plaintiffs and handle 
+them in the manner specified in Section VII.C below. 
+f. The TC shall report in writing to the Plaintiffs, initially every 
+three (3) months for three (3) years and thereafter every six (6) months until 
+expiration of this Final Judgment, the actions it has undertaken in performing its 
+20 
+ 
+  
+  
+    
+      
+  
+      
+ 
+  
+ 
+ 
+       
+  
+    
+      
+  
+ 
+     
+     
+   
+    
+     
+    
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 21 of 35 
+duties pursuant to this Final Judgment, including the identification of each business 
+practice reviewed and any recommendations made by the TC. 
+g. Regardless of when reports are due, when the TC has reason to 
+believe that there may have been a failure by Google to comply with any term of 
+this Final Judgment, or that Google is attempting to circumvent any provision of 
+this Final Judgment or the intend ed purposes of this Final Judgment, the TC shall 
+immediately notify the Plaintiffs in writing setting forth the relevant details. 
+h. TC members may communicate with third parties about how their 
+complaints or inquiries might be resolved with Google, so long as the 
+confidentiality of information obtained from Google is maintained. 
+i. The TC may hire at the cost and expense of Google, with prior notice 
+to Google and subject to approval by the Plaintiffs, such staff or consultants (all of 
+whom must meet the qualifications of Sections VII.A.2.a –c) as are reasonably 
+necessary for the TC to carry out its duties and responsibilities under this Final 
+Judgment. The compensation of any person retained by the TC shall be based on 
+reasonable and customary terms commensurate with the individual’s experience 
+and responsibilities. 
+j. The TC shall account for all reasonable expenses incurred, including 
+agreed upon fees for the TC members’ services, subject to the approval of the 
+Plaintiffs. Google’s failure to promptly pay the TC’s accounted -for costs and 
+expenses, including for agents and consultants, shall constitute a violation of this 
+Final Judgment and may result in sanctions imposed by the Court. Google may, on 
+application to the Court, object to the reasonableness of any such fees or other 
+21 
+ 
+ 
+     
+     
+     
+ 
+     
+  
+  
+   
+   
+  
+ 
+  
+ 
+    
+    
+      
+  
+     
+       
+   
+     
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 22 of 35 
+expenses only if Google has conveyed such objections to the Plaintiffs and the TC 
+within ten (10) calendar days of receiving the invoice for such fees or other 
+expenses. On any such application, (a) Google shall bear the burden to demonstrate 
+unreasonableness; (b) Google shall establish an escrow account into which it 
+deposits the disputed costs and expenses until the dispute is resolved; and (c) the 
+TC members shall be entitled to recover all cost s incurred on such application 
+(including reasonable attorn eys’ fees and costs), regardless of the Court’s 
+disposition of such application, unless the Court expressly finds that the TC’s 
+opposition to the application was without substantial justification. 
+k. Google may object to and be heard by the Court on any 
+recommendation from the TC or Plaintiffs as to the interpretations or substantive 
+requirements of this Final Judgment. 
+8. Each TC member, and any consultants or staff hired by the TC, shall sign a 
+confidentiality agreement prohibiting disclosure of any information obtained in the course 
+of performing his or her duties as a member of the TC or as a person assisting the TC, to 
+anyone other than another TC member or a consultant or staff hired by the TC, Google, the 
+Plaintiffs, or the Court. All information gathered by the TC in connection with this Final 
+Judgment and any report and recommendations prepared by the TC shall be tr eated as 
+Highly Confidential under the Protective Order in this case, and shall not be disclosed to 
+any person other than another TC member or a consultant or staff hired by the TC, Google, 
+the Plaintiffs, and the Court except as allowed by the Protective Order entered in the Action 
+or by further order of this Court. No member of the TC may make any public statements 
+relating to the TC’s activities. 
+22 
+ 
+  
+      
+     
+    
+  
+    
+ 
+       
+    
+  
+   
+  
+        
+       
+ 
+         
+ 
+   
+  
+   
+  
+   
+   
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 23 of 35 
+B. Internal Compliance Officer: 
+1. Google shall designate, within thirty (30) days of entry of this Final 
+Judgment, an employee of Google as the internal Compliance Officer with responsibility 
+for administering Google’s antitrust compliance program and helping to ensure compliance 
+with this Final Judgment. 
+2. Within seven (7) days of the Compliance Officer’s appointment, Google 
+shall identify to the Plaintiffs the Compliance Officer’s name, business address, telephone 
+number, and email address. Within fifteen (15) days of a vacancy in the Compliance 
+Officer po sition, Google shall appoint a replacement and identify to the Plaintiffs the 
+replacement Compliance Officer’s name, business address, telephone number, and email 
+address. Google’s initial or replacement appointment of the Compliance Officer is subject 
+to the approval of the Plaintiffs. 
+3. The Compliance Officer shall supervise the review of Google activities to 
+ensure that they comply with this Final Judgment. The Compliance Officer may be assisted 
+by other employees of Google. 
+4. The Compliance Officer shall be responsible for performing the following 
+activities: 
+a. within forty-five ( 45) days after entry of this Final Judgment, 
+distributing a copy of the Final Judgment to all officers and directors of Google; 
+b. promptly distributing a copy of this Final Judgment to any person 
+who succeeds to a position described in Section VII.B.4.a above; 
+c. ensuring that those persons designated in Section VII.B.4.a above 
+are annually briefed on the meaning and requirements of this Final Judgment and 
+23 
+ 
+   
+ 
+    
+   
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 24 of 35 
+the U.S. antitrust laws and advising them that Google’s legal advisors are  available  
+to confer with them regarding any question concerning compliance  with this Final 
+Judgment or the U.S. antitrust laws;  
+d.  obtaining from each person designated in  Section  VII.B.4.a  above  
+an annual written certification that he  or she:  (i)  has read and agrees to abide  by the 
+terms of this Final Judgment and (ii) has been advised and understands that his or 
+her failure to comply with this Final Judgment may result in a finding of contempt  
+of court;  
+e.  maintaining a  record of all  persons to whom a  copy of this Final  
+Judgment has been distributed and from whom the certification described in Section 
+VII.B.4.d above has been obtained;  
+f.  establishing and maintaining the website  provided for  in Section 
+VII.C.2.a below;  
+g.  receiving complaints from third parties, the TC, and the Plaintiffs 
+concerning Google’s compliance   with this Final Judgment and following the   
+appropriate procedures set forth in Section VII.C  below;  
+h. maintaining a record of all complaints received and action taken by 
+Google with respect to each such complaint; and 
+i. ensuring Google retains all relevant documents and electronically 
+stored information, regardless of medium or form, related to this Final Judgment 
+and all complaints received and/or action taken by Google with respect to any 
+complaint. 
+24 
+ 
+        
+  
+    
+ 
+  
+    
+ 
+    
+    
+   
+   
+      
+ 
+      
+ 
+    
+     
+     
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 25 of 35 
+5. Google shall within thirty (30) days further appoint a senior business 
+executive, who has visibility into any Google entity with obligations under this Final 
+Judgment, whom Google shall make available to update the Court on Google’s compliance 
+at regular status conferences or as otherwise ordered. 
+C. Voluntary Dispute Resolution: 
+1. Third parties may submit complaints concerning Google’s compliance with 
+this Final Judgment to the Plaintiffs, the TC, or the Compliance Officer. 
+2.  Third parties,  the TC,  or Plaintiffs in their  discretion may submit  to the  
+Compliance  Officer  any  complaints concerning  Google’s  compliance  with this Final  
+Judgment.  Without in any way limiting their  authority to take  any other action to enforce  
+this Final Judgment, the  Plaintiffs may submit complaints to the Compliance  Officer  
+whenever doing so would be consistent with the public interest.  
+a. To facilitate the communication of complaints and inquiries by 
+parties, the Compliance Officer shall place on Google’s website, in a manner 
+acceptable to the Plaintiffs, the procedures for submitting complaints. To 
+encourage whenever possible the informal resolution of complaints and inquiries, 
+the website shall provide a mechanism for communicating complaints and inquiries 
+to the Compliance Officer. 
+b. Google has thirty (30) days after receiving a complaint to attempt to 
+resolve or to reject it. 
+c. Within thirty (30) days of receiving a complaint, the Compliance 
+Officer shall advise the TC and the Plaintiffs of the nature of the complaint and its 
+disposition. The TC may then propose to the Plaintiffs further actions consistent 
+25 
+ 
+ 
+       
+  
+    
+    
+      
+ 
+     
+ 
+    
+    
+     
+        
+   
+ 
+     
+      
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 26 of 35 
+with this Final Judgment, including consulting with Plaintiffs regarding the 
+complaint. 
+3.  The  Compliance  Officer,  third parties, or the Plaintiffs in their  discretion  
+may submit  to the TC any complaints concerning Google’s compliance   with this Final 
+Judgment.  
+a. The TC shall investigate the complaints it receives and shall consult 
+with the Plaintiffs regarding its investigation. At least once during its investigation, 
+and more often when it may help resolve the complaints informally, the TC shall 
+meet with the Compliance Officer to allow Google to respond to the substance of 
+the complaints and to determine whether the complaints can be resolved without 
+further proceedings. 
+b. Following its investigation, the TC shall advise Google and the 
+Plaintiffs of its conclusion and its proposal for cure. 
+c. Reports and recommendations from the TC may be received into 
+evidence by the Court in connection with any effort by any Plaintiff to enforce this 
+Final Judgment but shall not be otherwise made available in any other court or 
+tribunal related to any other matter. No member of the TC shall be required to 
+testify by deposition, in court, or before any o ther tribunal regarding any matter 
+related to this Final Judgment. 
+d. The TC may preserve the anonymity of any third-party complainant 
+where it deems it appropriate to do so upon the request of the Plaintiffs or the third 
+party, or in its discretion. 
+26 
+ 
+   
+   
+      
+        
+      
+  
+ 
+   
+     
+  
+ 
+      
+   
+ 
+ 
+ 
+ 
+   
+     
+  
+  
+  
+   
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 27 of 35 
+D. Compliance Inspection: 
+1. Without in any way limiting the sovereign enforcement authority of each of 
+the Colorado Plaintiff States, the Colorado Plaintiff States shall form a committee to 
+coordinate their enforcement of this Final Judgment. Neither a Co -Plaintiff State nor a 
+Colorado Plaintiff State may take any action to enforce this Final Judgment without first 
+consulting with the United States and with the Colorado Plaintiff States’ enforcement 
+committee. 
+2. For the purposes of determining or securing compliance with this Final 
+Judgment or of determining whether this Final Judgment should be modified or vacated, 
+upon written request of an authorized representative of the Assistant Attorney General for 
+the Anti trust Division (after consultation with the Co -Plaintiff States and the Colorado 
+Plaintiff States’ enforcement committee) or of the Attorney General of a Co-Plaintiff State 
+or the Attorney General of a Colorado Plaintiff State (after consultation with the United 
+States and the Colorado Plaintiff States’ enforcement committee), as the case may be, and 
+reasonable notice to Google, Google shall permit, from time to time and subject to legally 
+recognized privileges, authorized representatives, including agents retained by any 
+Plaintiff: 
+a. to have access during Google’s office hours to inspect and copy, or 
+at the option of the Plaintiff, to require Google to provide electronic copies of all 
+books, ledgers, accounts, records, data, and documents in the possession, custody, 
+or control of Google relating to any matters contained in this Final Judgment; and 
+b. to interview, either informally or on the record, Google’s officers, 
+employees, or agents, who may have their individual counsel present, relating to 
+27 
+ 
+      
+      
+ 
+   
+   
+    
+     
+  
+  
+ 
+   
+  
+      
+   
+  
+      
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 28 of 35 
+any matters contained in this Final Judgment. The interviews shall be subject to 
+the reasonable convenience of the interviewee and without restraint or interference 
+by Google. 
+3. Upon the written request of an authorized representative of the Assistant 
+Attorney General for the Antitrust Division (after consultation with the Co-Plaintiff States 
+and the Colorado Plaintiff States’ enforcement committee) or of the Attorney General of a 
+Co-Plaintiff State or the Attorney General of a Colorado Plaintiff State (after consultation 
+with the United States and the Colorado Plaintiff States’ enforcement committee), Google 
+shall submit written reports or respond to written interrogatories, under oath if requested, 
+relating to any matters contained in this Final Judgment. 
+4. If, at the time information or documents are furnished by Google to the 
+Plaintiffs, Google identifies in writing the material in any such information or documents 
+to which a claim of protection may be asserted under Rule 26(c)(1)(G) of the Federal Rules 
+of Civil Procedure, and Google marks each pertinent page of such material, “Confidential 
+and Sensitive Commercial Information Subject to Rule 26(c)(1)(G) ,” then the Plaintiffs 
+shall give five ( 5) business days’ notice prior to divulging such material in any legal 
+proceeding, unless good cause is shown for a shorter notice period. 
+5.  Google  shall  have  the right to claim protection from public  disclosure, under 
+the Freedom of Information Act, 5 U.S.C. §  552, or any other  applicable law or regulation,  
+for  any material it  submits to the Plaintiffs  under this Final Judgment.  After  appropriate  
+consideration of such claim  of protection, Plaintiffs, as the case  may be, will either assert  
+that the material is protected from disclosure  under law or  give Google  ten (10)  business 
+days’ notice of its intent to disclose the material.  
+28 
+ 
+  
+  
+  
+      
+ 
+     
+ 
+  
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 29 of 35 
+E. Status Reports to the Court: 
+1.  Plaintiffs, with input  from the Technical Committee, shall  file  a  status report 
+within ninety (90)  days of the Effective  Date of this Final Judgment, and  then on future  
+dates as set by the Court, updating the Court as to the enforcement of  and Google’s 
+compliance with this Final Judgment.  
+VIII. EFFECTIVE DATE AND EXPIRATION 
+This Final Judgment will  take  effect sixty (60)  days after  the date on which it  is entered  
+(the  “Effective  Date”),  and Plaintiffs shall  report the date   on which Google has substantially 
+implemented all  provisions of this Final Judgment, except for  Section VII.A, which shall  take  
+effect immediately upon entry.  Unless the Court grants an extension or early termination is 
+granted, this Final Judgment will  expire  six (6)  years from the Effective  Date.  This Final Judgment 
+may be  terminated upon  notice  by the United States (after consultation with the Co-Plaintiff  
+States), the Colorado  Plaintiff  States’ enforcement committee, and Google  that continuation of  this 
+Final Judgment is no longer necessary to restore  competition in the monopolized markets.  
+IX. DEFINITIONS 
+A. “API” or “application programming interface” means a mechanism that allows 
+different software components to communicate with each other. 
+B. “Apple” means Apple Inc., a corporation organized and existing under the laws of 
+the State of California, headquartered in Cupertino, California, its successors and assigns, and its 
+subsidiaries, divisions, groups, affiliates, partnerships, and joint ventu res, and their directors, 
+officers, managers, agents, and employees. 
+29 
+ 
+      
+ 
+ 
+    
+ 
+    
+ 
+   
+   
+    
+  
+       
+ 
+      
+     
+   
+    
+ 
+        
+    
+ 
+   
+     
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 30 of 35 
+C. “Browser Developer” means a developer, owner, or operator of a Third-Party 
+Browser and includes, by way of example, Apple, Mozilla Corp., and Samsung Electronics Co., 
+Ltd. 
+D. “Chrome Browser Application” means the browser software application currently 
+marketed by Google as “Google Chrome” and its successors. 
+E. “Competitor” means any provider of or potential entrant in the provision of (i) a 
+General Search Engine (GSE) in the United States, (ii) Search Text Ads in the United States, or 
+(iii) a GenAI Product in the United States. 
+F. “Consideration” means anything of value, including any monetary payment; 
+provision of preferential licensing terms; technical, marketing, and sales support; developer 
+support; or hardware or software certification or approval. 
+G. “Default Search Engine” means a search engine that is set by a Browser Developer 
+to respond to user queries if a user takes no action to select a particular search engine. 
+H. “Device” or “device” means any single smartphone, tablet, laptop, or desktop, 
+excluding any device on which the ChromeOS operating system or a successor to the ChromeOS 
+operating system is installed. For clarity, any two devices are different devices, even if they are 
+the same make and model (e.g., two Samsung Galaxy S25s are two devices; two Apple iPhone 16 
+Pros are two devices). 
+I. “GenAI” or “Generative AI” is a type of artificial intelligence that creates new 
+content including but not limited to text, images, code, classifications, and other media using 
+machine learning models. 
+J. “GenAI Product” means any application, software, service, feature, tool, 
+functionality, or product that involves or makes use of Generative AI capabilities or models and 
+30 
+ 
+   
+ 
+      
+ 
+ 
+      
+ 
+  
+   
+  
+     
+  
+   
+   
+      
+  
+ 
+     
+  
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 31 of 35 
+has among its principal functions answering information-seeking prompts across a wide variety of 
+topics using a broad range of publicly available information. 
+K. “General Search Engine” or “GSE” means software or a service that produces links 
+to websites and other relevant information in response to a user query or prompt and that seeks to 
+fulfill a broad array of informational needs. 
+L. “Google” means (1) Defendant Google LLC, a limited liability company organized 
+and existing under the laws of the State of Delaware, headquartered in Mountain View, California; 
+(2) its successors and assigns, subsidiaries, divisions, groups, affiliates, partnerships, and joint 
+ventures controlling or overseeing Google Search (including syndicated products), Search Tex t 
+Ads (including syndicated products), the Chrome Browser Application, the Google Search 
+Application, the Google Assistant Application, and any related Google GenAI Product; and (3) the 
+directors, officers, managers, agents, and employees of such entities specified in this Section IX.L 
+who oversee Google Search (including syndicated products), Search Text Ads (including 
+syndicated products), the Chrome Browser Application, the Google Search Application, the 
+Google Assistant Application, and any related Google GenAI Product. For clarity , the term 
+“affiliates” includes any Alphabet Inc.–related entity that controls or oversees the aforementioned 
+products. 
+M. “Google Assistant Application” means the user -facing mobile assistive service 
+software application marketed by Google as “Google Assistant” and its successors. 
+N.  “Google  GenAI Product”  means any GenAI Product  offered  by Google,  including 
+by way of  example,  the stand-alone user-facing mobile software  application currently marketed  
+by Google   as the “Google Gemini” application (and that application’s functionally equivalent 
+successors).   
+31 
+ 
+    
+  
+        
+ 
+    
+         
+ 
+     
+ 
+  
+    
+  
+ 
+     
+      
+   
+   
+      
+    
+  
+ 
+    
+   
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 32 of 35 
+O. “Google Play” means the user -facing mobile software application distribution 
+service currently marketed by Google as the “Play Store” and its successors. 
+P. “Google Search” means the web search and search advertising services offered by 
+Google at Google.com. 
+Q. “Google Search Application” means the user-facing mobile online search software 
+application currently marketed by Google as the “Google app” or the “Google Search app” (and 
+its successors). 
+R. The terms “include” and “including” should be read as “including but not limited 
+to,” and any use of either word is not limited in any way to any examples provided. 
+S. “Marginal Cost” or “marginal cost” means the direct total production cost of 
+producing an additional unit of a good or service, which is determined by calculating the change 
+in direct total production cost resulting from Google providing the additional uni t(s) of data or 
+services required under this Final Judgment. 
+T. “Operating System Version” means a web browser version or a version of any 
+proprietary Apple feature or functionality, including Siri and Spotlight, designed to be installed 
+and used on a particular desktop or mobile operating system including, by way of example, 
+Microsoft Windows, Apple iOS, Apple Mac OS, Apple iPad OS, or Android. 
+U. “Privacy Mode” means a mode within a web browser or an Apple product or service 
+such as Siri or Spotlight that is designed to offer a preconfigured privacy setting and includes, by 
+way of example, Private Browsing in Apple Safari, Private mode in Mozilla F irefox, and Secret 
+mode in Samsung Internet. 
+V. “Qualified Competitor” means a Competitor who meets the Plaintiffs’ approved 
+data security standards as recommended by the Technical Committee and agrees to regular data 
+32 
+ 
+    
+   
+ 
+     
+    
+      
+ 
+    
+      
+       
+     
+ 
+    
+ 
+      
+  
+    
+ 
+     
+    
+     
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 33 of 35 
+security and privacy audits by the Technical Committee ; who makes a sufficient showing to the 
+Plaintiffs, in consultation with the Technical Committee, of a plan to invest and compete in or with 
+the GSE and/or Search Text Ads markets; and who does not pose a risk to the national security of 
+the United States. To remain eligible as a Qualified Competitor, the Competitor must apply for 
+re-certification on an annual basis starting from the date of original certification as a Qualified 
+Competitor and establish that it continues to meet the definition of a Qualified Competitor. The 
+Technical Committee shall establish appropriate procedures for the re-certification process. 
+W. “Search Access Point” means any software, application, interface, digital product, 
+or service where a user can enter a query or prompt and, in response to at least some user queries 
+or prompts, receive (or be directed to a place to receive) a response that includes information from 
+a GSE, including links to websites. Search Access Points include OS -level Search Access Points, 
+browsers (including Search Access Points within browsers such as browser address bars), search 
+apps, and GenAI Products that can retrieve and display inf ormation from a GSE, including links 
+to websites. 
+X. “Search Feature” in Google Search means any user-facing content on a SERP that 
+is not an organic link. Search Features include images, featured snippets, hotel units, query 
+expansion features like auto-complete, “did you mean” prompts, spelling corrections, and related 
+searches. 
+Y. “Search Text Ad” means a general search text advertisement, which is an ad that 
+resembles an organic link on a SERP. Search Text Ads can include images and often appear at 
+the top of the SERP with a designation indicating that they are paid advertisements. “Search Text 
+Ad” also includes Search Text Ads appearing in or in connection with Google AI Overviews. 
+33 
+ 
+     
+    
+ 
+    
+  
+     
+   
+ 
+    
+ 
+     
+    
+  
+     
+  
+  
+ 
+     
+     
+ 
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 34 of 35 
+Z. “SERP” or “Search Engine Results Page” means the results provided by a search 
+engine, in response to a user query, including links and other features and content, drawn from a 
+broad index of the web. 
+AA. “Technical Committee” or “TC” means the five -person committee of experts 
+appointed by the Court pursuant to Section VII.A. 
+BB. “Third-Party Browser” means any web browser that is not Google Chrome or 
+another proprietary Google web browser and includes, by way of example, Apple Safari, Mozilla 
+Firefox, and Samsung Internet. 
+CC. “Third-Party GenAI Product” means any GenAI Product that is not owned by 
+Google. 
+DD. “Third-Party General Search Service” means a web search service that can respond 
+to a broad range of search query categories and offers functionality that is substantially similar to 
+Google Search and is not owned by Google or its affiliates. 
+EE. “User-side Data” means all data that can be obtained from users in the United 
+States, directly through a search engine’s interaction with the user’s Device, including software 
+running on that Device, by automated means. User-side Data includes information Google collects 
+when answering commercial, tail, and local queries. 
+FF. “Web Search Index” means databases that store and organize information about 
+websites and their content that is crawled from the web. For the avoidance of doubt, it does not 
+include Google’s vertical indexes or its video, images, or other specialized inde xes that contain 
+information not crawled from the web. 
+34 
+ 
+  
+  
+   
+  
+    
+ 
+ 
+   
+    
+    
+      
+ 
+     
+     
+      
+ 
+     
+  
+ 
+ 
+                                 
+      
+           
+ 
+ 
+Case 1:20-cv-03010-APM Document 1462 Filed 12/05/25 Page 35 of 35 
+X. THIRD-PARTY RIGHTS 
+Nothing in this Final Judgment is intended to confer upon any other persons an y rights or 
+remedies of any nature whatsoever or by reason of this Final Judgment other than the right to 
+submit complaints to the Compliance Officer and the TC. 
+XI. RETENTION OF JURISDICTION AND ENFORCEMENT OF FINAL 
+JUDGMENT 
+A. Jurisdiction is retained by this Court for the purpose of enabling any of the parties 
+to this Final Judgment to apply to this Court at any time for such further orders or directions as 
+may be necessary or appropriate for the construction or carrying out of this Final Judgment, for 
+the modification of any of its provisions, for the enforcement of compliance with this Final 
+Judgment, and for the punishment of any violation of this Final Judgment. 
+B. For a period of four (4) years following the expiration of this Final Judgment, if 
+any Plaintiff has evidence that Google violated this Final Judgment before it expired, that Plaintiff 
+may file an action against Google in this Court requesting that the Cou rt order (1) Google to 
+comply with the terms of this Final Judgment for an additional term of at least four (4) years 
+following the filing of the enforcement action; (2) all appropriate contempt remedies; and 
+(3) additional relief needed to ensure Google complies with the terms of this Final Judgment. 
+35 
+Amit P. Mehta  
+United States District Judge  
+Dated: December 5, 2025 

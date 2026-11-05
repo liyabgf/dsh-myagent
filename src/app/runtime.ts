@@ -1,0 +1,1015 @@
+/**
+ * The Runtime: one deployment of myagent, wired together.
+ *
+ * Everything else in this package is a part with a narrow port; this file is the only place that knows all of them. It
+ * owns the order things are made in — the Store before the Engine, the Engine before the Sources — and the order they
+ * stop in, which is the reverse. It also owns the two rules that keep a restart honest: one writer per state directory,
+ * and an Assignment whose worker Session is gone is interrupted rather than left looking alive.
+ */
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import type { Context } from '@deepseek-ai/cordis'
+import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { SessionId } from '@deepseek-ai/dsh-session'
+import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
+import {
+  Engine, latestAssignment, lostTriggerOf, parseSettings, payloadText, policyVersion, runningAssignment, settingsPolicy,
+  UserError, waitsForPerson, type DomainEvent, type Settings, type Ticket,
+} from '../core/index.ts'
+import { machineOf, type DeploymentConfig, type Machine } from '../deployment.ts'
+import { chatKind } from '../sources/chat.ts'
+import { cronKind } from '../sources/cron.ts'
+import { frontMatter } from '../sources/inbox.ts'
+import { inboxKind } from '../sources/inbox.ts'
+import { sessionKind } from '../sources/session.ts'
+import type { SourceStatus } from '../sources/kind.ts'
+import type { Artifact, Trigger } from '../core/model.ts'
+import { SourceRegistry } from '../sources/registry.ts'
+import type { Cursor, SourceHost } from '../sources/kind.ts'
+import { DshExecutor, type LaunchPayload } from './executor.ts'
+import { OutcomeDelivery, type SendPayload } from './delivery.ts'
+import { Effects } from './effects.ts'
+import { HealthBoard } from './health.ts'
+import { KV, SchemaTooNew, Store } from './store.ts'
+import { LockHeld, takeLock, writeMarker, type StateLock } from './lock.ts'
+import { Passes } from './passes.ts'
+import { MAIN_SESSION, SessionHealth } from './session-health.ts'
+import { Watchdog, type WatchdogHost } from './watchdog.ts'
+import { ruleKind } from '../sources/rule.ts'
+import { packageFile, Prompts, type PromptRole } from './prompts.ts'
+import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
+import { mainTools, workerTools, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
+import { isTextFile, readForPanel, resolveInside } from './files.ts'
+import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
+
+/** How often the pump runs what is due, in milliseconds. */
+/**
+ * The most artifact bytes a worker may be handed.
+ *
+ * Far below the panel's 16MB ceiling on purpose: a download and a model's context are different budgets, and handing
+ * a worker a huge file it did not ask for is a way to lose the rest of its context.
+ */
+const WORKER_ARTIFACT_BYTES = 256 * 1024
+
+const PASS_INTERVAL_MS = 2_000
+/** The panel page, as this installation ships it. */
+const PANEL_FILE = 'panel/index.html'
+
+const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+
+/** The last thing a worker said, which is what a turn that ended without a report is recorded as. */
+function lastSaid(agent: Agent): string | undefined {
+  const events = agent.session.snapshotEvents()
+  for (let index = events.length - 1; index >= 0; index--) {
+    const event = events[index]
+    if (event === undefined || event.type !== 'assistant/message') continue
+    const content = (event.data as { message?: { content?: readonly { type: string; text?: string }[] } }).message?.content ?? []
+    const text = content.filter(block => block.type === 'text').map(block => block.text ?? '').join('\n').trim()
+    if (text !== '') return text
+  }
+  return undefined
+}
+
+/**
+ * How DSH ended this agent's last turn, with the reason's own facts.
+ *
+ * `blocked` means the turn never reached the model at all — the Session cannot run, which is a different fact from a
+ * worker that did its work and forgot to report. Telling them apart is what stops a retry loop that looks like
+ * progress: each attempt delivers, the turn ends at once, and nothing is ever produced.
+ *
+ * `error` means the turn failed, and DSH keeps the failure in the same event: an `LlmError` contributes its own
+ * serializable facts (`{message, code, status}`), anything else a flattened `errorChain` message. Reading it here is
+ * what puts the cause of an upstream 429 on the Ticket instead of leaving it on a health line that answers "now" and
+ * is legitimately overwritten by the next observation.
+ */
+interface TurnEndReason {
+  readonly kind?: string
+  readonly error?: { readonly message?: string; readonly code?: string; readonly status?: number }
+}
+
+function turnEndReason(agent: Agent): TurnEndReason | undefined {
+  const events = agent.session.snapshotEvents()
+  for (let index = events.length - 1; index >= 0; index--) {
+    const event = events[index]
+    if (event === undefined || event.type !== 'turn/end') continue
+    // The event's own shape is `{turn, reason}`; `reason` is what says how the turn ended.
+    return (event.data as { reason?: TurnEndReason } | undefined)?.reason
+  }
+  return undefined
+}
+
+/** What the operator reads when a worker's Session turns out to be one DSH will not run. */
+const UNRUNNABLE_SESSION = 'The worker Session could not run: DSH ended its turn as blocked before any model request, '
+  + 'so nothing was produced. Retrying reuses this same Session and ends the same way. Stop this Ticket and open a new '
+  + 'one for the work; its directory is left exactly as it was, so a new Ticket can continue from whatever is in it.'
+
+/** What a worker is doing right now, which is the only thing that makes watching a long task bearable. */
+export interface WorkerProgress {
+  readonly sessionId: string
+  /** The title DSH gave the worker's Session, which is what the operator looks for in the GUI's session list. */
+  readonly sessionTitle: string
+  readonly loaded: boolean
+  readonly agentStatus?: string
+  readonly turn?: number
+  readonly lastSaid?: string
+  readonly lastEventAt?: string
+  readonly recentTools: readonly { readonly name: string; readonly at?: string }[]
+  /**
+   * Real token counts, summed from the worker's own `assistant/message` events.
+   *
+   * `windowed` says whether the sum covers the whole Session: the progress view reads only the newest
+   * `PROGRESS_SCAN` events, so on a long task this is the cost of that window and not the cost of the work. Presenting
+   * a window as a total is how a budget number becomes a lie, and the operator asked specifically that token counts
+   * not be invented — so the number is either DSH's or nothing, and it says which slice of the Session it covers.
+   */
+  readonly usage?: {
+    readonly inputTokens: number
+    readonly outputTokens: number
+    readonly cacheReadTokens: number
+    readonly totalTokens: number
+    /** How many assistant messages the sum is over. */
+    readonly messages: number
+    readonly windowed: boolean
+  }
+  readonly assignment?: {
+    readonly id: string; readonly state: string; readonly startedAt?: string
+    readonly deliveredAt?: string; readonly deliveryError?: string
+  }
+}
+
+/**
+ * Sum the token counts DSH reports on each assistant message.
+ *
+ * Every field comes from the event; nothing here estimates, scales or guesses. `totalTokens` is the sum of the three
+ * DSH reports (input + output + cache read), which is how DSH itself relates them — recomputing it rather than copying
+ * its `totalTokens` keeps the three parts and the total consistent when a message reports only some of them.
+ */
+export function usageOf(scanned: readonly { type?: string; data?: unknown }[], total: number): WorkerProgress['usage'] {
+  let inputTokens = 0
+  let outputTokens = 0
+  let cacheReadTokens = 0
+  let messages = 0
+  for (const event of scanned) {
+    if (event.type !== 'assistant/message') continue
+    const usage = (event.data as { usage?: { inputTokens?: number; outputTokens?: number; cacheReadTokens?: number } } | undefined)?.usage
+    if (usage === undefined) continue
+    messages++
+    inputTokens += usage.inputTokens ?? 0
+    outputTokens += usage.outputTokens ?? 0
+    cacheReadTokens += usage.cacheReadTokens ?? 0
+  }
+  if (messages === 0) return undefined
+  return {
+    inputTokens, outputTokens, cacheReadTokens, messages,
+    totalTokens: inputTokens + outputTokens + cacheReadTokens,
+    windowed: total > scanned.length,
+  }
+}
+
+/** How far back the progress view reads; a long task has thousands of events and the panel asks every few seconds. */
+const PROGRESS_SCAN = 400
+/** How many recent tool calls the progress view shows. */
+const PROGRESS_TOOLS = 8
+
+/** Read a worker's recent activity out of its own Session log, newest first. */
+function progressOf(agent: Agent | undefined): Pick<WorkerProgress, 'turn' | 'lastSaid' | 'lastEventAt' | 'recentTools' | 'usage'> {
+  if (agent === undefined) return { recentTools: [] }
+  const events = agent.session.snapshotEvents()
+  const recentTools: { name: string; at?: string }[] = []
+  let turn: number | undefined
+  let lastSaid: string | undefined
+  let lastEventAt: string | undefined
+  for (let index = events.length - 1; index >= 0 && index >= events.length - PROGRESS_SCAN; index--) {
+    const event = events[index]
+    if (event === undefined) continue
+    const data = event.data as Record<string, unknown> | undefined
+    const at = typeof (event as { time?: unknown }).time === 'number'
+      ? new Date((event as { time: number }).time).toISOString() : undefined
+    lastEventAt ??= at
+    if (event.type === 'tool/call' && recentTools.length < PROGRESS_TOOLS) {
+      const name = data?.name
+      if (typeof name === 'string') recentTools.push({ name, at })
+      continue
+    }
+    if (event.type === 'turn/start' && turn === undefined) {
+      const value = data?.turn
+      if (typeof value === 'number') turn = value
+      continue
+    }
+    if (event.type === 'assistant/message' && lastSaid === undefined) {
+      lastSaid = lastSaid === undefined ? saidText(data) : lastSaid
+    }
+    if (turn !== undefined && lastSaid !== undefined && recentTools.length >= PROGRESS_TOOLS) break
+  }
+  return { turn, lastSaid, lastEventAt, recentTools, usage: usageOf(events, agent.session.snapshotEvents().length) }
+}
+
+/** The text of one assistant message event, or undefined when it said nothing a person can read. */
+function saidText(data: Record<string, unknown> | undefined): string | undefined {
+  const content = (data?.message as { content?: readonly { type: string; text?: string }[] } | undefined)?.content ?? []
+  const text = content.filter(block => block.type === 'text').map(block => block.text ?? '').join('\n').trim()
+  return text === '' ? undefined : text
+}
+
+/** One shipped recipe: a request file a person can start from, or a settings file whose schedule they can adopt. */
+export interface Recipe {
+  readonly name: string
+  readonly kind: 'request' | 'settings'
+  readonly title?: string
+  readonly text?: string
+  readonly scope?: string
+  readonly schedule?: Record<string, unknown>
+}
+
+export class Runtime implements HttpHost {
+  readonly machine: Machine
+  readonly health = new HealthBoard()
+  readonly context: Context
+  /** Aborted when this Runtime stops, so nothing new starts and every wait ends. */
+  readonly lifetime: AbortSignal
+  readonly store: Store
+  readonly prompts: Prompts
+  readonly effects: Effects
+  readonly passes: Passes
+  readonly sessions: Sessions
+  readonly executor: DshExecutor
+  readonly delivery: OutcomeDelivery
+  readonly engine: Engine
+  readonly sources: SourceRegistry
+  private readonly watchdog: Watchdog
+  private readonly listeners = new Set<(event: DomainEvent) => void>()
+  readonly subprocess: SubprocessRuntime
+
+  private readonly lock: StateLock
+  private readonly abort = new AbortController()
+  private readonly disposers: (() => void)[] = []
+  private settingsValue: Settings
+  private settingsRevisionValue: number
+  private panel: MainState = { acceptMode: 'observe', panelPath: `${BASE_PATH}/`, openTickets: 0, waiting: 0 }
+  /** Session id to Ticket id, from the bindings DSH answered with; a worker's id is a fact, not a prefix. */
+  private readonly sessionIndex = new Map<string, string>()
+  /**
+   * The `sessions` health entry, accounted per subject rather than written by whoever complained last.
+   *
+   * Every write to that entry goes through this, which is what makes its quiet line a claim it can keep: a problem it
+   * knows is live is composed into the detail instead of being overwritten, and one Ticket's recovery cannot erase
+   * another Ticket's failure.
+   */
+  private readonly sessionHealth = new SessionHealth(this.health.entry('sessions'), () => this.store.tickets.open().length)
+  /** The error `agent/error` saw for one Session, which the turn end that follows it writes onto that Ticket. */
+  private readonly sessionErrors = new Map<string, string>()
+  private stopped = false
+  private problem?: string
+
+  constructor(context: Context, config: DeploymentConfig) {
+    this.context = context
+    this.subprocess = context.subprocess
+    this.lifetime = this.abort.signal
+    this.machine = machineOf(config)
+    this.lock = takeLock(this.machine.stateDir)
+    // Spelled out rather than spread: `machine.promptMaxChars` is a Volatile, and spreading it wrote `"promptMaxChars": {}`
+    // into the one file whose job is to tell a person where this deployment keeps its things.
+    writeMarker(this.machine.stateDir, {
+      pid: process.pid, stateDir: this.machine.stateDir, workRoot: this.machine.workRoot,
+      inboxDir: this.machine.inboxDir, mainSessionId: this.machine.mainSessionId,
+      promptMaxChars: this.machine.promptMaxChars.get(), at: new Date().toISOString(),
+    })
+    try {
+      this.store = new Store(join(this.machine.stateDir, 'myagent.sqlite3'))
+    } catch (error) {
+      this.lock.release()
+      if (error instanceof SchemaTooNew) {
+        throw new Error(`This state directory was written by a newer myagent (schema ${error.found}); refusing to open it`)
+      }
+      throw error
+    }
+    this.settingsValue = this.store.settings()
+    this.settingsRevisionValue = this.store.settingsRevision()
+    this.prompts = new Prompts(this.store)
+
+    // The Engine's ports need it, and it needs them; the getters break the cycle and are read only after this
+    // constructor returns, when every one of them is assigned.
+    let engine!: Engine
+    let sessions!: Sessions
+    this.effects = new Effects(this.store, {
+      health: this.health.entry('effects'), lifetime: this.lifetime,
+      onPermanentFailure: (kind, key, payload, error) => {
+        this.health.entry('effects').problem(`${kind} ${key} gave up: ${reason(error)}`)
+        // Work that will not start, or an answer that will not arrive, is the Ticket's business and not only the
+        // board's. The line above answers "how are things now" and is genuinely transient: the queue ends every pass
+        // by recording a summary over it, unless that pass complained or a row it complained about is still queued —
+        // and a give-up settles its row, so the next pass with nothing wrong erases this line, as a restart erases the
+        // board outright. That is why every kind writes a durable trace of its own below, and why none of them may
+        // treat this line as even the transient half of one: `launch` and `input` a failed Report on the Ticket, `send`
+        // `reply_lost` plus REPLY-UNDELIVERED.md, `notify` `notice_lost`, `trigger` a `lost` row in `triggers`.
+        if (kind === 'launch' || kind === 'input') this.executor.gaveUp(kind, payload as LaunchPayload, error)
+        // Somebody asked in a room myagent is now silent in, so the owed words go where that Ticket's own record is.
+        if (kind === 'send') this.delivery.sendGaveUp(payload as SendPayload, error)
+        // A notice that will never arrive. Called on the Engine directly rather than through a Delivery port member:
+        // the Runtime is the composition root and already holds the Engine, whereas the narrow `replyLost` port exists
+        // precisely because a Delivery holding the Engine could write any domain state.
+        if (kind === 'notify') {
+          const notice = payload as { ticketId?: string; kind?: string; state?: string; summary?: string; detail?: string }
+          if (notice.ticketId !== undefined) {
+            try {
+              this.engine.noticeLost(notice.ticketId, {
+                ...(notice.kind === undefined ? {} : { notice: notice.kind }),
+                ...(notice.state === undefined ? {} : { state: notice.state }),
+                error: reason(error),
+                // What was going to be said, so a person can say it by hand — the same reasoning as the
+                // REPLY-UNDELIVERED.md file: a lost message is only actionable if its content survived.
+                // Spelled out rather than as a `?? … === undefined` chain: `??` binds LOOSER than `===`, so that
+                // spelling parses as `summary ?? (detail === undefined)` and silently does the wrong thing for a
+                // policy notice, which has `detail` and no `summary` — the words it was going to deliver were dropped,
+                // measured end to end by the fault-injection run. A report notice happened to work, which is why no
+                // test caught it: the accident and the intent agreed on the only case that was covered.
+                ...(notice.summary === undefined && notice.detail === undefined
+                  ? {}
+                  : { text: String(notice.summary ?? notice.detail).slice(0, 400) }),
+              })
+            } catch {
+              // The Ticket may be gone; losing the trace of a lost notice must not also lose the pass.
+            }
+          }
+        }
+        // A request the queue dropped. Until this branch it left nothing at all behind: no Trigger row, no Decision, no
+        // Ticket, the effect row deleted, and after a restart not one byte on disk about work a rule had asked for.
+        if (kind === 'trigger') {
+          try {
+            const detail = { error: reason(error), effectKey: key }
+            const lost = lostTriggerOf(payload, detail)
+            // Two paths, because what can honestly be said depends on what the payload still carries. One that names
+            // its request is stored as one, under its own identity, in the table whose semantics are "every request,
+            // and what became of it" — the real case, since a permanent failure here is `receive` throwing over a
+            // payload that reads fine. One that does not name it cannot fill the columns that table declares NOT NULL,
+            // and inventing them would put a Source named "lost" into the intake counts on the page whose job is
+            // answering where work comes from, so its text is kept instead, bounded, where it says nothing else.
+            if (lost === undefined || !this.engine.triggerLost(lost)) {
+              this.store.pushLostPayload({ at: new Date().toISOString(), payload: payloadText(payload), ...detail })
+            }
+          } catch {
+            // The other real cause of a permanent `trigger` failure is the Store itself failing, and then this write
+            // fails too — `kv` is in the same file as `triggers`, so no fallback could have done better. Losing the
+            // trace must not also lose the pass: the queue guards this hook (effects.ts:188-189), but it reports an
+            // escaped throw as a hook failure, and a second line saying the hook broke is not the fact worth reading.
+          }
+        }
+      },
+    })
+    this.executor = new DshExecutor({
+      context, store: this.store, effects: this.effects, health: this.health, lifetime: this.lifetime,
+      subprocess: this.subprocess,
+      get engine(): Engine { return engine },
+      get sessions(): Sessions { return sessions },
+      settings: () => this.settings(),
+      workRoot: () => this.machine.workRoot,
+      closing: () => this.stopped,
+    })
+    sessions = this.sessions = new Sessions({
+      context, prompts: this.prompts, lifetime: this.lifetime,
+      masterId: (): string => this.store.get<string>(KV.mainSession) ?? this.machine.mainSessionId,
+      masterDir: (): string => this.machine.workRoot,
+      bindMainSession: (sessionId: string): void => { this.store.set(KV.mainSession, sessionId) },
+      ticket: (ticketId: string): Ticket | undefined => this.store.tickets.get(ticketId),
+      ticketIdOfSession: (sessionId: string): string | undefined => this.ticketIdOfSession(sessionId),
+      bindSession: (ticketId: string, sessionId: string): void => {
+        this.sessionIndex.set(sessionId, ticketId)
+        this.engine.bindSession(ticketId, sessionId)
+      },
+      ticketEnded: (ticketId: string): boolean => {
+        const ticket = this.store.tickets.get(ticketId)
+        return ticket === undefined || ticket.ended !== undefined
+      },
+      environment: (ticket: Ticket): Record<string, string> => this.executor.environment(ticket),
+      tools: (agent: Agent, ticket?: Ticket): Tool[] =>
+        ticket === undefined ? mainTools(this.toolsHost()) : workerTools(this.toolsHost(), ticket),
+      mainState: (): MainState => this.panel,
+      closing: () => this.stopped,
+    })
+    this.delivery = new OutcomeDelivery({
+      context, store: this.store, effects: this.effects, sessions: this.sessions, health: this.health,
+      lifetime: this.lifetime, subprocess: this.subprocess, settings: () => this.settings(),
+      // A reply is dispatched by the kind its address names, so the Delivery asks the registry for that kind's one
+      // running instance rather than holding a reference of its own: the registry replaces an instance when its
+      // settings change, and a stale reference would deliver to a Source that has already been stopped.
+      source: kind => this.sources.source(kind),
+      // Handed one writer rather than the Engine: a Delivery that could reach the Engine could write any domain state,
+      // and a lost reply is the only fact about a Ticket's life it has to add. Read at call time, because the Engine is
+      // constructed after the Delivery that needs it.
+      replyLost: (ticketId, detail) => { this.engine.replyLost(ticketId, detail) },
+      panelPath: (): string => this.panelPath(),
+    })
+    this.engine = engine = new Engine({
+      repos: this.store, tx: this.store,
+      policy: () => settingsPolicy(this.settings()),
+      executor: this.executor, delivery: this.delivery,
+      emit: (event: DomainEvent): void => this.onEvent(event),
+    })
+    // The one effect that turns an event into a request. A rule Source enqueues a Trigger instead of calling `receive`
+    // inline, because its callback runs inside the transaction that ended the upstream Ticket; handling it here keeps
+    // the Engine the only writer and gives the request the queue's durability, deduplication and backoff for free.
+    this.effects.handle('trigger', payload => { this.engine.receive(payload as Trigger) })
+    this.passes = new Passes({
+      effects: this.effects, intervalMs: PASS_INTERVAL_MS, health: this.health.entry('passes'),
+      lifetime: this.lifetime, extra: [async (): Promise<void> => this.refresh()],
+      onPassError: (error: unknown): void => { context.logger.warn('a myagent pass failed: %s', reason(error)) },
+    })
+    this.sources = new SourceRegistry(this.sourceHost(), [cronKind, inboxKind(this.machine.inboxDir), sessionKind, ruleKind, chatKind])
+    this.watchdog = new Watchdog(this.watchdogHost())
+    this.disposers.push(registerHttp(this))
+  }
+
+  // ------------------------------------------------------------------- Ports
+
+  /** The Engine and Store the tools read and command. */
+  private toolsHost(): ToolsHost {
+    return {
+      engine: this.engine, store: this.store, acceptMode: () => this.settings().acceptMode,
+      // Answered by the Sessions, which is the only place that knows: the attempt is recorded when a launch prompts
+      // the worker, and a worker's Session outlives the attempt its tools were registered for.
+      attempt: (ticketId: string) => this.sessions.attempt(ticketId),
+      readArtifact: (source, target, path) => this.readArtifact(source, target, path),
+    }
+  }
+
+  /** Attempts that are running but whose Session has produced no event for at least `olderThanMs`. */
+  private silentAttempts(olderThanMs: number, now: number): { ticketId: string; assignmentId: string; silentForMs: number }[] {
+    const silent: { ticketId: string; assignmentId: string; silentForMs: number }[] = []
+    for (const ticket of this.store.tickets.open()) {
+      const assignment = latestAssignment(ticket)
+      if (assignment === undefined || assignment.state !== 'running') continue
+      const progress = this.progress(ticket.id)
+      // With no events yet the attempt has been silent since it started, which is the honest reading rather than zero.
+      const lastAt = progress.lastEventAt ?? assignment.startedAt ?? assignment.createdAt
+      const silentForMs = now - Date.parse(lastAt)
+      if (silentForMs >= olderThanMs) silent.push({ ticketId: ticket.id, assignmentId: assignment.id, silentForMs })
+    }
+    return silent
+  }
+
+  /**
+   * When this Runtime mounted, so "which mount am I talking to?" has an answer instead of an inference.
+   *
+   * Three rounds were spent establishing exactly that by correlating a marker file's timestamp against source mtimes,
+   * because nothing in the API said when the plugin came up. Cheap to expose, and it is the first thing to look at when
+   * the panel and the API disagree about what exists.
+   */
+  private readonly mountedAtIso: string = new Date().toISOString()
+
+  /** When this Runtime mounted. A method because the Runtime *is* the HttpHost, and the port declares one. */
+  mountedAt(): string { return this.mountedAtIso }
+
+  /**
+   * The interval the Watchdog's running timer is actually on.
+   *
+   * A diagnostic read, not test scaffolding: without it, "did my `everyMs` change take effect?" can only be answered by
+   * inference, and the acceptance run that found N2 unfixed had to do exactly that — matching a rescue's timestamp to
+   * `mountedAt + 7×60s` within 23ms to prove the timer was still on the old grid.
+   */
+  watchdogArmedInterval(): number { return this.watchdog.armedInterval() }
+
+  /** Read one registered artifact of another Ticket for a worker, or answer why it may not. */
+  async readArtifact(sourceTicketId: string, targetTicketId: string, path: string): Promise<ArtifactRead> {
+    let authorized: { directory: string; artifact: Artifact }
+    try {
+      authorized = this.engine.authorizeArtifactRead(sourceTicketId, targetTicketId, path)
+    } catch (error) {
+      return error instanceof UserError
+        ? { ok: false, error: error.message, code: error.code }
+        : { ok: false, error: reason(error) }
+    }
+    // The same traversal guard the panel's file routes use: a registered path is data, and data does not get to decide
+    // where on disk it points.
+    const absolute = resolveInside(authorized.directory, authorized.artifact.path)
+    if (absolute === undefined) return { ok: false, error: 'That artifact is not a path inside its Ticket directory.', code: 'artifact_missing' }
+    try {
+      const read = await readForPanel(absolute)
+      if (!isTextFile(authorized.artifact.path, read.size)) {
+        return { ok: false, error: `That artifact is not a text file, so it cannot go into a worker's context: ${authorized.artifact.path}` }
+      }
+      // A worker's context is not a download: the panel's 16MB ceiling is far past anything a model should be handed.
+      if (read.size > WORKER_ARTIFACT_BYTES) {
+        return {
+          ok: false,
+          error: `That artifact is ${read.size} bytes, over the ${WORKER_ARTIFACT_BYTES} a worker may be handed. `
+            + 'Ask the other Ticket for the part you need, or read it yourself if it is in your own directory.',
+        }
+      }
+      return {
+        ok: true, size: read.size, at: authorized.artifact.at,
+        ...(authorized.artifact.note === undefined ? {} : { note: authorized.artifact.note }),
+        content: Buffer.from(read.base64, 'base64').toString('utf8'),
+      }
+    } catch (error) {
+      return { ok: false, error: reason(error) }
+    }
+  }
+
+  /** Everything the Watchdog may touch: the judgement is its own, but every action is one something else already does. */
+  private watchdogHost(): WatchdogHost {
+    return {
+      settings: () => {
+        const watchdog = this.settings().watchdog
+        return {
+          enabled: watchdog.enabled, everyMs: watchdog.everyMs, launchStuckMs: watchdog.launchStuckMs,
+          silentMs: watchdog.silentMs, maxActions: watchdog.maxActions,
+        }
+      },
+      stuckLaunches: (olderThanMs, now) => this.executor.stuckLaunches(olderThanMs, now),
+      rescue: (ticketId, assignmentId, why) => {
+        this.executor.rescueStuckLaunch(ticketId, assignmentId)
+        // Recorded through the Engine, which is the only writer: the Watchdog may not write state of its own.
+        this.engine.watchdogActed(ticketId, why)
+      },
+      silentAttempts: (olderThanMs, now) => this.silentAttempts(olderThanMs, now),
+      interrupt: (ticketId, assignmentId, why) => {
+        // The pair `recover()` already uses for an attempt whose worker is gone: stop what it left running, then
+        // replace it. Halting first matters — an interrupted attempt whose background jobs keep running would spend
+        // the operator's machine on work nobody is waiting for.
+        void this.executor.haltBackground(ticketId, why)
+        this.engine.assignmentInterrupted(ticketId, assignmentId, why)
+      },
+      // The log is the counter, so a restart cannot make the Watchdog forget how many times it already tried. It
+      // counts both kinds of action, because to the operator they are the same fact: myagent intervened here.
+      actionsTaken: ticketId => this.engine.history(ticketId)
+        .filter(event => event.type === 'rescued' || (event.type === 'interrupted' && event.by?.id === 'watchdog')).length,
+      // Durable copy of the escalation: the board is the signal, the Ticket's log is the record. Not counted by
+      // `actionsTaken` above, because escalating is not an action taken — it is the conclusion that actions failed.
+      escalate: (ticketId, why) => { this.engine.watchdogEscalated(ticketId, why) },
+      health: this.health.entry('watchdog'),
+      requestPass: () => this.passes.requestPass(),
+    }
+  }
+
+  /**
+   * Every domain event, multiplexed to whoever is watching.
+   *
+   * A listener that throws is contained: an exception here would arrive inside the transaction that emitted the event,
+   * and one listener's bug must not be able to roll back a commit or take down the pump.
+   */
+  private subscribe(listener: (event: DomainEvent) => void): () => void {
+    this.listeners.add(listener)
+    return () => { this.listeners.delete(listener) }
+  }
+
+  /** Everything a Source may touch, and nothing more. */
+  private sourceHost(): SourceHost {
+    return {
+      engine: this.engine, effects: this.effects, health: this.health, lifetime: this.lifetime,
+      settings: () => this.settings(),
+      requestPass: () => this.passes.requestPass(),
+      subscribe: (listener: (event: DomainEvent) => void) => this.subscribe(listener),
+      cursor: (id: string): Cursor => {
+        const key = KV.sourceCursor(id)
+        return {
+          get: <T>(): T | undefined => this.store.get<T>(key),
+          set: <T>(value: T): void => { this.store.set(key, value) },
+        }
+      },
+    }
+  }
+
+  // ------------------------------------------------------------------- State
+
+  /** The settings as they are now, read from the Store when its revision moved. */
+  settings(): Settings {
+    const revision = this.store.settingsRevision()
+    if (revision !== this.settingsRevisionValue) {
+      this.settingsValue = this.store.settings()
+      this.settingsRevisionValue = revision
+    }
+    return this.settingsValue
+  }
+
+  /**
+   * Validate and store new settings, then tell the live Tickets what the change means for them.
+   * @throws a ZodError naming what is wrong, which the panel shows next to the field.
+   */
+  saveSettings(value: unknown): Settings {
+    const before = this.settings()
+    const next = parseSettings(value)
+    const revision = this.store.saveSettings(next)
+    this.settingsValue = next
+    this.settingsRevisionValue = revision
+    // Called here, and not only from `refresh()`, because a live acceptance run measured that every path from a
+    // settings save to `refresh()` is closed at exactly the moment a re-arm matters: `policyChanged` emits nothing for
+    // a watchdog- or executor-only change (`authorizationShape` covers neither, so `policyVersion` does not move), and
+    // no pass completes while a launch is awaiting its prepare command — which is the very situation the Watchdog
+    // exists for. The result was that a new `everyMs` took effect only at the next tick of the OLD grid: 34.7s of
+    // detection latency against a 15s threshold, with the rescue landing on mountedAt + 7×60s to within 23ms.
+    this.watchdog.settingsChanged()
+    const effects = this.engine.policyChanged(before, next)
+    this.context.logger.info('myagent settings saved (version %s, %d live Ticket(s) affected)', policyVersion(next), effects.length)
+    void this.sources.sync().catch((error: unknown) => { this.health.entry('sources').problem(reason(error)) })
+    this.passes.requestPass()
+    return next
+  }
+
+  /**
+   * The panel's URL prefix, with a Ticket id appendable after the `#ticket=`.
+   * Empty when this profile has no web server, which makes a notification fall back to its text alone.
+   */
+  panelPath(): string {
+    const port = (this.context as { webServer?: { port?: number } }).webServer?.port
+    return port === undefined ? '' : `http://127.0.0.1:${port}${BASE_PATH}/#ticket=`
+  }
+
+  /**
+   * What one Ticket's worker is doing, for a panel that refreshes while the operator watches.
+   * @throws `UserError('ticket_missing')` when there is no such Ticket.
+   */
+  progress(ticketId: string): WorkerProgress {
+    const ticket = this.store.tickets.get(ticketId)
+    if (ticket === undefined) throw new UserError('ticket_missing', { ticketId })
+    const sessionId = ticket.execution?.sessionId ?? workerSessionId(ticketId)
+    const agent = this.context.agents.get(sessionId as SessionId)
+    const assignment = latestAssignment(ticket)
+    return {
+      sessionId, sessionTitle: ticket.title, loaded: agent !== undefined, agentStatus: agent?.status,
+      ...progressOf(agent),
+      ...(assignment === undefined ? {} : {
+        assignment: {
+          id: assignment.id, state: assignment.state, startedAt: assignment.startedAt,
+          deliveredAt: assignment.deliveredAt, deliveryError: assignment.deliveryError,
+        },
+      }),
+    }
+  }
+
+  /** When each Source last fired, which the panel shows beside what happens next. */
+  /** What a Ticket registered as its own output, which is a claim about the work rather than a listing of the disk. */
+  artifacts(ticketId: string): readonly Artifact[] { return this.store.artifacts.list(ticketId) }
+
+  sourceStatus(): Record<string, SourceStatus> {
+    // Counts are read from the record, not from each Source's memory: see `Triggers.countBySource`. A read failure
+    // must not take the panel down, so the Source's own numbers stand in for it.
+    let counted: Record<string, Record<string, number>> = {}
+    try { counted = this.store.triggers.countBySource() } catch { /* the panel still renders without counts */ }
+    return Object.fromEntries(Object.entries(this.sources.status()).map(([name, own]) => [
+      name, counted[name] === undefined ? own : { ...own, counts: counted[name]! },
+    ]))
+  }
+
+  /**
+   * Look now and run what is due: every Source is asked to poll, then the pump is asked for a pass.
+   *
+   * This is what the panel's "run a pass" does, and what makes dropping a request into the inbox take effect at once
+   * rather than up to one poll interval later.
+   */
+  async nudge(): Promise<void> {
+    try {
+      await this.sources.nudge()
+    } catch (error) {
+      this.health.entry('sources').problem(reason(error))
+    }
+    this.passes.requestPass()
+  }
+
+  setupProblem(): string | undefined { return this.problem }
+
+  /** The panel page of this installation. @throws when it does not ship one. */
+  panelHtml(): string {
+    return readFileSync(packageFile(PANEL_FILE), 'utf8')
+  }
+
+  /**
+   * The recipes this installation ships, for the panel to offer as a starting point.
+   *
+   * Read from `examples/` rather than copied into the panel, so there is one text of each recipe: the files a person
+   * can copy by hand, the ones `tests/recipes.spec.ts` keeps valid, and the ones the panel offers are the same bytes.
+   */
+  recipes(): readonly Recipe[] {
+    let directory: string
+    try { directory = packageFile('examples') } catch { return [] }
+    let names: string[]
+    try { names = readdirSync(directory) } catch { return [] }
+    const recipes: Recipe[] = []
+    for (const name of names.sort()) {
+      const path = join(directory, name)
+      try {
+        // examples/README.md documents the recipes; offering it as one puts 1500 characters of documentation into the
+        // panel's request box, which is what it did until this line existed.
+        if (name.toLowerCase() === 'readme.md') continue
+        if (name.endsWith('.md')) {
+          const parsed = frontMatter(readFileSync(path, 'utf8'), name.replace(/\.md$/, ''))
+          recipes.push({
+            name, kind: 'request', title: parsed.title ?? name, text: parsed.body,
+            ...(parsed.scope === undefined ? {} : { scope: parsed.scope }),
+          })
+        } else if (name.endsWith('.json')) {
+          const document = JSON.parse(readFileSync(path, 'utf8')) as
+            { sources?: { cron?: { schedules?: readonly Record<string, unknown>[] } } }
+          const schedule = document.sources?.cron?.schedules?.[0]
+          if (schedule !== undefined) recipes.push({ name, kind: 'settings', schedule })
+        }
+      } catch {
+        // A recipe that cannot be read is not offered. `tests/recipes.spec.ts` is what keeps them valid; guessing here
+        // would put a broken template in front of the operator.
+        this.health.entry('panel').problem(`The recipe ${name} could not be read`)
+      }
+    }
+    return recipes
+  }
+
+  // ------------------------------------------------------------------- Start
+
+  /**
+   * Start the deployment: wire the listeners, recover what a crash left behind, start the pump and the Sources.
+   *
+   * Nothing here creates, resolves or decorates a Session, and nothing here awaits a DSH service that could block:
+   * mounting a bundle must not be able to hang or break the host's own startup. The main Session is created on demand
+   * by {@link createMainSession}, from the panel or from a Ticket somebody opens in it.
+   */
+  async start(): Promise<void> {
+    this.indexSessions()
+    this.wireAgents()
+    this.recover()
+    this.refresh()
+    try {
+      await this.sources.sync()
+    } catch (error) {
+      // A Source that will not start is that Source's problem, not a deployment that refuses to run.
+      this.health.entry('sources').problem(reason(error))
+      this.context.logger.warn('myagent could not start its Sources: %s', reason(error))
+    }
+    this.passes.start()
+    this.watchdog.start()
+    this.health.entry('runtime').record(this.machine.stateDir)
+    this.context.logger.info('myagent runs: state %s, work %s, inbox %s, accept mode %s',
+      this.machine.stateDir, this.machine.workRoot, this.machine.inboxDir, this.settings().acceptMode)
+  }
+
+  /** Record a problem the panel shows in its header, without stopping anything. */
+  markProblem(detail: string): void {
+    this.problem = detail
+    this.health.entry('runtime').problem(detail)
+  }
+
+  /**
+   * Create the main Session now, which mounting deliberately did not do.
+   * @returns its id, or the reason it could not be created, which the panel shows.
+   */
+  async createMainSession(): Promise<{ sessionId?: string; error?: string }> {
+    try {
+      const agent = await this.sessions.ensureMaster(this.machine.workRoot)
+      // Clears the front desk's own problem and nothing else. This used to `record` on the shared entry, so creating
+      // the main Session erased whatever a worker's failure had written there — one subject's good news overwriting
+      // another's, with no acknowledgement from either.
+      this.sessionHealth.clear(MAIN_SESSION)
+      return { sessionId: agent.id }
+    } catch (error) {
+      const detail = reason(error)
+      this.sessionHealth.problem(MAIN_SESSION, `The main Session could not be created: ${detail}`)
+      return { error: detail }
+    }
+  }
+
+  /** Whether the main Session exists, without creating it. */
+  /**
+   * The front desk as the panel shows it, under the id DSH actually gave it.
+   *
+   * `exists` covers a Session that is stored but not loaded in this process, which is the ordinary state after a
+   * restart: saying "not created" there would offer a button that in fact restores the old Session rather than making
+   * a new one. A front desk the operator deleted in the GUI still counts as existing until the next create rebinds it.
+   */
+  mainSession(): { exists: boolean; running: boolean; busy: boolean; id: string } {
+    const recorded = this.store.get<string>(KV.mainSession)
+    const id = recorded ?? this.machine.mainSessionId
+    const status = this.sessions.status(id)
+    return { ...status, exists: status.exists || recorded !== undefined, id }
+  }
+
+  /**
+   * Stop the Sources, the pump, the workers and the Store, in that order.
+   *
+   * This runs while the host is disposing, possibly because something else already failed, so every step is contained
+   * and bounded: a step that throws or hangs must not take the host's shutdown with it.
+   */
+  async stop(): Promise<void> {
+    if (this.stopped) return
+    this.stopped = true
+    this.abort.abort()
+    const step = async (name: string, work: () => unknown | Promise<unknown>, timeoutMs: number): Promise<void> => {
+      try {
+        await Promise.race([
+          Promise.resolve(work()),
+          new Promise((_resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error(`${name} did not finish in ${timeoutMs} ms`)), timeoutMs)
+            timer.unref?.()
+          }),
+        ])
+      } catch (error) {
+        this.context.logger.warn('myagent could not %s while stopping: %s', name, reason(error))
+      }
+    }
+    for (const dispose of this.disposers.splice(0).reverse()) {
+      try { dispose() } catch { /* a route that will not unregister must not hold the shutdown */ }
+    }
+    this.watchdog.stop()
+    await step('stop the pump', () => this.passes.stop(5_000), 8_000)
+    await step('stop the Sources', () => this.sources.stop(), 8_000)
+    await step('release the Sessions', () => this.sessions.dispose(), 5_000)
+    this.effects.dispose()
+    // A stopped deployment leaves no worker running under an authorization nobody holds any more.
+    await step('stop the workers', async () => {
+      for (const ticket of this.store.tickets.open()) {
+        if (runningAssignment(ticket) === undefined) continue
+        await this.executor.halt(ticket.id, 'myagent stopped', true)
+      }
+    }, 15_000)
+    await step('close the database', () => this.store.close(), 5_000)
+    this.lock.release()
+  }
+
+  /**
+   * The Ticket a Session belongs to: the binding DSH answered with first, and the id's own shape as a fallback for a
+   * worker whose binding was never recorded.
+   */
+  private ticketIdOfSession(sessionId: string): string | undefined {
+    return this.sessionIndex.get(sessionId) ?? ticketOfSession(sessionId)
+  }
+
+  /** Read every recorded binding, so a restart knows which Session belongs to which Ticket. */
+  private indexSessions(): void {
+    for (const ticket of this.store.tickets.list()) {
+      const sessionId = ticket.execution?.sessionId
+      if (sessionId !== undefined) this.sessionIndex.set(sessionId, ticket.id)
+    }
+  }
+
+  /**
+   * Watch the agents this system runs, so a worker's turn ending is recorded and a disposed Session is forgotten.
+   *
+   * Every listener is contained. These run inside DSH's own event dispatch, where an exception is a fatal load failure
+   * that ends the host process — a plugin's bug must never become the operator's crashed harness. What a listener
+   * cannot do is logged and recorded on the health board, which the panel shows.
+   */
+  private wireAgents(): void {
+    const contained = <A extends unknown[]>(name: string, run: (...args: A) => void): ((...args: A) => void) =>
+      (...args: A) => {
+        try { run(...args) } catch (error) {
+          const detail = `${name} listener: ${reason(error)}`
+          this.health.entry('listeners').problem(detail)
+          this.context.logger.error('myagent contained an exception in its %s', detail)
+        }
+      }
+    this.disposers.push(this.context.on('agent/status', contained('agent/status', ({ agent, status }) => {
+      const ticketId = this.ticketIdOfSession(agent.id)
+      if (ticketId === undefined || status !== 'idle') return
+      const ticket = this.store.tickets.get(ticketId)
+      const assignment = ticket === undefined ? undefined : runningAssignment(ticket)
+      if (assignment === undefined) return
+      const ended = turnEndReason(agent)
+      if (ended?.kind === 'blocked') {
+        // Not a worker that forgot to report: a Session DSH will not run. Recorded as a failure, which puts it in front
+        // of a person, rather than as `waiting`, which would look like work still in progress and invite a retry that
+        // cannot succeed.
+        const detail = `Ticket ${ticketId}: its Session ended the turn as blocked without reaching the model`
+        this.sessionHealth.problem(ticketId, detail)
+        this.context.logger.warn('myagent — %s', detail)
+        this.engine.report(ticketId, { state: 'failed', summary: UNRUNNABLE_SESSION })
+        this.passes.requestPass()
+        return
+      }
+      // Every non-blocked turn end is recorded, whatever the worker did inside it; whether a `waiting` Report is
+      // written underneath is `Engine.turnEnded`'s own call, and a turn the worker DID report in still ends here. With
+      // the ending's own reason — the part that used to be lost: an upstream 429 reached the health board and a warn
+      // log, and reached the Ticket not at all, so a Ticket that a person had to rescue was recorded exactly like one
+      // that ran smoothly. The board stays (it is the "now" signal); the event is the record.
+      this.engine.turnEnded(ticketId, assignment.id, lastSaid(agent), this.causeOf(agent.id, ended))
+      // A turn that ran to a real ending is the Session's own evidence that it works again, which is what retires the
+      // problem this entry reported for that Ticket. Deliberately not the turn end as such: the turn that FAILED also
+      // ends, and clearing on it would erase the line nine milliseconds after writing it. `aborted` is somebody
+      // cancelling rather than a Session working, and no `turn/end` at all is no evidence either way — both leave the
+      // problem live, and a Ticket that ends clears it whatever happened to its Session.
+      if (ended !== undefined && ended.kind !== 'error' && ended.kind !== 'aborted') this.sessionHealth.clear(ticketId)
+      this.passes.requestPass()
+    })))
+    this.disposers.push(this.context.on('agent/disposed', contained('agent/disposed', ({ agent }) => {
+      this.sessionErrors.delete(agent.id)
+      this.sessions.forget(agent)
+    })))
+    this.disposers.push(this.context.on('agent/error', contained('agent/error', ({ agent, error }) => {
+      const ticketId = this.ticketIdOfSession(agent.id)
+      const detail = `${ticketId === undefined ? 'the main Session' : `Ticket ${ticketId}`}: ${reason(error)}`
+      // Per subject rather than into one shared slot: a second Ticket's failure used to overwrite the first one's
+      // line, and the first Ticket's recovery used to leave a line on the board about work that had succeeded hours
+      // earlier. `SessionHealth` composes the entry from every problem it knows is live.
+      this.sessionHealth.problem(ticketId ?? MAIN_SESSION, detail)
+      this.context.logger.warn('myagent worker error — %s', detail)
+      // Kept for the turn end that follows, which is where this cause is written onto the Ticket: DSH emits
+      // `agent/error` from inside the failing turn and ends that turn immediately after, so the text belongs to it.
+      // One slot per Session, consumed by that turn end, so an error can never be attributed to a later turn.
+      this.sessionErrors.set(agent.id, reason(error))
+    })))
+  }
+
+  /**
+   * Why a turn ended, for the Ticket's own log.
+   *
+   * The error text prefers what `agent/error` handed this listener, so the log carries the same sentence the health
+   * board showed (`LlmError: 429: …`, with the error's own name); the reason DSH wrote into the Session's `turn/end`
+   * event is the fallback for an error this process never saw, which is what a `turn/end` whose append failed leaves
+   * behind. Consumed rather than read, so a failure that never ends a turn cannot be blamed on the next one.
+   */
+  private causeOf(sessionId: string, ended: TurnEndReason | undefined): { reason?: string; error?: string } | undefined {
+    const error = this.sessionErrors.get(sessionId) ?? ended?.error?.message
+    this.sessionErrors.delete(sessionId)
+    if (ended?.kind === undefined && error === undefined) return undefined
+    return { ...(ended?.kind === undefined ? {} : { reason: ended.kind }), ...(error === undefined ? {} : { error }) }
+  }
+
+  /**
+   * Recover what a crash left behind: an Assignment that says a worker is running while no Session is loaded was
+   * interrupted, so it ends as such and a fresh one starts in the same directory with a note saying what happened.
+   */
+  private recover(): void {
+    let recovered = 0
+    for (const ticket of this.store.tickets.open()) {
+      const assignment = runningAssignment(ticket)
+      if (assignment === undefined) continue
+      if (this.context.agents.get(workerSessionOf(ticket)) !== undefined) continue
+      this.engine.assignmentInterrupted(ticket.id, assignment.id)
+      recovered++
+    }
+    // A lock holder that is gone left its effects claimed; the Store gives them back before the first pass.
+    const released = this.store.releaseRunning()
+    if (recovered > 0 || released > 0) {
+      this.context.logger.info('myagent recovered %d interrupted Assignment(s) and released %d claimed effect(s)', recovered, released)
+    }
+  }
+
+  /** Recompute what the panel's header and the main Session's prompt section say, and keep the health board current. */
+  private refresh(): void {
+    const settings = this.settings()
+    // Cheap and idempotent: it re-arms only when the interval actually differs, so calling it on every refresh cannot
+    // push the next look further away. Without it, changing `watchdog.everyMs` took effect only after a restart.
+    this.watchdog.settingsChanged()
+    const open = this.store.tickets.open()
+    // The quiet line is written here as well as when the last problem clears, so a board that is fine says so instead
+    // of saying nothing: an empty board and a silent board are different claims. It writes nothing while any problem
+    // is live, which is the guard that keeps a quiet pass from becoming a false all-clear.
+    this.sessionHealth.summarize()
+    this.panel = {
+      acceptMode: settings.acceptMode, panelPath: `${BASE_PATH}/`, openTickets: open.length,
+      waiting: open.filter(ticket => waitsForPerson(ticket)).length,
+    }
+    const problems = this.health.problems()
+    this.health.entry('runtime').record(problems.length === 0
+      ? `${this.panel.openTickets} open Ticket(s), accept mode ${settings.acceptMode}${settings.paused ? ', paused' : ''}`
+      : `${problems.length} problem(s)`)
+  }
+
+  /** What a domain event changes outside the Engine's own writes. */
+  private onEvent(event: DomainEvent): void {
+    // Watchers first, and each one contained.
+    //
+    // This comment used to justify the containment by saying an event arrives inside the transaction that emitted it,
+    // so a throwing listener would roll back a commit. That stopped being true when `emit` moved to after-commit (S8),
+    // and the wrong reason was left behind — load-bearing, because it is the only stated reason for the try below.
+    // The containment is still right, for the reasons that survive: a listener that throws would otherwise abort the
+    // loop and leave every watcher after it unnotified, and one Source's bug must not be able to silence another's.
+    // A wrong reason that happens to justify a right decision is still a defect: the next person to read it will
+    // believe something false about when events are published.
+    for (const listener of [...this.listeners]) {
+      try { listener(event) } catch (error) { this.health.entry('sources').problem(`a listener failed: ${reason(error)}`) }
+    }
+    switch (event.type) {
+      case 'ticket.ended':
+        // A Ticket's ending retires its Session problem with it: work that is over is not failing now, whatever the
+        // way it ended. Nothing is lost by the clearing — the cause, since it exists, is in the Ticket's own log,
+        // which is the half of this fix the `turn_ended` detail carries.
+        this.sessionHealth.clear(event.ticket.id)
+        // Work left running under an authorization that ended stops with it, keeping the Session readable. A stop
+        // already halted it — halting again would cancel twice, and with different inbox handling.
+        if (event.ticket.ended?.outcome !== 'stopped') {
+          void this.executor.haltBackground(event.ticket.id, 'the Ticket ended')
+        }
+        // Whatever waited for this Ticket is told at once instead of noticing at the end of a deferral interval.
+        this.executor.releaseDependants(event.ticket.id)
+        this.refresh()
+        this.passes.requestPass()
+        break
+      case 'ticket.created': case 'ticket.resumed': case 'report.recorded':
+      case 'assignment.started': case 'assignment.ended': case 'trigger.received':
+        this.refresh()
+        this.passes.requestPass()
+        break
+      case 'policy.changed':
+        this.refresh()
+        break
+    }
+  }
+}
+
+/** Build a Runtime from the plugin's own configuration, or say why it cannot run. */
+export function createRuntime(context: Context, config: DeploymentConfig): Runtime {
+  try {
+    return new Runtime(context, config)
+  } catch (error) {
+    if (error instanceof LockHeld) context.logger.error('myagent did not start: %s', error.message)
+    throw error
+  }
+}
+
+export type { PromptRole }

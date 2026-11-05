@@ -1,0 +1,91 @@
+
+
+Google’s AI Exposure Exceeds the $1 Trillion It Reported
+
+By
+
+PYMNTS
+|
+October 29, 2026
+
+|
+
+Google parent Alphabet has said demand for cloud services is rapidly increasing, citing growth in unfulfilled contracts.
+
+However, a Bloomberg News report Thursday (Oct. 29) points to a quarterly filing from the tech giant saying that upwards of a third of that quarterly growth stems from a joint venture that Alphabet partially owns.
+
+This revelation, the report said, appears in the filing which discussed exposures to artificial intelligence (AI) risk beyond what Alphabet had discussed in its earnings call this week.
+
+During that call, the company disclosed more than $1 trillion in purchase commitments, future leases and other obligations. According to Bloomberg, the filing shows roughly $98.5 billion in contingent commitments Alphabet could be responsible for under certain conditions, an increase of $23 billion from last quarter.
+
+Among those commitments are guaranteeing data center lease payments, supporting partners’ power equipment purchases and a potential requirement to repurchase AI chip systems from customers, the report said.
+
+Google Cloud’s backlog of contracts came to $560.8 billion at the end of September, compared to $513.9 billion for the proper quarter, Bloomberg said. Of that figure, $16.8 billion is linked to a multiyear agreement with Crux AI, a venture Alphabet formed with Blackstone.
+
+Dan Morgan, senior portfolio manager at Synovus Trust, told Bloomberg that investors view backlog as a key indicator of potential sales growth, but had not fully realized that Google Cloud’s demand came from a firm the company had helped start.
+
+“It does kind of take a little bit of the luster off,” Morgan said. “It would be nice if it was coming from a bunch of outside customers. That is something that you do have to raise an eyebrow about — is this a self-fulfilling prophecy?”
+
+PYMNTS has contacted Google for comment but has not yet gotten a reply. The company declined to comment when reached by Bloomberg.
+
+Writing about the company’s earnings earlier this week, PYMNTS said the results “put a familiar fear back in focus: Big Tech’s artificial intelligence spending could outrun the earnings and cash needed to justify it.”
+
+But aside from spending bubble concerns, executives discussed a development that could end up being more consequential for AI’s future: Agents that help users make purchases and carry out tasks across Google’s products.
+
+On an earnings call, CEO Sundar Pichai described plans to bring capabilities created for enterprise customers to consumers, beginning with the Gemini app’s billion users.
+
+“Agents will operate as a unifying layer across our products,” Pichai said, describing an expansion into Google Chrome, Android and Workspace.
+
+Recommended
+
+MercadoLibre Expands AI War Chest by $30 Million in Q3
+
+Western Union Fights Revenue Slump With Stablecoin Card
+
+Chime Courts $75K-Plus Earners as Instant Loans Grow 30%
+
+Expedia Says Travelers Plan With AI Agents but Book Direct
+
+See More In:
+artificial intelligence, Google, News, PYMNTS News, What's Hot
+
+Trending News
+
+MercadoLibre Expands AI War Chest by $30 Million in Q3
+
+Western Union Fights Revenue Slump With Stablecoin Card
+
+Chime Courts $75K-Plus Earners as Instant Loans Grow 30%
+
+The Big Story
+
+Google’s Next Big Bet Is a Business It’s Never Won
+
+Featured News
+
+DoorDash Sees More in Instacart Than a Second Grocery Cart
+
+Circle’s USDC Moves $13.9 Trillion as Profit Per Dollar Slips
+
+Banks Move Payment Modernization From Separate Rails to Shared Hubs
+
+Younger Consumers Make Providers Pay for Bad Billing
+
+Why B2B Payments Need Proof Beyond the Invoice
+
+62% of Finance Leaders Struggle to Keep Cash Flow Forecasts on Track
+
+The Future of Payment Sovereignty Is Merchant Acceptance
+
+Subscribe
+
+Get PYMNTS Today, AI, B2B and more.
+
+Strategic B2B Partnerships
+
+Partner With PYMNTS
+
+Own the conversation. Drive demand.
+
+Start a Conversation →
+

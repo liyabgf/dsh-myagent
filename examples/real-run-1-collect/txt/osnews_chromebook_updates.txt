@@ -1,0 +1,206 @@
+
+
+Home > Google > Google breaks promise to provide 10 years of updates to Chromebooks
+
+Google launched its Googlebooks platform a week ago, and a lot of people were wondering what this meant for Chrome OS and Chromebooks. Since Googlebooks and its Android-based Googlebook OS lack the management frameworks markets like schools require, Chromebooks will continue to be available for now, until such time Googlebooks catch up in that regard. However, in a support document, Google states that update support for all Chromebook devices will end in 2034:
+
+ChromeOS devices will continue to receive regular updates and security patches through mid-2034. For qualifying devices purchased today whose 10-year support lifecycle extends beyond 2034, Google is committed to supporting your transition to Googlebook OS, with many devices offering direct migration paths.
+
+↫ Google support document
+Google promised 10 years of updates for all Chromebooks, and it’s now breaking that promise for anyone buying a Chromebook between now and whenever the last Chromebook rolls off the production line. Sadly, we live in a world where corporations are free to make and break whatever promises they want virtually free of consequences, and as society we’re so used to it that anti-consumer behaviour like this barely elicits a shrug.
+
+Google does state that “many newer commercial Chromebook models will be capable of upgrading to Googlebook OS”, but that, too, is just another promise – and a vague, one at that – so who knows how many devices will actually be capable of upgrading out in the real world. On top of that, we have no idea if Googlebooks will just be yet another in a long line of quickly abandoned Google tablet/laptop projects, further adding to the uncertainty.
+
+Stuff like this should not be legal.
+
+About The Author
+
+Thom Holwerda
+
+Follow me on Mastodon @[email protected]
+
+19 Comments
+
+2026-09-30 11:10 pm
+
+LeFantome
+> breaking that promise for anyone buying a Chromebook between now and whenever the last Chromebook rolls off the production line
+
+Well, I would not say they are breaking any promises for Chromebooks bought now forward. Because they are currently promising to support these devices through mid-2034. That is the deal currently available.
+
+The promises in question are to people who bought Chromebooks between mid-2024 and now (the past two years). They were told that they would get 10 years of support. It seems that this has changed to between 8 and 10 years of updates (depending on when you bought) and a promise to “support the transition to Googlebooks” after that. As Thom says, what exactly that last part means remains to be seen.
+
+2026-10-01 2:40 am
+
+quinn
+I’ll go on record with my prediction that “support during the transition” means aggressive ads for Googlebooks starting years before the end of support and constantly ramping up, paired with discounts from 165% of retail price all the way down to 100%
+
+2026-10-01 1:11 am
+
+Alfman
+Manufacturers don’t want to provide longer support even though the hardware still works. Supporting hardware for decades doesn’t align with business values. Fine, whatever, I would not judge them for this except when they keep hardware vendor locked thereby depriving owners of alternative support options. It is inexcusable to deprive owners of keys to their own hardware especially at EOL because it blocks owners from getting software support from elsewhere. 3rd operating systems have a proven track record of supporting old hardware long after manufacturer EOL. Manufactures have a planned obsolescence agenda whether they openly admit it or not and it’s a huge conflict of interest. Their tactics are significant contributors to the world’s e-waste problems.
+
+Obviously manufacturers cannot be trusted to clean up the e-waste mess they are creating; they have no incentive to do the right thing. IMHO manufacturers need to pay penalties for the e-waste they’re creating OR provide the the tools the community needs to support themselves. We need to disincentivize business models that leave hardware in graveyards.
+
+2026-10-02 4:39 pm
+
+LeFantome
+> manufacturers need to pay penalties for the e-waste they’re creating
+
+Some sort of “reclamation fee” could make sense for these kinds of electronics. Kind of like the deposits on bottles. But that would most likely just end up being yet another tax on consumers.
+
+2026-10-02 10:46 pm
+
+Alfman
+LeFantome,
+
+Some sort of “reclamation fee” could make sense for these kinds of electronics. Kind of like the deposits on bottles. But that would most likely just end up being yet another tax on consumers.
+
+I think it is sensible that the cost of cleaning up EOL products be internalized by the entities who are responsible for turning products into waste in the first place. However I wouldn’t want it to be applied as a blanket tax such that everyone has to pay it regardless of their behavior. I’d rather it be more incentive based: manufacturers that take steps to make products serviceable and accessible even after official EOL should be rewarded for that. IMHO the goal isn’t to raise prices, but to give the good companies a competitive leg up.
+
+Sadly I think that engineering products to fail may prove to be the winning business model if we fail to create better incentives. It upsets me that the very people in the best position to fix all these problems are the very ones profiting off of the status quo. Every single industry seems to be gravitating towards planned obsolescence and owners not having control over their own hardware.
+
+2026-10-01 6:02 am
+
+Unopposed0108
+Another question is, how many Chromebooks have an unlockable bootloader + UEFI + ACPI + SMBIOS? In other words you can install a generic Linux distro (or BSD/Illumos/Haiku/AROS/Windows etc.) on it? And how many don’t, in other words, are locked down e-waste once ChromeOS support ends?
+
+2026-10-01 10:31 am
+
+pgeorgi
+So far, all come with unlockable firmware. Having alternative firmware out there is a community side thing, but at least it’s possible.
+
+I expect anything predominantly driven by the Android org (such as those “Googlebooks”) to be very locked down, though.
+
+(Disclosure: I used to work on ChromeOS firmware, and the “you own it, you can modify it” philosophy is among the few things that never changed in the wider org. However, I left the mothership a few years ago, so I can’t say what way things are moving these days or going forward.)
+
+2026-10-01 11:23 am
+
+Alfman
+pgeorgi,
+
+So far, all come with unlockable firmware. Having alternative firmware out there is a community side thing, but at least it’s possible.
+
+People need to know that ARM models can have more issues and are frequently known not work work with the various community projects.
+
+https://docs.mrchromebox.tech/docs/known-issues.html
+
+ARM-Based Devices (Not Supported)
+
+All ARM-based Chromebooks: The MrChromebox project does not support these devices at all. This includes devices with MediaTek, Rockchip, Qualcomm, or NVIDIA Tegra processors. MrChromebox firmware only supports Intel and AMD x86_64 platform devices.
+
+It’s not helpful if you already have the hardware, but verify the specific model works before buying!
+
+2026-10-02 4:45 pm
+
+LeFantome
+@Alfman
+
+You are not wrong, but there are ARM Chromebooks that can run Linux well.
+
+https://archlinuxarm.org/platforms
+
+2026-10-02 9:58 pm
+
+Alfman
+LeFantome,
+
+You are not wrong, but there are ARM Chromebooks that can run Linux well.
+
+Yes, if a model is known to work and has specific instructions, then I am more confident that it will be ok, go for it. My problem was I ended up with an hand-me-down that the original owner no longer wanted and I didn’t get to chose the model I got.
+
+When it comes to new products, first hand buyers get to be more selective, which is good. Ideally buyers would only consider products that align with right to repair/reuse/serviceability/e-waste reduction/etc. This way manufacturers would be forced to compete on these factors. Unfortunately however most first hand buyers are clueless and fail to make the connection that their buying choices impacts ewaste down the line. And over time manufacturers have learned that they can take advantage of this disconnect, appealing to the initial buyer while making products worse for second hand markets.
+
+By the time products are in line to become e-waste, the manufacturer actually wants those products to become e-waste, it’s not a side effect. They do not want 3rd parties to repurpose the hardware or extend hardware lifespan. At best they want the image of being ecologically responsible, but their business interests conflict with the solutions. I don’t know how we can fix this in a free market fashion without regulation.
+
+Through the decades it’s become quite obvious that manufacturers are always going to put their own profits over ewaste solutions.
+
+2026-10-01 11:13 am
+
+sukru
+Unopposed0108,
+
+Most do have unlocked or easy to unlock bootloaders, and can be converted into bona fide Linux machines. (But as Alfman will remind, not the ARM versions).
+
+But that is only a small percentage of the people
+
+Most schools do NOT want to install and maintain Linux. If they did, they would not be buying Chromebooks and paying $100 per student per year in the first place. (Or whatever the current rate is)
+
+Schools want simplicity. And proper tools to control their entire fleet “The chromebook can be taken home for homeworks”, means the browser is locked down, there are controls for apps, and they know where the devices are.
+
+2026-10-01 11:53 am
+
+Alfman
+sukru,
+
+Most schools do NOT want to install and maintain Linux. If they did, they would not be buying Chromebooks and paying $100 per student per year in the first place. (Or whatever the current rate is)
+
+Schools want simplicity. And proper tools to control their entire fleet “The chromebook can be taken home for homeworks”, means the browser is locked down, there are controls for apps, and they know where the devices are.
+
+In general owners should always have the keys to their own hardware.
+
+In the case where the owner is the school, users (ie students) don’t have nor should they expect the freedom to install their own OS. That is fine. However conceptually if the school decommissions and then sells used chromebooks to a second hand market, the new owner really should not be locked down like a student. We should promoting technology where the owner gets the keys to their own hardware and criticizing technology where they don’t.
+
+2026-10-02 10:18 am
+
+sukru
+Alfman,
+
+In general owners should always have the keys to their own hardware
+
+I agree
+
+Unless you are leasing, or there are specific reasons the hardware should be “unlockable” (exceptions like Gaming Consoles which need anti-cheat, but even those need to come with an “unlock” after end-of-life)
+
+The problem is, many companies treat you as a “Service” customer not a “Hardware” customer. Hence they “sell” a useless appliance outside of their service.
+
+Look at this thing
+
+https://www.amazon.com/Davolink-Extender-Tri-Band-Wireless-Streaming/dp/B0CJXZSLNM
+
+I saw it on discount the other week (now expensive). A “minions” style router that would be an excellent signal booster and kids would love it
+
+But then I leaned, not only it is locked, they don’t even give you a manual firmware install option either (only automated one)
+
+Gave up, but it is being sold in large numbers, and when the company goes under (hope not but this is life)… they are most likely to become useless bricks. Nice looking, but useless.
+
+If they are selling a service, then this should be considered a lease, and they should be forced to buy back hardware that cannot be used anymore. But that would require some real good politicians.
+
+2026-10-01 8:28 pm
+
+kurkosdr
+Say what you want about Microsoft, but they have a history of providing an EOL date for when the Windows Updates will stop and sticking to it. Even lesser-used Windows versions such as Vista and Windows 8.x got the promised support. The only complaint I have is one Windows Update very late in the Windows 8.x lifecycle breaking Windows Media Center (yes, I had bought the ProPack, I still have a sealed ProPack in its box) and Microsoft dropping Windows Media Center EPG when the non-ESU support period for Windows 7 ended, but that’s it.
+
+2026-10-02 4:33 pm
+
+LeFantome
+Indeed. Microsoft in fact seems to have a big problem sticking to their EOL dates in the other direction. They often extend support much longer than they said they would. The quality of that support is a different debate.
+
+2026-10-02 10:14 pm
+
+Alfman
+LeFantome
+
+Indeed. Microsoft in fact seems to have a big problem sticking to their EOL dates in the other direction. They often extend support much longer than they said they would. The quality of that support is a different debate.,
+
+Yeah, it’s funny but microsoft’s problem is that so many of their customers don’t want to “upgrade” windows. Microsoft needs to push customers forward kicking and screaming, but for their part a majority of windows customers are reluctant to upgrade.
+
+If there were a version of windows that stayed out of people’s way and just worked as a good operating system promising to never push more feature updates, cloud integration, etc, then I honestly think a majority of windows customers would be in favor. It’s really the executives who have an insatiable apatite for shoving crap on customer’s computers that those customers don’t want.
+
+2026-10-03 8:35 pm
+
+Geck
+Well, actually that is nothing all that special at all, as you get the same with opting for Canonical, Red Hat, to an extent with Apple … or some prominent community driven GNU/Linux distributions. So say what you want about “X”, but “X” can provide 10 years of support easily, Microsoft is not an outlier here with Windows. The ones that actually should get praised for it are the ones that do it for “free”. Provide near decade of support no questions asked. As don’t forget companies mentioned above get paid for doing it, mostly for fixing security issues they introduced in the first place.
+
+2026-10-02 10:18 am
+
+iskios
+I am shocked!
+
+2026-10-06 9:27 am
+
+RobG
+Thanks for calling this out clearly – too few publications do so.
+
+Now, why the hell would anyone trust them to support Googlebooks for the promised 10 years is beyond me.
+

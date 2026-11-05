@@ -1,0 +1,144 @@
+
+
+Skip to main content
+
+The homepage
+
+The homepage
+
+Navigation Drawer
+
+Login
+/
+Sign Up
+
+Subscribe
+
+Comments Drawer
+
+Comments
+
+Loading comments
+
+Getting the conversation ready...
+
+The biggest names in AI are backing a new way to opt out of scraping
+
+The new control will allow publishers to apply their AI training preferences across multiple crawlers.
+
+The new control will allow publishers to apply their AI training preferences across multiple crawlers.
+
+by Emma Roth
+
+Oct 30, 2026, 8:26 PM UTC
+
+Illustration by Cath Virginia / The Verge | Photos from Getty Images
+
+Emma Roth
+
+is a news writer who covers the streaming wars, consumer tech, crypto, social media, and much more. Previously, she was a writer and editor at MUO.
+
+OpenAI, Google, Microsoft, and Anthropic say they will adopt a new standard that publishers can use to opt out of being scraped by AI, as reported earlier by Search Engine Roundtable. With this control, publishers can apply their AI training preferences across multiple AI companies, instead of setting them individually.
+
+The shared “policy token” signal is proposed by Kevin Kelley, a technical lead for standards at Anthropic, as part of the Internet Engineering Task Force (IETF). It will live within a website’s robots.txt file, which has long signaled which web crawlers can and can’t scrape a site — whether for search indexing, archiving, or AI training. Currently, sites have to signal their AI training preferences separately to each AI company.
+
+The announcement comes as publishers grapple with the continuing influx of AI crawlers scraping their sites and feeding their content into AI models. Some companies and organizations have attempted to combat unauthorized scraping, with the Really Simple Licensing (RSL) standard giving publishers the ability to charge crawlers that visit their sites, and Cloudflare blocking AI crawlers by default.
+
+OpenAI, Google, Microsoft, and Anthropic say they will restrict their AI crawlers from accessing a site if they encounter the shared token. Meta communications head Andy Stone also signaled support for the new setting, but doesn’t say whether the company will honor it. “We believe creating a common signal that conveys such preferences to multiple providers at once is an important step,” Stone says. “And we look forward to working with other AI companies on the standards and their implementation across the industry.”
+
+Microsoft says it will offer granular controls that will give publishers the ability to opt out of AI training or AI grounding, the process of pointing an AI model to a verified source of information to reduce hallucinations. Microsoft notes that websites will still appear in Bing’s search results regardless of their preferences. Google previously implemented similar controls that allow sites to control whether their content appears in AI search features or is used for AI training, without impacting visibility in search.
+
+While Anthropic has already adopted the signal, Google and Microsoft plan to support it next year. OpenAI says it will implement it in the “coming months.”
+
+Update, October 30th: Added a comment from Meta.
+
+Follow topics and authors from this story to see more like this in your personalized homepage feed and to receive email updates.
+Emma Roth
+
+Most Popular
+
+Most Popular
+
+Sam Altman addresses RAM comments: People should ‘put as much as they want in their computers’
+
+Anker’s new window-mounted camera monitors the outside of your home from within it
+
+Those Jeff Bezos hair transplant photos are very fake
+
+The Legend of Zelda: Ocarina of Time never gets old
+
+Rian Johnson explains why he had to build his own iPhone camera app
+
+Advertiser Content From
+
+This is the title for the native ad
+
+More in Tech
+
+Qualcomm is betting big on data centers as smartphone sales sink
+
+17 better ways Elon Musk could have wasted $446 million
+
+How I learned to love an obnoxious phone grip
+
+Gemini for Home now plugs into AT&T’s smart security system
+
+Xbox previews two new ways to control cloud games
+
+Google’s Pixel 11 phones are up to 27 percent off
+
+Qualcomm is betting big on data centers as smartphone sales sink
+
+Terrence O'BrienNov 4
+
+17 better ways Elon Musk could have wasted $446 million
+
+Elizabeth LopattoNov 4
+
+How I learned to love an obnoxious phone grip
+
+Allison JohnsonNov 4
+
+Gemini for Home now plugs into AT&T’s smart security system
+
+Emma RothNov 4
+
+Xbox previews two new ways to control cloud games
+
+Tom WarrenNov 4
+
+Google’s Pixel 11 phones are up to 27 percent off
+
+Cameron FaulknerNov 4
+
+Advertiser Content From
+
+This is the title for the native ad
+
+Top Stories
+
+Nov 4
+
+The fight for tech accountability starts now
+
+Nov 4
+
+My therapist thinks I should chuck the Amazon Bee Frontier out a window
+
+Nov 4
+
+The Legend of Zelda: Ocarina of Time never gets old
+
+Nov 4
+
+Rian Johnson explains why he had to build his own iPhone camera app
+
+Nov 4
+
+Not even $200 million could help Elon Musk buy Texas
+
+Notifications Drawer
+
+Sign in to see your notifications or create an account to join the conversation.
+Sign in
+

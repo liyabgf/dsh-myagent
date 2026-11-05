@@ -1,0 +1,209 @@
+ 
+   
+ 
+   
+ 
+  
+  
+ 
+     
+ 
+  
+  
+    
+ 
+Case 1:20-cv-03010-APM Document 1543 Filed 08/25/26 Page 1 of 5 
+IN THE UNITED STATES DISTRICT COURT 
+FOR THE DISTRICT OF COLUMBIA 
+United States of America,  et al.,  
+Plaintiffs,  
+v.  
+Google LLC,  
+Defendant.  
+Case No. 1:20-cv-03010-APM 
+HON. AMIT P. MEHTA 
+State of Colorado,  et al.,  
+Plaintiffs,  
+v.  
+Google LLC,  
+Defendant.  
+C
+ase No. 1:20-cv-03715-APM 
+HON. AMIT P. MEHTA 
+ORDER  REGARDING
+ CERTAIN ISSUES RAISED 
+AT THE JULY 14, 2026 STATUS CONFERENCE 
+Pursuant
+ to Section XI.A of the Final Judgment in the above-c aptioned actions (ECF No. 
+1462), the Court further orders and directs the following, which is necessary for the 
+construction or carrying out of the Final Judgment, with respect to certain issues identified by the 
+Technical Committee (“TC”) members (“TC Members”) appointed in the above-captioned 
+actions and raised by the Court during the status conference held on July 14, 2026: 
+I. C
+ompelled Testimony from TC Staff 
+1. N
+o TC Staff shall be required to testify by deposition, in court, or before any other 
+tribunal, administrative or quasi -judicial proceeding or arbitration regarding any 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+Case 1:20-cv-03010-APM Document 1543 Filed 08/25/26 Page 2 of 5 
+matter related to the Final Judgment, provided that this provision applies only to 
+testimony about TC work performed in furtherance of the TC’s duties under the Final 
+Judgment. For clarity, (i) any willful misconduct by TC Staff shall not constitute 
+work performed in furtherance of the TC’s duties under the Final Judgment, and (ii) 
+for any testimony not prohibited by this provision, such testimony shall not disclose 
+the substance of TC deliberations, analysis, investigation, recommendations, or 
+review of highly sensitive information provided to the TC.  For purposes of this 
+provision, “TC Staff” shall mean any individual hired or engaged by the TC’s legal 
+entity, Remedies Technical Committee, Inc., as a W -2 employee or 1099 contractor, 
+to provide professional services in furtherance of the TC’s duties under the Final 
+Judgment, pursuant to Section VII.A.7.i of the Final Judgment. 
+II. Po
+st-TC Employment Restrictions 
+P
+ursuant to Section VII.A.2 of the Final Judgment, the Court approves the following as to 
+Section VII.A.2.c: 
+1. For purposes of Section VII.A.2.c, “Competitor” shall expressly include the following 
+(“Expressly Identified Entities”): 
+a. Any entity that, as of the date the TC Member or TC Staff either ceases 
+working with the TC or begins performing work for the entity: 
+i. has been certified as a Qualified Competitor under the Final Judgment 
+and whose certification is then in effect; 
+ii. has a pending application for Qualified Competitor status; or 
+iii. is identified on a list of named entities pursuant to this approval 
+(“Named Entities”). Named Entities include the following entities 
+2 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+  
+  
+ 
+  
+  
+ 
+  
+  
+ 
+ 
+ 
+  
+Case 1:20-cv-03010-APM Document 1543 Filed 08/25/26 Page 3 of 5 
+identified by the Court in the Court’s liability, remedy, or Final 
+Judgment opinion: Anthropic, Brave, DeepSeek, DuckDuckGo, 
+Ecosia, Meta, Microsoft, OpenAI, Perplexity, Yahoo, and SpaceXAI 
+(formerly xAI). This list of Named Entities is not intended to be 
+exhaustive and may be modified at any time by subsequent agreement 
+of the Parties or by application to and approval by the Court based 
+upon the standard set forth in Section IX.E in the Final Judgment. 
+b. Any entity that, within the one-year period immediately preceding the date 
+that the TC Member or TC Staff ceases working with the TC and/or Remedies 
+Technical Committee, Inc., was certified as a Qualified Competitor but that 
+status has been rescinded, with drawn, allowed to lapse, or otherwise 
+terminated. 
+2. To the extent an exiting TC Member or TC Staff intends to begin performing work 
+for an entity that is not an Expressly Identified Entity but that meets the standard for 
+Competitor set forth in Section IX.E in the Final Judgment, such work may be 
+consented to by the Parties or approved by the Court as follows: 
+a. Prior to beginning such work, the exiting TC Member or TC Staff shall notify 
+the TC and the Parties that they intend to perform such work and: (i) identify 
+that entity and the division or other unit thereof within which the person 
+would perform work; and (ii) provide a statement that, to their knowledge, the 
+work they will perform will not support the entity’s provision of a GSE, 
+Search Text Ads, or GenAI Products (“Notice of Work”). 
+3 
+ 
+  
+ 
+ 
+  
+ 
+ 
+  
+  
+   
+   
+   
+ 
+  
+ 
+  
+Case 1:20-cv-03010-APM Document 1543 Filed 08/25/26 Page 4 of 5 
+b. Each Party shall then have five (5) business days from the date on which the 
+Notice of Work was sent to file with the Court any objection thereto and shall 
+request expedited resolution of the objection. The Party or Parties filing such 
+objection shall carry the burden to establish that such entity meets the standard 
+set forth in Section IX.E in the Final Judgment, such that the prohibition in 
+Section VII.A.2 of the Final Judgment should apply. As to any objection 
+raised by Google, Plaintiffs, in consultation with the TC, shall submit a 
+response to the Court addressing whether Google has met its burden under this 
+Section 2(b). As to any objection raised by Plaintiffs, Google shall submit a 
+response to the Court addressing whether Plaintiffs have met their bur den 
+under this Section 2(b). 
+c. If no such objection is timely filed, then the Parties shall be deemed to have 
+consented to that exiting TC Member or TC Staff’s Notice of Work under 
+Section VII.A.2 of the Final Judgment. 
+d. For purposes of this approval, “TC Staff” shall mean any individual hired or 
+engaged by the TC’s legal entity, Remedies Technical Committee, Inc., as a 
+W-2 employee or 1099 contractor, to provide professional services in 
+furtherance of the TC’s duties under the Final Judgment, pursuant to Section 
+VII.A.7.i of the Final Judgment. 
+The TC shall maintain a current list of Expressly Identified Entities and shall update that 
+list promptly upon any Qualified Competitor certification, application, or change in status, or any 
+change to the list of Named Entities. 
+4 
+ 
+  
+ 
+   
+  
+  
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+  
+ 
+Case 1:20-cv-03010-APM Document 1543 Filed 08/25/26 Page 5 of 5 
+Any TC Member or TC Staff may request a copy of the Expressly Identified Entities list 
+for up to one (1) year after ceasing to work with the TC; provided, however, that the TC Member 
+or TC Staff shall (a) treat such copy as Highly Confidential under the Protective Order, and (b) 
+use such copy solely for the purpose of assessing the extent to which Sections 1– 2 above may 
+apply to potential work that the TC Member or TC Staff may perform after ceasing to serve on or 
+work for the TC. 
+Nothing in this approval shall preclude an exiting TC Member or TC Staff from seeking 
+the Court’s approval under Section VII.A.2 for an exception to Section 1 above. Such request 
+shall first be made to all Parties and shall include at least the following: (a) identification of the 
+Expressly Identified Entity and the division or other unit thereof within which the person would 
+perform work; and (b) a statement that, to their knowledge, the work they will perform will not 
+support the Expressly Identified Entity’s provision of a GSE, Search Text Ads, or GenAI 
+Products. Plaintiffs shall promptly notify the Court of such request for approval, and Plaintiffs 
+and/or Google may object to the request. In the event of such objections, for the avoidance of 
+doubt, the exiting TC Member or TC Staff would bear the burden to establish the grounds for 
+approval. 
+ 
+H
+on. Amit P. Mehta 
+United States District Court Judge 
+5 
+Dated:
+ __________,August 25  2026  

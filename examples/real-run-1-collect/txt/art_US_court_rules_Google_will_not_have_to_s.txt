@@ -1,0 +1,86 @@
+
+
+Skip to content
+
+Story text
+
+Size
+
+Width
+*
+
+Links
+
+* Subscribers only
+
+Learn more
+
+A US federal judge has sided with Google, ruling that the company will not have to sell its online advertising exchange (previously known as AdX). The US Department of Justice (DOJ) sought this remedy in the long-running ad tech antitrust trial, which Google lost in 2025. However, the remedies imposed upon Google for that loss are shaping up to be minimal.
+
+In this case, the DOJ and a coalition of states sought to prove that Google leveraged its immense market power in online display ads to reduce the reach of competitors. Government lawyers argued that Google had “rigged” ad auctions to give itself an advantage. While the court agreed that Google illegally locked publishers into using its exchange, it did not agree that Google had broken the law when it came to the tools used by advertisers.
+
+Despite the mixed ruling, the DOJ argued during the remedy phase that forcing Google to sell its ad exchange, which facilitates connections between ad buyers and sellers, was the best way to level the playing field. But that won’t happen. While the ad exchange represents a relatively small part of Google’s revenue, forcing the company to sell may have sent ripple effects through the rest of its ad business. It would also have been a powerful message to Big Tech firms, which have successfully knocked back a recent wave of antitrust cases.
+
+That doesn’t necessarily mean Google gets off scot-free. While divesting the ad exchange would have been the most serious penalty, the government also asked for fines and court-ordered changes to Google’s business practices. It’s likely that the DOJ will get a lot of that, but we don’t know the specifics yet. Judge Leonie Brinkema has sealed the order for 14 days, giving the parties a chance to request redactions. So we’ll know the exact nature of the remedies in two weeks, but Google’s legal team will undoubtedly be celebrating today.
+
+Three losses, little consequence
+
+This is the third of three Google antitrust cases to reach a conclusion. While there still may be some legal wrangling over the exact nature of the advertising remedies, Google is emerging from this era of legal uncertainty largely unscathed.
+
+The DOJ’s other case against Google, which was focused on search, resulted in another loss for the company. The case wrapped up last year when the government failed to convince a judge that Google should have to sell off its Chrome browser. In that case, Google was ordered to make search data available to competitors and stop requiring its partners to distribute Google apps on mobile devices. Google, of course, objected to all of this, but that is not a bad outcome when the company was looking at the possibility of losing control of the world’s most popular browser.
+
+The other antitrust case was brought by Epic Games, which alleged that Google had used its control of Android and the Play Store to suppress alternative app stores and keep prices high for consumers. Google lost this one, too, but Epic didn’t get everything it wanted. The remedies are limited to the US, and Google maintains control over app vetting. Still, of the three antitrust cases, this may lead to the biggest changes in how Google does business.
+
+After attempting to settle with Epic to avoid distributing third-party app stores, Google had to follow through with that part of the judge’s order several weeks ago. It has also lowered Play Store fees and permitted developers to use alternative payment platforms.
+
+After all these years of hearings, appeals, and decisions, Google’s market power will remain largely unchanged going forward. That frees the company up to try to build new monopolies in AI, and the current DOJ doesn’t seem very interested in standing in the way of Big Tech.
+
+Ryan Whitwam
+
+Senior Technology Reporter
+
+Ryan Whitwam
+
+Senior Technology Reporter
+
+Ryan Whitwam is a senior technology reporter at Ars Technica, covering the ways Google, AI, and mobile technology continue to change the world. Over his 20-year career, he's written for Android Police, ExtremeTech, Wirecutter, NY Times, and more. He has reviewed more phones than most people will ever own. You can follow him on Bluesky, where you will see photos of his dozens of mechanical keyboards.
+
+99 Comments
+
+Comments
+
+Forum view
+
+Loading comments...
+
+Prev story
+
+Next story
+
+1.
+Elon Musk moved SpaceX to red Texas. Now it's blue. What happens next?
+
+2.
+Trump wanted to give No Kings no air. Then, Meta suspended its Instagram.
+
+3.
+What I learned driving the Slate electric truck prototype
+
+4.
+Ted Cruz aims to stack FCC with Republicans before Democrats take Senate control
+
+5.
+Uranium cubes reveal why the German nuclear project failed
+
+Dashboard
+
+Edit Post
+
+Howdy, Account
+
+AccountEdit Profile
+
+Log Out
+
+Connecting…
+

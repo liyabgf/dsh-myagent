@@ -1,0 +1,46 @@
+
+
+Skip to content
+
+This article was published on May 6, 2026
+
+TL;DR
+
+Google announced five updates to AI Overviews and AI Mode designed to send more traffic to publishers, including a Further Exploration links section, subscription labels, and inline link context. The changes arrive as AI Overviews face a 58 per cent click-through rate decline, antitrust lawsuits from Penske Media, and EU investigations into whether Google is cannibalising the web content its business depends on.
+
+Google has a publisher problem. AI Overviews, the AI-generated summaries that now appear at the top of search results for a growing share of queries, have been correlated with a 58 per cent reduction in click-through rates to the websites whose content those summaries are built on. Penske Media has filed an antitrust lawsuit. The European Publishers Council has filed a formal complaint with the European Commission. A third of publishers surveyed say they will block AI Overviews once the tools to do so become available. And Google’s search advertising business, which generated more than 50 billion dollars in the first quarter of 2026 alone, depends on the continued existence of the web content that AI Overviews are systematically disincentivising publishers from producing. On Tuesday, Google announced five updates to AI Mode and AI Overviews designed to send more traffic back to the websites it has been accused of cannibalising. The updates are Google’s most direct acknowledgement yet that AI search and the open web have a relationship problem, and its most concrete attempt to argue that the relationship can be repaired.
+
+The features
+
+The most significant addition is Further Exploration, a new section that appears at the end of AI Overviews with curated links to specific articles, case studies, and reports related to the query. The section is designed to transform the AI summary from a destination into a departure point, giving users who want to go deeper a structured path to the source material rather than leaving them with an answer that renders the original content unnecessary. Google is also introducing inline link context on desktop: hovering over a link embedded in an AI Overview will now display the name of the website or page title, addressing what the company describes as user hesitancy to click links when they are unsure where they lead.
+
+Three additional changes target specific use cases. AI Mode and AI Overviews will begin labelling links from a user’s active news subscriptions so they stand out in results, a feature Google says early testing showed made users “significantly more likely” to click. AI responses will also surface previews of perspectives from public forums such as Reddit, social media, and other firsthand sources, with context including the creator’s handle or community name. And Google is expanding the display of product review cards and comparison features within AI Overviews for shopping queries, adding more direct links to retailer and review sites. Taken together, the five updates represent a concerted effort to make AI Overviews more porous: more links, more context around those links, and more reasons for users to click through to the websites that generated the information the AI is summarising.
+
+The problem
+
+The updates arrive in the context of an existential confrontation between Google and the publishers whose content powers its search engine. An Ahrefs study published in February 2026 found that AI Overviews correlate with a 58 per cent reduction in click-through rates for top-ranking pages, nearly double the 34.5 per cent decline documented in April 2025. The Pew Research Center found that only eight per cent of users click on traditional search results when an AI Overview is present, compared to 15 per cent when no overview appears. Digital Content Next, which represents major digital publishers, reported that most of its members experienced traffic losses between one and 25 per cent, with some reporting declines exceeding 75 per cent. Chartbeat data tracking more than 2,500 news sites globally showed that Google search referrals declined by 33 per cent in 2025.
+
+The European Commission has told Google what it must do to share search data with rivals under the Digital Markets Act, proposing six specific areas of obligation including how Google must provide third-party search engines and AI chatbots with access to search index data. The EU has also launched a separate antitrust investigation into whether Google’s AI Overviews and AI Mode violate competition rules by using publisher content without appropriate compensation and without allowing publishers to refuse without losing access to Google Search. In the United States, the Department of Justice won its antitrust case against Google, with a federal judge prohibiting exclusive contracts relating to the distribution of Google Search and ordering behavioural remedies, though the DOJ is considering whether to appeal for additional structural relief.
+
+The tension
+
+Sundar Pichai’s vision for Google is to transform Search from a retrieval engine into an agent manager, a platform that does not merely find information but acts on it. The plan, articulated at Google Cloud Next 2026, positions AI agents as the next interface layer between users and the web, with Google’s models interpreting queries, synthesising answers, and executing tasks across services. The strategic direction is clear: Google wants users to interact with AI, not with websites. But the business model depends on those websites continuing to exist, continuing to produce content, and continuing to attract enough traffic that advertisers will pay to appear alongside their pages. The five updates announced on Tuesday are an attempt to square this circle, to keep AI Overviews as the primary interface while creating enough clickthrough to sustain the web ecosystem that feeds them.
+
+Google’s repositioning of Chrome as an agentic AI workplace tool underscores the direction of travel. The browser that once existed to connect users to websites is being rebuilt as an autonomous agent that completes tasks without requiring users to visit individual sites at all. The trajectory from AI Overviews to agentic browsing to fully autonomous agents suggests that the five publisher-friendly updates are a tactical concession within a strategic movement that is structurally reducing the value of the open web to Google’s users. Publishers are aware of this tension. The European Publishers Council’s complaint specifically argues that Google’s approach amounts to a forced choice: accept unlicensed use of content for AI training and AI-generated answers, or risk losing the search traffic that sustains digital publishing.
+
+The calculation
+
+The economics of AI search are fundamentally different from the economics of link-based search. A user who receives a complete answer from an AI Overview has no incentive to click through to a publisher’s website. A publisher whose content is summarised in an AI Overview receives no compensation for the content used and no traffic from the summary generated. The advertising model that sustained both Google and publishers for two decades depended on imperfect information: users searched, found promising links, clicked through, consumed content, and encountered ads. AI Overviews collapse this chain by providing the answer directly, eliminating the click, and stranding the advertising that was attached to the destination page. Google is simultaneously investing billions in custom AI inference chips to reduce the cost of generating those overviews at scale, which means the economic incentive to expand AI answers to more queries will only intensify.
+
+Google’s five updates attempt to rebuild some of the click incentive that AI Overviews have destroyed. Further Exploration sections add links. Subscription labels add familiarity. Inline context adds transparency. Forum perspectives add social proof. Product cards add commercial intent. Whether these additions are sufficient to reverse a 58 per cent decline in clickthrough rates, or whether they are window dressing on a structural shift that has already occurred, will be determined not by Google’s announcements but by the traffic data that publishers track in the months that follow. Google’s broader strategy is to make AI the interface for everything, from search to workspace to enterprise to commerce. The open web is the content layer that trains and feeds that interface. The question Google has not answered, and that Tuesday’s updates do not resolve, is what happens to the content layer when the interface no longer sends it traffic. The updates are a gesture. The trajectory is unchanged.
+
+Get the TNW newsletter
+
+Get the most important tech news in your inbox each week.
+
+Also tagged with
+
+Google
+
+Google
+

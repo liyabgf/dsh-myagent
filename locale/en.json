@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "myagent",
+    "description": "Your own agent system: schedules, a local inbox and the main Session all become Tickets through one gate, run unattended by their own DSH Session in their own directory, and report back."
+  }
+}

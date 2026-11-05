@@ -1,0 +1,79 @@
+
+
+Oops, something went wrong
+
+Skip to navigation Skip to main content Skip to right column
+
+Pichai Says Google Cloud Is Giving Up Revenue to Feed AI Research. Here’s What That Means for Alphabet Stock
+
+Wiltone Asuncion
+
+October 22, 2026 4 min read
+
+GOOG
++2.73%
+
+OPAI.PVT
+
+Key Stats for Alphabet Stock
+
+Current Price: $334.76
+
+Target Price (Mid): ~$707
+
+Street Target: ~$430
+
+Potential Total Return: ~111%
+
+Annualized IRR: ~20% / year
+
+__Now Live: Discover how much upside your favorite stocks could have using TIKR's new Valuation Model (It's free)__ >>>
+
+What Happened?
+
+Alphabet (GOOGL) CEO Sundar Pichai said in an October 20 interview on the Big Technology podcast that Google Cloud is giving up short-term revenue so frontier AI research gets first claim on computing power. He called Google DeepMind's compute needs "non-negotiable" and said serving new customers asking for 2027 capacity would be "incredibly difficult." Alphabet closed October 21 at $334.76, down 1.62%. The third-quarter report, due after the close on October 28, will be the first look at what that trade-off costs.
+
+Demand Keeps Arriving at a Rationed Cloud
+
+Pichai did not say how much Cloud revenue Google is giving up. The demand side kept growing anyway. OpenAI's models began rolling out on Google Cloud in private preview on October 21, a launch TIKR covered on October 22. Customers will be able to pay for them by drawing down Google Cloud spend commitments, according to OpenAI's announcement. Neither announcement said how that revenue is split. Amazon (AMZN) made OpenAI's GPT-6 Astra generally available on AWS in September, and OpenAI said Microsoft (MSFT) remains its primary cloud partner.
+
+Google Cloud CEO Thomas Kurian made the case for model choice at Goldman Sachs' Communacopia conference on September 8. On security, he argued that "no model finds a super set of all the other models," so customers should scan with several. He also described a business paid at every layer: "Some people buy us for silicon. Some people use our models. Some people use our data platforms." Every model Google adds widens demand for capacity that Pichai says is already rationed.
+
+The Cash Bill Is Getting Bigger
+
+Analysts are still raising revenue estimates. Consensus 2027 revenue sits around $627 billion, up from about $615 billion at September 30, and third-quarter revenue is expected near $128 billion, up around 25%. The cash cost is growing too: consensus 2027 free cash flow is around negative $37 billion, deeper than the roughly negative $32 billion TIKR cited on September 25, before turning strongly positive in 2029.
+
+Gemini also carries a legal overhang. A pending class action alleges Alphabet misled investors about delays to Gemini 3.5 Pro, allegations that remain unproven.
+
+TIKR tracks 62 analysts on Alphabet. How many say "Buy"? See the full breakdown of Buy, Hold, and Sell ratings on Alphabet, along with Wall Street's revenue and earnings estimates, all in one place. More than 500,000 investors use TIKR to research stocks like this one. See Alphabet's Analyst Ratings
+
+TIKR Advanced Model Analysis
+
+Current Price: $334.76
+
+Target Price (Mid): ~$707
+
+Potential Total Return: ~111%
+
+Annualized IRR: ~20% / year
+
+The TIKR model's mid case puts Alphabet at around $707 by December 31, 2030, roughly 20% a year from the October 21 close. That target is little changed from TIKR's October 11 analysis, so the lower share price lifted the implied return to about 111% from about 102%. The case assumes revenue growth around 17% a year, a net income margin around 33% and a P/E that shrinks about 2.6% a year, so earnings growth does the work. The Street's mean target of about $430 sits around 29% above the close. The main risk is that rationed capacity keeps capex high and pushes the cash recovery past 2028.
+
+Conclusion
+
+October 28 is the first read on rationing. Google Cloud grew 82% in Q2, a figure that included TPU system sales. Growth near that pace with total revenue above the roughly $128 billion consensus would mean the compute squeeze costs less than Pichai's comments implied. A sharp Cloud slowdown alongside another capex increase would mean the opposite.
+
+So what is Alphabet stock actually worth?
+
+TIKR lets you forecast the future price of any stock in less than a minute. Just enter a few assumptions into TIKR's valuation model and see what Alphabet could be worth. Start from Wall Street consensus estimates, or adjust the inputs to reflect your own view of the business. It's free to use.
+
+Analyze Alphabet on TIKR Free →
+
+Terms and Privacy Policy
+
+Your Privacy Choices
+
+CA Privacy Notice
+
+More Info
+

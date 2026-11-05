@@ -1,0 +1,27 @@
+# Commission seeks feedback on measures to ensure interoperability with Google's Android under the Digital Markets Act
+ref=IP/26/887
+
+The Commission has sent its preliminary findings to Google as part of the specification proceedings it started on 27 January 2026 under the Digital Markets Act (DMA). These preliminary findings outline the draft measures Google should implement to ensure that third parties have effective access and interoperability with key capabilities of Android.
+
+The proposed measures aim to ensure that competing AI services can effectively interact with applications on users' Android devices and execute tasks accordingly, such as sending an email using the user's preferred email app, ordering food or sharing a photo with friends. Currently, Google largely reserves these capabilities for use by its own AI offerings on Android phones and tablets. For example, the measures would allow competing AI services to be easily activated by users, using a custom ‘wake word', a phrase that the user can speak to activate an AI service.
+
+The proposed measures will also enable competing providers of AI services to innovate and offer deeply integrated AI experiences to users on Android phones and tablets, along with Alphabet's own AI services, such as Gemini. Opening up access to these capabilities will provide Android users across the EU with a wider choice of AI services.
+
+To ensure that these proposed measures are effective, the Commission invites interested parties to comment on them through a public consultation.
+
+Interested parties have until 13 May 2026 to submit their views on the draft measures. The non-confidential summary of the preliminary findings and envisaged measures is available on the consultation page.
+
+Next steps
+
+The Commission will carefully assess the feedback provided by interested parties and by Google. The input received may trigger adjustments to the proposed measures. The final decision must be adopted within six months from the opening of the specification proceedings and will contain the final binding measures.
+
+These proceedings are without prejudice to the powers of the Commission to adopt a decision finding non-compliance with any of the obligations laid down in the DMA by a gatekeeper.
+
+Background
+
+These preliminary findings are part of a set of specification proceedings opened on 27 January 2026. On 16 April 2026, the Commission issued preliminary findings and launched a public consultation in relation to specification proceedings on the sharing of search data with third parties, by Google Search.
+
+The DMA aims to ensure contestable and fair markets in the digital sector. It regulates gatekeepers, which are large digital platforms that provide an important gateway between business users and consumers, whose position can grant them the power to create a bottleneck in the digital economy.
+
+On 6 September 2023, the European Commission designated Alphabet Inc.'s Google Search, Google Play, Google Maps, YouTube, Google Android operating system, Google Chrome, Google Shopping and its online advertising services as core platform services. Alphabet has had to fully comply with all applicable DMA obligations in respect of the designated services since 7 March 2024.
+

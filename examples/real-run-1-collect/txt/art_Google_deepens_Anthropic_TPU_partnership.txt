@@ -1,0 +1,128 @@
+
+
+Skip to content
+
+Fear & Greed50 Neutral
+Crypto market$2.74T+4.6%24h breadth225 up29 downBitcoin$80,638+5.1%Ethereum$2,429+7.7%Solana$96+5.3%XRP$1.31+4.3%BNB$718+4%Top gainersDRV$0.380+21.4%DGAI$0.771+20.3%RAY$1.76+17%Top losersTRUMP$1.25−16.7%MELANIA$0.064−13.3%FB$0.300−11.6%StocksNVDA$200−3.1%TSLA$385−3.3%AAPL$350+5.3%MSFT$556+6.7%COIN$152+4.2%
+
+Fear & Greed50 Neutral
+Crypto market$2.74T+4.6%24h breadth225 up29 downBitcoin$80,638+5.1%Ethereum$2,429+7.7%Solana$96+5.3%XRP$1.31+4.3%BNB$718+4%Top gainersDRV$0.380+21.4%DGAI$0.771+20.3%RAY$1.76+17%Top losersTRUMP$1.25−16.7%MELANIA$0.064−13.3%FB$0.300−11.6%StocksNVDA$200−3.1%TSLA$385−3.3%AAPL$350+5.3%MSFT$556+6.7%COIN$152+4.2%
+
+Advertisement
+
+Crypto Briefing Pro Follow the news about what you own. Add your holdings to find related stories in Pro. Create a free account
+
+Menu
+
+Crypto sections
+
+Bitcoin
+Ethereum
+Altcoins
+DeFi
+Stablecoins
+Regulation
+Security
+
+Create account
+Log in
+
+Español
+
+Anthropic gets access to roughly 3.5 gigawatts of next-generation TPU capacity starting in 2027, with Broadcom designing the silicon
+
+by
+Diego Almada Lopez
+
+Wed 28 Oct 2026 · 17:14 EDT
+·
+3 min read
+
+In Technology
+
+Share
+
+Follow on Google
+
+Google Cloud has expanded its partnership with Anthropic and Broadcom. Under the deal, Anthropic gets access to around 3.5 gigawatts of next-generation Tensor Processing Unit capacity, starting in 2027.
+
+The agreement was announced on April 6, 2026. It builds on commitments the companies first made in October 2025.
+
+Who does what in this deal
+
+The deal has three players, and each has a distinct job.
+
+Google owns the TPU, its custom AI chip. TPUs power the company’s internal machine-learning work, including its Gemini models and various consumer services.
+
+Broadcom co-designs those chips with Google, a working relationship that dates back to around 2016. As part of this arrangement, Broadcom finalized a long-term agreement to develop and supply future Google TPUs, plus networking and rack components, through 2031.
+
+Anthropic is the customer, and an increasingly large one. The AI startup behind the Claude models is committing to a huge amount of Google compute.
+
+The money behind the machines
+
+Broadcom executed a $63 billion structured financing agreement, known as Project North Star, around late October 2026.
+
+Advertisement
+
+Crypto Briefing Pro Follow the news about what you own. Add your holdings to find related stories in Pro. Create a free account
+
+The package is backed by major financial institutions, including Bank of America, Citigroup and Blackstone. Its purpose is to finance Anthropic’s purchases of TPUs.
+
+Anthropic’s own filings suggest the appetite is real. According to its S-1 filing, the company projects spending of more than $114 billion with Google.
+
+AI, tech, and the markets they move—in one daily briefing.
+
+Daily. Free. Join 34,000+ readers across crypto, finance, and policy.
+
+We respect your privacy. Unsubscribe anytime.
+
+The broader picture is even larger. As of December 2025, the S-1 highlighted $417 billion in total compute commitments for the future.
+
+Anthropic’s revenue is climbing fast
+
+Anthropic reported a revenue run-rate exceeding $30 billion in April 2026.
+
+At the end of 2025, that number was approximately $9 billion.
+
+A run-rate projects current revenue over a full year. It is a snapshot of momentum, not a guarantee of annual results.
+
+Google wants TPUs everywhere
+
+Google plans to expand TPU sales beyond its own cloud. The company intends to make them available on platforms such as Oracle Cloud Infrastructure starting next year.
+
+Not putting all the chips in one basket
+
+Anthropic is not exclusive to Google. The company runs on a range of hardware, from Google TPUs to NVIDIA chips and AWS solutions.
+
+What this means for the AI compute race
+
+For Broadcom, the agreement through 2031 provides long-term visibility. Designing chips, networking and rack components for Google over that span gives it a steady role in the AI buildout.
+
+For Anthropic, the arrangement secures the capacity it needs to keep training and serving models. The tradeoff is enormous long-term obligations, with $417 billion in compute commitments outlined in its S-1.
+
+The financing structure is the part worth watching most closely. Project North Star ties banks and private capital directly to Anthropic’s chip purchases.
+
+There is also a competitive ripple effect. Commitments this large may push other AI developers and cloud providers to accelerate their own infrastructure spending to keep pace.
+
+Google spent roughly a decade building TPUs mostly for itself, and it now appears ready to sell them to everyone else.
+
+Disclosure: This article was edited by Diego Almada Lopez. For more information on how we create and review content, see our Editorial Policy.
+
+Next in Technology
+Alphabet reaffirms $195 billion to $205 billion capex guidance as AI spending climbs
+
+AI, tech, and the markets they move—in one daily briefing.
+Daily. Free. Join 34,000+ readers across crypto, finance, and policy.
+
+Free daily briefing
+
+Crypto Briefing Pro
+
+The news about what you hold
+
+Follow your stocks and crypto. Read the news about them from hundreds of publishers in Pro.
+
+Create account
+
+Privacy policy
+

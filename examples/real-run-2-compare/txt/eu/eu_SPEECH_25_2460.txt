@@ -1,0 +1,81 @@
+# 'The decision to impose a fine on Google: defending press and media freedom in the EU'  Opening commission statement delivered by Executive Vice-President Teresa Ribera 
+ref=SPEECH/25/2460
+
+Honourable Members. It is a great pleasure to be here with you.
+
+Thank you for putting forward this debate on a very relevant topic: the state of the media and press sector in the European Union.
+
+Because we know that today, perhaps more than ever, we need a strong, independent, and diverse media sector to support democratic debates and help to preserve core EU values that we once took for granted.
+
+Let me begin by underlining the importance of Europe's competition rules and of strong enforcement in the digital sector. And also of the broader European laws that protect media independence and diversity, such as the Media Freedom Act and the Audiovisual Media Services Directive as well as our digital rulebook: the Digital Markets Act and the Digital Services Act.
+
+Then I come to a relevant decision we took not so long ago. On 5 September the Commission found that Google abused its dominant position in the display advertising technology or ‘adtech' industry for well over a decade.
+
+Google illegally favoured its own adtech services to the detriment of its competitors, advertisers and online publishers.
+
+Its behaviour resulted in higher prices for advertisers, and a smaller cut for ad publishers, such as news media organisations.
+
+The Commission concluded that Google's practices are illegal under EU competition rules, and issued a 2.95 billion euro fine.
+
+We also asked Google to stop this illegal behaviour. They now have to tell us how they plans to do so. And if they fail to come up with a viable plan, we would impose an appropriate remedy.
+
+Our decision makes clear that Google needs to propose measures that eliminate its extensive conflicts of interest in the adtech industry.
+
+For the time being, our view is that a structural remedy seems to be needed to ensure this.
+
+Allow me to make a comment on the relevance of the Adtech industry.
+
+Digital advertising funds much of the online free content and services we use everyday.
+
+Imagine you are reading an article on a website, and an ad appears, for instance, for a well-known coffee brand. What looks like a simple ad is actually the result of a complex process powered by digital advertising technologies.
+
+This case dealt with the complex chain of intermediaries that run the real-time auctions to decide which ads we see each time that we open a website, such as El Pais or Le Monde, or whatever other media website you may want to consult.
+
+Publishers depend on these ads for much of their income – income they need to produce quality journalism and to support healthy democratic debates based on sound information.
+
+But Google's illegal behaviour, combined with its dominance in this space, has allowed it to capture an artificially large share of the revenue that advertisers pay to publishers for showing their ads, and so reducing the capacity of the media sector to count on these revenues to fund their services.
+
+As result, advertisers faced higher prices which they likely passed on to final customers all across the EU.
+
+Google also locked in publishers to its own advertising tools, making it difficult for them to switch to rivals and depriving them of choice and fair competition.
+
+Google's behaviour had a negative impact on all European citizens in their day-to-day use of the web. And I was pleased to see that publisher groups, different media groups, and other stakeholders have welcomed our decision.
+
+The purpose of our antitrust laws is not imposing fines for the sake of it.
+
+It is about changing behaviour, protecting our markets and our citizens. But for the enforcement of our rules, we sometimes need to fine for illegal behaviour.
+
+Even though we only took action in relation to the European Union, Google's conduct has a worldwide dimension.
+
+In April, a United States Federal Court upheld the main claims of a Department of Justice complaint against Google, which mirrored closely the issues addressed in our decision.
+
+That Court also recently heard arguments on the remedies Google should put in place and is expected to issue a decision in the coming months.
+
+There is therefore room to ensure that Google puts in place an effective remedy on both sides of the Atlantic to address its inherent conflicts of interest.
+
+This is also the message I shared with my counterpart in the United States, when I met her in New York recently, and our technical teams are in close contact as we enter this final stage.
+
+But this decision should not be seen in isolation. As you know, our digital rulebook, especially the Digital Markets Act and the Digital Services Act, is designed to make online advertising more transparent for advertisers, publishers, and consumers, shedding light on what is often called a "black box."
+
+And there is another important issue in this debate.
+
+Press publishers and media organizations not only face anticompetitive behaviour in online advertising but may also be confronting even bigger threats.
+
+I am of course referring to the growing use of AI-powered summaries of news and other content, often used without consent or payment, and potentially in breach of copyright laws.
+
+Because things are moving very fast when it comes to AI, which of course bring enormous opportunity and potential, but at the same time real risks, and the threat to the media sector is one of them.
+
+In parallel, we have just launched the evaluation of the 2009 Broadcasting communication. Public service broadcasters are essential to keep citizens informed, but the rules for State funding were set in 2009, long before new technologies and viewing habits transformed the sector and we need to check if they are still fit for purpose.
+
+Let me also mention that last year the co-legislators adopted The European Media Freedom Act, which sets out measures to safeguard media independence and pluralism in the internal market.
+
+It includes, in alignment with the safeguard laid down in the Digital Services Act, protections against the unwarranted removal of legitimate media content by very large online platforms, as well as new transparency requirements for advertising and audience measurement.
+
+Moreover, the Commission is evaluating the Audiovisual Media Services Directive to check if it still meets the needs of today's evolving market and technological realities.
+
+Looking ahead, our upcoming European Democracy Shield will outline measures to strengthen the sustainability of the media sector across the EU, and combat practices that can undermine democratic processes and fair elections across our Union.
+
+I am looking forward to hearing your comments.
+
+Thanks a lot.
+

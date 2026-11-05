@@ -1,0 +1,32 @@
+{
+  "acceptMode": "observe",
+  "executor": {
+    "maxWorkers": 2,
+    "prepare": ""
+  },
+  "notify": {
+    "enabled": true
+  },
+  "sources": {
+    "cron": {
+      "enabled": true,
+      "schedules": [
+        {
+          "id": "daily-digest",
+          "name": "每日竞品摘要",
+          "enabled": true,
+          "timing": { "kind": "daily", "time": "09:00", "timeZone": "Asia/Shanghai" },
+          "scope": "临时工作在本 Ticket 自己的目录里做；成品写到 ~/Documents/SA/digests/（不存在就创建）。除这两个目录外不写任何文件，不删除任何已有文件。网络只允许用 web_fetch 抓取下面列出的源，抓不到就在报告里点名，不要改用别的站点。",
+          "prompt": "每天产出一份竞品动态摘要。\n\n要做什么：\n1. 用 date 命令取当天日期（时区 Asia/Shanghai），记作 TODAY。\n2. 用 web_fetch 抓取这几个源：\n   - https://openai.com/news/\n   - https://www.anthropic.com/news\n   - https://deepmind.google/discover/blog/\n   - https://huggingface.co/blog\n   某个源抓不到（超时、403、结构变了）就在最终报告里点名，不要静默跳过，也不要改用别的站点凑数。\n3. 只保留最近 7 天内发布的条目。按公司分组，每条给出：标题、发布日期、一句话要点、原文链接。\n4. 读 ~/Documents/SA/digests/ 下最近一份摘要（按文件名日期取最新），把已经出现过的条目去掉，只留真正的新内容。目录不存在或没有旧文件时，就当全部都是新的。\n\n产出：\n- ~/Documents/SA/digests/TODAY.md，开头三行写：日期、抓到几个源、失败几个源（点名）。\n- ~/Documents/SA/digests/latest.md，内容就是 TODAY.md 的副本。\n\n怎样算做完：两个文件都已写好，然后用 myagent_report 汇报 state=ready，summary 用三句话说清楚今天有几条新内容、分别来自哪家公司、有没有源抓取失败，files 列出这两个文件的路径。\n一条新内容都没有时也要写文件（正文写明「今日无新增」）并汇报 state=ready。\n所有源都抓不到时汇报 state=failed，summary 说明是网络问题还是页面结构变了。\n需要我做决定才能继续时（例如源全部改版、无法判断哪些算竞品）汇报 state=blocked，question 写一个具体的问题和你建议的处理方式。"
+        }
+      ]
+    },
+    "inbox": {
+      "enabled": true,
+      "pollMs": 5000
+    },
+    "session": {
+      "enabled": true
+    }
+  }
+}

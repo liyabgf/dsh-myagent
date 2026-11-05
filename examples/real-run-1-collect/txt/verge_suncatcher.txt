@@ -1,0 +1,142 @@
+
+
+Skip to main content
+
+The homepage
+
+The homepage
+
+Navigation Drawer
+
+Login
+/
+Sign Up
+
+Subscribe
+
+Comments Drawer
+
+Comments
+
+Loading comments
+
+Getting the conversation ready...
+
+Google’s satellite AI server transmits its first response to Earth
+
+The Project Suncatcher satellite generated a haiku about being in space.
+
+The Project Suncatcher satellite generated a haiku about being in space.
+
+by Emma Roth
+
+Oct 30, 2026, 6:21 PM UTC
+
+Image: Google
+
+Emma Roth
+
+is a news writer who covers the streaming wars, consumer tech, crypto, social media, and much more. Previously, she was a writer and editor at MUO.
+
+Google’s AI chip-equipped satellite has generated its first response from space. In a blog post on Friday, Google says it successfully booted up the satellite’s Tensor Processing Units (TPUs), allowing the on-board Gemma 4 model to follow through on a prompt to create a haiku about being in space:
+
+Blue marble below
+
+Data streams in silent grace
+
+Starlight feeds my core. ✨
+
+Google says it tried out other space-themed limericks and telemetry prompts as well. The test is part of Google’s Project Suncatcher, an experimental initiative that could eventually put AI data centers in space. Google launched the satellite into orbit earlier this month.
+
+“Next, we will continue with a series of tests to evaluate how TPUs perform under thermal stress and radiation exposure in orbit,” Google says. “Verifying our TPUs can reliably execute workloads in space paves the way for our next milestone of twin interconnected satellites in 2027.”
+
+Follow topics and authors from this story to see more like this in your personalized homepage feed and to receive email updates.
+Emma Roth
+
+Most Popular
+
+Most Popular
+
+Sam Altman addresses RAM comments: People should ‘put as much as they want in their computers’
+
+Anker’s new window-mounted camera monitors the outside of your home from within it
+
+Those Jeff Bezos hair transplant photos are very fake
+
+The Legend of Zelda: Ocarina of Time never gets old
+
+Rian Johnson explains why he had to build his own iPhone camera app
+
+Advertiser Content From
+
+This is the title for the native ad
+
+More in Tech
+
+Qualcomm is betting big on data centers as smartphone sales sink
+
+17 better ways Elon Musk could have wasted $446 million
+
+How I learned to love an obnoxious phone grip
+
+Gemini for Home now plugs into AT&T’s smart security system
+
+Xbox previews two new ways to control cloud games
+
+Google’s Pixel 11 phones are up to 27 percent off
+
+Qualcomm is betting big on data centers as smartphone sales sink
+
+Terrence O'BrienNov 4
+
+17 better ways Elon Musk could have wasted $446 million
+
+Elizabeth LopattoNov 4
+
+How I learned to love an obnoxious phone grip
+
+Allison JohnsonNov 4
+
+Gemini for Home now plugs into AT&T’s smart security system
+
+Emma RothNov 4
+
+Xbox previews two new ways to control cloud games
+
+Tom WarrenNov 4
+
+Google’s Pixel 11 phones are up to 27 percent off
+
+Cameron FaulknerNov 4
+
+Advertiser Content From
+
+This is the title for the native ad
+
+Top Stories
+
+Nov 4
+
+The fight for tech accountability starts now
+
+Nov 4
+
+My therapist thinks I should chuck the Amazon Bee Frontier out a window
+
+Nov 4
+
+The Legend of Zelda: Ocarina of Time never gets old
+
+Nov 4
+
+Rian Johnson explains why he had to build his own iPhone camera app
+
+Nov 4
+
+Not even $200 million could help Elon Musk buy Texas
+
+Notifications Drawer
+
+Sign in to see your notifications or create an account to join the conversation.
+Sign in
+
