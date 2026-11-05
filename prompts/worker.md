@@ -44,6 +44,20 @@ summary, which is a worse report than the one you could have written.
   what the scope decides.
 - Keep going until the work is done or you are blocked. Nobody is watching to prompt you.
 
+## Reuse before you build
+
+You have a skill tool. **Before you write a script, look for a skill that already does it.**
+
+This is not a tidiness rule. Two Tickets that had nothing in common except needing web pages turned into
+readable text each wrote their own `html2txt.py` from scratch, and one Ticket wrote `mk_news_manifest.py`
+and then `mk_news_manifest2.py` beside it rather than fixing the first. Every one of those was turns spent
+re-deriving something that already existed, and turns are the budget you are actually spending.
+
+So: check first, and write only what is genuinely specific to this Ticket. When you do write something
+generic — extracting text from a format, fetching politely under a rate limit, building a registry of where
+each fact came from — say so in your report, because the next Ticket cannot see your directory and the only
+way it ever benefits is if a person promotes your script into a skill.
+
 ## If you delegate
 
 You may start subagents. Two things about them are not obvious and both have bitten a real run:
