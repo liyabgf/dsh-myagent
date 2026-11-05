@@ -76,6 +76,17 @@ export interface SessionsHost {
    * and a branch for the other case would be a branch nothing can reach.
    */
   ticketEnded(ticketId: string): boolean
+  /**
+   * Report the one fact about a Session that this class cannot act on: a Session whose id claims a Ticket that does
+   * not exist, and which was therefore decorated with nothing.
+   *
+   * Narrow the way `DeliveryHost.replyLost` and `WatchdogHost.escalate` are narrow — the two ids and nothing else —
+   * because `Sessions` is not handed the Engine or the health board: which subject accounts this fact, what the board
+   * says about it and what retires it are all the Runtime's call, and a class that could reach the board could write
+   * any line on it. This class has exactly one line to add, and the log line it already writes is not enough on its
+   * own — a refusal only the log shows is a refusal the operator never reads (§2.2's second debt).
+   */
+  impostorRefused(sessionId: string, claimedTicketId: string): void
   /** Environment variables a worker's directory and prompt carry. */
   environment(ticket: Ticket): Record<string, string>
   /** The tools to register on the main Session (`ticket` absent) or on `ticket`'s worker. */
@@ -322,13 +333,16 @@ export class Sessions {
       // ("this is the main Session" and "I could not find that Ticket") must not share one value; this is the fifth
       // time that shape has appeared here and the first whose fallback grants permission (§0.10).
       //
-      // So: no decoration at all, which means no myagent tools and no myagent prompt section. Logged rather than
-      // silent, because a refusal nobody can see is how S33's false audit line happened; surfacing it on the health
-      // board needs a port member this class does not have, and closing the hole comes first.
+      // So: no decoration at all, which means no myagent tools and no myagent prompt section. Reported rather than
+      // silent, because a refusal nobody can see is how S33's false audit line happened — and reported in BOTH places
+      // this class can reach, because they have different readers: the log is where a developer looks afterwards, the
+      // health board is what the operator is actually reading while it happens. The board is reached through the narrow
+      // `impostorRefused` port member rather than through a health board this class does not hold.
       this.ctx.logger.warn(
         'myagent — Session %s is named like a worker\'s but no Ticket %s exists, so it gets no myagent tools',
         agent.id, ticketId,
       )
+      this.host.impostorRefused(agent.id, ticketId)
       return
     }
     await this.decorate(agent, ticket)

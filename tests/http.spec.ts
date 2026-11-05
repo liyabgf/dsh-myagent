@@ -32,6 +32,27 @@ async function createTicket(context: Deployment, title = '每日摘要'): Promis
   return id!
 }
 
+/**
+ * Wait for a condition a pass produces, instead of assuming one `nudge` was enough.
+ *
+ * `Runtime.nudge` awaits the Sources' nudge and then calls `passes.requestPass()`, which SCHEDULES a pass without
+ * awaiting it (`src/app/runtime.ts:667-674`) — and this spec already knew that: line 382's comment says so, and the
+ * test there calls `nudge` twice to win the race. Usually winning a race is indistinguishable from not having one,
+ * which is why `expected 'pending' to be 'running'` at the artifacts test looked like a mystery: it was measured
+ * passing three times alone and once red under full-suite load, with no source change in between.
+ *
+ * Bounded, and it fails saying what it waited for rather than hanging — an intermittent red is worse than a
+ * consistent one because it makes the exit code untrustworthy, and the exit code is the only authority this project
+ * has (`docs/v2/04-execution-discipline.md` §0.1).
+ */
+async function untilPass(predicate: () => boolean, what: string, tries = 200): Promise<void> {
+  for (let attempt = 0; attempt < tries; attempt++) {
+    if (predicate()) return
+    await new Promise(resolve => { setTimeout(resolve, 5) })
+  }
+  throw new Error(`${what} had not happened after ${tries} attempts to wait for it`)
+}
+
 describe('the fence', () => {
   it('serves the panel page to anybody who can reach the port', async () => {
     await withDeployment(async ({ host }) => {
@@ -357,6 +378,9 @@ describe('the artifacts a Ticket registered', () => {
       // The launch has to have happened first: a report may only land on an attempt that is running, which is what
       // makes a superseded turn unable to end a Ticket whose replacement has not started.
       await context.runtime.nudge()
+      // Wait for the launch rather than assuming the pass `nudge` scheduled has already run; the assertion below is
+      // unchanged, because the thing being asserted was never wrong — the wait was missing.
+      await untilPass(() => context.runtime.engine.require(id).assignments.at(-1)!.state === 'running', 'the launch')
       expect(context.runtime.engine.require(id).assignments.at(-1)!.state).toBe('running')
       // `report.md` and `./report.md` are one file; a path outside the Ticket directory is not registered at all.
       context.runtime.engine.report(id, { state: 'ready', summary: '做完了', files: ['report.md', './report.md', '../elsewhere'] })

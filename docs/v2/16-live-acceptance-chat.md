@@ -51,7 +51,7 @@ size=167936 mtime=Nov 4 11:40:37 2026
 | 覆盖层 | `/tmp/myagent-acc-chat/overlay.patch.yml`：`stateDir: ~/.dsh/state/myagent-acc-chat`、`mainSessionId: myagent-chat-main` | 【实测】 |
 | 起点隔离性 | `~/.dsh/state/` 起点只有 `myagent`、`myagent-acc-watchdog`、`myagent-acceptance` → `myagent-acc-chat` 是本轮新建 | 【实测】 |
 | 启动宿主 | `cd ~/deepseek-harness && node --import tsx/esm apps/cli/src/bin.ts --profile myagent-test --patch /tmp/myagent-acc-chat/overlay.patch.yml --port 3180 --no-open 2>&1 \| tee /tmp/myagent-acc-chat/host.log`（后台作业 `bash-15077492a1d141c5`，宿主 pid **57025**） | 【实测】 |
-| 就绪行 | `dsh web: http://127.0.0.1:3180/?token=<dsh-web-token:09cee1614808>` | 【实测】 |
+| 就绪行 | `dsh web: http://127.0.0.1:3180/?token=<token-sha256:09cee1614808>` | 【实测】 |
 | 监听确认 | `lsof -nP -iTCP:3180 -sTCP:LISTEN` → `node 57025 … TCP 127.0.0.1:3180 (LISTEN)` | 【实测】 |
 | 新 stateDir 自建 | `inbox/ work/ chat/ myagent.json myagent.lock myagent.sqlite3{,-shm,-wal}` | 【实测】 |
 | `mountedAt` | `2026-11-04T10:28:36.570Z` | 【实测】 |

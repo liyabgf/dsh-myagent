@@ -219,3 +219,144 @@ DSH 提供 `dsh-web-search`、`dsh-web-fetch`、`tool-web`，
 - **原先标为未核实的两处，一处已查实**：worker **没有**被告知 skill 的存在
   （`prompts/` 下 "skill" 命中 0 次，且 `worker.md` 明写 "You have three tools, and no others"）——
   见 §2.4 第 3 条。另一处仍未核实：worker 为什么不用宿主的 web 工具（需要看那两个会话的记录）
+
+
+---
+
+## 3. 追加（第 50 轮）：skill 的加载路径已查实，以及"随包发 skill"卡在哪一步
+
+### 3.1 已确认：worker **有**技能工具，所以那句提示词不是假指令
+
+`src/app/sessions.ts:36` 的 worker 允许工具清单里**含 `'skill'`**，而 `cordis.patch.yml:73-76`
+在 worker preset 里装了 `dsh-skill-filesystem` 与 `dsh-tool-skill`。
+**所以第 2 部分的诊断是准的：重复发明是纯粹的提示词缺口，不是能力缺口。**
+0.1.2 已在 `prompts/worker.md` 加了「Reuse before you build」一节，用两次运行的实测证据说话，
+并要求 worker 在报告里点出哪些脚本是通用的——**因为下一个 Ticket 看不见它的目录，
+唯一能让它受益的途径是有人把脚本提升成 skill**。
+
+> 先查证再写，是因为这个项目有过教训：**告诉一个会话去用某个它其实没有的工具，是一条假指令**
+> （`tests/chat-send.spec.ts:205` 的注释就是这么写的）。
+
+### 3.2 skill 从哪些根加载（权威来源：DSH 源码 `packages/skill/skill-filesystem/src/index.ts`）
+
+模块注释："discovers directory-bundle and flat Markdown skills from **project, custom, and user roots**"。
+
+| 根 | 配置项 | 对 myagent 是否可用 |
+| --- | --- | --- |
+| **project** | 由工作目录推定 | **不合适**：worker 的 `cwd` 是它那张 Ticket 的目录，所以 project 根的 skill 是**每张 Ticket 一份、随 Ticket 结束而失效**——正好与"可复用"相反 |
+| **custom** | **`customSkillDirs?: string[]`** | **这是正确的机制**：显式目录列表，与 cwd 无关 |
+| **user** | 由 `dshHome` / `agentsHome` 推定 | 可用但**不该由插件写**：那是用户自己的空间，插件往里放东西是越界 |
+| **bundled** | `bundledSkillDir?`，默认取 `$DSH_BUNDLED_SKILL_DIR`，被 `includeDefaultRoots` 门控 | **不可用**：那是 DSH 自己的内置根，第三方 bundle 不该占 |
+
+**结论：随包发 skill 的正确机制是 `customSkillDirs`**——包里放一个 `skills/`，让它指向那里。
+
+### 3.3 卡住的那一步（未解决，写给下一轮）
+
+`customSkillDirs` 是**字符串数组**，而 `cordis.patch.yml` 是**静态 YAML**。
+要指向"myagent 自己被安装到的那个目录下的 `skills/`"，就需要一个**运行时才知道的绝对路径**，
+静态 YAML 表达不了。三个可能的解法，**都未验证**：
+
+1. **在插件代码里设**：`src/index.ts` 在 apply 时用 `import.meta.dirname` 解析出包内 `skills/` 的绝对路径，
+   再通过 ctx 改 `skill-filesystem` 的配置。**需要查**：cordis 是否允许一个插件在运行时改另一个插件的配置，
+   以及改了之后 catalog 会不会重扫。
+2. **patch 格式是否支持相对模块的路径占位**。**需要查** `packages/boot/plugin-manager/src/patch.ts` 与 loader 语义。
+3. **文档化而不自动化**：README 里告诉用户自己把 `skills/` 加进 `customSkillDirs`。
+   最省，但**把成本推给用户**，而那正是重复发明会继续发生的原因。
+
+**在查清 1 或 2 之前不要写 skill 文件**：放错位置的 skill 是死文件，而死文件比没有文件更坏——
+它让人以为能力已经提供了。**这与"实现了但没有调用者"是同一个陷阱换了一层：这次是"提供了但加载不到"。**
+
+### 3.3b 【第 50 轮已解除】三个候选都不需要——正确的 API 是 `ctx.skills.register`
+
+§3.3 的卡点建立在"skill 只能从目录根加载"这个前提上，**而那个前提是错的**。
+`packages/skill/skill/src/index.ts` 是 **provider 注册表**，其模块注释说：
+"providers such as `dsh-skill-filesystem` decide where skills come from;
+**this service only merges provider catalogs**, resolves the winning skill…"。它暴露两个注册方法：
+
+```ts
+registerProvider(create: (control: SkillProviderControl) => SkillProvider): () => void   // :390
+register(skill: SkillRegistration): () => void                                            // :439
+```
+
+三条决定性事实：
+- **`SkillSource` 里有一个 `'runtime'` 桶**（`:40`）——这就是为运行时注册准备的来源标记
+- **skill 可以是虚拟的**：`:58` 写着 "Absolute instruction file path when supplied by the provider;
+  **absent for virtual skills**"——正文可以是代码里的字符串，不必有磁盘文件
+- **`SkillResourceBase` 可以是 `{kind:'directory', path}`**（`:42-44`），用于让正文解析相对资源，
+  而 `path` 可以在运行时用 `import.meta.dirname` 算出来
+
+**所以 myagent 随包发 skill 的正确做法**：在 `src/index.ts` 的 apply 里调
+`ctx.skills.register({ …, source: 'runtime' })`，正文内联或指向包内目录；
+**不需要 `customSkillDirs`，不需要 patch YAML 表达运行时路径，也不该往 user 或 bundled 根写。**
+返回的注销函数要在 `dispose` 里调（与其余资源的生命周期一致）。
+
+**取名要注意 rank**：`BUNDLED_SKILL_RANK = 600`（`:28`），而 "Lower ranks win duplicate skill names
+before provider registration order is considered"（`:78`）——**与 DSH 内置同名时谁赢取决于 rank**。
+`register` 单个 skill 时的 rank 语义**未核实**（要读 `SkillRegistration` 的定义）。
+
+**下一步（可直接照做）**：写三个 skill——HTML→文本、限速抓取、来源登记表。
+**需求证据就是两次真实运行各自独立发明过它们**（`html2txt.py` 两份、1675 与 2044 字节且不相同；
+`mk_registry.py` → `sources/registry.md` 279 条登记）。**正文应当从那两个真实脚本里提炼**，
+而不是重写一遍——它们被真实工作验证过，而重写会丢掉验证换来的细节（例如限速与重试的实际参数）。
+
+### 3.4 顺带发现的一个验证盲区
+
+改 `prompts/worker.md` 后跑完整闸门：**771 条全绿、而产物哈希没变**。
+所以 **`prompts/*.md` 与 `panel/index.html` 一样：随包发布、运行时从磁盘读、但不进 `lib/index.js`**，
+而 `scripts/gate.sh` 的新鲜度检查**只 glob `*.ts`**——**这两类文件的改动它都看不见**
+（第 46 轮记过面板那一半，这是同一盲区的第二个实例）。
+
+**修法不能照搬 `*.ts` 的规则**：那两类的"最新"判据不是"比 `lib/index.js` 新"
+（它们本来就不进 bundle，永远不会比它旧），而是"有没有比上次发布新"。
+更实际的做法是让闸门**报告**这两类文件的哈希、由发布流程去比对——
+**因为对不进 bundle 的文件，"新鲜度"这个概念本身就不成立。**
+
+
+### 3.5 【工程第 2 轮】W3 的调查结论：**我给代理的那个前提是错的**，而真正的答案更有用
+
+我在 W3 的派单里说"技能目录里已经出现 `myagent:worker` 与 `myagent:orchestrator`，
+所以**已经有某个机制在把这个 bundle 的内容以 skill 形式发布**，先查明它"。
+**那个推论是错的**，而代理在死之前查到的九条事实足以证明它错（`/tmp/w3-investigation.md`）：
+
+1. **skill 名字的语法禁止冒号**：`SKILL_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/`
+   （`packages/skill/skill/src/index.ts:21`，导出为 `isSkillName`，`:35`），
+   而 `ctx.skills.register()` 对不合法的名字**抛 `invalid skill name`**（`tests/skill.spec.ts:1026`）。
+   **所以 `myagent:worker` 不可能是 `ctx.skills` 注册表里的 skill 名**——
+   它是**另一个界面的显示串**，或者是某个观察者做的 `provider:name` 拼接。
+2. **`skill-filesystem` 要求 YAML frontmatter 带 `name` 与 `description`**
+   （`:825` "missing YAML frontmatter"、`:831` "frontmatter requires name and description"、`:835` 名字非法），
+   而 `prompts/worker.md` 与 `prompts/orchestrator.md` **没有 frontmatter**（开头就是散文），
+   **所以 skill-filesystem 会忽略它们，而不是发布它们**。
+3. 本机没有 myagent 的 `skills/` 目录、没有 `~/.dsh/**/skills`、没有 `~/Documents/SA/.dsh`；
+   唯一有 skills 目录的是**隔壁那个原型项目**
+   （`~/Documents/SA/dsh-superagent-prototype/skills/`，形状是 `<skill-name>/SKILL.md`）。
+4. 我在派单里点名的候选（`dsh-harness-dev-context`）**被 grep 排除**：它的 `src/index.ts` 里 "skill" 出现 0 次。
+5. 整个 `packages/` 里 `registerProvider` 只有三处
+   （`skill-filesystem`、`skill-office/src/index.ts:94`、`sandbox-windows-acl/src/acl-skill.ts:74`），**没有一处与 myagent 有关**。
+
+> **所以我看到的那个带 `myagent:` 前缀的目录，与 DSH 的 skill 注册表不是同一个东西。**
+> 它和同一份目录里的 `user-settings:deepseek-llm-api-custom`、
+> `deepseek-model-reasoning-effort:deepseek-model-…` 是同一类显示串。
+> **它到底由哪个界面拼出来，仍未查明**——但那已经不要紧了，
+> 因为**它不是 myagent 可以用来发布 skill 的机制**，而 W3 需要的正是后者。
+
+**而这次调查真正的收获，是把 §3.3b 那个未核实的问题答掉了**：
+
+- **`RUNTIME_RANK = 250`**（`packages/skill/skill/src/index.ts:24`），而 `BUNDLED_SKILL_RANK = 600`（`:28`），
+  且 "**Lower ranks win** duplicate skill names before provider registration order is considered"（`:78`）。
+  **所以运行时注册的 skill（250）会赢过 DSH 内置的（600）**——
+  这意味着 myagent 用 `ctx.skills.register` 发布的 skill 在同名时**优先**，
+  取名时**要意识到这一点**（不要无意 shadow 掉宿主的内置 skill）。
+- **skill 可以是虚拟的**（`:58` "absent for virtual skills"），
+  **所以正文可以是代码里的字符串，完全不需要磁盘文件、也不需要解析任何安装路径**。
+
+**因此 W3 的实现路径现在确定了，而且比我原先设想的简单**：
+**用 `ctx.skills.register` 注册三个虚拟 skill，kebab-case 名字，正文内联**——
+不走 `customSkillDirs`（那需要一个运行时才知道的绝对路径，而 §3.3 那个"静态 YAML 表达不了"的困难就是这么来的，
+**虚拟 skill 直接绕开了它**），不往 user/bundled 根写。
+**唯一还要读的是 `SkillRegistration` 的确切字段形状**（`:439` 的参数类型），那是实现时的第一件事。
+
+> **这一轮的方法论收获**：**我给代理的前提是错的，而代理没有照着我的前提做，它去查了语法。**
+> 如果它信了我那句"已经有机制在发布"，它就会去找那个不存在的机制、然后照它设计 W3——
+> **于是三个 skill 会被放到一个加载不到它们的目录里，成为死文件**（§3.3 警告的正是这个）。
+> **这是 0.11 的正面例子：配方（我给的调查方向）被当成结论来用会出事，而被当成假设来查就救回了整件事。**

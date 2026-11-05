@@ -4,7 +4,7 @@
 **Profile**：`myagent-test`（`~/.dsh/profiles/myagent-test`，`bundles = [@deepseek-ai/dsh-base, @deepseek-ai/dsh-web-app, myagent]`，`dependencies.myagent = link:~/Documents/SA/myagent`）
 **端口**：`3180`（日常宿主在 `3080`，全程未被写入；只做过只读 GET）
 **状态目录**：`~/.dsh/state/myagent-acceptance`（隔离，独立锁；**不是** `~/.dsh/state/myagent`）
-**宿主进程**：pid `72808`（`node --import tsx/esm apps/cli/src/bin.ts --profile myagent-test --patch … --port 3180 --no-open`），锁 `{"pid":72808,"host":"<host>","token":"<lock-token:886029b85a39>-…","at":"2026-11-03T10:03:36.698Z"}`
+**宿主进程**：pid `72808`（`node --import tsx/esm apps/cli/src/bin.ts --profile myagent-test --patch … --port 3180 --no-open`），锁 `{"pid":72808,"host":"<host>","token":"2d1c1fff-…","at":"2026-11-03T10:03:36.698Z"}`
 **启动命令**：
 
 ```bash
@@ -478,7 +478,7 @@ bad=[(k,v.get("detail")) for k,v in s["health"].items() if not v.get("ok",True)]
 | 主 Session 按需创建 + 记录真实 id | `live` | **`live`（当前构建），但带 B1** | `POST /api/main-session` → `myagent-acc-main`，`exists=true`；默认 id 会跨部署相撞（B1） |
 | 效果队列排空 | `live` | **`live`（当前构建）** | 每次结束后 `counts.effects={}`；只读查库 `effects` 0 行 |
 | 效果队列**放弃路径**（5 次耗尽） | `offline` | **`live`** | §4：1/5 → 4/5 → gave up，退避 15/30/60/120 s 与公式吻合，Ticket 上落了 `failed` Report，且 retry 成功跑到 `done` |
-| 单写者锁 | `live` | **`live`（当前构建）** | 隔离锁 `pid 72808`（token `<lock-token:886029b85a39>…`）与日常锁 `pid 24619`（token `<lock-token:93873534cc66>…`）同时存在且互不干扰；停宿主后隔离锁文件消失 |
+| 单写者锁 | `live` | **`live`（当前构建）** | 隔离锁 `pid 72808`（token `2d1c1fff…`）与日常锁 `pid 24619`（token `fb8b230f…`）同时存在且互不干扰；停宿主后隔离锁文件消失 |
 | 同源围栏 + 路径穿越防护 | `live` | **`live`（当前构建）** | §0：403/403/200/404 + 六种 file 路由坏输入 400/400/400/404/400/404 |
 | 全部 12 个 GET 路由 | `live` | **`live`（当前构建）** | §0：12/12 → 200 |
 | worker 工具白名单 | `live` | **`live`（当前构建）** | §1：19 个工具的完整名单，`myagent_report` 在，六个面向人的工具都不在 |
@@ -515,7 +515,7 @@ bad=[(k,v.get("detail")) for k,v in s["health"].items() if not v.get("ok",True)]
 原因：DSH 的 workspace 注册表把 session id 全局绑到创建它的 workspace。`~/.dsh/storages/workspace.json` 里就有：
 
 ```json
-"<token-sha256:76782a0f20a2>": {"path":"~/.dsh/state/myagent/work","title":"work",
+"<uuid-sha256:76782a0f20a2>": {"path":"~/.dsh/state/myagent/work","title":"work",
   "sessionIds":["myagent-main"], "createdAt":"2026-11-02T15:12:26.803Z"}
 ```
 
@@ -655,7 +655,7 @@ job_kill bash-ce3a90ca78d54074
 | 检查 | 手段 | 结果 |
 | --- | --- | --- |
 | 日常宿主还活着、还是同一个进程 | `lsof -nP -iTCP:3080 -sTCP:LISTEN` | `node 24619 … TCP 127.0.0.1:3080 (LISTEN)`（与 17:54 基线一致） |
-| 日常锁没被抢 | `cat ~/.dsh/state/myagent/myagent.lock` | `{"pid":24619,"host":"<host>","token":"<token-sha256:dc5819a73897>","at":"2026-11-03T08:13:51.555Z"}` —— 与 17:54:21 基线**逐字相同**（pid、token、时间戳都没变） |
+| 日常锁没被抢 | `cat ~/.dsh/state/myagent/myagent.lock` | `{"pid":24619,"host":"<host>","token":"<uuid-sha256:dc5819a73897>","at":"2026-11-03T08:13:51.555Z"}` —— 与 17:54:21 基线**逐字相同**（pid、token、时间戳都没变） |
 | `~/.dsh/state/myagent/` 内容没变 | 17:54:21 与 19:00:52 各做一次 `find … -exec stat -f '%N \| size \| mtime \| inode'` + `shasum -a 256`（`myagent.json` / `myagent.lock` / `myagent.sqlite3`），两份输出 `diff` | **`*** IDENTICAL ***`**：全部 39 行（目录、8 个 work 子目录、7 个 inbox 文件、库与锁）逐字相同，`diff` 无输出。基线 sha256：`myagent.json 9c9b7fbe…`、`myagent.lock 46706790…`、`myagent.sqlite3 52dba970…`，收尾复算一致 |
 | `web` profile 没变 | `shasum -a 256` 基线 `package.json` = `3ddfcba9afb0c3f8b2264b8485f85bd6f438e4dee8769b47ca10e9da115dc338`，`cordis.patch.yml` = `c8ac1fa63184e32efc0f44a0513eee00a74219e50813c47e79b9cc008e67338e` | 收尾复算一致；且全程没有对它做过任何写操作，也没有调过 `plugin_manager` |
 | 对 3080 只做过 GET | 本次对 `127.0.0.1:3080` 的全部请求：`GET /myagent/api/{state,tickets,recipes,schedules,effects,prompts,decisions,triggers}` 各一次（17:54），都带 `x-myagent-request: 1` | 没有任何 POST/PUT，没有碰它的设置或排期 |

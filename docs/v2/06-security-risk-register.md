@@ -92,6 +92,99 @@ myagent 假定"本机 = 操作者"。在那个假定下这不是缺陷；**一�
 或者给 myagent 自己一个 token（设置里存、面板首次访问时要求输入）——但那只是把"本机能读设置文件"
 变成"本机能读设置文件里的 token"，**在同一个信任模型下并不增加强度**，所以要诚实地说它值不值得做。
 
+## 2.2 已堵：一个 id 形状就能拿到管理面（第 50 轮发现并修复）
+
+**发现**（由实现 F1/F2 的那一轮报出，我核实了代码路径）：
+`ticketOfSession(sessionId)` 是**纯形状解析**——`sessionId.startsWith('worker-') ? slice(7) : undefined`，
+而它自己的注释写着"for a Session that was never recorded"。
+`decorateAgent` 拿到这个 ticketId 之后调 `this.host.ticket(ticketId)`；
+**如果那张 Ticket 不存在，返回 `undefined`**，而 `decorate` 用 **`ticket === undefined` 来判定 role**：
+
+```ts
+const role: PromptRole = ticket === undefined ? 'orchestrator' : 'worker'
+```
+
+**所以"这是主 Session"与"我找不到那张 Ticket"被同一个 `undefined` 表达，而兜底方向是 orchestrator**——
+也就是前台的**管理工具**：`myagent_create_ticket`（**建一张 Ticket，而它会以完全访问运行**）、
+`myagent_stop_ticket`、`myagent_retry_ticket`、`myagent_answer_ticket`。
+
+**后果**：**任何能创建一个 id 以 `worker-` 开头的 DSH 会话的东西，就拿到了 myagent 的完整管理面。**
+这与 §2.1（面板与 API 不在宿主认证之后）叠在一起时更糟：本机上任何进程都能建会话。
+
+**这是 §0.10 那个 fallthrough 族的第五次出现，也是第一次兜底方向是"给权限"**——
+前四次是分类错、计数错、签名错、拒绝理由说假话；这一次是**提权**。
+
+**已修**（`src/app/sessions.ts` 的 `decorateAgent`）：Ticket 不存在时**完全不装扮**——
+不给 myagent 工具、不给 myagent 提示词段，并记一条 warn（**不是静默**：
+一条没人看得见的拒绝正是 S33 那句假审计记录的成因）。
+完整闸门退出码 0、771 条测试、产物 `3f772ddc7f64ba9f…`。
+
+**仍未做（欠账，写到可照做的程度）**：
+1. **这条修复仍然没有回归测试，而且第一次尝试写失败了——失败的方式值得记。**
+   我按 `host.guardOf(id)` 写了断言（"冒充者没有 guard、真 worker 有 guard"），测试**通过**了；
+   **但把修复退回去做变异检验时，它仍然通过**。也就是说**那条断言根本抓不住这个缺陷**。
+
+   **原因是探针选错了，不是修复有问题**：`guardOf` 读的是**工具守卫**（`agent.ctx.tools.guard(...)`），
+   而**orchestrator 那条路根本不注册 guard——只有 worker 会被 restrict**。
+   所以"没有 guard"这件事，对"被正确拒绝的冒充者"与"被装扮成前台的冒充者"**同时成立**。
+   **一条不可能失败的断言，比没有断言更坏**：它读起来像覆盖（这正是纪律 0.8 警告的形状）。
+   已把它撤下，并在 `tests/flow.spec.ts` 里留下为什么撤、以及正确的探针需要什么。
+
+   **正确写法需要先给桩加一个读取口**：myagent 在一个 Session 上**注册了什么**——
+   `agent.ctx.tools.register(...)` 的工具，和/或 `agent.ctx.systemPrompt.section(...)` 的提示词段。
+   `AgentRecord` 里这两个面都有（`tests/helpers/host.ts`），**但只对外暴露了 `guardOf`**。
+   有了它之后，断言对是：
+   ```ts
+   expect(host.toolsOf(impostorId)).toEqual([])                            // 一个 myagent 工具都没有
+   expect(host.toolsOf(workerId(ticket.id))).toContain('myagent_report')    // 真 worker 仍然有
+   ```
+   **第二条才是让第一条能够失败的东西。**
+2. ~~**它只进了日志，没进健康板**~~ **【工程第 2 轮已完成，W2】**
+   `SessionsHost` 上加了窄端口成员 **`impostorRefused(sessionId, claimedTicketId)`**（两个 id，别无其它——
+   `Sessions` 没有拿到 Engine，也没有拿到健康板），在 `decorateAgent` 的拒绝分支里、保留的 `logger.warn` 之后调用。
+   `session-health.ts` 加了 **`impostorSubject(sessionId)` → `impostor-session:<sid>`** 与
+   `impostorDetail(...)` → `Session <sid> claims Ticket <tid>, which does not exist, and was given no myagent tool`。
+
+   **subject 键的选择是这条的全部难点，三个候选都被否掉了**：
+   - **不是 ticketId**——没有那张 Ticket，而**那个"没有"正是要报告的事实**
+   - **不是 `MAIN_SESSION`**——`createMainSession` 成功时会清 `MAIN_SESSION`，
+     **于是前台的好消息会抹掉一条活着的安全拒绝**（那就是 N9）
+   - **也不是一个共享的 `IMPOSTOR_SESSION` 常量**——两个冒充者是两个 subject；
+     **共享键会让第二个覆盖第一个，并且 dispose 其中一个会退休另一个的行**
+
+   **退休规则**：会话离开注册表（`runtime.ts` 既有的 `agent/disposed` 监听器现在调
+   `sessionHealth.clear(impostorSubject(agent.id))`）。**刻意不选"一个非错误的回合结束"**：
+   对 429 来说，一个完成的回合证明会话又能到达模型了；而这里的事实是
+   **"这个会话没有授权、什么都没拿到"，一个成功的回合并不改变它**。
+
+   **已如实记下的两个残留**：报告由 DSH 的 `agent/created` 触发，所以**一次不重新宣告遗留会话的重启不会重报它**；
+   以及**一张后来真的用了那个 id 的 Ticket 不会退休这条行**（要在那里退休需要**第二个**端口成员来做 clear，
+   而 W2 的原则是一个成员对应一个事实）。
+
+   **变异检验五处，每处都做 0.8 强形式，结果是本项目最好的一次**：
+   **没有任何一处变异在删掉断言之后变绿——每处都被 ≥2 条独立断言抓住。**
+
+   | | 变异 | 红在哪 | 强形式（删断言后） |
+   | --- | --- | --- | --- |
+   | M1 | 共享 impostor 键 | `expected 'Session worker-1111…' to contain 'worker-0000…'`（**N9 复现**） | **仍红，且更糟**：dispose 第二个会清掉共享槽，于是第一个冒充者还活着而板上读作 ok:true |
+   | M2 | 路由到 `MAIN_SESSION` | **两条测试同时红**（前台的 ECONNREFUSED 行覆盖了拒绝） | **仍红**在恢复那步：`createMainSession()` 成功而板上变 ok:true，冒充者仍在注册表里——**正是这个路由要防的假"一切正常"** |
+   | M3 | 删掉 `agent/disposed` 的 clear | 被 dispose 的会话那行留在板上（**永久假警报**，S38/S41/F2 家族） | **仍红**在 `expect(onBoard(runtime)).toBe(false)`：两个会话都消失后 `health.problems()` 仍列着 `sessions` |
+   | M4 | detail 丢掉 ticketId | 剥掉 id 的那条断言 | **仍红**在 `toContain('does not exist')`，所以"点名两个 id"由两条独立断言守着 |
+   | M5 | **退回 S44 修复本身**（= W1 的 M1） | **两个 spec 的全部 5 条测试都红**；W1 那条消息与 §4.62 的记录逐字相同 | **仍红**在 `expect(onBoard(runtime)).toBe(true)` |
+
+   **M4 里有一条值得单独留下的认识**（代理自己发现的）：
+   `toContain(ticketId)` 在一个含 `worker-<ticketId>` 的 detail 上**会被 Session id 自己满足，因而不可能失败**——
+   **所以它改成在 `detail.replace(sessionId, '')` 之后找 ticketId**。
+   同理，测试 3 里**先让前台自己的 `agent/error` 活着**再断言，因为
+   **"一个找不到东西的 clear 是空操作"，所以只在成功创建之后断言是不可能失败的**。
+
+   **W1 的测试文件逐字未动**（`cde48ef721744ed2`，mtime 仍是 21:30），且**在新代码下仍然通过**。
+   **我（主 Agent）独立复核过**：`decorateAgent` 的提前返回仍在、S44 标记命中 1、
+   M1 让 W1 的测试变红（`expected [ 'myagent_create_ticket', …(6) ] to deeply equal []`）并同时让 W2 的三条变红、
+   完整闸门**退出码 0 / 776 条**（= 772 + 4，与代理的预测一致）。
+
+   **所以 §2.2 的两条欠账现在都关闭了。**
+
 ## 3. 一个必须点名的弱点：inbox 的发起者身份
 
 门禁按 `allowedSenders` 判断"谁在请求"，而 **inbox 来源的 actor 是从请求文件本身推出来的**。

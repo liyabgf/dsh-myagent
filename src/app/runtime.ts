@@ -33,7 +33,7 @@ import { HealthBoard } from './health.ts'
 import { KV, SchemaTooNew, Store } from './store.ts'
 import { LockHeld, takeLock, writeMarker, type StateLock } from './lock.ts'
 import { Passes } from './passes.ts'
-import { MAIN_SESSION, SessionHealth } from './session-health.ts'
+import { impostorDetail, impostorSubject, MAIN_SESSION, SessionHealth } from './session-health.ts'
 import { Watchdog, type WatchdogHost } from './watchdog.ts'
 import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
@@ -379,6 +379,14 @@ export class Runtime implements HttpHost {
       ticketEnded: (ticketId: string): boolean => {
         const ticket = this.store.tickets.get(ticketId)
         return ticket === undefined || ticket.ended !== undefined
+      },
+      // A Session named after a Ticket that does not exist, which `Sessions` decorated with nothing: the refusal goes
+      // on the board the operator reads, and not only into the log. Accounted under the impostor's OWN subject — not a
+      // Ticket's, because there is no Ticket, and not `MAIN_SESSION`'s, because the front desk's own problem and its
+      // recovery are another subject's business — so neither an unrelated Ticket's ending nor a successful
+      // `createMainSession` can erase it, and two impostors cannot erase each other. Retired below, by `agent/disposed`.
+      impostorRefused: (sessionId: string, claimedTicketId: string): void => {
+        this.sessionHealth.problem(impostorSubject(sessionId), impostorDetail(sessionId, claimedTicketId))
       },
       environment: (ticket: Ticket): Record<string, string> => this.executor.environment(ticket),
       tools: (agent: Agent, ticket?: Ticket): Tool[] =>
@@ -838,7 +846,8 @@ export class Runtime implements HttpHost {
   }
 
   /**
-   * Watch the agents this system runs, so a worker's turn ending is recorded and a disposed Session is forgotten.
+   * Watch the agents this system runs, so a worker's turn ending is recorded and a disposed Session is forgotten —
+   * including the one Sessions problem whose subject is a Session rather than a Ticket, which a disposal retires.
    *
    * Every listener is contained. These run inside DSH's own event dispatch, where an exception is a fatal load failure
    * that ends the host process — a plugin's bug must never become the operator's crashed harness. What a listener
@@ -888,6 +897,12 @@ export class Runtime implements HttpHost {
     this.disposers.push(this.context.on('agent/disposed', contained('agent/disposed', ({ agent }) => {
       this.sessionErrors.delete(agent.id)
       this.sessions.forget(agent)
+      // The impostor subject's one retirement fact: the Session is gone, so nothing is standing at the door under a
+      // name it has no Ticket for any more. A Ticket's problem is retired by its Ticket ending or by its Session
+      // completing a non-error turn, and neither is available or meaningful here — see `impostorSubject`. Run for every
+      // disposed Session rather than only a refused one, because clearing a subject that is not in the account writes
+      // nothing, and asking first would mean holding a second list of which Sessions were refused.
+      this.sessionHealth.clear(impostorSubject(agent.id))
     })))
     this.disposers.push(this.context.on('agent/error', contained('agent/error', ({ agent, error }) => {
       const ticketId = this.ticketIdOfSession(agent.id)

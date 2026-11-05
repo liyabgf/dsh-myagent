@@ -50,34 +50,3 @@ cp examples/data-report.md ~/.dsh/state/myagent/inbox/
 2. **把失败也写清楚。** 抓不到源、目录是空的、口径有歧义——分别该汇报 `failed` / `dropped` / `blocked`，
    以及 `summary` 里要说明什么。不写的话，worker 会自己编一个理由，而你无法判断它是不是真的做完了。
 3. **`blocked` 只问一个问题**，并给出你建议的选项。一个问题能被一句话回答，三个问题不会。
-
----
-
-## 两次真实运行（`real-run-1-collect`、`real-run-2-compare`）
-
-这两个目录**不是构造的样例，是 myagent 第一次被当作日常工具使用时真实跑出来的东西**（2026-11-05）。
-操作者派了两张 Ticket，两张都跑到 `done`，各耗时 87 / 93 分钟、各消耗约 1250 万 / 1040 万 token
-（绝大部分是 cacheRead）、各产出 20 / 78 个已登记产物。
-
-**为什么把它们放进来**：仓库里其它示例都是探针（"写一个小文件然后报告"），
-而**这两次运行暴露了十条探针永远碰不到的问题**（见 `docs/v2/19-production-findings.md`）——
-上游限流、需要人手动救援、两个 worker 互相读对方的产物、以及一份写给已结束 Ticket 的修正意见无人接收。
-**一个只看顺利路径的系统，看起来永远是好的。**
-
-**包含什么**：人能读的成果与方法——`README.md`（阅读顺序与复核方法）、`RESULT.md`（Ticket 的收尾）、
-`brief.md` / `analysis/*.md`（论述）、`sources/registry.md` 与来源清单（可追溯性）、
-`scripts/`（worker 自己写的抓取与解析脚本，**这是"它是怎么干活的"最直接的证据**）。
-
-**包含 `txt/`**（从原始网页/文件抽取出的正文，约 4.4 MB）：因为 `analysis/*.md` 与 `brief.md`
-**逐条引用它们**（`../txt/doj/search_memorandum_opinion_2025-12-05.txt` 之类）。
-不带这一层，读者无法核对任何一条论断——而"可追溯"正是这两次运行的方法本身。
-
-**排除了什么，以及为什么**：`raw/`（68 MB 抓来的原始网页与 PDF）、`vendor/`、`digests/`，
-以及个别 >500 KB 的抓取索引。**这些是 `txt/` 的上游，可以按附带的脚本与来源登记表重新抓取**；
-放进仓库会让 clone 变成一次 92 MB 的下载。
-**所以文档里若有指向 `raw/` 的链接，它在 GitHub 上是断的——那是刻意的**，
-`sources/registry.md` 与 `sources/manifest_*.csv` 里有每条的原始 URL，可自行取回。
-
-**第二次的产物里有一份值得单独看**：`analysis/04_给搜集信息Ticket的口径修正.md`——
-它写给第一张 Ticket，而那张在 71 分钟前就已经结束了。**所以这份修正没有送达任何人。**
-这是协作协议的一个真实边界（结束是终态），记在 `19-production-findings.md` 的 F6。

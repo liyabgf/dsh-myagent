@@ -611,3 +611,42 @@ describe('the token counts a worker’s progress reports', () => {
     expect(usageOf([message(10, 10, 0)], 1)).toMatchObject({ windowed: false })
   })
 })
+
+// A regression test for S44 (a Session merely NAMED like a worker getting the orchestrator's management tools) was
+// written and then removed, because its mutation check failed: with the fix reverted, the test still passed. The probe
+// was wrong, not the fix. `host.guardOf(id)` reads the tool GUARD, and the orchestrator path never registers one —
+// only workers are restricted — so "no guard" is true for a correctly-refused impostor AND for one that was decorated
+// as the front desk. The assertion could not fail, which is exactly the shape discipline 0.8 warns about, and a green
+// test that cannot fail is worse than no test: it reads as coverage.
+//
+// What writing it properly needs: a stub accessor for what myagent REGISTERED on a Session — the tools from
+// `agent.ctx.tools.register(...)` and/or the prompt section from `agent.ctx.systemPrompt.section(...)`. `AgentRecord`
+// has both surfaces (`tests/helpers/host.ts`) but exposes only `guardOf`. With that, the pair of assertions is
+//   expect(host.toolsOf(impostorId)).toEqual([])                      // no myagent tools at all
+//   expect(host.toolsOf(workerId(ticket.id))).toContain('myagent_report')   // a real worker still gets them
+// and the second is what makes the first able to fail. Recorded in docs/v2/06-security-risk-register.md §2.2.
+
+// S44's regression test — SECOND attempt, also removed, and the reason is now narrow and known.
+//
+// W0 added `host.toolsOf(agentId)` (the right probe: a guard is registered only for workers, so `guardOf` cannot
+// distinguish a refused Session from one decorated as the front desk). With it, the contrast half of the test PASSES
+// — a real Ticket's worker does get `myagent_report` — so registration recording works. But reverting the fix in
+// `decorateAgent` (mutation M1) left the impostor half passing too: `toolsOf(impostor)` is `[]` in BOTH versions.
+//
+// The likely cause, not yet proven: the test emitted `agent/created` with a bare `{ id }` object, and `decorateAgent`
+// reaches for more of the agent (`agent.session`, the prompt section's inputs) — so it throws, and the listener is
+// wrapped in `contained(...)`, which swallows listener exceptions by design (S8: one Source's bug must not silence
+// another's work). Both the fixed and the reverted code throw at the same place, so nothing is registered either way
+// and the assertion cannot distinguish them.
+//
+// What the next attempt needs, in order:
+//   1. Build the impostor with the stub's own factory — `fakeAgent(id, tools, restrictions, guards, policy)`
+//      (`tests/helpers/host.ts:133`) — so `decorateAgent` does not throw before it decides anything.
+//   2. FIRST assert the harness is live: `expect(host.toolsOf(<front desk id>)).toContain('myagent_create_ticket')`.
+//      Without this, "nothing is ever registered in this harness" and "the impostor was correctly refused" look
+//      identical — which is precisely how both attempts so far went green for the wrong reason.
+//   3. Then the pair: `toolsOf(impostor)` toEqual [] AND `toolsOf(workerId(ticket.id))` toContain 'myagent_report'.
+//   4. Mutation M1 must go red on assertion (3a), and M2 (delete 3b) must leave it red — 0.8's strong form.
+//
+// `toolsOf` stays in the harness: it is correct, it is used by step 2 above, and W1 in
+// `docs/v2/21-engineering-plan.md` is still open. Recorded in `docs/v2/06-security-risk-register.md` §2.2.

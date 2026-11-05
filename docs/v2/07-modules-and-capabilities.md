@@ -118,7 +118,7 @@
 | `health.effects.detail` | **逐字 `"no effect failed in this pass"`** —— 那是 `src/app/effects.ts:56` 的 `QUIET` 常量，即**第 43 轮那个"健康条目自己会清"的行为此刻正在线上跑着** |
 | `health['source:chat']` | `{ok:true, detail:"disabled"}`；`sources.chat.counts` = `{accepted:0, ignored:0, observed:0, duplicate:0, waiting:0}` |
 | `policyVersion` / `settingsRevision` | **`3bb5598e3044fc96`** / **7** —— `settingsRevision` 与 00:5x 那次**逐字相同**（7），而 `policyVersion` **变了**（00:5x 是 `275ea61ded276e15`）。见下面那条单独的记录 |
-| `state.mainSession` | `{exists:true, running:true, busy:false, id:"session-<token-sha256:1f68dd909302>"}` |
+| `state.mainSession` | `{exists:true, running:true, busy:false, id:"session-<uuid-sha256:1f68dd909302>"}` |
 | `GET /api/projects` / `works` / `effects` | `{"projects":[]}` / `{"works":[]}` / `{"counts":{}}` —— 仍是空集合 |
 | 服务端面板字节 | 与磁盘 `panel/index.html` **逐字节相同**（sha256 `2fdbfcad0f440318…`，128775 字节）—— 预期如此，面板每次请求都从磁盘读 |
 | 日常库 | sha256 **`a793caacbbcb2e1d…`**、**167936 字节**、mtime **`Nov  4 11:40:37`** —— **重载没有写它**（`-wal` 仍是 0 字节），与 `docs/v2/16-live-acceptance-chat.md` §5 记录的"起点=终点"仍逐字相同 |
@@ -487,7 +487,7 @@ src/app/runtime.ts:381          ← repos: this.store, tx: this.store（把 Stor
 
 | # | 能力 | 状态 | 证据 |
 | --- | --- | --- | --- |
-| C63 | 单写者锁（OS 文件锁 + 锁文件记 pid/host/token） | **真宿主验证** | `01` §8 行「单写者锁」：隔离锁 `pid 72808`（token `<lock-token:886029b85a39>…`）与日常锁 `pid 24619`（token `<lock-token:93873534cc66>…`）同时存在且互不干扰；停宿主后隔离锁文件消失。`02b` §3【转录】：SIGTERM 之后 `myagent.lock` 不存在（即 `runtime.stop()` 跑过了）。`docs/v2/06-security-risk-register.md` §2 把它列为**两处真边界之一**。本文只读复核：日常宿主的 `myagent.lock` 存在，109 字节 |
+| C63 | 单写者锁（OS 文件锁 + 锁文件记 pid/host/token） | **真宿主验证** | `01` §8 行「单写者锁」：隔离锁 `pid 72808`（token `2d1c1fff…`）与日常锁 `pid 24619`（token `fb8b230f…`）同时存在且互不干扰；停宿主后隔离锁文件消失。`02b` §3【转录】：SIGTERM 之后 `myagent.lock` 不存在（即 `runtime.stop()` 跑过了）。`docs/v2/06-security-risk-register.md` §2 把它列为**两处真边界之一**。本文只读复核：日常宿主的 `myagent.lock` 存在，109 字节 |
 | C64 | `LockHeld`：拒绝第二个活着的写者；偷走一个持有者已消失的锁 | **离线验证** | `tests/delivery.spec.ts` 的 `lets one writer hold a state directory`、`refuses a second live deployment over the same directory`、`steals the lock of a holder that is gone`、`does not steal the lock of another live process`、`leaves a lock it stole nothing of, and removes only its own`；`tests/mount.spec.ts` 的 `refuses a second deployment over the same state directory, and says so plainly`；`tests/recovery.spec.ts` 的 `refuses a second deployment over the same state, so two processes cannot work one queue`。`01` §10 明说**主动放弃**线上验（"唯一干净的做法是在同一个隔离状态目录上再起一个宿主 …… 对日常宿主有非零风险"），`00` §1 记的那次尝试死于 `EADDRINUSE` 而不是 `LockHeld` |
 | C65 | `writeMarker` 不把 Volatile 序列化进诊断文件（S15/B7 的修复） | **部分实现** | **得证的一半（本文只读复核，不满足证据规则，故不升级）**：日常宿主的 `~/.dsh/state/myagent/myagent.json` 逐字段是 `pid 24619` / `stateDir` / `workRoot` / `inboxDir` / `mainSessionId: "myagent-main"` / **`promptMaxChars: 100000`（一个数字，不是 `{}`）** / `at: 2026-11-04T04:21:30.905Z`；`src/app/runtime.ts:248-253` 有一条注释说明为什么必须逐字段拼而不能展开（上一版记的是 `:247-252`）。**未得证的一半（尚未实现）**：`grep -rn "writeMarker\|myagent.json" tests/` 只命中 `tests/files.spec.ts` 的一个穿越路径字面量 —— **没有任何测试断言 marker 的内容**。所以这个修复**既没有测试也没有 01/02/02b/14/16 的证据**。`00` §7 的 S30/B7 标“已修”，§8 第 5 项却仍标 ⬜（附录 A 第 2 条）。**一个附带的新事实**：marker 的 `at` 与 `myagent.lock` 的 `at` 与 `state.mountedAt` **三者逐字相同**（`2026-11-04T04:21:30.90xZ`），所以这三条独立读数互相印证了挂载时刻——这是 §0.3 那个 bundle 夹逼的下界证据 |
 

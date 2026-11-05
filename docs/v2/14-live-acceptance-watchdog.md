@@ -38,7 +38,7 @@ a793caacbbcb2e1d5f96608305878340c52f5c31d7f031e05a4c4df628a987f5  ~/.dsh/state/m
 | 步骤 | 命令 / 观察 | 标注 |
 | --- | --- | --- |
 | 启动宿主 | `cd ~/deepseek-harness && node --import tsx/esm apps/cli/src/bin.ts --profile myagent-test --patch /tmp/myagent-acc-watchdog/overlay.patch.yml --port 3180 --no-open`（后台作业 `bash-7ab03567919b483b`，输出 tee 到 `/tmp/myagent-acc-watchdog/host.log`） | 【实测】 |
-| 就绪行 | `dsh web: http://127.0.0.1:3180/?token=<dsh-web-token:c308d48c6187>` | 【实测】 |
+| 就绪行 | `dsh web: http://127.0.0.1:3180/?token=<token-sha256:c308d48c6187>` | 【实测】 |
 | 监听确认 | `lsof -nP -iTCP:3180 -sTCP:LISTEN` → `node 37395 ... TCP 127.0.0.1:3180 (LISTEN)` | 【实测】 |
 | 新 stateDir | `~/.dsh/state/myagent-acc-watchdog/` 由宿主自建（`inbox/ work/ myagent.json myagent.lock myagent.sqlite3{,-shm,-wal}`） | 【实测】 |
 | `mountedAt` | `2026-11-04T04:27:05.801Z` | 【实测】 |

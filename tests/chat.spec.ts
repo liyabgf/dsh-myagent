@@ -449,3 +449,4 @@ describe('the scan window and the switches', () => {
     } finally { await source.stop() }
   })
 })
+

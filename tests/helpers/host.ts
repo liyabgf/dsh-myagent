@@ -224,6 +224,16 @@ export interface StubHost {
    * Its answer is what a Session is told when it calls a tool with no live Ticket behind it.
    */
   guardOf(agentId: string): (() => string | undefined) | undefined
+  /**
+   * The tool names myagent registered on one Session, in registration order.
+   *
+   * `guardOf` is not enough to ask "what did this Session get": a guard is registered by `tools.guard()`, and only a
+   * WORKER is restricted — the front desk gets management tools and no guard. So "no guard" is true both for a Session
+   * myagent correctly refused to decorate and for one it decorated as the orchestrator, which is exactly why the first
+   * attempt at a regression test for S44 passed with the defect live (risk register §2.2). Registration is the fact
+   * that distinguishes them.
+   */
+  toolsOf(agentId: string): string[]
   /** Dispatch an event to the plugin's listeners, without containing what they throw. */
   emit(name: string, payload: unknown): void
   /** Run what `apply` registered for disposal, which is how the host stops a plugin. */
@@ -484,6 +494,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
     },
     tool: (agentId: string, name: string) => tools.find(tool => tool.agentId === agentId && tool.definition.name === name),
     guardOf: (agentId: string) => guards.filter(item => item.agentId === agentId).at(-1)?.guard,
+    toolsOf: (agentId: string) => tools.filter(tool => tool.agentId === agentId).map(tool => tool.definition.name),
     // Dispatch as DSH does: a throwing listener propagates to the caller, which is what makes it fatal.
     emit: (name: string, payload: unknown) => {
       const args = (Array.isArray(payload) ? payload : [payload]) as never[]
