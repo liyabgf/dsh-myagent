@@ -310,7 +310,28 @@ export class Sessions {
       if (agent.id === this.host.masterId()) await this.decorate(agent, undefined)
       return
     }
-    await this.decorate(agent, this.host.ticket(ticketId))
+    const ticket = this.host.ticket(ticketId)
+    if (ticket === undefined) {
+      // A Session whose id merely LOOKS like a worker's, with no Ticket behind it. `ticketIdOfSession` answers by
+      // SHAPE (`worker-<id>`), deliberately, so that a Session myagent never recorded can still be recognized — which
+      // means anyone who can create a Session with such a name reaches this branch.
+      //
+      // Passing the `undefined` on would be a privilege escalation, not a harmless default: `decorate` reads
+      // `ticket === undefined` as "this is the front desk" and hands over the orchestrator's management tools —
+      // create a Ticket (which then runs with full access), stop one, retry one, answer one. Two different facts
+      // ("this is the main Session" and "I could not find that Ticket") must not share one value; this is the fifth
+      // time that shape has appeared here and the first whose fallback grants permission (§0.10).
+      //
+      // So: no decoration at all, which means no myagent tools and no myagent prompt section. Logged rather than
+      // silent, because a refusal nobody can see is how S33's false audit line happened; surfacing it on the health
+      // board needs a port member this class does not have, and closing the hole comes first.
+      this.ctx.logger.warn(
+        'myagent — Session %s is named like a worker\'s but no Ticket %s exists, so it gets no myagent tools',
+        agent.id, ticketId,
+      )
+      return
+    }
+    await this.decorate(agent, ticket)
   }
 
   /**

@@ -51,6 +51,30 @@ myagent 会在挂载时检查该目录是否组/世界可写并上一行健康�
 未映射的消息**被留住、不消耗**。但映射表本身是可编辑的设置，
 **能改设置的人就能把任何平台 id 映射成任何 Actor**——所以它仍是**逻辑守卫**。
 
+## 已修的提权路径（0.1.1）
+
+**0.1.0 里有一条提权路径，0.1.1 已堵。** 记录在这里，因为公开仓库的使用者有权知道。
+
+`ticketOfSession(sessionId)` 按**形状**回答：id 以 `worker-` 开头就取出后半段当 ticketId
+（这是刻意的，好让一个 myagent 从未记录过的会话也能被认出来）。
+而 `decorate` 用 **`ticket === undefined`** 来判定角色：
+
+```ts
+const role: PromptRole = ticket === undefined ? 'orchestrator' : 'worker'
+```
+
+于是在 0.1.0 里，**"这是主 Session"与"我找不到那张 Ticket"是同一个值**，
+一个 id 叫 `worker-<任何不存在的 id>` 的会话会被当成前台，
+拿到 orchestrator 的**管理工具**：`myagent_create_ticket`（**建一张 Ticket，而它会以完全访问运行**）、
+`myagent_stop_ticket`、`myagent_retry_ticket`、`myagent_answer_ticket`。
+
+**结合上面第 2 条（面板与 API 不在宿主认证之后），本机上任何能创建 DSH 会话的进程都能拿到这个管理面。**
+
+0.1.1 的修法：Ticket 不存在时**完全不装扮**——不给 myagent 工具、不给 myagent 提示词段，
+并记一条 warn（不是静默：一条没人看得见的拒绝正是审计记录里出现假话的成因）。
+
+**这条修复目前还没有回归测试**，欠账与要写的断言记在 `docs/v2/06-security-risk-register.md` §2.2。
+
 ## 报告安全问题
 
 请开一个 private 的 GitHub security advisory，或在 issue 里注明 `[security]` 并避免附上可复现的凭据。
