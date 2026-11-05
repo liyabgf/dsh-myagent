@@ -4836,3 +4836,23 @@ GET /myagent/api/state    → 404   （应为 200）
 
 - **F4（`sends.nowhere` 拆分）—— 裁定为保持现状、不在本次改动**：核查 `src/app/delivery.ts:248`、`panel/index.html:1716` 与 `tests/panel.spec.ts:2902-2918`、`tests/http.spec.ts:685`、`tests/chat-send.spec.ts:186,392,414` 发现，现有 6 处测试与面板文案**显式钉死**了 `{ queued, nowhere }` 这一精确形状及「『无处可发』不是错误，排期和收件目录来的活就是这样」的解释。拆分字段或隐藏该计数会直接违反「不改既有测试预期」的硬约束。
 - **F6（跨 Ticket 修正回路）与 W8（真浏览器验证回路 + worker 失败旋钮）—— 明确记为超出本轮范围，留入 `12-unimplemented.md`**：W8 的 §6c worker 失败旋钮已由第 50 轮新增的 `failUpstream(host, workerId, ...)` 在 `tests/fault-injection.spec.ts:539-739` 实现并覆盖了 6 条测试；真浏览器回路与 F6 面板跨 Ticket 引用扫描作为后续独立迭代项记录在案。
+
+
+## 4.84 补丁：修复 `sessions` 健康条目的两处归因与自清盲区（0.1.5）
+
+操作者反馈面板显示 `sessions` 有问题。实测 `GET /myagent/api/state` 显示：
+`the main Session: LlmError: 500: {"message":"upstream error: do request failed ..."}`（`at: 2026-11-05T18:43:57.411Z`）。
+
+核查磁盘与 `src/app/runtime.ts:875-930` 发现两处结构性缺陷：
+
+1. **无关 DSH 会话的错误被误归因给 `MAIN_SESSION`（§0.10 兜底家族的又一实例）**：
+   `agent/error` 是 DSH 宿主全局事件。当任何非 myagent 派出的普通 DSH 会话（如当前工作会话 `session-968b3dae-…` 在 02:43:57 遇到的上游 500）触发 `agent/error` 时，`ticketIdOfSession(agent.id)` 返回 `undefined`，而 `:919-923` 直接用 `ticketId ?? MAIN_SESSION` 兜底，将其记为 `the main Session: LlmError: 500…`（此时真实的 `myagent-main` 磁盘文件自 11-05 15:29 起根本未动过）。
+2. **`MAIN_SESSION` 缺少正常回合结束的自清路径**：
+   `agent/status` 监听器在 `:877` 写的是 `if (ticketId === undefined || status !== 'idle') return`——主会话没有 `ticketId`，因此即使主会话自己随后成功完成了新的对话回合，也永远走不到 `sessionHealth.clear(MAIN_SESSION)`，只能靠手动调用 `POST /api/main-session`（`createMainSession`）清除。
+
+**修复与验证**：
+- `agent/error`：当 `ticketId === undefined` 且 `agent.id` 不是主会话 id（`store.get(KV.mainSession) ?? machine.mainSessionId`）时直接忽略，不再污染 myagent 健康板。
+- `agent/status`：当 `ticketId === undefined` 但 `agent.id` 是主会话 id，且完成的回合 `ended` 存在且非 `error`/`aborted` 时，调用 `this.sessionHealth.clear(MAIN_SESSION)` 自动退休故障记录。
+- 新增测试 `ignores agent/error from an unrelated DSH Session, and retires MAIN_SESSION when the front desk completes a turn`（`tests/session-health.spec.ts`），经 M1（去掉旁观会话过滤）、M2（去掉主会话回合完成自清）及 0.8 强形式验证通过。
+- 线上已通过 `POST /myagent/api/main-session` 幂等重绑清除了粘住的条目，实测 `health.sessions` 已恢复为 `{"ok": true, "detail": "0 open Ticket(s), no Session problem is live"}`。
+- 完整闸门：**退出码 0、785 条测试**，产物 `1b44c9b17e0d902e…`（347028 字节）。

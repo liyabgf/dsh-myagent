@@ -271,4 +271,51 @@ describe('a Session named after a Ticket that does not exist, on the health boar
       expect(board(runtime).detail).toContain('no Session problem is live')
     } finally { await runtime.stop() }
   })
+
+  it('ignores agent/error from an unrelated DSH Session, and retires MAIN_SESSION when the front desk completes a turn', async () => {
+    const context = await deployment('auto')
+    const { host, runtime } = context
+    try {
+      expect((await runtime.createMainSession()).error).toBeUndefined()
+      await settle(runtime)
+      expect(onBoard(runtime)).toBe(false)
+
+      // 1. An unrelated user conversation in the DSH GUI hits an upstream 500: `agent/error` is global across the host,
+      // so its `ticketIdOfSession` is undefined, and it must NOT be misattributed to `MAIN_SESSION`.
+      const bystander = announce(host, 'session-user-chat-999')
+      host.emit('agent/error', { agent: bystander, error: new Error('LlmError: 500: upstream error') })
+      await settle(runtime)
+      expect(onBoard(runtime)).toBe(false)
+      expect(board(runtime)).toMatchObject({ ok: true })
+
+      // 2. When the front desk ITSELF hits an upstream error, it IS recorded under MAIN_SESSION...
+      const frontDesk = host.agents.get(runtime.machine.mainSessionId)!
+      host.emit('agent/error', { agent: frontDesk, error: Object.assign(new Error('500: upstream error on main'), { name: 'LlmError' }) })
+      await settle(runtime)
+      expect(onBoard(runtime)).toBe(true)
+      expect(board(runtime).detail).toContain('the main Session: LlmError: 500: upstream error on main')
+
+      // ...a failing turn ending does NOT retire it...
+      frontDesk.session.events.push({
+        seq: frontDesk.session.events.length + 1, type: 'turn/end',
+        data: { turn: 1, reason: { kind: 'error', error: { message: '500', code: 'UPSTREAM', status: 500 } } },
+      })
+      frontDesk.status = 'idle'
+      host.emit('agent/status', { agent: frontDesk, status: 'idle' })
+      await settle(runtime)
+      expect(onBoard(runtime)).toBe(true)
+
+      // ...and a subsequent turn that completes normally DOES retire it, without needing createMainSession again.
+      frontDesk.session.events.push({
+        seq: frontDesk.session.events.length + 1, type: 'turn/end',
+        data: { turn: 2, reason: { kind: 'completed' } },
+      })
+      frontDesk.status = 'idle'
+      host.emit('agent/status', { agent: frontDesk, status: 'idle' })
+      await settle(runtime)
+      expect(onBoard(runtime)).toBe(false)
+      expect(board(runtime)).toMatchObject({ ok: true })
+      expect(board(runtime).detail).toContain('no Session problem is live')
+    } finally { await runtime.stop() }
+  })
 })

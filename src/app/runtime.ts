@@ -873,8 +873,21 @@ export class Runtime implements HttpHost {
         }
       }
     this.disposers.push(this.context.on('agent/status', contained('agent/status', ({ agent, status }) => {
+      if (status !== 'idle') return
       const ticketId = this.ticketIdOfSession(agent.id)
-      if (ticketId === undefined || status !== 'idle') return
+      if (ticketId === undefined) {
+        // The front desk has no Ticket, so its only recovery evidence is its own Session completing a non-error turn —
+        // without this, an upstream error recorded under MAIN_SESSION stayed on the board until `createMainSession` ran
+        // again, even after the front desk recovered and finished subsequent turns.
+        if (agent.id === (this.store.get<string>(KV.mainSession) ?? this.machine.mainSessionId)) {
+          const ended = turnEndReason(agent)
+          if (ended !== undefined && ended.kind !== 'error' && ended.kind !== 'aborted') {
+            this.sessionHealth.clear(MAIN_SESSION)
+            this.passes.requestPass()
+          }
+        }
+        return
+      }
       const ticket = this.store.tickets.get(ticketId)
       const assignment = ticket === undefined ? undefined : runningAssignment(ticket)
       if (assignment === undefined) return
@@ -916,6 +929,10 @@ export class Runtime implements HttpHost {
     })))
     this.disposers.push(this.context.on('agent/error', contained('agent/error', ({ agent, error }) => {
       const ticketId = this.ticketIdOfSession(agent.id)
+      // Ignore Sessions that belong neither to a Ticket nor to the front desk: `agent/error` is global across the DSH
+      // host, so an ordinary user conversation in the GUI that hits an upstream 500 has `ticketId === undefined` and
+      // used to be misattributed to `MAIN_SESSION` ("the main Session: LlmError: 500…"), where it then stuck forever.
+      if (ticketId === undefined && agent.id !== (this.store.get<string>(KV.mainSession) ?? this.machine.mainSessionId)) return
       const detail = `${ticketId === undefined ? 'the main Session' : `Ticket ${ticketId}`}: ${reason(error)}`
       // Per subject rather than into one shared slot: a second Ticket's failure used to overwrite the first one's
       // line, and the first Ticket's recovery used to leave a line on the board about work that had succeeded hours
