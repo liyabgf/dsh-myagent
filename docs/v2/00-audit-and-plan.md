@@ -4856,3 +4856,46 @@ GET /myagent/api/state    → 404   （应为 200）
 - 新增测试 `ignores agent/error from an unrelated DSH Session, and retires MAIN_SESSION when the front desk completes a turn`（`tests/session-health.spec.ts`），经 M1（去掉旁观会话过滤）、M2（去掉主会话回合完成自清）及 0.8 强形式验证通过。
 - 线上已通过 `POST /myagent/api/main-session` 幂等重绑清除了粘住的条目，实测 `health.sessions` 已恢复为 `{"ok": true, "detail": "0 open Ticket(s), no Session problem is live"}`。
 - 完整闸门：**退出码 0、785 条测试**，产物 `1b44c9b17e0d902e…`（347028 字节）。
+
+
+## 4.85 工程第 1–4 轮（UI/UX 重构目标）：真浏览器验证回路（W8）、面板现代化重构与 F6 闭环（0.2.0）
+
+### 1. 为什么必须先建真浏览器回路：jsdom 看不见的 37,112 px 页面
+
+在动手改 `panel/index.html` 之前，先用本机 Playwright + Google Chrome（无头模式）对日常宿主（`http://127.0.0.1:3080/myagent/`）做了盒模型与全页截图基线测量（`/tmp/panel-before-*.png`）。
+**实测发现一个 jsdom 186 条测试全绿下完全失明的视觉灾难**：打开真实生产 Ticket `信息比对 (19dd5c9c)`（547 个磁盘文件、76 个登记产物）时，整页 `document.documentElement.scrollHeight` 高达 **37,112 px**，`#detail` 高度 **36,825 px**，单张全页截图体积 **7.0 MB**：
+- `#d-files`（产出文件列表）：**16,947 px**
+- `#d-artifacts`（产物列表）：**13,510 px**
+- 报告 `<pre>`：**1,692 px**
+- `#d-progress`：**1,160 px**
+- 结果文件 `.tools` 芯片组：**1,138 px**
+
+**新建 `scripts/verify-browser.mjs`**：驱动真 Chrome 对线上面板执行 19 项计算样式（`getComputedStyle`）、盒模型高度（`getBoundingClientRect`）、深链路由与零异常断言。**在重构前先跑一次基准**：12 项通过、7 项失败（退出码 1），直接证明全部新增断言在修复前确实会变红（0.8）。
+
+### 2. `panel/index.html` 现代化重构与四项易用性欠账结清
+
+在不改动任何既有 DOM ID、class 契约与文案（186 条既有 jsdom 测试一字未改全过）的前提下完成重构：
+
+1. **现代视觉设计系统（Slate / Indigo 双色板）**：
+   - 顶栏升级为 `position: sticky; top: 0` 毛玻璃/阴影仪表盘顶栏；
+   - `nav#tabs` 升级为分段胶囊导航栏（Segmented Pill Bar），激活态带卡片阴影与高亮色；
+   - 状态标签 `.stage` 升级为带语义背景色（`--ok-bg` / `--warn-bg` / `--bad-bg` / `--accent-bg`）的圆角胶囊；
+   - `.kv` 属性表、代码块与卡片统一圆角、边框对比度与 `:focus` 光环。
+2. **盒模型高度治理（修复 37,112 px 失控）**：
+   - `.filelist` 限制 `max-height: 260px; overflow-y: auto`；`<pre>` 限制 `max-height: 240px; overflow-y: auto`；`.tools` 与 `.said` 分别限制 `180px` 与 `240px`；左侧 `ul.list` 限制 `max-height: 74vh; overflow-y: auto`。
+   - **真浏览器复测对比**：打开同一张 `19dd5c9c` Ticket，`#d-files .filelist` 从 **16,947 px → 260 px**，`#d-artifacts` 从 **13,510 px → 260 px**，整页 `scrollHeight` 从 **37,112 px → 3,494 px**（缩小 90.6%），全页截图从 **7.0 MB → 993 KB**。
+3. **跨 Ticket 引用与晚到修正回溯（关闭 F6）**：
+   - 在 `renderDetail` 中扫描 `ticketIndex`：当其他 Ticket 的标题或摘要引用了当前 Ticket 的短 ID（8 位）或标题时，在详情页顶部醒目渲染 `#d-mentions`（`.mentions-box`），列出引用方并提供一键「打开」按钮。
+   - 真浏览器下打开 `搜集信息 (b356ac64)`，面板直接显示：`关联引用（1 张后续 Ticket 在摘要或产物备注中引用了本 Ticket）：信息比对（19dd5c9c） · 打开`。
+4. **补齐 `#work=<id>` 与 `#project=<id>` 深链（关闭 §4.50 欠账）**：
+   - 扩展 `applyHash()`，支持 `#work=<id>` 与 `#project=<id>` 直接切换至「工作」页并选中对应流水线或项目。
+5. **设置页可视化快捷助手 `#settings-quick`（关闭 §4.50 欠账）**：
+   - 在 `#settings` JSON 文本框上方新增常用设置快捷栏（`#sq-mode` 受理模式、`#sq-workers` 最大并发 Worker、`#sq-senders` 允许发起者），与下方 JSON 双向实时同步。
+
+### 3. 单元测试与变异检验
+
+- `tests/panel.spec.ts` 新增 4 条测试（186 → **190 条**，全套 785 → **789 条**）。
+- **变异检验 M1**（禁用 `#d-mentions` 渲染）→ 变红（`Error: the page has nothing at #d-mentions`）。
+- **变异检验 M2**（禁用 `#work=` 路由分支）→ 变红；**0.8 强形式**（删掉第一条 `hidden` 断言）→ 仍红在第二条断言。还原核对 sha256 一致。
+- **完整四步闸门 `./scripts/gate.sh`**：退出码 **0**，**789 passed (789)**。
+- **真浏览器验证 `node scripts/verify-browser.mjs`**：**通过 19 条，失败 0 条，退出码 0**。

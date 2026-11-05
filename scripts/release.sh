@@ -67,7 +67,7 @@ def h12(s): return hashlib.sha256(s.encode()).hexdigest()[:12]
 stats = {}
 def bump(k, n=1): stats[k] = stats.get(k, 0) + n
 SKIP_DIRS = {'node_modules', '.git'}
-TEXT = {'.md', '.ts', '.js', '.yml', '.yaml', '.json', '.py', '.html', '.sh', '.txt', '.tsv', '.csv', '.d.ts'}
+TEXT = {'.md', '.ts', '.js', '.mjs', '.cjs', '.yml', '.yaml', '.json', '.py', '.html', '.sh', '.txt', '.tsv', '.csv', '.d.ts'}
 for p in root.rglob('*'):
     if not p.is_file() or any(d in p.parts for d in SKIP_DIRS) or p.name == 'pnpm-lock.yaml':
         continue
@@ -107,7 +107,7 @@ SPECIFIC = {
 n = 0
 for p in root.rglob('*'):
     if not p.is_file() or 'node_modules' in p.parts or p.name == 'pnpm-lock.yaml' or p.suffix not in {
-            '.md', '.ts', '.js', '.yml', '.json', '.py', '.html', '.sh', '.txt'}:
+            '.md', '.ts', '.js', '.mjs', '.cjs', '.yml', '.json', '.py', '.html', '.sh', '.txt'}:
         continue
     try: s = p.read_text()
     except Exception: continue

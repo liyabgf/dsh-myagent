@@ -3338,3 +3338,72 @@ describe('the utility class that hides things', () => {
     expect(PAGE).toMatch(/\.hidden\s*\{\s*display:\s*none\s*!important\s*\}/)
   })
 })
+
+describe('bounded box-model CSS, cross-Ticket citation backlinks (F6), deep links, and quick settings', () => {
+  it('bounds .filelist and pre heights in CSS so a 547-file Ticket cannot inflate the document to 37,112 px', () => {
+    expect(PAGE).toMatch(/\.filelist\s*\{[^}]*max-height:\s*260px[^}]*overflow-y:\s*auto/)
+    expect(PAGE).toMatch(/pre\s*\{[^}]*max-height:\s*240px[^}]*overflow-y:\s*auto/)
+  })
+
+  it('shows cross-Ticket citation backlinks (#d-mentions) when another Ticket mentions this Ticket id or title', async () => {
+    const t1 = 'b356ac649bc46a144c38f9b4b6619175'
+    const t2 = '19dd5c9ca7bce11fb2c9f7a2b04728b0'
+    await mount(routes({
+      'GET tickets': () => ({
+        offset: 0, limit: 80, count: 2,
+        tickets: [
+          listed({ id: t1, title: '搜集信息', stage: 'done' }),
+          listed({ id: t2, title: '信息比对', stage: 'done', summary: '已与另一 Ticket（搜集信息 / b356ac64）合并成综合论述。' }),
+        ],
+      }),
+      [`GET tickets/${t1}`]: ticket({ id: t1, title: '搜集信息', stage: 'done' }),
+      [`GET tickets/${t1}/progress`]: progress(),
+      [`GET tickets/${t1}/files`]: files(),
+      [`GET tickets/${t1}/dependencies`]: { waitsFor: [], waitedOnBy: [] },
+      [`GET tickets/${t1}/events`]: { count: 0, returned: 0, events: [] },
+      [`GET tickets/${t2}`]: ticket({ id: t2, title: '信息比对', stage: 'done' }),
+      [`GET tickets/${t2}/progress`]: progress(),
+      [`GET tickets/${t2}/files`]: files(),
+      [`GET tickets/${t2}/dependencies`]: { waitsFor: [], waitedOnBy: [] },
+      [`GET tickets/${t2}/events`]: { count: 0, returned: 0, events: [] },
+    }))
+    click(one('#tickets li'))
+    await settle()
+    const mentions = one('#d-mentions')
+    expect(read(mentions)).toContain('关联引用')
+    expect(read(mentions)).toContain('信息比对（19dd5c9c）')
+    click(one('#d-mentions button'))
+    await settle()
+    expect(read(one('#detail h2'))).toBe('信息比对')
+  })
+
+  it('routes #work=<id> deep links directly to the Works tab and loads that Work detail', async () => {
+    await mount(routes({
+      'GET works': { works: [work({ id: 'work-99', name: '谷歌法律专题' })] },
+      'GET works/work-99': {
+        work: work({ id: 'work-99', name: '谷歌法律专题', scope: '法务范围' }),
+        tickets: [],
+      },
+    }), '#work=work-99')
+    await settle()
+    expect(one('#tab-works').classList.contains('hidden')).toBe(false)
+    expect(one('#tab-tickets').classList.contains('hidden')).toBe(true)
+    expect(read(one('#work-detail'))).toContain('谷歌法律专题')
+    expect(read(one('#work-detail'))).toContain('work-99')
+  })
+
+  it('syncs the quick settings bar (#settings-quick) with the JSON textarea in both directions', async () => {
+    await mount(routes())
+    click(button('设置'))
+    await settle()
+    expect(input('sq-mode').value).toBe('auto')
+    expect(input('sq-workers').value).toBe('2')
+    expect(input('sq-senders').value).toBe('operator')
+
+    choose('sq-senders', 'operator, alice')
+    choose('sq-mode', 'observe')
+    const parsed = JSON.parse(area('settings').value)
+    expect(parsed.acceptMode).toBe('observe')
+    expect(parsed.allowedSenders).toEqual(['operator', 'alice'])
+  })
+})
