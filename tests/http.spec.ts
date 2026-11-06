@@ -61,7 +61,13 @@ describe('the fence', () => {
       expect(response.text).toContain('<title>myagent</title>')
       expect(response.text).toContain('x-myagent-request')
       // Every tab the operator is promised is in the page that was served, and so is the code that fills it.
-      for (const tab of ['tickets', 'new', 'decisions', 'sources', 'schedules', 'settings', 'prompts']) {
+      // 【U13 产品变更】排期并入「派活」页，不再是独立面板，所以这里不再有 'schedules'。
+      // 旧值：['tickets', 'new', 'decisions', 'sources', 'schedules', 'settings', 'prompts']
+      // 断言的事实没变——承诺给操作者的每一页都在送出的页面里；变的是承诺的清单。
+      // 排期的代码仍在（下面两条 loadSchedules / schedules/preview 的断言照旧钉着它）。
+      // 【U14 产品变更】来源页解散：'sources' → 'chat'（聊天自成页），健康与队列进抽屉、丢失进记录页。
+      // 旧值：['tickets', 'new', 'decisions', 'sources', 'settings', 'prompts']
+      for (const tab of ['tickets', 'new', 'decisions', 'chat', 'settings', 'prompts']) {
         expect(response.text, `tab-${tab}`).toContain(`id="tab-${tab}"`)
       }
       expect(response.text).toContain('loadSchedules')

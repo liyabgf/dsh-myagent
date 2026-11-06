@@ -228,6 +228,9 @@ const routes = (over: Routes = {}): Routes => ({
   // The Work labels, the edges and the log a detail view always reads; empty by default, because a test about one of
   // them replaces it and a test about something else must not have to.
   'GET works': { works: [] },
+  // 【U14】丢失的请求搬进「记录」页，而进这一页会连判定一起读；总览落地时也读最近 5 条判定。
+  // 放在基础夹具里，而不是让每条用到这一页的测试各自补——否则漏一个就红在一个与本包无关的 404 上。
+  'GET decisions': { count: 0, decisions: [] },
   'GET tickets/ticket-1/dependencies': { waitsFor: [], waitedOnBy: [] },
   'GET tickets/ticket-1/events': { count: 0, returned: 0, events: [] },
   // The capability probe reads this one route on boot; an unstubbed route answers "No route for", which is exactly
@@ -409,8 +412,20 @@ const all = (selector: string, within: ParentNode = document): Element[] => [...
 const read = (node: Element | null | undefined): string => node?.textContent ?? ''
 
 /** The one button a person would click, found by its label, because the page has no test handles. */
+/**
+ * 按钮自己的标签：整段文本减去徽标文本（U7）。
+ *
+ * 导航徽标是按钮的子节点，于是「任务」的 textContent 变成「任务3」。若按整段文本匹配，加了徽标之后
+ * 每一个按标签找按钮的调用都要跟着改，而**徽标是数据、标签是身份**——两者不该混在一个字符串里比。
+ */
+const labelOf = (node: Element): string => {
+  let text = node.textContent ?? ''
+  for (const badge of node.querySelectorAll('.badge')) text = text.replace(badge.textContent ?? '', '')
+  return text.trim()
+}
+
 const button = (label: string, within: ParentNode = document): Element => {
-  const found = all('button', within).filter(node => (node.textContent ?? '').trim() === label)
+  const found = all('button', within).filter(node => labelOf(node) === label)
   if (found.length !== 1) throw new Error(`${found.length} buttons in this view read “${label}”`)
   return found[0]!
 }
@@ -446,6 +461,11 @@ const toastText = (): string => text('toast')
 
 /** Open the Ticket the list already shows, which is what one click on it does. */
 const openListed = async (): Promise<void> => {
+  // 显式点到任务页，而不是依赖"落地页恰好是任务页"。U1 把落地页改成了总览，这个隐含依赖一次暴露了 35 处：
+  // 辅助函数替测试假设了页面的默认状态，默认状态一变，35 条测试一起红。声明前置条件是加强，不是弱化——
+  // 每条测试断言的事实一个字没动。
+  click(button('任务'))  // 【U7 改名】旧文案 'Ticket'
+  await settle()
   click(one('#tickets li'))
   await settle()
 }
@@ -574,8 +594,12 @@ describe('the header', () => {
     const [list] = sent('GET tickets')
     expect(list?.query.get('state')).toBe('open')
     expect(list?.query.get('limit')).toBe('80')
-    // The default tab is drawn, and the six others are not merely present but hidden.
-    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+    // The default tab is drawn, and the others are not merely present but hidden.
+    // 【U1 产品变更】落地页从任务列表改成总览（§6.1 收件箱心智：人打开面板第一问是"有什么新事"）。
+    // 断言的事实类别没变——默认页被画出、其余隐藏、计数行正确——变的只是默认页是谁。
+    // 旧断言：expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+    expect(byId('tab-overview').classList.contains('hidden')).toBe(false)
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(true)
     expect(byId('tab-settings').classList.contains('hidden')).toBe(true)
     expect(text('ticket-hint')).toBe('1 条')
   })
@@ -593,23 +617,30 @@ describe('the tabs', () => {
   it('shows one page at a time, and reads what that page needs when the operator asks for it', async () => {
     const { sent } = await mount(routes({ 'GET decisions': { count: 0, decisions: [] } }))
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
-      .toEqual(['tickets', 'works', 'new', 'decisions', 'sources', 'schedules', 'settings', 'prompts'])
+      // 【U1】总览是新增的第一项；其余顺序未动。
+      // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
+      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
 
-    click(button('门禁记录'))
+    click(button('记录'))
     await settle()
-    expect(sent('GET decisions')).toHaveLength(1)
+    // 【U1】限定到记录页自己的读（limit=80）：总览落地时会预读最近 5 条判定（limit=5），那是另一个读者。
+    // 断言的事实没变——进这一页读它一次。
+    expect(sent('GET decisions').filter(call => call.query.get('limit') === '80')).toHaveLength(1)
     expect(byId('tab-decisions').classList.contains('hidden')).toBe(false)
-    for (const other of ['tickets', 'works', 'new', 'sources', 'schedules', 'settings', 'prompts']) {
+    for (const other of ['tickets', 'works', 'new', 'chat', 'settings', 'prompts']) {  // 【U13】去 'schedules'；【U14】'sources'→'chat'
       expect(byId(`tab-${other}`).classList.contains('hidden'), other).toBe(true)
     }
-    expect(byId('tabs').children[3]!.getAttribute('aria-selected')).toBe('true')
+    // 【U1】门禁记录从第 4 个变成第 5 个（总览插在首位），落地的总览此时不该是选中态。
+    expect(byId('tabs').children[4]!.getAttribute('aria-selected')).toBe('true')
     expect(byId('tabs').children[0]!.getAttribute('aria-selected')).toBe('false')
   })
 
   it('stops watching a Ticket when the operator leaves the page it is on', async () => {
     const { sent } = await mount(routes())
-    click(one('#tickets li'))
-    await settle()
+    // 【U1】先点到任务页再点行。原先直接点 `#tickets li`，依赖"落地页恰好是任务页"；落地页改成总览后，
+    // 这一下点的是**隐藏 Tab 里的行**——浏览器里产生不出来的状态，于是 tab 仍是 overview、轮询按设计不启动。
+    // 断言的事实（在它自己的页上被看着、离开就不看了）一个字没改。
+    await openListed()
     await tick(3000)
     expect(sent('GET tickets/ticket-1')).toHaveLength(2)
 
@@ -627,9 +658,12 @@ describe('one Ticket', () => {
     expect(text('detail')).toContain('整理本周竞品动态')
     expect(read(one('#detail .stage'))).toBe('waiting')
     expect(one('#detail .stage').className).toContain('attention')
+    // 【U4 产品变更】授权与来源 Trigger 搬进了默认折叠的「技术细节」（<details>，文本仍在 DOM，
+    // detailValue('授权') 等断言原样通过）。行集合不变、顺序变为主行在前。
+    // 旧断言：toEqual(['Ticket', '创建', '更新', '归属', '授权', '目录', '来源 Trigger'])
     expect(all('#detail .kv dt').map(node => node.textContent))
-      .toEqual(['Ticket', '创建', '更新', '归属', '授权', '目录', '来源 Trigger'])
-    expect(detailValue('Ticket')).toBe('ticket-1')
+      .toEqual(['任务', '创建', '更新', '归属', '目录', '授权', '来源 Trigger'])  // 【U7】首行标签 Ticket→任务
+    expect(detailValue('任务'))  // 【U7 改名】旧标签 'Ticket'.toBe('ticket-1')
     expect(detailValue('授权')).toBe('operator（person）经 schedule，策略版本 pv-9f3c')
     expect(detailValue('目录')).toBe('/work/ticket-1')
     expect(detailValue('来源 Trigger')).toBe('trigger-7')
@@ -1159,7 +1193,7 @@ describe('the address bar', () => {
 describe('the ticket list', () => {
   it('asks for the list the operator selected', async () => {
     const { last } = await mount(routes())
-    choose('filter', 'ended')
+    click(button('已结束'))  // 【U7】下拉改 chips：旧写法 choose('filter', 'ended')
     await settle()
     expect(last('GET tickets')?.query.get('state')).toBe('ended')
     expect(last('GET tickets')?.query.get('limit')).toBe('80')
@@ -1167,9 +1201,16 @@ describe('the ticket list', () => {
 
   it('says there is nothing in the list, in a sentence', async () => {
     await mount(routes({ 'GET tickets': { offset: 0, limit: 80, count: 0, tickets: [] } }))
-    expect(text('tickets')).toBe('没有 Ticket。')
+    // 【U10 产品变更】空态加了"下一步"按钮（§6.1：空状态是教学时刻），所以整段文本不再是那一句话。
+    // 旧断言：expect(text('tickets')).toBe('没有 Ticket。')
+    // 断言的事实没变——空态说人话——外加一条新事实：它给出下一步。
+    expect(text('tickets')).toContain('没有 Ticket。')
+    expect(read(button('去派活', byId('tickets')))).toBe('去派活')
     expect(text('ticket-hint')).toBe('0 条')
-    expect(all('#tickets li button')).toHaveLength(0)
+    // 【U10 产品变更】空态现在带一个"下一步"按钮，所以"列表里没有任何按钮"不再是事实。
+    // 旧断言：expect(all('#tickets li button')).toHaveLength(0)
+    // 它原本要防的是"空列表里混进可点的东西让人困惑"，现在改成钉住**只有一个、且它就是下一步**。
+    expect(all('#tickets li button').map(node => labelOf(node))).toEqual(['去派活'])
   })
 
   it('shows on each row what it is, what stage it is at, and who it is waiting for', async () => {
@@ -1655,8 +1696,11 @@ describe('handing out work', () => {
     await mount(scheduleRoutes())
     choose('n-recipe', '1')
     await settle()
-    expect(byId('tab-schedules').classList.contains('hidden')).toBe(false)
-    expect(byId('tab-new').classList.contains('hidden')).toBe(true)
+    // 【U13 产品变更】配方把人带到「派活」页的**定时模式**，而不是一个独立的排期页。
+    // 旧断言：tab-schedules 可见、tab-new 隐藏 —— 现在恰好相反：页面就是 tab-new，页内是定时那一块。
+    expect(byId('tab-new').classList.contains('hidden')).toBe(false)
+    expect(byId('dispatch-timed').classList.contains('hidden')).toBe(false)
+    expect(byId('dispatch-once').classList.contains('hidden')).toBe(true)
     expect(text('sched-editor-title')).toBe('编辑排期：digest-copy')
     expect(input('s-id').value).toBe('digest-copy')
     expect(area('s-prompt').value).toBe('产出今天的摘要，写到 report.md')
@@ -1768,7 +1812,11 @@ describe('handing out work', () => {
 
 describe('schedules', () => {
   const openSchedules = async (): Promise<void> => {
-    click(button('排期'))
+    // 【U13】排期不再是独立菜单：它在「派活」页的定时模式下（同一道门禁、同一种请求，只是"到点派"）。
+    // 旧写法：click(button('排期'))
+    click(button('派活'))
+    await settle()
+    click(button('定时派'))
     await settle()
   }
 
@@ -1801,7 +1849,10 @@ describe('schedules', () => {
   it('says there are no schedules yet, in a sentence', async () => {
     await mount(scheduleRoutes({ 'GET schedules': { zone: 'Asia/Shanghai', now: AT, schedules: [] } }))
     await openSchedules()
-    expect(text('schedules')).toBe('还没有排期。')
+    // 【U10 产品变更】同上：空态加了「建一个」，直接触发已有的新建入口。
+    // 旧断言：expect(text('schedules')).toBe('还没有排期。')
+    expect(text('schedules')).toContain('还没有排期。')
+    expect(read(button('建一个', byId('schedules')))).toBe('建一个')
     expect(text('sched-last')).toBe('还没有')
   })
 
@@ -1989,26 +2040,35 @@ describe('schedules', () => {
 })
 
 describe('where work comes from', () => {
-  const openSources = async (): Promise<void> => {
-    click(button('来源'))
+  // 【U14 产品变更】「来源」页解散了，这一个入口变成两个：
+  //   来源状态表 → 总览的「活从哪来」；健康与队列 → 顶栏「状态」抽屉。
+  // 旧写法：click(button('来源'))
+  const openOverview = async (): Promise<void> => {
+    click(button('总览'))
+    await settle()
+  }
+  const openDrawer = async (): Promise<void> => {
+    click(byId('health'))
     await settle()
   }
 
   it('draws the sources, the health and the queue as tables, not as JSON', async () => {
     await mount(routes({ 'GET effects': { counts: { notify: 2, launch: 1 } } }))
-    await openSources()
-    for (const id of ['sources', 'health-detail', 'effects']) {
+    await openOverview()
+    await openDrawer()
+    // 【U14】来源表的容器 id 跟着它搬去总览，改成 ov-sources；健康与队列的容器 id 沿用（搬进抽屉时特意没改）。
+    for (const id of ['ov-sources', 'health-detail', 'effects']) {
       expect(all(`#${id} table.plain`), id).toHaveLength(1)
       expect(text(id), id).not.toMatch(/[[{}"]/)
     }
-    expect(all('#sources th').map(node => node.textContent)).toEqual(['来源', '状态', '详情', '下次', '最近触发', '计数'])
-    const cron = all('#sources tbody tr')[0]!
+    expect(all('#ov-sources th').map(node => node.textContent)).toEqual(['来源', '状态', '详情', '下次', '最近触发', '计数'])
+    const cron = all('#ov-sources tbody tr')[0]!
     expect(read(one('.ok', cron))).toBe('正常')
     expect(read(cron)).toContain('1 条排期')
     expect(read(cron)).toContain('schedules 1')
     // A Source reports its next run as an instant, and a person reads it as a date in their own zone.
     expect(read(cron)).toContain('2026')
-    const inbox = all('#sources tbody tr')[1]!
+    const inbox = all('#ov-sources tbody tr')[1]!
     expect(read(inbox)).toContain('看着 /inbox')
     // A Source that has never fired says so, instead of leaving a cell the operator has to interpret.
     expect(read(inbox)).toContain('还没有')
@@ -2019,7 +2079,7 @@ describe('where work comes from', () => {
 
   it('says the queue is empty in a sentence, because an empty queue is the good case', async () => {
     await mount(routes())
-    await openSources()
+    await openDrawer()
     expect(text('effects')).toBe('队列是空的：没有等着做的事。')
     expect(text('effects-note')).toBe('')
     expect(all('#effects table')).toHaveLength(0)
@@ -2032,16 +2092,17 @@ describe('where work comes from', () => {
         health: { cron: { ok: false, detail: '排期解析失败：digest', at: LATER }, executor: { ok: true, detail: '正常', at: LATER } },
       }),
     }))
-    await openSources()
-    expect(read(one('#sources .bad'))).toBe('异常')
-    expect(text('sources')).toContain('排期解析失败：digest')
+    await openOverview()
+    await openDrawer()
+    expect(read(one('#ov-sources .bad'))).toBe('异常')
+    expect(text('ov-sources')).toContain('排期解析失败：digest')
     expect(read(one('#health-detail .bad'))).toBe('有问题')
     expect(text('health')).toBe('状态 1 个问题')
   })
 
   it('says the queue could not be read, where the queue would have been', async () => {
     await mount(routes({ 'GET effects': refuse(500, '数据库锁住了') }))
-    await openSources()
+    await openDrawer()
     expect(read(one('#effects pre.bad'))).toBe('数据库锁住了')
   })
 })
@@ -2064,7 +2125,7 @@ describe('what the gate decided', () => {
   }
   const refused = DECISIONS.decisions[1]!
   const openDecisions = async (): Promise<void> => {
-    click(button('门禁记录'))
+    click(button('记录'))
     await settle()
   }
   const decisionRow = (title: string): Element => {
@@ -2079,7 +2140,13 @@ describe('what the gate decided', () => {
     expect(all('#decisions li')).toHaveLength(2)
     const accepted = decisionRow('整理本周竞品动态')
     expect(read(one('.done', accepted))).toBe('accept')
-    expect(read(accepted)).toContain('2026')
+    // 【U8 产品变更】行内时刻改成相对（"3 天前"），绝对时刻挂在该 span 的 title 上。
+    // 旧断言：expect(read(accepted)).toContain('2026')
+    // **不断言具体的"3 天前"**：真实时钟在走，那样写会随日期漂移成 flake（W9 修过的同一类）。
+    // 断言的是两个不变量：文本是相对表达（或超 30 天退回的日期），且 title 里带着绝对时刻。
+    const whenCell = one('.meta span', accepted)
+    expect(read(whenCell)).toMatch(/刚刚|分钟前|小时前|天前|\d{4}\//)
+    expect(whenCell.getAttribute('title')).toContain('2026')
     // An accepted request is not a refusal, so there is nothing to put away.
     expect(all('button', accepted)).toHaveLength(0)
     const ignored = decisionRow('陌生人的请求')
@@ -2120,7 +2187,8 @@ describe('what the gate decided', () => {
     // The row is also a way into its Ticket, so a click on 忽略 must not be read as a click on the row.
     expect(sent('GET tickets/ticket-2')).toHaveLength(0)
     // The list is read again, which is how the row learns it has been put away.
-    expect(sent('GET decisions')).toHaveLength(2)
+    // 【U1】同样限定到记录页自己的读（limit=80）；总览那条 limit=5 的预读是另一个读者，不算进这个事实。
+    expect(sent('GET decisions').filter(call => call.query.get('limit') === '80')).toHaveLength(2)
   })
 
   it('marks a refusal that has been put away, and does not ask the server again', async () => {
@@ -2239,7 +2307,9 @@ describe('settings and prompts', () => {
     await settle()
     expect(last('PUT prompts')?.body).toEqual({ worker: '别写别处', orchestrator: '' })
     expect(toastText()).toBe('提示词已保存（修订 3）')
-    click(button('恢复内置'))
+    // 【U6 产品变更】旧文案 '恢复内置'。现在每个角色卡里有「只恢复这个角色」，
+    // 全局那颗若仍叫「恢复内置」，"点哪一个"就得靠位置猜——所以它改叫「两个都恢复内置」。断言的事实没变。
+    click(button('两个都恢复内置'))
     await settle()
     expect(last('PUT prompts')?.body).toEqual({ worker: '', orchestrator: '' })
     expect(toastText()).toBe('已恢复内置提示词')
@@ -2494,10 +2564,14 @@ describe('the contract with the API', () => {
       'POST tickets/ticket-1/dependencies/drop': { dropped: 'ticket-2', waitsFor: [] },
     }))
     // Every page, and the writes on them: the routes a person can reach by clicking around.
-    for (const tab of ['工作', '派活', '门禁记录', '来源', '排期', '设置', '提示词']) {
+    for (const tab of ['工作', '派活', '记录', '聊天', '设置', '提示词']) {  // 【U7】门禁记录→记录；【U13】排期并入派活；【U14】来源→聊天
       click(button(tab))
       await settle()
     }
+    // 【U14】健康与队列搬进了顶栏「状态」抽屉，所以遍历也必须打开它——否则 GET effects 就"没人问了"，
+    // 而这条测试的一半职责正是"表里的路由不能悄悄丢掉"。抽屉不是页面，但它是操作者能点到的地方。
+    click(byId('health'))
+    await settle()
     // The 工作 page: drill into a Project, make both records, then follow a Work down to one of its Tickets.
     click(one('#projects li'))
     await settle()
@@ -2511,8 +2585,8 @@ describe('the contract with the API', () => {
     await settle()
     click(button('忽略', one('#decisions li')))
     await settle()
-    click(button('门禁记录'))
-    click(button('Ticket'))
+    click(button('记录'))
+    click(button('任务'))  // 【U7 改名】旧文案 'Ticket'
     await settle()
     await openListed()
     click(button('报告.md'))
@@ -2544,7 +2618,9 @@ describe('the contract with the API', () => {
     type('n-request', '产出 report.md')
     click(button('创建 Ticket'))
     await settle()
-    click(button('排期'))
+    click(button('派活'))  // 【U13】旧写法 click(button('排期'))
+    await settle()
+    click(button('定时派'))
     await settle()
     click(button('新建排期'))
     await settle()
@@ -2565,7 +2641,7 @@ describe('the contract with the API', () => {
     click(button('提示词'))
     await settle()
     click(button('保存', byId('tab-prompts')))
-    click(button('恢复内置'))
+    click(button('两个都恢复内置'))  // 【U6】同上，旧文案 '恢复内置'
     await settle()
     click(button('立即执行一轮'))
     click(button('创建主 Session'))
@@ -2613,7 +2689,7 @@ describe('markup in a value the operator can edit', () => {
 
 describe('the chat Source', () => {
   const openChat = async (): Promise<void> => {
-    click(button('来源'))
+    click(button('聊天'))  // 【U14】聊天自成页，旧写法 button('来源')
     await settle()
   }
 
@@ -2657,7 +2733,9 @@ describe('the chat Source', () => {
     expect(tables).toHaveLength(2)
     // Tables rather than JSON, which is the standing complaint these three sections were rebuilt for.
     for (const node of tables) expect(read(node), read(node)).not.toMatch(/[[{}"]/)
-    expect(all('th', tables[0]!).map(node => node.textContent)).toEqual(['频道', '目录', '状态'])
+    // 【U12 产品变更】频道表多了「操作」列——这一节原先只读，指引把人送去改 JSON，那就是记在案的债。
+    // 旧断言：toEqual(['频道', '目录', '状态'])
+    expect(all('th', tables[0]!).map(node => node.textContent)).toEqual(['频道', '目录', '状态', '操作'])
     expect(read(all('tbody tr', tables[0]!)[0]!)).toContain('/chat/ops')
     // A channel that is switched off is neither read nor answered, and that is worth more than a missing row.
     expect(read(all('tbody tr', tables[0]!)[1]!)).toContain('停用（不读，也不回）')
@@ -2959,7 +3037,7 @@ describe('a host whose plugin has no chat view yet', () => {
    */
   it('says so once, in its own banner, and asks no route of its own', async () => {
     const { calls, sent } = await mount(routes())
-    click(button('来源'))
+    click(button('聊天'))  // 【U14】聊天自成页，旧写法 button('来源')
     await settle()
     expect(text('chat')).toContain('宿主的插件比这个页面旧')
     expect(byId('chat-banner').classList.contains('hidden')).toBe(false)
@@ -2993,7 +3071,7 @@ describe('a host whose plugin has no chat view yet', () => {
       'PUT settings': { settings: chatDocument(), settingsRevision: 4 },
       'POST pass': { requested: true, effects: {} },
     }))
-    click(button('来源'))
+    click(button('聊天'))  // 【U14】聊天自成页，旧写法 button('来源')
     await settle()
     expect(text('chat')).toContain('宿主的插件比这个页面旧')
     click(button('重试', byId('chat-banner')))
@@ -3032,7 +3110,7 @@ describe('markup in a value a chat platform wrote', () => {
     // This is the one string on the page that somebody else controls: with no `from` field the Source names a held
     // message by its FILE NAME, and whoever can write to the channel directory chose that name.
     await mount(routes({ 'GET state': chatStateWith({ count: 1, ids: ['<img src=x onerror="document.title=\'pwned\'">'] }) }))
-    click(button('来源'))
+    click(button('聊天'))  // 【U14】聊天自成页，旧写法 button('来源')
     await settle()
     expect(document.querySelector('#chat img')).toBe(null)
     expect(document.title).not.toBe('pwned')
@@ -3044,7 +3122,7 @@ describe('markup in a value a chat platform wrote', () => {
     // The other half of S36: these are text nodes, which are inert by construction. Running them through `escapeText`
     // would show the operator `&amp;` where they wrote `&` — in the map that says who may originate work.
     await mount(routes({ 'GET state': chatStateWith({ count: 0, ids: [] }) }))
-    click(button('来源'))
+    click(button('聊天'))  // 【U14】聊天自成页，旧写法 button('来源')
     await settle()
     expect(read(identityRow('U&A'))).toContain('li & yang')
     expect(read(identityRow('U&A'))).toContain('A & B < C')
@@ -3083,11 +3161,15 @@ describe('the requests the queue gave up on', () => {
     return state({ counts: { ...(base.counts as Record<string, unknown>), lost } })
   }
 
-  const lostRoutes = (over: Routes = {}): Routes => routes({ 'GET state': lostState(), 'GET lost': lostBody(), ...over })
+  // 【U14】丢失的请求搬进「记录」页，而进这一页会连判定一起读——所以夹具要桩上 GET decisions，
+  // 否则这 12 条测试红在一个与本包无关的 404 上。
+  const lostRoutes = (over: Routes = {}): Routes => routes({
+    'GET state': lostState(), 'GET lost': lostBody(), 'GET decisions': { count: 0, decisions: [] }, ...over,
+  })
 
   it('shows both paths, and keeps them apart because they are two different facts', async () => {
     await mount(lostRoutes())
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     // How many, on the two paths, from the count that rides the poll the page already makes.
     expect(text('lost')).toContain('被认出然后丢掉的行 1')
@@ -3110,7 +3192,7 @@ describe('the requests the queue gave up on', () => {
 
   it('watches the number on the five-second refresh without re-reading twenty payloads of raw text', async () => {
     const { sent } = await mount(lostRoutes())
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(sent('GET lost')).toHaveLength(1)
     await tick(10_000)
@@ -3130,7 +3212,7 @@ describe('the requests the queue gave up on', () => {
       },
       'GET lost': lostBody({ total: 1, shown: 1, rows: [lostRow()], payloads: [] }),
     }))
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(text('lost')).toContain('自这个页面打开以来这个数字没有增加（一直是 1 条）')
     await tick(5_000)
@@ -3147,7 +3229,7 @@ describe('the requests the queue gave up on', () => {
       'GET state': lostState({ rows: 0, payloads: 0 }),
       'GET lost': lostBody({ total: 0, shown: 0, rows: [], payloads: [] }),
     }))
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(text('lost')).toContain('没有丢失的请求：队列没有彻底放弃过任何一条')
     // The header pill is hidden at zero rather than showing a zero: a pill that is always there is one the eye skips.
@@ -3167,7 +3249,7 @@ describe('the requests the queue gave up on', () => {
     // `state()` has no `counts.lost`: this is a plugin older than the page, which is the case the capability probe
     // exists for. The page is served from disk and the plugin is not, so the two disagree in production.
     const { calls } = await mount(routes())
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(text('lost')).toContain('宿主的插件比这个页面旧')
     // The distinction the whole section hangs on: "I could not read it" must never be drawn in the same words as
@@ -3192,7 +3274,7 @@ describe('the requests the queue gave up on', () => {
       },
       'GET lost': lostBody(),
     }))
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(text('lost')).toContain('宿主的插件比这个页面旧')
     click(button('重试', byId('lost')))
@@ -3206,7 +3288,7 @@ describe('the requests the queue gave up on', () => {
       'GET state': lostState({ rows: 2, payloads: 0 }),
       'GET lost': refuse(500, 'the database is locked'),
     }))
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     // The counts came from `state` and are still true, so they stay on screen; the reason there is no list under them
     // is a sentence. An empty list here would read as "nothing was lost" while two were.
@@ -3233,7 +3315,7 @@ describe('the requests the queue gave up on', () => {
         return lostBody({ total: 3, shown: 2, rows: [lostRow({ id: 'trigger-lost-c' }), lostRow({ id: 'trigger-lost-b' })], payloads: [] })
       },
     }))
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(text('lost')).toContain('一共 3 条，这里显示最新的 2 条')
     click(button('再读 50 条（现在读到 50 条为止）', byId('lost')))
@@ -3245,7 +3327,7 @@ describe('the requests the queue gave up on', () => {
     await mount(lostRoutes({
       'GET lost': lostBody({ total: 0, shown: 0, rows: [], payloads: [lostPayload({ payload: 'x'.repeat(1000), chars: 1500 })] }),
     }))
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     expect(text('lost')).toContain('原文 1500 字，只存下前 1000 字')
     // Honest about the limit of the remedy rather than offering a control that cannot succeed: the Store kept a
@@ -3257,15 +3339,15 @@ describe('the requests the queue gave up on', () => {
 
   it('offers no way to replay a lost request, and says so instead of leaving the operator to guess', async () => {
     await mount(lostRoutes())
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     // There is no route that could re-drive one — the queue deleted its row when it gave up — and a button that can
     // only fail is worse than no button, which is why this page has removed one before. So the remedy is a sentence.
-    expect(text('tab-sources')).toContain('这里没有「重放」按钮，因为它做不到')
-    expect(text('tab-sources')).toContain('系统也不会自动重放它')
+    expect(text('tab-decisions')).toContain('这里没有「重放」按钮，因为它做不到')  // 【U14】旧为 tab-sources
+    expect(text('tab-decisions')).toContain('系统也不会自动重放它')
     // The part that is easy to get wrong and that §4.45 fixed: `lost` is not a duplicate, so the gate really does run
     // again on the same request. Without this the honest remedy reads as a dead end.
-    expect(text('tab-sources')).toContain('lost 行不算重复')
+    expect(text('tab-decisions')).toContain('lost 行不算重复')
     // The one control offered is one that can succeed: read the detail again.
     expect(all('#lost button').map(node => node.textContent)).toEqual(['重新读取'])
   })
@@ -3301,7 +3383,7 @@ describe('markup in a payload the page could not parse', () => {
 
   it('renders the raw text as text, because a text node is inert and escaping it would cost the evidence', async () => {
     await mount(hostileRoutes())
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     // Nothing was built out of it: the img and the script are strings on screen, not elements in the page.
     expect(document.querySelector('#lost img')).toBe(null)
@@ -3316,7 +3398,7 @@ describe('markup in a payload the page could not parse', () => {
 
   it('renders a row’s title and error as text too, since a chat Trigger carries what a stranger wrote', async () => {
     await mount(hostileRoutes())
-    click(button('来源'))
+    click(button('记录'))  // 【U14】丢失的请求归记录页，旧写法 button('来源')
     await settle()
     const row = one('#lost table tbody tr')
     // The title is the request's own, and for a chat Trigger that is a line somebody else sent to a channel directory.
@@ -3336,6 +3418,910 @@ describe('the utility class that hides things', () => {
   // the only thing a jsdom suite can pin about a bug that only a browser can show.
   it('outranks any ID rule that sets display, because hiding is the only thing it does', () => {
     expect(PAGE).toMatch(/\.hidden\s*\{\s*display:\s*none\s*!important\s*\}/)
+  })
+})
+
+describe('总览：落地页回答"有什么需要我"（U1）', () => {
+  it('落地就是总览，而"需要你处理"里直接给出回答框，不必先钻进详情页', async () => {
+    const { sent, last } = await mount(routes({
+      'POST tickets/ticket-1/answer': { ok: true },
+    }))
+    // 落地页是总览：这是 U1 的全部理由（§6.1 收件箱心智），所以要显式钉住，而不是靠"恰好"。
+    expect(byId('tab-overview').classList.contains('hidden')).toBe(false)
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(true)
+    // 等你回答的任务出现在总览里，带着它自己的问题原文和一个行内回答框。
+    expect(text('ov-attention')).toContain('整理本周竞品动态')
+    // 列表接口带的是 summary，不是 question（那是详情接口的字段）——总览显示前者，问题原文在详情里。
+    expect(text('ov-attention')).toContain('读完了三份文件')
+    const box = input('ov-answer-ticket-1')
+    expect(box).toBeTruthy()
+
+    // 行内回答走的是详情页同一条路由，没有第二套写法。按钮叫「发送」（行内快速回复），不叫「回答」。
+    type('ov-answer-ticket-1', '按 A 报表算')
+    click(button('发送', byId('ov-attention')))
+    await settle()
+    expect(sent('POST tickets/ticket-1/answer')).toHaveLength(1)
+    expect(last('POST tickets/ticket-1/answer')?.body).toEqual({ text: '按 A 报表算' })
+    expect(toastText()).toBe('已回答')
+  })
+
+  it('正在输入的回答不会被 5 秒刷新吃掉——这条纪律在总览同样成立', async () => {
+    await mount(routes())
+    type('ov-answer-ticket-1', '写到一半')
+    // 一次完整刷新（load() 会重画总览）。详情页为此有 draft+焦点保护，总览复用同一条纪律。
+    await tick(5000)
+    expect(input('ov-answer-ticket-1').value).toBe('写到一半')
+  })
+
+  it('没有需要你处理的事时说的是这句话，而不是一排 0 和空白', async () => {
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 0, tickets: [] },
+    }))
+    expect(text('ov-attention')).toContain('系统安静，没有需要你处理的事')
+  })
+
+  it('KPI 一排把"只有你能推进的事"放在视线落点，而机器路径不在其中', async () => {
+    await mount(routes())
+    const labels = all('#ov-kpis .l').map(node => read(node))
+    expect(labels).toEqual(['进行中的任务', '等你回答', '工作槽', '系统健康', '聊天等映射', '丢失的请求'])
+    // 排障时才看的东西不该占落地页的一格（§6.1：每个元素必须回答五个问题之一）。
+    expect(text('ov-kpis')).not.toContain('/Users/')
+    expect(text('ov-kpis')).not.toContain('state')
+  })
+
+  it('总览不自己再读一遍任务列表：一次读、两处用', async () => {
+    const { sent } = await mount(routes())
+    // 列表页与总览的「等你回答」是同一份数据；两条读会让落地页多一个请求，还可能两个数不一致。
+    expect(sent('GET tickets')).toHaveLength(1)
+    expect(sent('GET tickets')[0]!.query.get('state')).toBe('open')
+  })
+})
+
+describe('健康抽屉与打通（U2 / U3）', () => {
+  const BAD_ID = '19dd5c9ca7bce11fb2c9f7a2b04728b0'
+
+  it('状态胶囊点一下就打开抽屉，抽屉里是每个部件的原文，而不是一句"N 个问题"', async () => {
+    await mount(routes({
+      'GET state': state({
+        health: { sessions: { ok: false, detail: 'the main Session: LlmError: 500', at: AT }, effects: { ok: true, detail: 'no effect failed in this pass' } },
+      }),
+      'GET effects': { counts: { send: 2 } },
+    }))
+    // 落地时抽屉是关的：一个默认就开着的抽屉等于没有抽屉。
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
+    click(byId('health'))
+    await settle()
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(false)
+    const body = text('health-drawer-body')
+    // 原文，不是概述：操作者要读的是那句 LlmError，而不是"1 个问题"。
+    expect(body).toContain('the main Session: LlmError: 500')
+    expect(body).toContain('no effect failed in this pass')
+    // 队列也在同一个抽屉里，因为"哪里不对"和"还堆着多少事"是一起看的。
+    expect(body).toContain('send')
+    expect(text('drawer-sub')).toBe('1 个部件有问题')
+  })
+
+  it('问题文本里的任务 id 是入口，不是要抄下来的字符串', async () => {
+    await mount(routes({
+      'GET state': state({ health: { sessions: { ok: false, detail: `Ticket ${BAD_ID}: LlmError: 429`, at: AT } } }),
+      'GET effects': { counts: {} },
+      [`GET tickets/${BAD_ID}`]: ticket({ id: BAD_ID, title: '信息比对' }),
+      [`GET tickets/${BAD_ID}/progress`]: progress(),
+      [`GET tickets/${BAD_ID}/files`]: files(),
+      [`GET tickets/${BAD_ID}/dependencies`]: { waitsFor: [], waitedOnBy: [] },
+      [`GET tickets/${BAD_ID}/events`]: { count: 0, returned: 0, events: [] },
+    }))
+    click(byId('health'))
+    await settle()
+    const link = one('#health-drawer-body button.linklike')
+    expect(read(link)).toBe('19dd5c9c…')
+    expect(link.getAttribute('title')).toBe(BAD_ID)
+    click(link)
+    await settle()
+    // 一步从"哪里不对"走到"哪个任务不对"：抽屉关掉、切到任务页、详情就是那张。
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+    expect(read(one('#detail h2'))).toBe('信息比对')
+  })
+
+  it('Esc 与点遮罩都能关掉抽屉，因为一个关不掉的抽屉会挡住整页', async () => {
+    await mount(routes({ 'GET effects': { counts: {} } }))
+    click(byId('health'))
+    await settle()
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(false)
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
+    expect(byId('drawer-backdrop').classList.contains('hidden')).toBe(true)
+
+    click(byId('health'))
+    await settle()
+    click(byId('drawer-backdrop'))
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
+  })
+
+  it('归属那行点一下就打开那条工作，不再是要自己去别页找的死文本（U3 缺口 1）', async () => {
+    await mount(routes({
+      'GET tickets/ticket-1': ticket({ workId: 'work-1', workSeq: 3 }),
+      'GET works': { works: [work({ id: 'work-1', name: '周报' })] },
+      'GET works/work-1': { work: work({ id: 'work-1', name: '周报' }), tickets: [] },
+    }))
+    await openListed()
+    // U4 之后 kv 里有两个 linklike（Ticket 短码也算），所以要沿「归属」这个 dt 找到它自己的 dd，不能全页搜。
+    const term = all('#detail .kv dt').find(node => node.textContent === '归属')
+    const link = one('button.linklike', term!.nextElementSibling!)
+    expect(read(link)).toBe('周报（work-1）')
+    click(link)
+    await settle()
+    expect(byId('tab-works').classList.contains('hidden')).toBe(false)
+    expect(read(one('#work-detail'))).toContain('周报')
+  })
+
+  it('聊天等待与丢失两个胶囊都能点，直达各自的分区（U3 缺口 3/4）', async () => {
+    // mount() 收的是路由表，不是 state 文档——第一版把 chatState(...) 直接传了进去，于是 'GET state' 没人应答、
+    // 404、头部根本没画，红得莫名其妙。state 要走 'GET state' 这条路由进来。
+    await mount(routes({
+      'GET state': chatState({
+        chat: chatView({ waiting: { count: 2, ids: ['U01ABCDEF'] } }),
+        counts: { ...(chatState().counts as Record<string, unknown>), lost: { rows: 1, payloads: 0 } },
+      }),
+      // counts.lost 在场 → 页面不再把它当"这个 bundle 没有 lost 视图"，所以进来源页会真的去读详情。
+      'GET lost': {
+        total: 1, shown: 1, bounds: { keep: 20, chars: 1000 },
+        rows: [{ id: 'trigger-lost-1', source: 'chat', kind: 'chat', at: AT, title: '一条被放弃的请求', error: 'Error: gave up', effectKey: 'k' }],
+        payloads: [],
+      },
+    }))
+    // 两个胶囊都因为非零而现身，且都带着"可点"的线索。
+    expect(byId('chat-waiting').classList.contains('hidden')).toBe(false)
+    expect(byId('chat-waiting').className).toContain('clickable')
+    expect(byId('lost-count').classList.contains('hidden')).toBe(false)
+    expect(byId('lost-count').className).toContain('clickable')
+
+    // 【U14】两个胶囊不再落到同一页：聊天等待去「聊天」，丢失去「记录」。旧断言两处都是 tab-sources 可见。
+    click(byId('chat-waiting'))
+    await settle()
+    expect(byId('tab-chat').classList.contains('hidden')).toBe(false)
+
+    click(button('总览'))
+    await settle()
+    click(byId('lost-count'))
+    await settle()
+    expect(byId('tab-decisions').classList.contains('hidden')).toBe(false)
+  })
+
+  it('键盘也能打开抽屉：role=button 就得配 Enter，否则"可点"只对用鼠标的人成立', async () => {
+    await mount(routes({ 'GET effects': { counts: {} } }))
+    expect(byId('health').getAttribute('role')).toBe('button')
+    expect(byId('health').getAttribute('tabindex')).toBe('0')
+    byId('health').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await settle()
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(false)
+  })
+})
+
+describe('Esc 的优先级与空态的下一步（U10）', () => {
+  it('Esc 收起打开着的文件查看器', async () => {
+    await mount(routes())
+    await openListed()
+    click(button('报告.md'))
+    await settle()
+    expect(text('d-fileview')).toContain('报告.md')
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    // 收起就是清空：留一个空壳在那里，操作者会以为还在读。
+    expect(text('d-fileview')).toBe('')
+  })
+
+  it('抽屉开着时 Esc 先关抽屉，不动文件查看器（一个键三件事，按挡视线的程度排优先级）', async () => {
+    // 文件正文要有 `.view`，就得把单文件路由桩上（`served()`）：只桩目录列表 `files` 的话，
+    // 打开文件会 404、查看器画的是错误行，而我新加的那条守卫会红在一个与 Esc 无关的原因上。
+    await mount(routes({ 'GET effects': { counts: {} }, 'GET tickets/ticket-1/file': served() }))
+    await openListed()
+    click(button('报告.md'))
+    await settle()
+    click(byId('health'))
+    await settle()
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(false)
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
+    // 文件查看器不该被连带关掉：Esc 一次只关一层。
+    expect(text('d-fileview')).toContain('报告.md')
+    // 第二条独立守卫（0.8 强形式量出上面那条在 jsdom 里是**唯一**守卫：删掉它，"两层一起关"的变异就无人发现）。
+    // 钉的是另一个 DOM 事实——查看器里那个装着文件正文的 `.view` 还在，而不是同一句话换个说法。
+    expect(all('#d-fileview .view')).toHaveLength(1)
+    expect(read(button('收起', byId('d-fileview')))).toBe('收起')
+  })
+
+  it('空态的下一步按钮真的走到那一步，而不是一个装饰', async () => {
+    await mount(routes({ 'GET tickets': { offset: 0, limit: 80, count: 0, tickets: [] } }))
+    click(button('任务'))
+    await settle()
+    click(button('去派活', byId('tickets')))
+    await settle()
+    expect(byId('tab-new').classList.contains('hidden')).toBe(false)
+  })
+})
+
+describe('剩余打通（U16）', () => {
+  it('事件日志里的 Session id 可点击复制——抄 32 位串不该靠人眼', async () => {
+    await mount(routes({
+      'GET tickets/ticket-1/events': {
+        count: 1, returned: 1,
+        events: [event({ type: 'session_bound', detail: { sessionId: 'myagent-ticket-1' } })],
+      },
+    }))
+    await openListed()
+    // detail 渲染成可点按钮；文本逐字保留（detailText 里仍含原串），复制走点击。
+    const link = one('#d-events button.linklike')
+    expect(read(link)).toBe('myagent-ticket-1')
+    expect(link.getAttribute('title')).toContain('点击复制')
+    // 文本本身一字不丢：折叠/按钮化不等于删除。
+    expect(text('d-events')).toContain('myagent-ticket-1')
+  })
+
+  it('授权行里的发起者是入口：点它去设置页的允许发起者编辑', async () => {
+    await mount(routes())
+    await openListed()
+    const term = all('#detail details.tech dt').find(node => node.textContent === '授权')
+    const sender = one('button.linklike', term!.nextElementSibling!)
+    expect(read(sender)).toBe('operator')
+    click(sender)
+    await settle()
+    expect(byId('tab-settings').classList.contains('hidden')).toBe(false)
+    // 文本逐字不变：主 kv 的授权断言因此原样通过。
+    expect(detailValue('授权')).toBe('operator（person）经 schedule，策略版本 pv-9f3c')
+  })
+})
+
+describe('来源 Trigger 深链与过滤（U15）', () => {
+  // DECISIONS 是「what the gate decided」那个 describe 里的局部常量，这里取不到——
+  // 同一个作用域错误本文件已踩第三次（U5 的 openNew、U13 的 openSchedules）。就地写一份最小的：
+  // 两条判定、其中一条的 triggerId 是任务详情里那条，这样"只看一条"才有意义。
+  const MY_DECISIONS = {
+    count: 2,
+    decisions: [
+      {
+        id: 'decision-1', triggerId: 'trigger-7', outcome: 'accept', at: LATER, reason: 'accepted',
+        reasonText: 'The gate admitted this request.', ticketId: 'ticket-1', policyVersion: 'pv-9f3c',
+        title: '整理本周竞品动态',
+      },
+      {
+        id: 'decision-2', triggerId: 'trigger-9', outcome: 'ignore', at: AT, reason: 'sender_not_allowed',
+        reasonText: 'sender "stranger" is not on the list', title: '陌生人的请求',
+      },
+    ],
+  }
+  const TRIGGER_ROUTES = (): Routes => routes({
+    'GET decisions': MY_DECISIONS,
+  })
+
+  it('技术细节里的「来源 Trigger」点一下，记录页只看那一条请求的判定', async () => {
+    await mount(TRIGGER_ROUTES())
+    await openListed()
+    // U16 之后折叠区里有两个 linklike（授权的发起者、来源 Trigger），所以要沿 dt 找到 Trigger 自己那格。
+    const term = all('#detail details.tech dt').find(node => node.textContent === '来源 Trigger')
+    const link = one('button.linklike', term!.nextElementSibling!)
+    expect(read(link)).toBe('trigger-7')
+    click(link)
+    await settle()
+    expect(byId('tab-decisions').classList.contains('hidden')).toBe(false)
+    // 只看这一条：说明行 + 恰好 1 行判定（夹具里 trigger-7 只有 1 条）。
+    expect(text('decisions')).toContain(`只看来源 Trigger trigger-7 的判定：1 条`)
+    expect(all('#decisions li')).toHaveLength(2)   // 1 条说明 + 1 条判定
+    // 第二条守卫：过滤条件写进了地址栏。0.8 强形式量出"刷新后仍成立"那条测试里的 hash 断言是**唯一**守卫，
+    // 删掉它，"不写深链"的变异就无人发现——所以点击这条路径上也钉一次（两个角度守同一个事实）。
+    expect(location.hash).toBe('#trigger=trigger-7')
+    // 清除筛选取消，回到全部。
+    click(button('看全部'))
+    await settle()
+    expect(all('#decisions li')).toHaveLength(2)   // 2 条判定，无说明行
+  })
+
+  it('深链 #trigger=<id> 直接落在过滤后的记录页', async () => {
+    await mount(TRIGGER_ROUTES(), '#trigger=trigger-7')
+    await settle()
+    expect(byId('tab-decisions').classList.contains('hidden')).toBe(false)
+    expect(text('decisions')).toContain('只看来源 Trigger trigger-7')
+  })
+
+  it('过滤用深链表达，所以刷新后仍然成立，而不是又回到 80 条里找那一条', async () => {
+    await mount(TRIGGER_ROUTES())
+    await openListed()
+    const term = all('#detail details.tech dt').find(node => node.textContent === '来源 Trigger')
+    click(one('button.linklike', term!.nextElementSibling!))
+    await settle()
+    expect(location.hash).toBe('#trigger=trigger-7')
+    await tick(5000)
+    // 刷新重画，过滤仍在。
+    expect(text('decisions')).toContain('只看来源 Trigger trigger-7')
+  })
+
+  it('过滤不到时说清楚两种可能，而不是留一片空白', async () => {
+    await mount(TRIGGER_ROUTES(), '#trigger=trigger-x')
+    await settle()
+    expect(text('decisions')).toContain('这一条不在最近 80 条里；它可能更早，或根本没走到判定')
+  })
+})
+
+describe('来源页解散（U14）', () => {
+  it('五个分区各归其位：来源表在总览、健康与队列在抽屉、丢失在记录、聊天自成页', async () => {
+    await mount(routes({ 'GET effects': { counts: { notify: 2 } } }))
+    // 导航里不再有「来源」——那一页混了五个不相关的分区，现在没有东西需要它了。
+    const labels = [...byId('tabs').children].map(node => labelOf(node))
+    expect(labels).not.toContain('来源')
+    expect(labels).toContain('聊天')
+    // 旧面板 id 不存在了：留着它就是留一个永远画不出内容的空壳。
+    expect(document.getElementById('tab-sources')).toBe(null)
+
+    // 来源状态表在总览，且落地就画好（它不需要自己的请求，数据在 state 里）。
+    expect(all('#ov-sources table.plain')).toHaveLength(1)
+    expect(all('#ov-sources th').map(node => node.textContent)).toEqual(['来源', '状态', '详情', '下次', '最近触发', '计数'])
+
+    // 健康与队列在抽屉里，容器 id 沿用（搬动位置不该改名字）。
+    click(byId('health'))
+    await settle()
+    expect(all('#health-detail table.plain')).toHaveLength(1)
+    expect(all('#effects table.plain')).toHaveLength(1)
+    expect(text('effects-note')).toContain('退避重试')
+  })
+
+  it('丢失的请求与判定同住记录页，进这一页两份都读', async () => {
+    const { sent } = await mount(routes({
+      'GET state': state({ counts: { ...(state().counts as Record<string, unknown>), lost: { rows: 1, payloads: 0 } } }),
+      'GET lost': { total: 1, shown: 1, rows: [], payloads: [], bounds: { keep: 20, chars: 1000 } },
+    }))
+    click(button('记录'))
+    await settle()
+    expect(byId('tab-decisions').classList.contains('hidden')).toBe(false)
+    // 两份都在这一页上：判定列表与丢失说明。
+    expect(document.getElementById('decisions')).not.toBe(null)
+    expect(text('tab-decisions')).toContain('丢失的请求')
+    expect(sent('GET decisions').filter(call => call.query.get('limit') === '80')).toHaveLength(1)
+    expect(sent('GET lost')).toHaveLength(1)
+  })
+
+  it('答不了丢失视图的旧 bundle，在记录页仍要说"读不到"而不是留一片空白', async () => {
+    // 这一条钉住 U14 引入又修掉的回归：搬页之后 loadLost 是唯一入口，而它在 lostStale 时直接 return，
+    // 于是"这个 bundle 答不了"从一句话变成了空白。降级也必须说一句话，不能靠调用顺序碰巧成立。
+    await mount(routes())
+    click(button('记录'))
+    await settle()
+    expect(text('lost')).toContain('宿主的插件比这个页面旧')
+    expect(all('#lost p.warn')).toHaveLength(1)
+    expect(all('#lost p.ok')).toHaveLength(0)
+  })
+
+  it('聊天页只有聊天：等待队列、身份映射、频道、回复计数', async () => {
+    await mount(routes({ 'GET state': chatState() }))
+    click(button('聊天'))
+    await settle()
+    expect(byId('tab-chat').classList.contains('hidden')).toBe(false)
+    const body = text('tab-chat')
+    expect(body).toContain('身份映射')
+    expect(body).toContain('回复计数')
+    // 健康、队列、丢失都不在这一页了。
+    expect(body).not.toContain('丢失的请求')
+    expect(document.querySelector('#tab-chat #health-detail')).toBe(null)
+  })
+})
+
+describe('排期并入派活（U13）', () => {
+  it('派活页默认是「一次性派」，切到「定时派」才读排期并显示列表', async () => {
+    const { sent } = await mount(scheduleRoutes())
+    click(button('派活'))
+    await settle()
+    // 默认档：一次性派可见、定时派隐藏，且**没有**为看不见的东西发请求。
+    expect(byId('dispatch-once').classList.contains('hidden')).toBe(false)
+    expect(byId('dispatch-timed').classList.contains('hidden')).toBe(true)
+    // 基线不是 0：总览落地时就为"接下来自动跑的活"读过一次排期。断言要记基线、看增量，
+    // 否则量到的是别的页面的读——第一版正是把它当成 0，红得莫名其妙。
+    const baseline = sent('GET schedules').length
+    expect(baseline).toBe(1)
+
+    click(button('定时派'))
+    await settle()
+    expect(byId('dispatch-timed').classList.contains('hidden')).toBe(false)
+    expect(byId('dispatch-once').classList.contains('hidden')).toBe(true)
+    // 切过去才读：为看不见的页面轮询是白花的请求。
+    expect(sent('GET schedules')).toHaveLength(baseline + 1)
+    expect(text('schedules')).toContain('每日摘要')
+    // 当前档看得见（与任务页的筛选 chips 同一条纪律）。
+    expect(all('#dispatch-mode .chip-btn')[1]!.getAttribute('aria-pressed')).toBe('true')
+    expect(all('#dispatch-mode .chip-btn')[0]!.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('切回「一次性派」后，5 秒刷新不再读排期', async () => {
+    const { sent } = await mount(scheduleRoutes())
+    // openSchedules 是排期那个 describe 里的局部函数，这里取不到（U5 的 openNew 同一个作用域错误，第二次踩）。
+    // 内联同样两步：点「派活」，再切「定时派」。
+    click(button('派活'))
+    await settle()
+    click(button('定时派'))
+    await settle()
+    const afterOpen = sent('GET schedules').length
+    expect(afterOpen).toBe(2)  // 总览一次 + 定时模式一次
+    click(button('一次性派'))
+    await settle()
+    await tick(5000)
+    // 离开定时模式之后，刷新不该继续为它发请求。
+    expect(sent('GET schedules')).toHaveLength(afterOpen)
+  })
+
+  it('搜到一条排期，点它就落在派活页的定时模式', async () => {
+    await mount(scheduleRoutes())
+    type('search', 'digest')
+    await tick(250)
+    const rows = all('#search-results .sr')
+    expect(read(rows[0]!)).toContain('排期')
+    click(rows[0]!)
+    await settle()
+    expect(byId('tab-new').classList.contains('hidden')).toBe(false)
+    expect(byId('dispatch-timed').classList.contains('hidden')).toBe(false)
+  })
+})
+
+describe('频道表控件（U12）：关掉"只能改整份 JSON"的债', () => {
+  /** 打开来源页的聊天一节，带上保存与 pass 两条路由。 */
+  const openChatSection = async (over: Routes = {}) => {
+    const log = await mount(routes({
+      'GET state': chatState(),
+      'PUT settings': { settings: settings(), settingsRevision: 9 },
+      'POST pass': { ok: true },
+      ...over,
+    }))
+    click(button('聊天'))  // 【U14】聊天自成页，旧写法 button('来源')
+    await settle()
+    return log
+  }
+  /** 保存送出去的频道表。 */
+  const savedChannels = (log: { last: (key: string) => Call | undefined }) => {
+    const body = log.last('PUT settings')?.body as
+      { sources?: { chat?: { channels?: Record<string, unknown>[]; identities?: Record<string, unknown> } } } | undefined
+    return body?.sources?.chat
+  }
+
+  it('频道表每行有启停与删除，删除要两步确认', async () => {
+    await openChatSection()
+    const row = one('#chat table tbody tr')
+    expect(read(row.children[0])).toBe('ops')
+    expect(read(button('停用', row))).toBe('停用')
+    expect(read(button('删除', row))).toBe('删除')
+    // 第一步只是问，不写：删除的是"这个来源不再看那个目录"，不是一个显示项。
+    click(button('删除', row))
+    await settle()
+    expect(read(button('确认删除', one('#chat table tbody tr')))).toBe('确认删除')
+    expect(read(button('取消', one('#chat table tbody tr')))).toBe('取消')
+  })
+
+  it('加一个频道：整份文档里只多这一条，身份映射与其余设置原样保留', async () => {
+    const log = await openChatSection()
+    type('ch-id', 'research')
+    type('ch-dir', '/chat/research')
+    click(button('加一个频道'))
+    await settle()
+    const chat = savedChannels(log)
+    expect(chat?.channels).toEqual([
+      { id: 'ops', directory: '/chat/ops', enabled: true },
+      { id: 'research', directory: '/chat/research', enabled: true },
+    ])
+    // 关键的一半：改频道不该顺手抹掉身份映射（两者住在同一个 chat 块里）。
+    expect(chat?.identities).toEqual({ U01ABCDEF: { actor: 'alice', note: '操作者本人' } })
+    expect(toastText()).toContain('已加频道 research')
+    // 保存后立刻请系统再看一遍目录：加频道的意义是"它读到东西了吗"，不是"保存成功"四个字。
+    expect(log.sent('POST pass')).toHaveLength(1)
+  })
+
+  it('不合法的 id 当场说清规则，不发请求', async () => {
+    const log = await openChatSection()
+    type('ch-id', 'Bad_ID')
+    type('ch-dir', '/chat/x')
+    click(button('加一个频道'))
+    await settle()
+    expect(toastText()).toContain('小写字母开头')
+    expect(log.sent('PUT settings')).toHaveLength(0)
+  })
+
+  it('重复的 id 当场说，因为"加了一个什么都没发生"比一句报错难懂得多', async () => {
+    const log = await openChatSection()
+    type('ch-id', 'ops')
+    type('ch-dir', '/chat/ops2')
+    click(button('加一个频道'))
+    await settle()
+    expect(toastText()).toContain('已经有一个 id 为 ops 的频道')
+    expect(log.sent('PUT settings')).toHaveLength(0)
+  })
+
+  it('停用一个频道翻转的是它自己的 enabled，其余频道与设置不动', async () => {
+    const log = await openChatSection({
+      'GET state': chatState({
+        settings: chatDocument({
+          channels: [
+            { id: 'ops', directory: '/chat/ops', enabled: true },
+            { id: 'lab', directory: '/chat/lab', enabled: true },
+          ],
+        }),
+      }),
+    })
+    const rows = all('#chat table tbody tr')
+    click(button('停用', rows[1]!))
+    await settle()
+    expect(savedChannels(log)?.channels).toEqual([
+      { id: 'ops', directory: '/chat/ops', enabled: true },
+      { id: 'lab', directory: '/chat/lab', enabled: false },
+    ])
+    expect(toastText()).toContain('已停用频道 lab')
+  })
+
+  it('5 秒刷新不吃掉写到一半的频道表单', async () => {
+    await openChatSection()
+    type('ch-id', 'research')
+    type('ch-dir', '/chat/re')
+    // 一次完整刷新（load() 会重画聊天一节）。身份映射为此有草稿读回机制，频道表单复用同一条纪律。
+    await tick(5000)
+    expect(input('ch-id').value).toBe('research')
+    expect(input('ch-dir').value).toBe('/chat/re')
+  })
+
+  it('没填目录就说清楚要填什么，而不是让服务器拒一遍', async () => {
+    const log = await openChatSection()
+    type('ch-id', 'research')
+    click(button('加一个频道'))
+    await settle()
+    expect(toastText()).toContain('先写目录')
+    expect(log.sent('PUT settings')).toHaveLength(0)
+  })
+})
+
+describe('设置分区表单（U11）', () => {
+  const openSettings = async (over: Routes = {}): ReturnType<typeof mount> => {
+    const log = await mount(routes({ 'PUT settings': { settings: settings(), settingsRevision: 4 }, ...over }))
+    click(button('设置'))
+    await settle()
+    return log
+  }
+
+  it('分区改一处，JSON 跟着变，脏状态立刻说出来', async () => {
+    await openSettings()
+    choose('sq-mode', 'observe')
+    const parsed = JSON.parse(area('settings').value)
+    expect(parsed.acceptMode).toBe('observe')
+    // 改了没保存，页面上要看得见——切走丢改动是最容易白干的事。
+    expect(byId('settings-dirty').classList.contains('hidden')).toBe(false)
+    // 措辞本身也钉住：指示器说的是"有未保存的更改"，不是"改动"这种含糊话。
+    expect(read(byId('settings-dirty'))).toContain('未保存')
+    // 脏状态是**双向**指示器，所以它有两个跳变要钉。这一条与"保存后隐藏"（在下一条测试里）
+    // 一起构成独立守卫：0.8 强形式量出单靠上面那条 classList 断言时，"永不显示"的变异在删掉它之后就无人发现。
+    // 分区勾选也走同一条路：暂停是布尔，收的是 checkbox。
+    click(input('sq-paused'))
+    expect(JSON.parse(area('settings').value).paused).toBe(true)
+  })
+
+  it('「保存这一区」保存的是整份文档——四个入口，一个事实源', async () => {
+    const { last } = await openSettings()
+    choose('sq-mode', 'observe')
+    click(button('保存这一区', byId('sec-accept')))
+    await settle()
+    // PUT 的仍是**整份** settings：API 收整份，分区只是把入口变近，不是分片保存。
+    // 不与"保存后的文本框"比——保存成功后处理器会重新载入，文本框那时已经是服务器回的新状态了。
+    const body = last('PUT settings')?.body as Record<string, unknown>
+    expect(body).toMatchObject({ acceptMode: 'observe', paused: false, allowedSenders: ['operator'] })
+    // 整份的证据：没被这一区碰过的字段也原样在里面（分片保存会把它们丢掉）。
+    expect(body.executor).toEqual({ maxWorkers: 2, prepare: '', model: '' })
+    expect(Object.keys(body.sources as object).sort()).toEqual(['cron', 'inbox', 'session'])
+    expect(toastText()).toBe('已保存并生效')
+    // 保存成功后脏状态必须消失，否则它就成了常驻的噪声。
+    expect(byId('settings-dirty').classList.contains('hidden')).toBe(true)
+    // 再改一次必须又亮起来：指示器的两个跳变都要真的发生，而不只是"曾经亮过"。
+    // 要选一个与"保存后重新载入的值"不同的档——夹具重载回来就是 auto，再选 auto 等于没改，脏状态当然不亮。
+    choose('sq-mode', 'observe')
+    expect(byId('settings-dirty').classList.contains('hidden')).toBe(false)
+  })
+
+  it('JSON 手改会实时重画分区；不合法时分区不动——拿半份数据重画会把错误固化进表单', async () => {
+    await openSettings()
+    type('settings', JSON.stringify({ ...settings(), acceptMode: 'observe' }, null, 2))
+    await settle()
+    expect(input('sq-mode').value).toBe('observe')
+    expect(input('sq-senders').value).toBe('operator')
+
+    // 改坏 JSON：分区必须停在最后一份合法值上。
+    choose('sq-mode', 'auto')
+    type('settings', '{"acceptMode": ')
+    expect(input('sq-mode').value).toBe('auto')
+    expect(byId('settings-dirty').classList.contains('hidden')).toBe(false)
+  })
+
+  it('各来源开关写进 sources.<来源>.enabled，而关闭是产出侧的事——已受理的不受影响', async () => {
+    await openSettings()
+    const boxes = all('#sq-src-toggles input[data-src]')
+    // 夹具有 cron / inbox / session 三个来源块，勾选状态画得对。
+    expect(boxes.map(box => (box as HTMLElement).dataset.src).sort()).toEqual(['cron', 'inbox', 'session'])
+    click(boxes[0]!)
+    const parsed = JSON.parse(area('settings').value) as { sources: Record<string, Record<string, unknown>> }
+    expect(parsed.sources.cron!.enabled).toBe(false)
+  })
+
+  it('收件目录分区收的是目录、轮询与开关', async () => {
+    await openSettings()
+    expect(input('sq-inbox-dir').value).toBe('/inbox')
+    expect(input('sq-inbox-poll').value).toBe('5000')
+    type('sq-inbox-dir', '/新收件目录')
+    const parsed = JSON.parse(area('settings').value) as { sources: Record<string, Record<string, unknown>> }
+    expect(parsed.sources.inbox!.directory).toBe('/新收件目录')
+  })
+})
+
+describe('全局搜索（U9）', () => {
+  it('按标题或 id 搜到任务，点结果直达详情', async () => {
+    await mount(routes())
+    type('search', '竞品')
+    // 输入是 180ms 防抖的——不是等真实时间，是推进假时钟。
+    await tick(250)
+    const results = all('#search-results .sr')
+    expect(results.length).toBe(1)
+    expect(read(results[0]!)).toContain('整理本周竞品动态')
+    expect(read(results[0]!)).toContain('任务')
+    click(results[0]!)
+    await settle()
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+    expect(read(one('#detail h2'))).toBe('整理本周竞品动态')
+    // 选中即清空：搜索框不留旧字，下一次搜不用先删。
+    expect(input('search').value).toBe('')
+  })
+
+  it('搜工作与排期也直达，搜不到就说没有，不静默', async () => {
+    await mount(routes({
+      'GET works': { works: [work({ id: 'work-7', name: '竞品周报' })] },
+      'GET works/work-7': { work: work({ id: 'work-7', name: '竞品周报' }), tickets: [] },
+      'GET schedules': { zone: 'Asia/Shanghai', now: AT, schedules: [scheduleView()] },
+    }))
+    type('search', '周报')
+    await tick(250)
+    const kinds = all('#search-results .sr .kind').map(node => read(node))
+    expect(kinds).toContain('工作')
+
+    type('search', '不存在的字')
+    await tick(250)
+    expect(read(one('#search-results .sr'))).toBe('没有匹配的。')
+  })
+
+  it('Esc 清空搜索并收起结果', async () => {
+    await mount(routes())
+    type('search', '竞品')
+    await tick(250)
+    expect(byId('search-results').classList.contains('hidden')).toBe(false)
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    expect(input('search').value).toBe('')
+    expect(byId('search-results').classList.contains('hidden')).toBe(true)
+  })
+
+  it('按 id 前缀也搜得到：人记得的常常是那 8 位短码', async () => {
+    await mount(routes())
+    type('search', 'ticket-1')
+    await tick(250)
+    // **不数行数**：空结果那条"没有匹配的。"同样是一个 .sr，所以 `toHaveLength(1)` 在搜不到时也成立——
+    // 变异检验（去掉 id 匹配）当场量出这条断言是空的。断言内容，不断言条数。
+    const row = one('#search-results .sr')
+    expect(read(row)).toContain('整理本周竞品动态')
+    expect(read(one('.kind', row))).toBe('任务')
+    expect(read(row)).not.toContain('没有匹配')
+  })
+})
+
+describe('列表用相对时间，绝对时刻不丢（U8）', () => {
+  it('任务行说"多久前"，而精确时刻挂在 title 上——相对化不等于丢信息', async () => {
+    await mount(routes())
+    click(button('任务'))
+    await settle()
+    const cells = all('#tickets li .meta span').filter(node => node.getAttribute('title') !== null)
+    expect(cells.length).toBeGreaterThan(0)
+    // 文本是相对表达（或超 30 天退回的日期）。**不断言具体"3 天前"**：真实时钟在走，
+    // 那样写会随日期漂移成 flake——W9 修过的同一类，不能在这里重新引进。
+    expect(read(cells[0])).toMatch(/刚刚|分钟前|小时前|天前|\d{4}\//)
+    expect(cells[0]!.getAttribute('title')).toContain('2026')
+    // 详情里的时刻仍是绝对的：列表回答"多久前"，详情回答"几点几分"（邮件与 IM 的分法）。
+    await openListed()
+    expect(detailValue('创建')).toContain('2026')
+  })
+
+  it('"此刻"的最后动静也相对化，因为要判断的是"它还活着吗"', async () => {
+    await mount(routes({ 'GET tickets/ticket-1/progress': progress({ lastEventAt: new Date().toISOString() }) }))
+    await openListed()
+    await settle()
+    expect(text('d-progress')).toMatch(/最后动静\s*刚刚|最后动静\s*\d+ 分钟前/)
+  })
+})
+
+describe('改名、筛选 chips 与导航徽标（U7）', () => {
+  it('筛选是四档 chips，当前档看得见，点另一档就按那一档重新读', async () => {
+    const { sent, last } = await mount(routes())
+    click(button('任务'))
+    await settle()
+    const chips = all('#filter .chip-btn')
+    expect(chips.map(node => node.textContent)).toEqual(['进行中', '等你回答', '已结束', '全部'])
+    // 当前档是"看得见"的，不是藏在下拉里的一个 value。
+    expect(chips[0]!.getAttribute('aria-pressed')).toBe('true')
+    expect(chips.slice(1).every(node => node.getAttribute('aria-pressed') === 'false')).toBe(true)
+
+    click(button('已结束'))
+    await settle()
+    expect(last('GET tickets')?.query.get('state')).toBe('ended')
+    expect(all('#filter .chip-btn')[2]!.getAttribute('aria-pressed')).toBe('true')
+    expect(all('#filter .chip-btn')[0]!.getAttribute('aria-pressed')).toBe('false')
+    // 四档都还在：换档不是把别的档藏起来。
+    expect(sent('GET tickets').map(call => call.query.get('state'))).toContain('open')
+  })
+
+  it('总览的「等你回答」卡点一下就切到任务页并选中那一档', async () => {
+    await mount(routes())
+    click(one('#ov-kpis .ov-kpi.clickable'))
+    await settle()
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+    expect(all('#filter .chip-btn')[1]!.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('徽标只在非零时出现：一个常驻的 0 是眼睛会自动跳过的东西', async () => {
+    // 默认夹具里 attention=1，所以任务页徽标现身并报数。
+    await mount(routes())
+    const badge = byId('badge-tickets')
+    expect(badge.classList.contains('hidden')).toBe(false)
+    expect(badge.textContent).toBe('1')
+
+    // 归零就必须消失，而不是显示 0——它唯一要说的话是"有事等你"。
+    await mount(routes({
+      'GET state': state({ counts: { ...(state().counts as Record<string, unknown>), attention: 0 } }),
+    }))
+    expect(byId('badge-tickets').classList.contains('hidden')).toBe(true)
+  })
+
+  it('聊天等映射与丢失合并成一颗徽标，因为它们是同一件事：只有你能推进', async () => {
+    await mount(routes({
+      'GET state': chatState({
+        chat: chatView({ waiting: { count: 2, ids: ['U01'] } }),
+        counts: { ...(chatState().counts as Record<string, unknown>), lost: { rows: 1, payloads: 2 } },
+      }),
+      'GET lost': { total: 3, shown: 3, rows: [], payloads: [], bounds: { keep: 20, chars: 1000 } },
+    }))
+    expect(byId('badge-sources').classList.contains('hidden')).toBe(false)
+    expect(byId('badge-sources').textContent).toBe('5')
+  })
+
+  it('菜单用操作者的词：任务、记录，而不是 Ticket、门禁记录', async () => {
+    await mount(routes())
+    const labels = [...byId('tabs').children].map(node => labelOf(node))
+    // 【U13】排期并入派活，一级菜单 9 → 8。旧值：['总览','任务','工作','派活','记录','来源','排期','设置','提示词']
+    // 【U14】来源页解散：留下的只有聊天，所以这一项改叫「聊天」。旧值含 '来源'。
+    expect(labels).toEqual(['总览', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词'])
+    // data-tab 没跟着改：它是路由与深链的键，改它等于改协议，而改名只该改给人看的那一层。
+    expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
+      // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
+      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
+  })
+})
+
+describe('创建结果卡片与提示词分角色卡（U5 / U6）', () => {
+  it('建成功了说的是人话，并给出打开它的按钮；原始 JSON 折叠但没删', async () => {
+    await mount(routes({ 'POST tickets': { stored: true, disposition: 'accepted', ticketId: 'ticket-9' } }))
+    click(button('派活'))
+    await settle()
+    type('n-title', '整理本周竞品动态')
+    type('n-request', '产出 report.md')
+    click(button('创建 Ticket'))
+    await settle()
+    expect(text('new-result')).toContain('已开任务 ticket-9')
+    expect(text('new-result')).toContain('它已经进队列')
+    // 原始返回还在，只是默认折叠：排障时它必须在，而"折叠"不等于"删除"（与 U4 同一条原则）。
+    expect(text('new-result')).toContain('"ticketId": "ticket-9"')
+    expect(one('#new-result details.tech').hasAttribute('open')).toBe(false)
+    expect(read(button('打开这张任务', byId('new-result')))).toBe('打开这张任务')
+  })
+
+  it('observe 模式下说清"记录了但没执行"，并给出怎么让它真的跑', async () => {
+    await mount(routes({ 'POST tickets': { stored: true, disposition: 'observed', reason: 'observed' } }))
+    click(button('派活'))
+    await settle()
+    type('n-title', '整理本周竞品动态')
+    type('n-request', '产出 report.md')
+    click(button('创建 Ticket'))
+    await settle()
+    expect(text('new-result')).toContain('已记录，但没有执行')
+    expect(text('new-result')).toContain('把受理模式改成 auto')
+  })
+
+  it('被拒时把原因原话给出，并指向该去哪修', async () => {
+    await mount(routes({ 'POST tickets': { stored: false, disposition: 'ignored', reason: 'sender_not_allowed', reasonText: '发起者不在允许名单' } }))
+    click(button('派活'))
+    await settle()
+    type('n-title', 'x')
+    type('n-request', 'y')
+    click(button('创建 Ticket'))
+    await settle()
+    expect(text('new-result')).toContain('没有开任务')
+    expect(text('new-result')).toContain('发起者不在允许名单')
+    expect(text('new-result')).toContain('不在允许名单就去设置页加')
+  })
+
+  // 复用文件里既有的 PROMPTS 夹具，而不是自己手搓一份：第一版我把字段写成 `current`，
+  // 而页面读的是 `override`，于是文本框是空的、芯片显示"读内置"——夹具与实现的字段名对不上，
+  // 红的却是产品。用同一个夹具，这类错就不可能再发生。
+  // 文件里那份 PROMPTS 定义在另一个 describe 内部，这里取不到；就地写一份**字段名与实现一致**的：
+  // 页面读的是 `override`（不是 `current`），第一版正是把这两个搞混，夹具与实现对不上、红的却是产品。
+  const MY_PROMPTS = {
+    revision: 2, maxChars: 20_000,
+    roles: [
+      { role: 'worker', base: '内置的 worker 文本', override: '自定义的 worker 文本', pinsBase: false },
+      { role: 'orchestrator', base: '内置的 orchestrator 文本', pinsBase: false },
+    ],
+  }
+  const promptRoutes = (over: Routes = {}): Routes => routes({
+    'GET prompts': MY_PROMPTS,
+    'PUT prompts': { revision: 3 },
+    ...over,
+  })
+
+  it('每个角色说自己是什么状态，并给出字数（U6）', async () => {
+    await mount(promptRoutes())
+    click(button('提示词'))
+    await settle()
+    expect(read(byId('p-worker-state'))).toBe('已覆盖')
+    expect(read(byId('p-orchestrator-state'))).toBe('读内置')
+    expect(text('p-worker-count')).toBe(`${'自定义的 worker 文本'.length} 字`)
+    // 覆盖文本恰好等于内置时，系统会把这个角色钉在当前版本——这件事必须看得见，不能只在保存后才发现。
+    type('p-worker', '内置的 worker 文本')
+    expect(read(byId('p-worker-state'))).toContain('与内置相同')
+  })
+
+  it('只恢复一个角色时，另一个角色的当前值原样带上，不被顺手抹掉', async () => {
+    const { last } = await mount(promptRoutes())
+    click(button('提示词'))
+    await settle()
+    type('p-orchestrator', '我自己写的前台提示词')
+    click(button('只恢复这个角色', byId('prompt-card-worker')))
+    await settle()
+    // PUT 的仍是整份文档，所以"只恢复 worker"必须把 orchestrator 的当前值一起送回去。
+    expect(last('PUT prompts')?.body).toEqual({ worker: '', orchestrator: '我自己写的前台提示词' })
+    // 第二条守卫，独立于具体值：0.8 强形式量出上一条是**唯一**守卫（删掉它，"两个都抹空"的变异就无人发现）。
+    // 这一条只钉那个真正不可接受的结局——把操作者另一个角色写的东西悄悄抹掉。
+    expect(last('PUT prompts')?.body).not.toEqual({ worker: '', orchestrator: '' })
+    expect(toastText()).toBe('worker 已恢复内置（修订 3）')
+  })
+})
+
+describe('短码与技术细节折叠（U4）', () => {
+  const LONG = 'b356ac649bc46a144c38f9b4b6619175'
+
+  it('技术细节默认折叠，但折叠不等于删除：文本还在 DOM 里', async () => {
+    await mount(routes())
+    await openListed()
+    const fold = one('#detail details.tech')
+    // 默认不展开——排障才看的东西不该天天占着屏幕。
+    expect(fold.hasAttribute('open')).toBe(false)
+    // 但一个字都没丢：授权全文、Trigger id、范围原文都还在文档里（既有 detailValue 断言也正因此不受影响）。
+    expect(text('detail')).toContain('策略版本 pv-9f3c')
+    expect(text('detail')).toContain('trigger-7')
+    expect(text('detail')).toContain('只在这张 Ticket 自己的目录里工作')
+    // 展开是操作者的一次点击，不是一次刷新。
+    click(one('#detail details.tech summary'))
+    expect(one('#detail details.tech').hasAttribute('open')).toBe(true)
+  })
+
+  it('正文显示 8 位短码，整串挂在点击复制上——抄 32 位十六进制不该靠人眼', async () => {
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ id: LONG })] },
+      [`GET tickets/${LONG}`]: ticket({ id: LONG }),
+      [`GET tickets/${LONG}/progress`]: progress(),
+      [`GET tickets/${LONG}/files`]: files(),
+      [`GET tickets/${LONG}/dependencies`]: { waitsFor: [], waitedOnBy: [] },
+      [`GET tickets/${LONG}/events`]: { count: 0, returned: 0, events: [] },
+    }))
+    await openListed()
+    // dd 的文本恰为短码，别无他物：整串若也画出来，这一行就又变回 32 位噪声。
+    expect(detailValue('任务'))  // 【U7 改名】旧标签 'Ticket'.toBe('b356ac64…')
+    const link = one('#detail .kv button.linklike')
+    expect(link.getAttribute('title')).toContain(LONG)
+    expect(read(link)).toBe('b356ac64…')
   })
 })
 

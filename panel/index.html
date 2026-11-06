@@ -113,6 +113,63 @@
   .view { max-height: 340px; overflow: auto; background: var(--subtle); border: 1px solid var(--line); border-radius: 8px; padding: 10px }
   .mentions-box { border: 1px solid var(--accent); background: var(--accent-bg); border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 13px }
   .quick-bar { background: var(--subtle); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px }
+  /* 总览的 KPI 一排：数字大、标签小，扫一眼就知道系统在哪一档；点得到的一律是可点样式。 */
+  .ov-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px }
+  .ov-kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow) }
+  .ov-kpi .n { font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -.01em }
+  .ov-kpi .l { font-size: 12px; color: var(--muted); margin-top: 2px }
+  .ov-kpi.clickable { cursor: pointer; transition: border-color .15s }
+  .ov-kpi.clickable:hover { border-color: var(--accent) }
+  .ov-kpi.alert .n { color: var(--bad) }
+  .ov-kpi.warn .n { color: var(--warn) }
+  .ov-kpi.good .n { color: var(--ok) }
+  /* 行内回答框：邮件里"回复"从不离开收件箱，这里也不该让人为了答一句话先钻进详情页。 */
+  .ov-item { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; background: var(--surface) }
+  .ov-item .hd { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap }
+  .ov-quiet { padding: 14px; border: 1px dashed var(--line-strong); border-radius: 10px; color: var(--muted); text-align: center }
+  /* 健康抽屉（U2）：从任何页面 1 步可达，替代只有 hover 才出现的 tooltip——hover 在触屏上根本不存在。 */
+  #drawer-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .38); z-index: 55 }
+  #health-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 92vw); z-index: 60;
+                   background: var(--surface); border-left: 1px solid var(--line); box-shadow: -4px 0 24px rgba(15,23,42,.14);
+                   display: flex; flex-direction: column }
+  #health-drawer header { position: static; box-shadow: none; padding: 12px 16px; align-items: center }
+  #health-drawer .body { overflow-y: auto; padding: 14px 16px 28px; flex: 1 }
+  #health-drawer h2 { margin-top: 16px }
+  /* 顶栏胶囊里可点的那几个：cursor 与 hover 是"这里能点"的唯一线索，不给就等于没有。 */
+  .pill.clickable { cursor: pointer }
+  .pill.clickable:hover { border-color: var(--accent); color: var(--fg) }
+  /* 技术细节（U4）：默认折叠。policyVersion、Trigger id、范围原文是排障要看的，不是每天要看的。 */
+  details.tech { border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; background: var(--subtle) }
+  details.tech > summary { cursor: pointer; padding: 8px 12px; font-size: 12px; color: var(--muted); font-weight: 600; user-select: none }
+  details.tech[open] > summary { border-bottom: 1px solid var(--line) }
+  details.tech .kv { border: 0; background: transparent; margin: 8px 12px }
+  .prompt-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: var(--subtle) }
+  .set-sec { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; background: var(--subtle) }
+  .set-sec label { margin: 6px 0 2px }
+  #settings-dirty { border: 1px solid var(--warn); background: var(--warn-bg); color: var(--warn);
+                    border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: 13px }
+  /* 全局搜索（U9）：人找一件东西的第一动作是搜，不是翻左侧分组。 */
+  #search-wrap { position: relative; flex: 1 1 240px; max-width: 340px; min-width: 180px }
+  #search { width: 100%; padding: 6px 10px 6px 30px; border-radius: 999px; font-size: 13px;
+            background: var(--subtle); border: 1px solid var(--line-strong) }
+  #search-wrap::before { content: '⌕'; position: absolute; left: 11px; top: 50%; transform: translateY(-52%);
+            color: var(--muted); font-size: 15px; pointer-events: none }
+  #search-results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 70; background: var(--surface);
+            border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 28px rgba(15,23,42,.18);
+            max-height: 380px; overflow-y: auto; padding: 6px }
+  #search-results .sr { display: flex; gap: 8px; align-items: baseline; padding: 8px 10px; border-radius: 8px; cursor: pointer }
+  #search-results .sr:hover { background: var(--subtle) }
+  #search-results .sr .kind { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; flex: none }
+  /* 导航徽标（U7）：人看导航先于看顶栏，"需要我"就该出现在视线落点上，而不是藏在顶部胶囊里。 */
+  nav button .badge { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 999px;
+                      background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center }
+  nav button .badge.muted-badge { background: var(--warn) }
+  /* 筛选 chips（U7）：下拉要先点开才知道有哪几档，chips 把四档一次摊开，当前档看得见。 */
+  .chips { display: inline-flex; gap: 6px; flex-wrap: wrap }
+  .chip-btn { background: var(--surface); color: var(--muted); border: 1px solid var(--line-strong); border-radius: 999px;
+              padding: 4px 12px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s }
+  .chip-btn:hover { border-color: var(--accent); color: var(--accent) }
+  .chip-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600 }
   /* `!important` is not sloppiness here, it is the whole point: this is a utility class whose only job is to hide, and
      an ID rule beats a class rule on specificity regardless of source order. `#v2-banner, #chat-banner { display: flex }`
      above therefore won, both banners stayed on screen permanently, the 重试 button appeared to do nothing (it toggled
@@ -129,19 +186,24 @@
   <span class="pill" id="mode">受理模式 <b>—</b></span>
   <span class="pill" id="counts">Ticket <b>—</b></span>
   <span class="pill" id="slots">工作槽 <b>—</b></span>
-  <span class="pill" id="health">状态 <b>—</b></span>
+  <!-- 可点：健康详情以前只有 hover tooltip，触屏上等于不存在（§6.1）。点开是抽屉，任何页面 1 步可达。 -->
+  <span class="pill clickable" id="health" role="button" tabindex="0" title="点开看每个部件的健康详情">状态 <b>—</b></span>
   <span class="pill" id="main-session" title="主 Session 是你的前台：报告的通知会留在它的历史里，派活也从它开始。挂载时不创建，按需创建。">主 Session <b>—</b></span>
   <span class="pill" id="paths" title="状态目录 / 工作根 / 收件目录">路径 <b>—</b></span>
   <!-- Shown from every page, and only when it is non-zero: a message from an unmapped identity is HELD, not refused,
        so nothing else on this panel will ever bring it up again — no Decision, no Ticket, no toast. Its remedy is a
        settings edit the operator has to know to make, and burying that on one tab is how a held message stays held. -->
-  <span class="pill hidden" id="chat-waiting" title="聊天来源留住了几条来自未映射身份的消息：它们没有变成 Trigger，也没有被拒绝，文件还在频道目录里。把身份加进映射表，下一次扫描就会受理。详情在「来源」页。">聊天等待 <b>—</b></span>
+  <span class="pill clickable hidden" id="chat-waiting" role="button" tabindex="0" title="聊天来源留住了几条来自未映射身份的消息：它们没有变成 Trigger，也没有被拒绝，文件还在频道目录里。把身份加进映射表，下一次扫描就会受理。详情在「来源」页。">聊天等待 <b>—</b></span>
   <!-- Shown from every page, and only when it is non-zero, for the reason the pill beside it exists: a request the
        queue gave up on is silent everywhere else. It has no Decision, no Ticket, no toast, and the effect row it came
        in on is deleted, so nothing else on this panel will ever bring it up again — and unlike a held message it is
        gone, not waiting. Hidden when `state` has no `counts.lost` at all, because "this bundle cannot answer" is not
        a zero. Details in 「来源」页. -->
-  <span class="pill hidden" id="lost-count" title="队列彻底放弃过几个请求：重试 5 次都失败，效果行已删，此后没有任何一轮 pass 会再看它一眼。系统不会自动重放它们。两条路径（已被认出的行、读不出的载荷）分开列在「来源」页的「丢失的请求」里。">丢失 <b>—</b></span>
+  <span class="pill clickable hidden" id="lost-count" role="button" tabindex="0" title="队列彻底放弃过几个请求：重试 5 次都失败，效果行已删，此后没有任何一轮 pass 会再看它一眼。系统不会自动重放它们。两条路径（已被认出的行、读不出的载荷）分开列在「来源」页的「丢失的请求」里。">丢失 <b>—</b></span>
+  <span id="search-wrap">
+    <input type="text" id="search" placeholder="搜索任务、工作、排期…（⌘K）" autocomplete="off">
+    <div id="search-results" class="hidden"></div>
+  </span>
   <span class="row" style="margin-left:auto">
     <button class="btn hidden" id="create-main">创建主 Session</button>
     <button class="btn" id="pause">暂停 / 继续</button>
@@ -168,24 +230,54 @@
     <button class="btn small" id="chat-retry">重试</button>
   </div>
   <nav id="tabs">
-    <button data-tab="tickets" aria-selected="true">Ticket</button>
+    <!-- 落地页是总览而不是任务列表：人打开面板的第一问是"有什么新事"，不是"给我看全部任务"。
+         这是收件箱心智（§6.1），也是 U1 的全部理由。 -->
+    <button data-tab="overview" aria-selected="true">总览</button>
+    <!-- 【U7 改名】Ticket→任务：操作者的词。data-tab 不动，所以路由、深链与真浏览器断言都不受影响。 -->
+    <button data-tab="tickets" aria-selected="false">任务<span class="badge hidden" id="badge-tickets"></span></button>
     <button data-tab="works">工作</button>
     <button data-tab="new">派活</button>
-    <button data-tab="decisions">门禁记录</button>
-    <button data-tab="sources">来源</button>
-    <button data-tab="schedules">排期</button>
+    <button data-tab="decisions">记录<span class="badge muted-badge hidden" id="badge-sources"></span></button>
+    <button data-tab="chat">聊天<span class="badge muted-badge hidden" id="badge-sources"></span></button>
     <button data-tab="settings">设置</button>
     <button data-tab="prompts">提示词</button>
   </nav>
 
-  <div id="tab-tickets">
+  <div id="tab-overview">
+    <!-- KPI 一排：只放"一眼要知道"的数，不放机器路径这类排障时才看的东西。 -->
+    <div class="ov-kpis" id="ov-kpis"></div>
+    <section class="card">
+      <h2>需要你处理</h2>
+      <p class="muted">三样东西以前散在三个页面：等你回答的任务、等你映射身份的聊天消息、队列彻底放弃的请求。
+        它们是同一个问题的三种形态——<b>无人值守的系统里，只有你能推进的事</b>。</p>
+      <div id="ov-attention"><span class="muted">读取中…</span></div>
+    </section>
+    <section class="card">
+      <h2>活从哪来</h2>
+      <p class="muted">每个来源现在是在跑还是停了、下次什么时候看、最近一次产出是什么时候。</p>
+      <div id="ov-sources"><span class="muted">读取中…</span></div>
+    </section>
+    <div class="grid">
+      <section class="card">
+        <h2>接下来自动跑的活</h2>
+        <div id="ov-upcoming"><span class="muted">读取中…</span></div>
+      </section>
+      <section class="card">
+        <h2>最近活动</h2>
+        <div id="ov-recent"><span class="muted">读取中…</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tab-tickets" class="hidden">
     <div class="row" style="margin-bottom:10px">
-      <select id="filter" style="width:auto">
-        <option value="open">进行中</option>
-        <option value="attention">等人回答</option>
-        <option value="ended">已结束</option>
-        <option value="all">全部</option>
-      </select>
+      <!-- 【U7】下拉改 chips：四档一次摊开，当前档看得见，少一次点击。语义与原来逐档相同。 -->
+      <div class="chips" id="filter" role="group" aria-label="筛选任务">
+        <button class="chip-btn" data-filter="open" aria-pressed="true">进行中</button>
+        <button class="chip-btn" data-filter="attention" aria-pressed="false">等你回答</button>
+        <button class="chip-btn" data-filter="ended" aria-pressed="false">已结束</button>
+        <button class="chip-btn" data-filter="all" aria-pressed="false">全部</button>
+      </div>
       <button class="btn" id="refresh">刷新</button>
       <span class="muted" id="ticket-hint"></span>
     </div>
@@ -228,6 +320,13 @@
   </div>
 
   <div id="tab-new" class="hidden">
+    <!-- U13：排期与手动派活合成一页。它们走的是**同一道门禁**、写的是同一种请求，
+         差别只在"现在派"还是"到点派"——分成两个一级菜单，是把系统内部的实现分类当成了操作者的分类。 -->
+    <div class="chips" id="dispatch-mode" role="group" aria-label="派活方式" style="margin-bottom:12px">
+      <button class="chip-btn" data-mode="once" aria-pressed="true">一次性派</button>
+      <button class="chip-btn" data-mode="timed" aria-pressed="false">定时派</button>
+    </div>
+    <div id="dispatch-once">
     <section class="card">
       <h2>派一个活</h2>
       <p class="muted">和定时任务、投递到收件目录的文件走同一道门禁。observe 模式下只记录、不执行。</p>
@@ -249,44 +348,8 @@
       <div class="row" style="margin-top:12px"><button class="btn" id="create">创建 Ticket</button></div>
       <pre id="new-result" class="muted"></pre>
     </section>
-  </div>
-
-  <div id="tab-decisions" class="hidden">
-    <section class="card">
-      <h2>门禁记录</h2>
-      <p class="muted">每个 Trigger 的判定：accepted 开 Ticket，observed 只记录，ignored 附原因。</p>
-      <ul class="list" id="decisions"></ul>
-    </section>
-  </div>
-
-  <div id="tab-sources" class="hidden">
-    <section class="card"><h2>来源</h2><div id="sources"></div></section>
-    <section class="card"><h2>健康</h2><div id="health-detail"></div></section>
-    <section class="card"><h2>队列</h2><div id="effects"></div><p class="muted" id="effects-note"></p></section>
-    <section class="card">
-      <h2>丢失的请求</h2>
-      <!-- The remedy is stated here, in markup, so it does not depend on a read that may have failed: the operator who
-           gets here because something is broken is the one who must not find an empty box. -->
-      <p class="muted">队列对一个请求重试 5 次（15s、30s、60s 退避）仍失败就<b>放弃</b>它，并删掉自己那一行——此后没有任何一轮
-        pass 会再看它一眼，重启也不会把它捡回来。放弃时会留下一条记录，这一节就是读它的地方。
-        它<b>不是</b>门禁判定：门禁可能根本没跑到出结论，所以这里没有 Decision、也没有 Ticket。</p>
-      <p class="muted"><b>这里没有「重放」按钮，因为它做不到。</b>没有任何路由能把一条已经放弃的请求重新塞回队列，
-        一个只能失败的按钮比没有按钮更坏。<b>系统也不会自动重放它。</b>能做的只有两件事：修好让它失败的原因，
-        然后让来源再产出一次同样的请求（收件目录里再放一个文件、排期到点再触发、让对方再发一次）——门禁会重新跑一遍，
-        <code>lost</code> 行<b>不算重复</b>，所以不会被短路成「这条已经处理过了」；或者在「派活」页手动画一条，
-        那是<b>新的一条</b>请求，不是重放这一条。</p>
-      <div id="lost"></div>
-    </section>
-    <section class="card">
-      <h2>聊天</h2>
-      <p class="muted">平台桥把消息写进频道目录，就成了这里的一条请求；报告原路写回同一个目录的 <code>out/</code>。
-        身份必须被<b>映射</b>才成为发起者：没映射的消息<b>留住</b>（不产生 Trigger，也不拒绝，文件留在原处），
-        加进映射表之后下一次扫描就受理它——拒绝是不可逆的，留住不是。</p>
-      <div id="chat"></div>
-    </section>
-  </div>
-
-  <div id="tab-schedules" class="hidden">
+    </div>
+    <div id="dispatch-timed" class="hidden">
     <section class="card">
       <h2>排期</h2>
       <p class="muted">到点自动派活，走的是和手动派活同一道门禁。时区 <b id="sched-zone">—</b> · 上次触发 <span id="sched-last">—</span></p>
@@ -321,30 +384,109 @@
       <pre id="sched-preview-out" class="muted"></pre>
       <pre id="sched-error" class="bad"></pre>
     </section>
+  
+    </div>
+  </div>
+
+  <div id="tab-decisions" class="hidden">
+    <section class="card">
+      <h2>判定</h2>
+      <p class="muted">每个 Trigger 的判定：accepted 开 Ticket，observed 只记录，ignored 附原因。</p>
+      <ul class="list" id="decisions"></ul>
+    </section>
+    <!-- U14/U15：丢失的请求搬到这里。它与判定是同一类东西——"门与队列对一个请求做了什么"——
+         而以前它被埋在「来源」页的第四个分区里。 -->
+    <section class="card">
+      <h2>丢失的请求</h2>
+      <!-- The remedy is stated here, in markup, so it does not depend on a read that may have failed: the operator who
+           gets here because something is broken is the one who must not find an empty box. -->
+      <p class="muted">队列对一个请求重试 5 次（15s、30s、60s 退避）仍失败就<b>放弃</b>它，并删掉自己那一行——此后没有任何一轮
+        pass 会再看它一眼，重启也不会把它捡回来。放弃时会留下一条记录，这一节就是读它的地方。
+        它<b>不是</b>门禁判定：门禁可能根本没跑到出结论，所以这里没有 Decision、也没有 Ticket。</p>
+      <p class="muted"><b>这里没有「重放」按钮，因为它做不到。</b>没有任何路由能把一条已经放弃的请求重新塞回队列，
+        一个只能失败的按钮比没有按钮更坏。<b>系统也不会自动重放它。</b>能做的只有两件事：修好让它失败的原因，
+        然后让来源再产出一次同样的请求（收件目录里再放一个文件、排期到点再触发、让对方再发一次）——门禁会重新跑一遍，
+        <code>lost</code> 行<b>不算重复</b>，所以不会被短路成「这条已经处理过了」；或者在「派活」页手动画一条，
+        那是<b>新的一条</b>请求，不是重放这一条。</p>
+      <div id="lost"></div>
+    </section>
+  </div>
+
+  <!-- U14：这一页原先混了五个不相关的分区（来源/健康/队列/丢失/聊天）。现在各归其位：
+       来源状态 → 总览；健康与队列 → 顶栏「状态」抽屉；丢失的请求 → 记录页；聊天 → 这一页。
+       留下的只有聊天，所以这一页改名叫「聊天」：它是"聊天这条来源的一切"，不是"所有来源"。 -->
+  <div id="tab-chat" class="hidden">
+    <section class="card">
+      <h2>聊天</h2>
+      <p class="muted">平台桥把消息写进频道目录，就成了这里的一条请求；报告原路写回同一个目录的 <code>out/</code>。
+        身份必须被<b>映射</b>才成为发起者：没映射的消息<b>留住</b>（不产生 Trigger，也不拒绝，文件留在原处），
+        加进映射表之后下一次扫描就受理它——拒绝是不可逆的，留住不是。</p>
+      <div id="chat"></div>
+    </section>
   </div>
 
   <div id="tab-settings" class="hidden">
     <section class="card">
       <h2>设置</h2>
-      <p class="muted">整份 JSON 直接改，保存即生效；改动会影响在跑的 Ticket 时，系统会把变化告诉它们。字段含义见 README。</p>
-      <div id="settings-quick" class="quick-bar">
-        <div class="row">
-          <span class="muted" style="font-size:12px;font-weight:600">快捷设置（自动同步至下方 JSON）：</span>
-          <label class="row" style="margin:0">受理模式
-            <select id="sq-mode" style="width:auto">
-              <option value="observe">observe（只记录不执行）</option>
-              <option value="auto">auto（门禁通过即执行）</option>
-            </select>
-          </label>
-          <label class="row" style="margin:0">最大并发 Worker
-            <input type="number" id="sq-workers" min="1" max="8" style="width:72px" value="2">
-          </label>
-          <label class="row" style="margin:0">允许发起者（逗号分隔）
-            <input type="text" id="sq-senders" style="width:220px" placeholder="operator, alice">
-          </label>
+      <p class="muted">按区改，改完点那一区自己的「保存这一区」。也可以展开最下面的 JSON 直接改整份——两边随时同步。
+        字段含义见 README。</p>
+      <!-- 脏状态（U11）：改了没保存却切走，是最容易白干的一件事，所以要说出来。 -->
+      <div id="settings-dirty" class="hidden" role="status">有未保存的更改。点某一区的「保存这一区」，或点下面的「保存」保存整份。</div>
+      <!-- `id="settings-quick"` 沿用：它原是三个快捷字段（U 阶段 A），U11 把它长成完整的分区表单。
+           沿用 id 而不是另起一个，是为了不把"同一个东西换了名字"当成"多了一个东西"。 -->
+      <div id="settings-quick">
+        <div class="set-sec" id="sec-accept">
+          <div class="row"><b>受理</b>
+            <button class="btn small" style="margin-left:auto" data-sec="accept">保存这一区</button></div>
+          <div class="row" style="margin-top:6px">
+            <label class="row" style="margin:0">模式
+              <select id="sq-mode" style="width:auto">
+                <option value="observe">observe（只记录不执行）</option>
+                <option value="auto">auto（门禁通过即执行）</option>
+              </select>
+            </label>
+            <label class="row" style="margin:0"><input type="checkbox" id="sq-paused"> 全局暂停（不再启动新的工作）</label>
+          </div>
+          <label for="sq-senders">允许发起者（逗号分隔）</label>
+          <input type="text" id="sq-senders" placeholder="operator, alice">
+        </div>
+        <div class="set-sec" id="sec-exec">
+          <div class="row"><b>执行</b>
+            <button class="btn small" style="margin-left:auto" data-sec="exec">保存这一区</button></div>
+          <div class="row" style="margin-top:6px">
+            <label class="row" style="margin:0">最大并发 Worker
+              <input type="number" id="sq-workers" min="1" max="8" style="width:72px"></label>
+            <label class="row" style="margin:0">模型（留空用宿主默认）
+              <input type="text" id="sq-model" style="width:200px"></label>
+          </div>
+          <label for="sq-prepare">起跑前命令（留空即不跑）</label>
+          <input type="text" id="sq-prepare" placeholder="例如 git pull">
+        </div>
+        <div class="set-sec" id="sec-inbox">
+          <div class="row"><b>收件目录</b>
+            <button class="btn small" style="margin-left:auto" data-sec="inbox">保存这一区</button></div>
+          <div class="row" style="margin-top:6px">
+            <label class="row" style="margin:0"><input type="checkbox" id="sq-inbox-on"> 启用</label>
+            <label class="row" style="margin:0">轮询毫秒
+              <input type="number" id="sq-inbox-poll" min="250" step="250" style="width:100px"></label>
+          </div>
+          <label for="sq-inbox-dir">目录</label>
+          <input type="text" id="sq-inbox-dir">
+        </div>
+        <div class="set-sec" id="sec-sources">
+          <div class="row"><b>各来源开关</b>
+            <button class="btn small" style="margin-left:auto" data-sec="sources">保存这一区</button></div>
+          <div class="row" id="sq-src-toggles" style="margin-top:6px"></div>
+          <p class="muted" style="font-size:12px;margin:4px 0 0">关掉一个来源是**产出侧**的动作：它不再产生新请求，
+            已经受理的不受影响。聊天频道与身份映射在「来源」页的聊天一节里改。</p>
         </div>
       </div>
-      <textarea id="settings" style="min-height:340px"></textarea>
+      <details class="tech" id="settings-advanced">
+        <summary>高级 · 直接编辑整份 JSON</summary>
+        <textarea id="settings" style="min-height:340px"></textarea>
+        <p class="muted" style="font-size:12px">这里的编辑会实时同步到上面的分区；分区里的改动也会写回这里。
+          JSON 不合法时分区不动，以免用半份数据覆盖整份。</p>
+      </details>
       <div class="row" style="margin-top:10px">
         <button class="btn" id="save-settings">保存</button>
         <button class="btn" id="reload-settings">重新读取</button>
@@ -358,19 +500,58 @@
     <section class="card">
       <h2>提示词</h2>
       <p class="muted">留空即用内置文本。保存后，下一轮就绑定到在跑的 Session，不需要重启。</p>
-      <label for="p-worker">worker（Ticket 工作者）</label>
-      <textarea id="p-worker" style="min-height:220px"></textarea>
-      <label for="p-orchestrator">orchestrator（主 Session）</label>
-      <textarea id="p-orchestrator" style="min-height:220px"></textarea>
+      <!-- U6：分角色成卡。以前是两个光秃秃的大文本框，既不说这个角色是干什么的，也不说改了多少、
+           与内置差在哪——而"覆盖文本恰好等于内置"会把角色钉死在当前版本（这条系统在 revision 行里警告过）。 -->
+      <div class="prompt-card" id="prompt-card-worker">
+        <div class="row">
+          <b>worker</b><span class="muted" style="font-size:12px">任务工作者：每张任务的 Session 拿到的那一份</span>
+          <span class="muted" id="p-worker-count" style="margin-left:auto;font-size:12px"></span>
+        </div>
+        <p class="muted" style="font-size:12px;margin:4px 0 0">职责：在自己的目录里干活、用 myagent_report 汇报、不越出范围。</p>
+        <textarea id="p-worker" style="min-height:220px"></textarea>
+        <div class="row" style="margin-top:6px">
+          <span class="chip" id="p-worker-state">读内置</span>
+          <button class="btn small" id="p-worker-reset">只恢复这个角色</button>
+        </div>
+      </div>
+      <div class="prompt-card" id="prompt-card-orchestrator">
+        <div class="row">
+          <b>orchestrator</b><span class="muted" style="font-size:12px">主 Session（前台）拿到的那一份</span>
+          <span class="muted" id="p-orchestrator-count" style="margin-left:auto;font-size:12px"></span>
+        </div>
+        <p class="muted" style="font-size:12px;margin:4px 0 0">职责：派活、回答任务的问题、看健康与队列。</p>
+        <textarea id="p-orchestrator" style="min-height:220px"></textarea>
+        <div class="row" style="margin-top:6px">
+          <span class="chip" id="p-orchestrator-state">读内置</span>
+          <button class="btn small" id="p-orchestrator-reset">只恢复这个角色</button>
+        </div>
+      </div>
       <div class="row" style="margin-top:10px">
         <button class="btn" id="save-prompts">保存</button>
-        <button class="btn" id="reset-prompts">恢复内置</button>
+        <button class="btn" id="reset-prompts">两个都恢复内置</button>
         <span class="muted" id="prompt-revision"></span>
       </div>
       <pre id="prompt-error" class="bad"></pre>
     </section>
   </div>
 </main>
+<div id="drawer-backdrop" class="hidden"></div>
+<aside id="health-drawer" class="hidden" aria-label="系统健康">
+  <header>
+    <h2 style="margin:0">系统健康</h2>
+    <span class="muted" id="drawer-sub" style="font-size:12px"></span>
+    <button class="btn small" id="drawer-close" style="margin-left:auto">关闭</button>
+  </header>
+  <div class="body" id="health-drawer-body">
+    <!-- U14：健康与队列从「来源」页搬到这里，容器 id 沿用（health-detail / effects / effects-note）。
+         抽屉是"任何页面 1 步可达"的地方，而这两样正是排障时要一起看的。 -->
+    <h2 style="margin-top:0">部件</h2>
+    <div id="health-detail"></div>
+    <h2>队列</h2>
+    <div id="effects"></div>
+    <p class="muted" id="effects-note"></p>
+  </div>
+</aside>
 <div id="toast"></div>
 <script>
 (() => {
@@ -417,9 +598,52 @@
   }
   const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body ?? {}) })
   const put = (path, body) => api(path, { method: 'PUT', body: JSON.stringify(body ?? {}) })
-  const when = iso => iso ? new Date(iso).toLocaleString('zh-CN', { hour12: false }) : '—'
+  /**
+   * 把一段文本里的 Session id / 32 位任务 id 变成可点的复制按钮（U16 缺口 6）。
+   *
+   * Session 没有可跳转的 URL（宿主不提供会话路由，§4.48 记过的设计事实），所以这里的"打通"是**复制**——
+   * 操作者拿着它去 DSH 的会话列表里按 sessionTitle 搜。抄一串 32 位十六进制不该靠人眼。
+   */
+  const withCopyIds = text => {
+    const parts = String(text ?? '').split(/(myagent-[a-z0-9-]+|[0-9a-f]{32})/g)
+    return parts.map(part =>
+      /^myagent-[a-z0-9-]+$/.test(part) || /^[0-9a-f]{32}$/.test(part)
+        ? el('button', { class: 'linklike', title: `${part}（点击复制）`, onclick: () => void copy(part) }, part)
+        : part)
+  }
 
-  let state = null, selected = null, tab = 'tickets'
+  const when = iso => iso ? new Date(iso).toLocaleString('zh-CN', { hour12: false }) : '—'
+  /**
+   * 相对时间（U8）：列表里"3 分钟前"才是有用的信号，"2026-11-06 14:32:11"要人自己做减法。
+   *
+   * **只用于列表与概览**；详情里的时刻仍是绝对的（`when`）——列表回答"多久前"，详情回答"几点几分"，
+   * 这也是邮件与 IM 的分法。超过 30 天退回绝对日期：说"180 天前"不如说"5 月 8 日"。
+   * 精确值一律挂在 title 上，所以相对化没有丢信息。
+   */
+  const ago = iso => {
+    if (!iso) return '—'
+    const then = new Date(iso).getTime()
+    if (Number.isNaN(then)) return '—'
+    const seconds = Math.round((Date.now() - then) / 1000)
+    if (seconds < 45) return '刚刚'
+    if (seconds < 3600) return `${Math.round(seconds / 60)} 分钟前`
+    if (seconds < 86400) return `${Math.round(seconds / 3600)} 小时前`
+    if (seconds < 30 * 86400) return `${Math.round(seconds / 86400)} 天前`
+    return new Date(iso).toLocaleDateString('zh-CN')
+  }
+  /** 未来的时刻（排期下次触发）：说"2 小时后"比说一个绝对时间更容易判断"还早不早"。 */
+  const until = iso => {
+    if (!iso) return '—'
+    const then = new Date(iso).getTime()
+    if (Number.isNaN(then)) return '—'
+    const seconds = Math.round((then - Date.now()) / 1000)
+    if (seconds < 0) return ago(iso)
+    if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))} 分钟后`
+    if (seconds < 86400) return `${Math.round(seconds / 3600)} 小时后`
+    return when(iso)
+  }
+
+  let state = null, selected = null, tab = 'overview'
   /** id → Work / TicketSummary / Project, for the labels no record carries: a row reads a name, not an id. */
   let worksIndex = new Map(), ticketIndex = new Map(), projectsIndex = new Map()
   const m0 = s => (s && s.machine) || {}
@@ -529,6 +753,24 @@
       // A text node, not innerHTML — same discipline as the pill above, where it costs nothing.
       lostPill.replaceChildren('丢失 ', el('b', { class: 'bad' }, String(total)))
     }
+    // 导航徽标（U7）：任务页＝等你回答的数；来源页＝聊天等映射 + 丢失。
+    // 零就不显示——一个常驻的 0 是眼睛会自动跳过的东西，而它唯一要说的话是"有事等你"。
+    // U14/U15 把丢失搬进「记录」页后，这颗徽标要跟着搬（记在工程清单里，不是遗漏）。
+    const badgeTickets = $('badge-tickets')
+    if (badgeTickets !== null) {
+      const n = state.counts.attention ?? 0
+      badgeTickets.textContent = String(n)
+      badgeTickets.classList.toggle('hidden', !(n > 0))
+    }
+    const badgeSources = $('badge-sources')
+    if (badgeSources !== null) {
+      const chatN = chatStale ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
+      const lostObj = (state.counts || {}).lost
+      const lostN = lostObj === undefined ? 0 : (lostObj.rows ?? 0) + (lostObj.payloads ?? 0)
+      const total = chatN + lostN
+      badgeSources.textContent = String(total)
+      badgeSources.classList.toggle('hidden', !(total > 0))
+    }
     if (state.setupProblem) toast(state.setupProblem)
   }
 
@@ -541,7 +783,13 @@
   const renderTickets = list => {
     const node = $('tickets'); node.replaceChildren()
     $('ticket-hint').textContent = `${list.length} 条`
-    if (list.length === 0) { node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '没有 Ticket。'))) ; return }
+    // 空状态是教学时刻（§6.1）：说清下一步，并给一个直接走到那里的按钮。
+    if (list.length === 0) {
+      node.append(el('li', { style: 'cursor:default' }, el('div', { class: 'row', style: 'padding:6px 0' },
+        el('span', { class: 'muted' }, '没有 Ticket。'),
+        el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => show('new') }, '去派活'))))
+      return
+    }
     for (const ticket of list) {
       const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
       node.append(el('li', { 'aria-current': selected === ticket.id ? 'true' : 'false', onclick: () => open(ticket.id) },
@@ -550,7 +798,7 @@
           el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)),
         el('div', { class: 'meta' },
           el('span', {}, `${ticket.via} · ${ticket.sender}`),
-          el('span', {}, when(ticket.updatedAt)),
+          el('span', { title: when(ticket.updatedAt) }, ago(ticket.updatedAt)),
           ticket.workId ? el('span', {}, `${work ? work.name : `工作 ${ticket.workId}`} · 第 ${ticket.workSeq ?? '—'} 位`) : null,
           ticket.waitsForPerson ? el('span', { class: 'warn' }, '等人回答') : null,
           ticket.summary ? el('span', {}, ticket.summary.slice(0, 90)) : null)))
@@ -665,7 +913,8 @@
       el('button', { class: 'btn small', onclick: () => void copy(live.sessionId) }, '复制 id'),
       el('span', { class: 'chip' }, live.loaded ? `已载入 · ${live.agentStatus || '—'}` : '未载入（跑完就卸载了）'),
       live.turn ? el('span', { class: 'chip' }, '第 ', el('b', {}, String(live.turn)), ' 轮') : null,
-      live.lastEventAt ? el('span', { class: 'chip' }, '最后动静 ', el('b', {}, clockOf(live.lastEventAt))) : null),
+      live.lastEventAt ? el('span', { class: 'chip', title: when(live.lastEventAt) }, '最后动静 ',
+        el('b', {}, ago(live.lastEventAt))) : null),
     el('p', { class: 'muted', style: 'font-size:12px' },
       `在 DSH 的会话列表里找「${live.sessionTitle || '—'}」就能看到它干活的全过程；这个宿主没有指向某个会话的网址，所以给不出链接。`),
     (live.recentTools || []).length === 0 ? null : el('div', { class: 'tools' },
@@ -768,19 +1017,48 @@
     node.replaceChildren()
     node.append(el('div', { class: 'row' },
       el('h2', { style: 'margin:0' }, ticket.title),
-      el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)))
+      el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage),
+      ))
     const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
     const rows = [
-      ['Ticket', ticket.id],
+      // 短码 + 完整 id 进 title：正文读 8 位，悬停看全串，复制走上面的按钮。断言用的 'ticket-1' 截到 8 位不变。
+      // 【U7 改名】行标签 Ticket→任务，与菜单一致：同一个东西不该在两个地方叫两个名字。
+      ['任务', ticket.id.length > 8 ? `${ticket.id.slice(0, 8)}…` : ticket.id],
       ['创建', when(ticket.createdAt)], ['更新', when(ticket.updatedAt)],
       // Which Work this Ticket belongs to, and its place in that Work's history — a Ticket made last month and
       // filed today is the next in line, and that is a fact about the Work, not about the calendar.
+      // U3 缺口 1：这一行以前是死文本，工作名和短 id 印在那里却点不动，操作者得自己切到「工作」页去找。
       ['归属', backend === false ? '读不到：插件比这个页面旧'
-        : ticket.workId ? `${work ? work.name : '工作'}（${ticket.workId.slice(0, 8)}）· 第 ${ticket.workSeq ?? '—'} 位`
+        : ticket.workId
+          ? el('span', {},
+            el('button', {
+              class: 'linklike', title: `打开工作 ${ticket.workId}`,
+              onclick: () => { worksTab = { project: work?.projectId ?? null, work: ticket.workId }; show('works') },
+            // 标签沿用原文本（含短 id），只是从死文本变成可点：改文案是 U7 的事，这一包只改"能不能点"。
+            }, work ? `${work.name}（${ticket.workId.slice(0, 8)}）` : `工作 ${ticket.workId.slice(0, 8)}`),
+            `· 第 ${ticket.workSeq ?? '—'} 位`)
           : '未归入'],
-      ['授权', `${ticket.mandate.sender.id}（${ticket.mandate.sender.kind}）经 ${ticket.mandate.via}，策略版本 ${ticket.mandate.policyVersion}`],
       ['目录', ticket.directory || '—'],
-      ['来源 Trigger', (ticket.origin && ticket.origin.triggerId) || '—'],
+    ]
+    // 技术三行进折叠区（U4）：授权全文、Trigger id、范围原文。折叠不等于删除——文本还在 DOM 里，
+    // 既有断言（detailValue('授权') 等）原样通过；变的只是默认不展开。
+    const triggerId = (ticket.origin && ticket.origin.triggerId) || ''
+    const techRows = [
+      // 缺口 9：发起者从死文本变成入口——点它去设置页的「允许发起者」编辑（谁在名单里，在那里改）。
+      // 文本逐字不变（dd.textContent 不变），所以既有断言原样通过。
+      ['授权', el('span', {},
+        el('button', {
+          class: 'linklike', title: `去设置页编辑允许发起者（${ticket.mandate.sender.id} 在不在名单里）`,
+          onclick: () => { show('settings'); $('sq-senders')?.focus() },
+        }, ticket.mandate.sender.id),
+        `（${ticket.mandate.sender.kind}）经 ${ticket.mandate.via}，策略版本 ${ticket.mandate.policyVersion}`)],
+      // U15：Trigger id 从死文本变成入口——点它去记录页，只看这一条请求的判定。
+      // 一张任务是怎么被受理的，与它现在干到哪了，是操作者会连着问的两个问题。
+      ['来源 Trigger', triggerId === '' ? '—'
+        : el('button', {
+          class: 'linklike', title: `在记录页只看 ${triggerId}`,
+          onclick: () => openTrigger(triggerId),
+        }, triggerId)],
     ]
     // Where the answer went back to, for a Ticket whose Trigger carried an address. Rendered only when there is one:
     // a row reading "nowhere" on every cron and inbox Ticket would be noise, and the tally in 来源 · 聊天 already
@@ -791,7 +1069,18 @@
         + ' — 报告会被送回这里'])
     }
     if (ticket.ended) rows.push(['结束', `${ticket.ended.outcome} · ${when(ticket.ended.at)} · ${ticket.ended.reason || ''}`])
-    node.append(el('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])))
+    // v 允许是节点（U3 起「归属」是可点的按钮），所以不再一律 String()：把节点字符串化会画出 [object HTMLButtonElement]。
+    node.append(el('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [
+      el('dt', {}, k),
+      // Ticket 行的短码本身可点：点一下复制整串（点你看到的东西，比找旁边的按钮少一次视线移动）。
+      // dd 的 textContent 仍恰为短码——按钮文本就是短码，别无他物——所以既有断言逐字通过。
+      k === '任务' && !v?.nodeType
+        ? el('dd', {},
+          // title 挂的是整串——这个 title 的全部意义就是"悬停看全串"，挂短码等于没挂。
+          // 这条是新测试当场抓到的：断言写的是 title 含完整 id，而实现里误用了截断后的 v。
+          el('button', { class: 'linklike', title: `${ticket.id}（点击复制整串）`, onclick: () => void copy(ticket.id) }, String(v)))
+        : el('dd', { title: k === 'Ticket' ? undefined : undefined }, v?.nodeType ? v : String(v)),
+    ])))
 
     // Filing is offered on ended Tickets too: putting last month's work into the Work it belonged to is bookkeeping,
     // not new authorization, and the Engine agrees. Not offered at all when the plugin cannot take the answer —
@@ -829,7 +1118,12 @@
             class: 'btn small', onclick: () => { show('tickets'); void open(other.id) },
           }, `${other.title}（${other.id.slice(0, 8)}） · 打开`)))))
     }
-    node.append(el('h2', { style: 'margin-top:14px' }, '范围'), el('pre', {}, ticket.mandate.scope))
+    node.append(el('details', { class: 'tech' },
+      el('summary', {}, '技术细节（授权、来源 Trigger、范围）'),
+      // 节点感知（U3 的教训在 U4 引入这条线时被我重新踩了一次）：值是节点（如「来源 Trigger」按钮）时
+      // 必须直接放入，一律 String() 会画出 [object HTMLButtonElement]——正是新测试当场抓到的。
+      el('dl', { class: 'kv' }, techRows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, v?.nodeType ? v : String(v))])),
+      el('h2', { style: 'margin-top:8px' }, '范围'), el('pre', {}, ticket.mandate.scope)))
     const attachments = ticket.attachments || []
     if (attachments.length > 0) {
       node.append(el('h2', { style: 'margin-top:14px' }, `随任务带过去的文件（${attachments.length}）`),
@@ -1057,7 +1351,8 @@
           el('span', {}, when(event.at)),
           el('code', {}, event.type),
           event.by ? el('span', {}, `${BY_KIND[event.by.kind] ?? event.by.kind}${event.by.id ? ` · ${event.by.id}` : ''}`) : null),
-        detail === '' ? null : el('div', { class: 'muted', style: 'font-size:12px' }, detail)))
+        // detail 里的 id 是可复制的（缺口 6）：事件日志的 detail 一半是 session_bound 的 sessionId。
+        detail === '' ? null : el('div', { class: 'muted', style: 'font-size:12px' }, ...withCopyIds(detail))))
     }
     node.replaceChildren(view,
       el('p', { class: 'muted', style: 'font-size:12px' }, `共 ${body.count} 条 · 已显示 ${body.returned} 条 · 最新在前`),
@@ -1081,15 +1376,253 @@
     } catch (error) { node.replaceChildren(el('pre', { class: 'bad' }, error.message)) }
   }
 
+  // ------------------------------------------------------------ global search (U9)
+
+  /**
+   * 全局搜索：人找一件东西的第一动作是搜，不是翻左侧分组。
+   *
+   * 每次聚焦后重新读一遍索引（任务 200 条 + 工作 + 排期）：一个个人系统里这三份数据都很小，
+   * 而"搜的时候新鲜"比"页面上新鲜"更接近搜索的本意。输入按 180ms 防抖——打字不该每键三连请求。
+   */
+  let searchTimer
+  const runSearch = async () => {
+    const box = $('search'), out = $('search-results')
+    if (box === null || out === null) return
+    const query = box.value.trim().toLowerCase()
+    if (query === '') { out.replaceChildren(); out.classList.add('hidden'); return }
+    const [t, w, sc] = await Promise.all([
+      api('tickets?state=all&limit=200').catch(() => ({ tickets: [] })),
+      api('works').catch(() => ({ works: [] })),
+      api('schedules').catch(() => ({ schedules: [] })),
+    ])
+    // 搜索发出后值可能又变了：拿输入框**此刻**的值比，不比发起时的，否则晚到的响应会画出旧结果。
+    if (query !== box.value.trim().toLowerCase()) return
+    const hit = (name, id) => String(name ?? '').toLowerCase().includes(query) || String(id).toLowerCase().includes(query)
+    const rows = []
+    for (const ticket of (t.tickets || [])) if (hit(ticket.title, ticket.id)) {
+      rows.push(['任务', ticket.title || ticket.id, ticket.id, () => { show('tickets'); void open(ticket.id) }])
+    }
+    for (const work of (w.works || [])) if (hit(work.name, work.id)) {
+      rows.push(['工作', work.name, work.id, () => { worksTab = { project: work.projectId ?? null, work: work.id }; show('works') }])
+    }
+    for (const sched of (sc.schedules || [])) if (hit(sched.name, sched.id)) {
+      rows.push(['排期', sched.name || sched.id, sched.id, () => showDispatch('timed')])
+    }
+    const top = rows.slice(0, 8)
+    out.replaceChildren(...(top.length === 0
+      ? [el('div', { class: 'sr', style: 'cursor:default' }, el('span', { class: 'muted' }, '没有匹配的。'))]
+      : top.map(([kind, name, id, go]) => el('div', { class: 'sr', onclick: () => { clearSearch(); go() } },
+        el('span', { class: 'kind' }, kind), el('span', { class: 'title' }, name), el('span', { class: 'muted', style: 'font-size:12px' }, id.slice(0, 8))))))
+    out.classList.remove('hidden')
+  }
+
+  const clearSearch = () => {
+    const box = $('search'), out = $('search-results')
+    if (box !== null) box.value = ''
+    if (out !== null) { out.replaceChildren(); out.classList.add('hidden') }
+  }
+
+  // ---------------------------------------------------------------- overview
+
+  /**
+   * 总览：把"只有操作者能推进的事"收在一页。
+   *
+   * 全部用现有路由客户端拼装（state / tickets / schedules / decisions），不动 src/：这一页的价值是**把已经存在
+   * 但散在三处的信息放到视线落点**，不是新增能力。行内回答复用详情页同一套草稿保护——3 秒轮询绝不能吃掉
+   * 正在输入的字（§4.50 记过的操作者投诉），所以本页**不启动 Ticket 轮询**，只由 load() 的 5 秒刷新驱动，
+   * 且刷新时保留输入框内容。
+   */
+  const ovDrafts = new Map()
+
+  const loadOverview = async () => {
+    const attention = $('ov-attention'), upcoming = $('ov-upcoming'), recent = $('ov-recent')
+    if (attention === null) return
+    renderKpis()
+    // 一次读、两处用：任务列表既是「任务」页的内容，也是总览「等你回答」的数据源。
+    // 原先总览自己再发一条 `state=attention`，同一份数据读两遍——落地页多一个请求，而两个数还可能不一致。
+    await loadTickets()
+    renderSourcesTable()
+    const [schedBody, decisionsBody] = await Promise.all([
+      api('schedules').catch(() => ({ schedules: [] })),
+      api('decisions?limit=5').catch(() => ({ decisions: [] })),
+    ])
+    // 手上这批就是全部时，客户端过滤即可；被 limit 截断时才补一次精确读，否则「等你回答」会漏掉列表外的任务。
+    const waiting = listTruncated
+      ? ((await api('tickets?state=attention&limit=20').catch(() => ({ tickets: [] }))).tickets || [])
+      : currentList.filter(item => item.waitsForPerson === true)
+    renderAttention(attention, waiting)
+    renderUpcoming(upcoming, schedBody.schedules || [])
+    renderRecent(recent, decisionsBody.decisions || [])
+  }
+
+  const renderKpis = () => {
+    const node = $('ov-kpis')
+    if (node === null || state === null) return
+    const c = state.counts || {}
+    const slots = c.workerSlots || {}
+    const problems = Object.entries(state.health || {}).filter(([, v]) => v && v.ok === false)
+    const waiting = chatStale ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
+    const lost = (c.lost || {})
+    const lostTotal = c.lost === undefined ? 0 : (lost.rows ?? 0) + (lost.payloads ?? 0)
+    const kpi = (n, label, cls, onclick, title) => el('div', {
+      class: `ov-kpi${cls ? ' ' + cls : ''}${onclick ? ' clickable' : ''}`,
+      ...(onclick ? { onclick, title: title || '点开看详情' } : {}),
+    }, el('div', { class: 'n' }, String(n)), el('div', { class: 'l' }, label))
+    node.replaceChildren(
+      kpi(c.open ?? 0, '进行中的任务'),
+      kpi(c.attention ?? 0, '等你回答', (c.attention ?? 0) > 0 ? 'alert' : '', () => { setFilter('attention'); show('tickets') }, '只看等你回答的任务'),
+      kpi(`${slots.used ?? 0}/${slots.max ?? 0}`, '工作槽'),
+      kpi(problems.length, problems.length === 0 ? '系统健康' : '健康问题', problems.length === 0 ? 'good' : 'alert',
+        () => openHealthDrawer(), '点开健康抽屉'),
+      kpi(waiting, '聊天等映射', waiting > 0 ? 'warn' : '', () => { show('chat') }, '去聊天页映射身份'),
+      kpi(lostTotal, '丢失的请求', lostTotal > 0 ? 'alert' : '', () => { show('decisions') }, '去记录页看丢失的请求'),
+    )
+  }
+
+  /**
+   * 把一段详情文本里的 32 位任务 id 变成可点的按钮（U2）。
+   *
+   * 健康条目说的是"Ticket 19dd5c9c…: LlmError 429"，而以前操作者只能把这个 id 抄下来、自己去任务页找。
+   * 一条报问题的行如果没法从它直接走到出问题的那个东西，它就只是通知，不是入口。
+   */
+  const withTicketLinks = text => {
+    const parts = String(text ?? '').split(/([0-9a-f]{32})/)
+    return parts.map(part => /^[0-9a-f]{32}$/.test(part)
+      ? el('button', {
+        class: 'linklike', title: part,
+        onclick: () => { closeHealthDrawer(); show('tickets'); void open(part) },
+      }, `${part.slice(0, 8)}…`)
+      : part)
+  }
+
+  const closeHealthDrawer = () => {
+    $('health-drawer')?.classList.add('hidden')
+    $('drawer-backdrop')?.classList.add('hidden')
+  }
+
+  /** 健康抽屉：健康各条目的原文 + 队列，任何页面 1 步可达（替代只有 hover 才出现的 tooltip）。 */
+  const openHealthDrawer = async () => {
+    const drawer = $('health-drawer'), body = $('health-drawer-body')
+    if (drawer === null || body === null) return
+    drawer.classList.remove('hidden')
+    $('drawer-backdrop')?.classList.remove('hidden')
+    const entries = Object.entries(state?.health || {})
+    const bad = entries.filter(([, v]) => v && v.ok === false)
+    $('drawer-sub').textContent = bad.length === 0 ? '所有部件正常' : `${bad.length} 个部件有问题`
+    // U14：容器（#health-detail / #effects / #effects-note）是抽屉 markup 里的静态节点，
+    // 所以这里只填它们、不重建整个 body——沿用 id 让既有断言与既有渲染函数都不用改。
+    renderHealth()
+    await renderEffects()
+  }
+
+  const renderAttention = (node, tickets) => {
+    const waitingCount = chatStale || state === null ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
+    const lostTotal = ((state?.counts || {}).lost || {})
+    const lostN = (state?.counts || {}).lost === undefined ? 0 : (lostTotal.rows ?? 0) + (lostTotal.payloads ?? 0)
+    const items = []
+    for (const t of tickets) {
+      const draftKey = t.id
+      const box = el('textarea', {
+        id: `ov-answer-${t.id}`, placeholder: '回答它的问题，Enter 发送（Shift+Enter 换行）',
+        style: 'min-height:56px;margin-top:6px',
+      })
+      box.value = ovDrafts.get(draftKey) || ''
+      // 草稿跨刷新保留：这是详情页已验证过的机制，总览的行内回答框复用同一条纪律。
+      box.addEventListener('input', () => ovDrafts.set(draftKey, box.value))
+      const send = async () => {
+        const text = box.value.trim()
+        if (!text) return toast('先写回答内容')
+        try { await post(`tickets/${encodeURIComponent(t.id)}/answer`, { text }); ovDrafts.delete(draftKey); toast('已回答'); await load() }
+        catch (error) { toast(error.message) }
+      }
+      box.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send() }
+      })
+      items.push(el('div', { class: 'ov-item' },
+        el('div', { class: 'hd' },
+          el('span', { class: 'title' }, t.title),
+          el('span', { class: 'stage attention' }, t.stage),
+          el('span', { class: 'muted', style: 'font-size:12px' }, `${t.via} · ${t.sender} · ${when(t.updatedAt)}`),
+          el('button', { class: 'linklike', style: 'margin-left:auto', onclick: () => { show('tickets'); void open(t.id) } }, '打开详情')),
+        // 列表接口只带 summary，不带 question（那是详情接口的字段）。总览不为了显示一句话去逐条读详情——
+        // N 条就是 N 个请求。要看问题原文点「打开详情」，那里有。
+        t.summary ? el('p', { class: 'muted', style: 'margin:6px 0 0' }, t.summary) : null,
+        box,
+        // 「发送」而不是「回答」：这是行内快速回复（Enter 也发送，IM 习惯），与详情页那个完整表单是两个操作。
+        // 同名会让页面上出现两个「回答」，也让"点哪一个"变成要靠位置猜的事（§6.1 一致性）。
+        el('div', { class: 'row', style: 'margin-top:6px' }, el('button', { class: 'btn small', onclick: () => void send() }, '发送'))))
+    }
+    if (waitingCount > 0) {
+      items.push(el('div', { class: 'ov-item' },
+        el('div', { class: 'hd' }, el('span', { class: 'title' }, `${waitingCount} 条聊天消息在等身份映射`),
+          el('span', { class: 'stage attention' }, '等人'),
+          el('button', { class: 'linklike', style: 'margin-left:auto', onclick: () => { show('chat') } }, '去映射')),
+        el('p', { class: 'muted', style: 'margin:6px 0 0' }, '它们没有被拒绝，也没有变成任务：文件还在频道目录里。把身份加进映射表，下一次扫描就受理。')))
+    }
+    if (lostN > 0) {
+      items.push(el('div', { class: 'ov-item' },
+        el('div', { class: 'hd' }, el('span', { class: 'title' }, `${lostN} 个请求被队列彻底放弃`),
+          el('span', { class: 'stage failed' }, '丢了'),
+          el('button', { class: 'linklike', style: 'margin-left:auto', onclick: () => { show('decisions') } }, '去看')),
+        el('p', { class: 'muted', style: 'margin:6px 0 0' }, '重试 5 次都失败，效果行已删，系统不会自动重放。修好原因后让来源再产出一次同样的请求。')))
+    }
+    // 展开而不是直接传数组：`replaceChildren` 只接受节点或字符串，传数组会被 String() 成
+    // 「[object HTMLDivElement]」原样画到页面上——这条是新测试当场抓到的，不是评审看出来的。
+    node.replaceChildren(...(items.length === 0
+      ? [el('div', { class: 'ov-quiet' }, '系统安静，没有需要你处理的事。')]
+      : items))
+  }
+
+  const renderUpcoming = (node, schedules) => {
+    const enabled = schedules.filter(item => item.enabled !== false)
+      .map(item => ({ item, next: item.next ? Date.parse(item.next) : Infinity }))
+      .sort((a, b) => a.next - b.next).slice(0, 5)
+    if (enabled.length === 0) {
+      node.replaceChildren(el('div', { class: 'ov-quiet' }, schedules.length === 0
+        ? '没有排期。想让它定时派活，去「排期」页建一条。'
+        : '排期都停用了。'))
+      return
+    }
+    node.replaceChildren(el('ul', { class: 'list', style: 'max-height:none' }, ...enabled.map(({ item }) => el('li', {
+      style: 'cursor:default',
+    },
+      el('div', { class: 'row' }, el('span', { class: 'title' }, item.name || item.id),
+        // 未来的时刻说"2 小时后"，绝对时刻挂 title：判断"还早不早"用前者，要精确值看后者。
+        el('span', { class: 'muted', style: 'margin-left:auto;font-size:12px', title: item.next ? when(item.next) : undefined },
+          item.next ? until(item.next) : '—')),
+      el('div', { class: 'meta' }, el('span', {}, item.describe ?? ''))))))
+  }
+
+  const renderRecent = (node, decisions) => {
+    if (decisions.length === 0) { node.replaceChildren(el('div', { class: 'ov-quiet' }, '还没有判定记录。')); return }
+    node.replaceChildren(el('ul', { class: 'list', style: 'max-height:none' }, ...decisions.map(d => {
+      const cls = d.outcome === 'accept' ? 'done' : d.outcome === 'observe' ? 'attention' : 'failed'
+      return el('li', { onclick: () => { if (d.ticketId) { show('tickets'); void open(d.ticketId) } } },
+        el('div', { class: 'row' }, el('span', { class: `stage ${cls}` }, d.outcome),
+          el('span', { class: 'title' }, d.title || d.triggerId),
+          el('span', { class: 'muted', style: 'margin-left:auto;font-size:12px', title: when(d.at) }, ago(d.at))))
+    })))
+  }
+
   let currentList = []
+  /** 列表是否被 limit 截断；总览据此决定要不要为「等你回答」补一次精确读。 */
+  let listTruncated = false
+  /** 当前筛选档（U7：chips 取代 select，所以不再是 DOM 上的 .value）。 */
+  let filterValue = 'open'
+  const setFilter = value => {
+    filterValue = value
+    for (const chip of $('filter').children) chip.setAttribute('aria-pressed', String(chip.dataset.filter === value))
+  }
   const loadTickets = async () => {
     // One extra read buys the whole list its Work labels; a row that says "工作 9f3c…" is a row the operator cannot use.
     const [body, works] = await Promise.all([
-      api(`tickets?state=${$('filter').value}&limit=80`),
+      api(`tickets?state=${filterValue}&limit=80`),
       backend === false ? { works: [] } : api('works').catch(() => ({ works: [] })),
     ])
     worksIndex = new Map((works.works || []).map(work => [work.id, work]))
     currentList = body.tickets
+    // 服务端报的总数比拿到的行数多，就是被 limit 截断了——总览的「等你回答」这时不能只在手上这批里找。
+    listTruncated = Number(body.count ?? 0) > currentList.length
     renderTickets(currentList)
     // A Ticket that has left the current filter is still the one the operator is reading, and may still hold words
     // they have not sent. Keeping the pane as it is costs nothing; blanking it, or re-fetching to explain itself,
@@ -1111,7 +1644,7 @@
   },
   el('div', { class: 'row' }, el('span', { class: 'title' }, project.name)),
   el('div', { class: 'meta' },
-    el('span', {}, when(project.createdAt)),
+    el('span', { title: when(project.createdAt) }, ago(project.createdAt)),
     project.note ? el('span', {}, project.note) : null))
 
   const workRow = work => el('li', {
@@ -1121,7 +1654,7 @@
   el('div', { class: 'row' }, el('span', { class: 'title' }, work.name)),
   el('div', { class: 'meta' },
     work.projectId ? el('span', {}, (projectsIndex.get(work.projectId) || {}).name || work.projectId) : null,
-    el('span', {}, when(work.createdAt)),
+    el('span', { title: when(work.createdAt) }, ago(work.createdAt)),
     work.scope ? el('span', {}, work.scope.slice(0, 60)) : null))
 
   /** A Work's Tickets, in the order they joined it — the queue, which no other ordering in the system expresses. */
@@ -1244,11 +1777,40 @@
 
   // ------------------------------------------------------------ decisions
 
+  /**
+   * 记录页的过滤（U15）：从一张任务的「来源 Trigger」点过来时，只看那一条请求的判定。
+   *
+   * 用深链 `#trigger=<id>` 表达，所以它可分享、可在刷新后复原——过滤条件只存在内存里的话，
+   * 一次刷新就把操作者带回 80 条里去找那一条。
+   */
+  let decisionFilter = null
+
+  const openTrigger = triggerId => {
+    decisionFilter = triggerId
+    if (location.hash !== `#trigger=${triggerId}`) history.replaceState(null, '', `#trigger=${triggerId}`)
+    show('decisions')
+  }
+
+  const clearTriggerFilter = () => {
+    decisionFilter = null
+    if (/^#trigger=/.test(location.hash)) history.replaceState(null, '', location.pathname)
+    void loadDecisions()
+  }
+
   const loadDecisions = async () => {
     const body = await api('decisions?limit=80')
     const node = $('decisions'); node.replaceChildren()
-    if (body.decisions.length === 0) { node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '还没有判定。'))) ; return }
-    for (const decision of body.decisions) {
+    const all_ = body.decisions || []
+    const shown = decisionFilter === null ? all_ : all_.filter(item => item.triggerId === decisionFilter)
+    if (decisionFilter !== null) {
+      node.append(el('li', { style: 'cursor:default' }, el('div', { class: 'row' },
+        el('span', { class: 'muted' }, `只看来源 Trigger ${decisionFilter} 的判定：${shown.length} 条`
+          + (shown.length === 0 ? '（这一条不在最近 80 条里；它可能更早，或根本没走到判定）' : '')),
+        el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => clearTriggerFilter() }, '看全部'))))
+      if (shown.length === 0) return
+    }
+    if (all_.length === 0) { node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '还没有判定。'))) ; return }
+    for (const decision of shown) {
       const cls = decision.outcome === 'accept' ? 'ok' : decision.outcome === 'observe' ? 'warn' : 'bad'
       const dismissed = String(decision.detail || '').includes('[dismissed]')
       node.append(el('li', { onclick: () => { if (decision.ticketId) { show('tickets'); void open(decision.ticketId) } } },
@@ -1262,7 +1824,7 @@
               try { await post(`decisions/${encodeURIComponent(decision.id)}/dismiss`, {}); toast('已忽略'); await loadDecisions() }
               catch (error) { toast(error.message) }
             } }, dismissed ? '已忽略' : '忽略')),
-        el('div', { class: 'meta' }, el('span', {}, when(decision.at)), el('span', {}, decision.reasonText || decision.reason),
+        el('div', { class: 'meta' }, el('span', { title: when(decision.at) }, ago(decision.at)), el('span', {}, decision.reasonText || decision.reason),
           decision.detail ? el('span', {}, decision.detail) : null)))
     }
   }
@@ -1273,14 +1835,15 @@
     el('thead', {}, el('tr', {}, ...head.map(title => el('th', {}, title)))),
     el('tbody', {}, ...rows.map(cells => el('tr', {}, ...cells.map(cell => el('td', {}, cell))))))
 
-  const loadSources = async () => {
-    // Drawn first, from the state this refresh already carries: it needs no request of its own, so a slow or failing
-    // read of the queue below must not be able to delay or blank the section an operator came here for.
-    renderChat()
-    // Same, and for the same reason: the counts come from `state`, so the number an operator watches here is never
-    // held up behind — or blanked by — the queue read below. The DETAIL is a request of its own, and is not made here.
-    renderLost()
-    const node = $('sources'); node.replaceChildren()
+  /**
+   * 来源状态表（U14：搬到总览的「活从哪来」）。
+   *
+   * 它不需要自己的请求——数据就在每次刷新已经拿到的 `state` 里，所以总览画它不增加任何往返。
+   */
+  const renderSourcesTable = () => {
+    const node = $('ov-sources')
+    if (node === null) return
+    node.replaceChildren()
     const rows = Object.entries(state?.sources || {}).map(([name, status]) => {
       const counts = Object.entries(status.counts || {}).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${v}`).join(' · ')
       return [
@@ -1296,15 +1859,33 @@
       ? el('span', { class: 'muted' }, '没有来源。')
       : table(['来源', '状态', '详情', '下次', '最近触发', '计数'], rows))
 
-    const health = $('health-detail'); health.replaceChildren()
+  }
+
+  /**
+   * 健康与队列（U14：搬进顶栏「状态」抽屉，容器 id 沿用）。
+   *
+   * 这两样是排障时一起看的，所以放一起；抽屉任何页面 1 步可达，比埋在某一页的第二个分区强。
+   * 队列要发一次请求，健康不用——所以健康先画，队列读失败也不该让健康那一半空着。
+   */
+  const renderHealth = () => {
+    const health = $('health-detail')
+    if (health === null) return
+    health.replaceChildren()
     const entries = Object.entries(state?.health || {})
     health.append(entries.length === 0 ? el('span', { class: 'muted' }, '没有健康记录。') : table(['部件', '状态', '详情', '时间'],
       entries.map(([name, entry]) => [
         name, el('span', { class: entry.ok ? 'ok' : 'bad' }, entry.ok ? '正常' : '有问题'),
-        entry.detail || '—', entry.at ? when(entry.at) : '—',
+        // 详情里的任务 id 是可点的：从"哪里不对"直接走到"哪个任务不对"（U2）。
+        el('span', {}, ...(entry.detail === undefined || entry.detail === null || entry.detail === ''
+          ? ['—'] : withTicketLinks(entry.detail))),
+        entry.at ? when(entry.at) : '—',
       ])))
+  }
 
-    const effects = $('effects'); effects.replaceChildren()
+  const renderEffects = async () => {
+    const effects = $('effects')
+    if (effects === null) return
+    effects.replaceChildren()
     try {
       const counts = (await api('effects')).counts || {}
       const kinds = Object.entries(counts)
@@ -1345,7 +1926,10 @@
   const loadLost = async () => {
     // Gated on the state key rather than probed with a request of its own: a bundle that does not answer `counts.lost`
     // does not have this route, and asking it would be a 404 the operator can do nothing about.
-    if (lostStale) return
+    // U14 的回归修正：这一节原先住在「来源」页，进页时 loadSources() 会先画一次 renderLost()，
+    // 所以降级说明有人画。搬进记录页之后只剩 loadLost()，而它在 lostStale 时直接 return —— 于是
+    // "这个 bundle 答不了"变成一片空白。降级也要说一句话，不能靠调用顺序碰巧成立。
+    if (lostStale) { renderLost(true); return }
     try {
       lostDetail = await api(`lost?limit=${lostLimit}`)
       lostReadAt = new Date().toISOString()
@@ -1513,6 +2097,36 @@
   let confirmUnsafe = null
   let confirmUnmap = null
 
+  /** 频道表单的草稿与两步确认状态（U12）。与身份映射同一套：重画前先把输入读回来，5 秒刷新不吃掉半条。 */
+  let channelDraft = { id: '', directory: '' }
+  let confirmChannel = null
+
+  /** 清空频道表单：草稿与页面**都**清，因为重画会先把输入读回草稿，只清一边会被复活。 */
+  /**
+   * 派活方式（U13）：'once' 是现在派一张，'timed' 是到点自动派。
+   *
+   * 两者共用一个一级页面，因为它们走同一道门禁、写同一种请求；分开是两个菜单，合起来是一个开关。
+   * 面板的 `tab` 值仍是 'new'——**内部状态没有多出一个页面**，只是这一页里有两块内容按模式显隐。
+   */
+  let dispatchMode = 'once'
+  const setDispatchMode = mode => {
+    dispatchMode = mode
+    for (const chip of $('dispatch-mode').children) chip.setAttribute('aria-pressed', String(chip.dataset.mode === mode))
+    $('dispatch-once').classList.toggle('hidden', mode !== 'once')
+    $('dispatch-timed').classList.toggle('hidden', mode !== 'timed')
+    if (mode === 'timed') void loadSchedules()
+  }
+  /** 从别处（搜索结果、配方）跳到定时派：先落到「派活」页，再切到定时模式。 */
+  const showDispatch = mode => { show('new'); setDispatchMode(mode) }
+
+  const clearChannelForm = () => {
+    channelDraft = { id: '', directory: '' }
+    for (const id of ['ch-id', 'ch-dir']) {
+      const field = $(id)
+      if (field !== null) field.value = ''
+    }
+  }
+
   const chatBlock = () => (((state.settings || {}).sources || {}).chat) || {}
 
   /**
@@ -1531,6 +2145,63 @@
   }
 
   /** The whole settings document with one map replaced, so no other key — channels included — silently disappears. */
+  /** 频道的保存：整份设置文档减去/加上一条频道，其余设置与身份映射原样不动（与 saveIdentities 同一条形状）。 */
+  const saveChannels = channels => {
+    const settings = state.settings
+    return put('settings', {
+      ...settings,
+      sources: { ...settings.sources, chat: { ...settings.sources.chat, channels } },
+    })
+  }
+
+  /**
+   * 保存频道，然后立刻请系统再看一遍目录（U12）。
+   *
+   * 后半步是前半步的意义所在：加一个频道之后，操作者要看的是"它读到东西了吗"，而不是"保存成功"四个字。
+   * `POST pass` 会轮询每个来源并等这次扫描，所以回到屏幕上的是答案而不是承诺。
+   * 请不动 pass 不值得单独报错——来源自己也会按 pollMs 轮询，最多少等一个间隔。
+   */
+  const saveChannelsThen = async (channels, message) => {
+    try { await saveChannels(channels) } catch (error) { return toast(error.message) }
+    confirmChannel = null
+    clearChannelForm()
+    toast(message)
+    try { await post('pass', {}) } catch { /* 来源自己的轮询会做同一件事 */ }
+    await load()
+  }
+
+  const addChannel = () => {
+    const id = ((($('ch-id') || {}).value ?? '')).trim()
+    const directory = ((($('ch-dir') || {}).value ?? '')).trim()
+    if (id === '') return toast('先写频道 id')
+    // 校验规则照抄服务端的 schema（policy.ts 的 channels）：小写字母开头、只含小写字母数字短横线、≤40。
+    // 在页面上先说，比等服务器拒一遍再猜规则省事。
+    if (!/^[a-z][a-z0-9-]{0,39}$/.test(id)) return toast('频道 id 不合法：小写字母开头，只能含小写字母、数字和短横线，最多 40 字符')
+    if (directory === '') return toast('先写目录（消息所在的目录，回复写进它的 out/）')
+    if (directory.length > 4096) return toast('目录太长了')
+    const channels = [...(chatBlock().channels || [])]
+    // 重复 id 服务器会拒；这里先说，因为"加了一个什么都没发生"比一句报错难懂得多。
+    if (channels.some(channel => channel.id === id)) return toast(`已经有一个 id 为 ${id} 的频道了`)
+    void saveChannelsThen([...channels, { id, directory, enabled: true }],
+      `已加频道 ${id}：下一次扫描就会读它的目录`)
+  }
+
+  /** 启停一个频道：产出侧的动作——停用不再读、也不再回，目录里已受理的不受影响。 */
+  const toggleChannel = id => {
+    const channels = (chatBlock().channels || []).map(channel =>
+      channel.id === id ? { ...channel, enabled: channel.enabled === false } : channel)
+    const now = channels.find(channel => channel.id === id)
+    void saveChannelsThen(channels, now?.enabled === false
+      ? `已停用频道 ${id}：不再读也不再回，目录里的消息留在原处`
+      : `已启用频道 ${id}`)
+  }
+
+  /** 删除一个频道：两步确认，因为删掉的是"这个来源不再看那个目录"，不是一个显示项。 */
+  const removeChannel = id => {
+    const channels = (chatBlock().channels || []).filter(channel => channel.id !== id)
+    void saveChannelsThen(channels, `已删除频道 ${id}：它目录里已受理的不受影响，没读的还留在那儿`)
+  }
+
   const saveIdentities = identities => {
     const settings = state.settings
     return put('settings', {
@@ -1634,6 +2305,10 @@
       const field = $(id)
       if (field !== null) identityDraft[key] = field.value
     }
+    for (const [key, id] of [['id', 'ch-id'], ['directory', 'ch-dir']]) {
+      const field = $(id)
+      if (field !== null) channelDraft[key] = field.value
+    }
     node.replaceChildren()
     if (chatStale) { node.append(staleLine()); return }
     const chat = state.chat || {}
@@ -1723,13 +2398,31 @@
     // ---- channels
     node.append(el('h2', { style: 'margin-top:14px' }, `频道（${channels.length}）`),
       channels.length === 0
-        ? el('p', { class: 'muted' }, '还没有频道：「设置」页 sources.chat.channels 里加一条。')
-        : table(['频道', '目录', '状态'], channels.map(channel => [
+        // 【U12】空态指向下面的表单，而不是让人去改 JSON；JSON 那条路仍在（设置页的高级折叠区），所以两处都提到。
+        ? el('p', { class: 'muted' }, '还没有频道：用下面的表单加一条（也可以在「设置」页的高级区直接改 sources.chat.channels）。')
+        : table(['频道', '目录', '状态', '操作'], channels.map(channel => [
           channel.id, channel.directory,
           channel.enabled === false
             ? el('span', { class: 'warn' }, '停用（不读，也不回）')
             : el('span', { class: 'ok' }, '启用'),
+          el('span', { class: 'row' },
+            el('button', { class: 'btn small', onclick: () => toggleChannel(channel.id) },
+              channel.enabled === false ? '启用' : '停用'),
+            confirmChannel === channel.id
+              ? el('span', { class: 'row' },
+                el('span', { class: 'muted' }, '删掉它？'),
+                el('button', { class: 'btn small danger', onclick: () => removeChannel(channel.id) }, '确认删除'),
+                el('button', { class: 'btn small', onclick: () => { confirmChannel = null; renderChat() } }, '取消'))
+              : el('button', { class: 'btn small danger', onclick: () => { confirmChannel = channel.id; renderChat() } }, '删除')),
         ])))
+
+    // ---- 加一个频道（U12）：这一节原先只读，指引把人送去改 JSON——那就是记在案的债
+    node.append(el('div', { class: 'stack', style: 'margin-top:10px' },
+      el('label', { for: 'ch-id' }, '频道 id（小写字母开头，只能含小写字母、数字和短横线，最多 40）'),
+      el('input', { type: 'text', id: 'ch-id', maxlength: '40', placeholder: 'ops', value: channelDraft.id }),
+      el('label', { for: 'ch-dir' }, '目录（消息所在的目录；回复写进它的 out/）'),
+      el('input', { type: 'text', id: 'ch-dir', maxlength: '4096', placeholder: '/绝对/路径/频道目录', value: channelDraft.directory }),
+      el('div', { class: 'row' }, el('button', { class: 'btn', onclick: () => addChannel() }, '加一个频道'))))
 
     // ---- the identity map: platform id → the name it speaks as → why it is on the table
     const mapped = Object.entries(identities)
@@ -1796,34 +2489,99 @@
 
   // ------------------------------------------------------------- settings
 
-  const syncQuickFromJson = () => {
-    try {
-      const parsed = JSON.parse($('settings').value || '{}')
-      if ($('sq-mode') && parsed.acceptMode) $('sq-mode').value = parsed.acceptMode
-      if ($('sq-workers') && parsed.executor?.maxWorkers !== undefined) $('sq-workers').value = String(parsed.executor.maxWorkers)
-      if ($('sq-senders') && Array.isArray(parsed.allowedSenders)) $('sq-senders').value = parsed.allowedSenders.join(', ')
-    } catch { /* user is mid-typing raw JSON */ }
+  /**
+   * 设置（U11）：**JSON 是唯一事实源**，分区表单只是它的一层皮。
+   *
+   * 分区输入 → 收集成文档写回 JSON；JSON 手改 → 合法时重画分区。JSON 不合法时分区**不动**——
+   * 拿半份数据重画会把错误固化进表单。脏状态单独说：改了没保存就切走是最容易白干的事。
+   */
+  let savedSettingsJson = ''
+
+  const settingsDoc = () => {
+    try { return JSON.parse($('settings').value || '{}') } catch { return null }
   }
-  const syncJsonFromQuick = () => {
-    try {
-      const parsed = JSON.parse($('settings').value || '{}')
-      if ($('sq-mode')) parsed.acceptMode = $('sq-mode').value
-      const w = Number($('sq-workers')?.value)
-      if (Number.isInteger(w) && w >= 1 && w <= 8) {
-        parsed.executor = { ...(parsed.executor || {}), maxWorkers: w }
-      }
-      if ($('sq-senders')) {
-        const list = $('sq-senders').value.split(',').map(x => x.trim()).filter(Boolean)
-        if (list.length > 0) parsed.allowedSenders = list
-      }
-      $('settings').value = JSON.stringify(parsed, null, 2)
-    } catch { /* raw JSON invalid; leave untouched */ }
+
+  const markDirty = () => {
+    const node = $('settings-dirty')
+    if (node !== null) node.classList.toggle('hidden', $('settings').value === savedSettingsJson)
   }
+
+  const writeDoc = doc => {
+    $('settings').value = JSON.stringify(doc, null, 2)
+    markDirty()
+  }
+
+  const renderSections = () => {
+    const doc = settingsDoc()
+    if (doc === null) return
+    if ($('sq-mode') !== null) $('sq-mode').value = String(doc.acceptMode ?? 'observe')
+    if ($('sq-paused') !== null) $('sq-paused').checked = doc.paused === true
+    if ($('sq-senders') !== null) $('sq-senders').value = Array.isArray(doc.allowedSenders) ? doc.allowedSenders.join(', ') : ''
+    const ex = doc.executor ?? {}
+    if ($('sq-workers') !== null) $('sq-workers').value = String(ex.maxWorkers ?? '')
+    if ($('sq-model') !== null) $('sq-model').value = String(ex.model ?? '')
+    if ($('sq-prepare') !== null) $('sq-prepare').value = String(ex.prepare ?? '')
+    const inbox = (doc.sources ?? {}).inbox ?? {}
+    if ($('sq-inbox-on') !== null) $('sq-inbox-on').checked = inbox.enabled !== false
+    if ($('sq-inbox-poll') !== null) $('sq-inbox-poll').value = String(inbox.pollMs ?? '')
+    if ($('sq-inbox-dir') !== null) $('sq-inbox-dir').value = String(inbox.directory ?? '')
+    const wrap = $('sq-src-toggles')
+    if (wrap !== null) {
+      const kinds = Object.entries(doc.sources ?? {}).filter(([, v]) => v !== null && typeof v === 'object')
+      // onchange/oninput 在创建时就挂：这一批节点是每次重画新建的，初始化时的那个绑定循环够不着它们。
+      wrap.replaceChildren(...kinds.map(([name, block]) => el('label', { class: 'row', style: 'margin:0' },
+        el('input', {
+          type: 'checkbox', 'data-src': name, onchange: collectFromSections, oninput: collectFromSections,
+          ...(block.enabled !== false ? { checked: '' } : {}),
+        }), name)))
+    }
+  }
+
+  /** 把分区表单收进文档。JSON 不合法时返回 null，分区不动。 */
+  const collectSections = () => {
+    const doc = settingsDoc()
+    if (doc === null) return null
+    if ($('sq-mode') !== null) doc.acceptMode = $('sq-mode').value
+    if ($('sq-paused') !== null) doc.paused = $('sq-paused').checked
+    if ($('sq-senders') !== null) {
+      const list = $('sq-senders').value.split(',').map(x => x.trim()).filter(x => x !== '')
+      if (list.length > 0) doc.allowedSenders = list
+    }
+    const w = Number($('sq-workers')?.value)
+    if (Number.isInteger(w) && w >= 1 && w <= 8) {
+      const ex = { ...(doc.executor ?? {}), maxWorkers: w }
+      if ($('sq-model') !== null) ex.model = $('sq-model').value
+      if ($('sq-prepare') !== null) ex.prepare = $('sq-prepare').value
+      doc.executor = ex
+    }
+    const inbox = { ...((doc.sources ?? {}).inbox) }
+    if ($('sq-inbox-on') !== null) inbox.enabled = $('sq-inbox-on').checked
+    const poll = Number($('sq-inbox-poll')?.value)
+    if (Number.isInteger(poll) && poll >= 250) inbox.pollMs = poll
+    if ($('sq-inbox-dir') !== null) inbox.directory = $('sq-inbox-dir').value
+    doc.sources = { ...(doc.sources ?? {}), inbox }
+    for (const box of document.querySelectorAll('#sq-src-toggles input[data-src]')) {
+      const src = doc.sources
+      src[box.dataset.src] = { ...(src[box.dataset.src] ?? {}), enabled: box.checked }
+    }
+    return doc
+  }
+
+  /**
+   * 收集分区 → 写回 JSON。静态字段与**动态创建**的来源开关都挂它。
+   *
+   * 这里踩过一个真 bug：绑定循环只在脚本初始化时跑一次，而来源开关是 `renderSections()` 之后才创建的，
+   * 于是它们**一个监听器都没有**——勾选框在屏幕上翻转了、JSON 却纹丝不动。动态控件必须在创建时就挂上。
+   */
+  const collectFromSections = () => { const doc = collectSections(); if (doc !== null) writeDoc(doc) }
+
   const loadSettings = () => {
     $('settings').value = JSON.stringify(state?.settings ?? {}, null, 2)
+    savedSettingsJson = $('settings').value
     $('settings-revision').textContent = `修订 ${state?.settingsRevision ?? '—'}`
     $('settings-error').textContent = ''
-    syncQuickFromJson()
+    renderSections()
+    markDirty()
   }
 
   const loadPrompts = async () => {
@@ -1833,11 +2591,33 @@
       $('p-orchestrator').value = body.roles.find(r => r.role === 'orchestrator')?.override ?? ''
       $('p-worker').placeholder = body.roles.find(r => r.role === 'worker')?.base ?? ''
       $('p-orchestrator').placeholder = body.roles.find(r => r.role === 'orchestrator')?.base ?? ''
+      promptBases.worker = body.roles.find(r => r.role === 'worker')?.base ?? ''
+      promptBases.orchestrator = body.roles.find(r => r.role === 'orchestrator')?.base ?? ''
       const pinned = body.roles.filter(r => r.pinsBase).map(r => r.role)
       $('prompt-revision').textContent = `修订 ${body.revision} · 上限 ${body.maxChars} 字符 · 留空即用内置文本`
         + (pinned.length > 0 ? ` · 注意：${pinned.join('/')} 的覆盖与内置文本相同，会把该角色钉在当前版本上` : '')
       $('prompt-error').textContent = ''
+      renderPromptMeta()
     } catch (error) { $('prompt-error').textContent = error.message }
+  }
+
+  /**
+   * 每个角色现在是什么状态（U6）：读内置 / 已覆盖 / 与内置相同（会被钉住）。
+   * 字符数一并给出——上限是硬限制，而"改到第几字了"以前只能靠保存失败才知道。
+   */
+  const promptBases = { worker: '', orchestrator: '' }
+  const renderPromptMeta = () => {
+    for (const role of ['worker', 'orchestrator']) {
+      const area = $(`p-${role}`), count = $(`p-${role}-count`), chip = $(`p-${role}-state`)
+      if (area === null) continue
+      const value = area.value
+      if (count !== null) count.textContent = `${value.length} 字`
+      if (chip === null) continue
+      chip.replaceChildren(value === '' ? '读内置'
+        : value === promptBases[role] && promptBases[role] !== '' ? '与内置相同（会钉住该角色）'
+          : '已覆盖')
+      chip.className = `chip ${value === '' ? '' : value === promptBases[role] && promptBases[role] !== '' ? 'warn' : 'ok'}`.trim()
+    }
   }
 
   // ----------------------------------------------------------------- load
@@ -1947,7 +2727,10 @@
   const renderSchedules = () => {
     const node = $('schedules'); node.replaceChildren()
     if (schedules.length === 0) {
-      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '还没有排期。')))
+      node.append(el('li', { style: 'cursor:default' }, el('div', { class: 'row', style: 'padding:6px 0' },
+        el('span', { class: 'muted' }, '还没有排期。'),
+        // 直接触发已有的新建入口：同一个 onclick 逻辑，不是第二套。
+        el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => openEditor(null) }, '建一个'))))
       return
     }
     for (const schedule of schedules) {
@@ -2010,27 +2793,33 @@
       lostStale = (state.counts || {}).lost === undefined
       renderBanner()
       renderHeader()
-      if (tab === 'tickets') await loadTickets()
+      if (tab === 'overview') await loadOverview()
+      else if (tab === 'tickets') await loadTickets()
       else if (tab === 'works') await loadWorksTab()
-      else if (tab === 'decisions') await loadDecisions()
-      else if (tab === 'sources') await loadSources()
-      else if (tab === 'schedules') await loadSchedules()
+      // U14：记录页现在同时住着判定与丢失。刷新时两份都要重画——
+      // 丢失那半只重画不重读（详情是人来看时才读的，见 loadLost 的注释）。
+      else if (tab === 'decisions') { await loadDecisions(); renderLost() }
+      else if (tab === 'chat') renderChat()
+      else if (tab === 'new' && dispatchMode === 'timed') await loadSchedules()
     } catch (error) { shout(error) }
   }
 
   const show = name => {
     tab = name
     for (const button of $('tabs').children) button.setAttribute('aria-selected', String(button.dataset.tab === name))
-    for (const panel of ['tickets', 'works', 'new', 'decisions', 'sources', 'schedules', 'settings', 'prompts']) {
+    for (const panel of ['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts']) {
       $(`tab-${panel}`).classList.toggle('hidden', panel !== name)
     }
+    if (name === 'overview') void loadOverview()
     if (name === 'settings') loadSettings()
     if (name === 'prompts') void loadPrompts()
     // Entering the page reads the lost detail once. The five-second refresh does not: it redraws the COUNTS from the
     // `state` it already fetched, and re-reading twenty payloads of raw text nobody is re-reading is not a refresh.
-    if (name === 'sources') { void loadSources(); void loadLost() }
-    if (name === 'schedules') void loadSchedules()
-    if (name === 'decisions') void loadDecisions()
+    // U14：来源页解散。聊天自成页；丢失的请求归记录页，所以进记录页时把两份都读。
+    if (name === 'chat') renderChat()
+    // U13：排期不再是独立面板；它在「派活」页的定时模式下，进页时按当前模式决定读不读。
+    if (name === 'new' && dispatchMode === 'timed') void loadSchedules()
+    if (name === 'decisions') { void loadDecisions(); void loadLost() }
     if (name === 'works') void loadWorksTab()
     if (name === 'tickets') { void loadTickets(); if (selected !== null) void showDetail() }
     // Polling a Ticket nobody is looking at only spends requests.
@@ -2053,6 +2842,12 @@
       show('works')
       return
     }
+    const triggerMatch = /^#trigger=(.+)$/.exec(location.hash)
+    if (triggerMatch !== null) {
+      decisionFilter = decodeURIComponent(triggerMatch[1])
+      show('decisions')
+      return
+    }
     const projMatch = /^#project=(.+)$/.exec(location.hash)
     if (projMatch !== null) {
       const id = decodeURIComponent(projMatch[1])
@@ -2060,14 +2855,84 @@
       show('works')
     }
   }
-  for (const qid of ['sq-mode', 'sq-workers', 'sq-senders']) {
-    const qel = $(qid)
-    if (qel !== null) qel.addEventListener('change', syncJsonFromQuick)
+  // 分区输入（含勾选框）→ 收进文档写回 JSON。勾选框的 change 不冒泡给 label，所以 input 与 change 都挂。
+  for (const field of document.querySelectorAll('.set-sec input, .set-sec select')) {
+    // input 与 change 都挂：真浏览器里打字发 input、失焦发 change，勾选框两个都发；
+    // 只挂 change 的话，jsdom 里用 type() 打字不会触发（收集是幂等的，重复收一次没有副作用）。
+    field.addEventListener('input', collectFromSections)
+    field.addEventListener('change', collectFromSections)
   }
-  $('settings').addEventListener('input', syncQuickFromJson)
+  // JSON 手改：合法才重画分区；不合法时分区不动（拿半份数据重画会把错误固化进表单），只标脏。
+  $('settings').addEventListener('input', () => {
+    markDirty()
+    try { JSON.parse($('settings').value); renderSections() } catch { /* 正在打字，分区不碰 */ }
+  })
+  // 每一区自己的保存：PUT 的仍是整份文档，只是入口变近了。
+  for (const btn of document.querySelectorAll('.set-sec button[data-sec]')) {
+    btn.addEventListener('click', async () => {
+      const doc = settingsDoc()
+      if (doc === null) { $('settings-error').textContent = 'JSON 不合法，先修好下面那份再保存。'; return }
+      try {
+        await put('settings', doc)
+        savedSettingsJson = $('settings').value
+        markDirty()
+        $('settings-error').textContent = ''
+        toast('已保存并生效')
+        await load(true)
+        loadSettings()
+      } catch (error) { $('settings-error').textContent = error.message }
+    })
+  }
 
+  // 顶栏三个胶囊的点击（U2/U3）。键盘也走得通：role=button + tabindex=0 就得配 Enter/Space，否则
+  // "可点"只对用鼠标的人成立。
+  const gotoSection = (anchorId) => {
+    // U14：聊天与丢失不再同住一页——聊天有自己的页，丢失归记录页。
+    show(anchorId === 'chat' ? 'chat' : 'decisions')
+    // 等这一页画出来再滚，否则目标节点还在上一帧的位置。scrollIntoView 在 jsdom 里不存在，所以可选调用。
+    requestAnimationFrame(() => document.getElementById(anchorId)?.scrollIntoView?.({ block: 'start' }))
+  }
+  $('health').addEventListener('click', () => void openHealthDrawer())
+  $('chat-waiting').addEventListener('click', () => gotoSection('chat'))
+  $('lost-count').addEventListener('click', () => gotoSection('lost'))
+  for (const id of ['health', 'chat-waiting', 'lost-count']) {
+    $(id).addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return
+      event.preventDefault()
+      $(id).click()
+    })
+  }
+  $('drawer-close').addEventListener('click', closeHealthDrawer)
+  $('drawer-backdrop').addEventListener('click', closeHealthDrawer)
+
+  // 搜索（U9）：⌘/Ctrl+K 聚焦；Esc 清空并收起（与其他 Esc 行为互不冲突：抽屉开时优先关抽屉）。
+  $('search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => void runSearch(), 180) })
+  document.addEventListener('keydown', event => {
+    if ((event.metaKey === true || event.ctrlKey === true) && (event.key === 'k' || event.key === 'K')) {
+      event.preventDefault()
+      $('search')?.focus()
+      return
+    }
+  })
+
+  /**
+   * Esc 的**唯一**处理器（U10）。
+   *
+   * 原先抽屉一个监听器、搜索与查看器另一个监听器，于是**一次 Esc 同时关掉两层**——
+   * 这是分处注册必然的结果：每个处理器都只看自己那一层，谁也不知道别人也动了手。
+   * 收成一个处理器、按"挡视线的程度"排优先级、命中即返回，才做得到"一次只关一层"。
+   */
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return
+    const drawer = $('health-drawer')
+    if (drawer !== null && !drawer.classList.contains('hidden')) { closeHealthDrawer(); return }
+    const search = $('search')
+    if (search !== null && search.value !== '') { clearSearch(); return }
+    if (viewing !== null) { viewing = null; renderFileView(selected ?? '') }
+  })
+  for (const chip of $('dispatch-mode').children) chip.addEventListener('click', () => setDispatchMode(chip.dataset.mode))
   for (const button of $('tabs').children) button.addEventListener('click', () => show(button.dataset.tab))
-  $('filter').addEventListener('change', () => void loadTickets())
+  for (const chip of $('filter').children) chip.addEventListener('click', () => { setFilter(chip.dataset.filter); void loadTickets() })
   $('refresh').addEventListener('click', () => void load(true))
   // The banner's one button: the operator reloaded the plugin, and the page finds out without a full reload.
   $('v2-retry').addEventListener('click', async () => {
@@ -2177,7 +3042,7 @@
           $('n-recipe-hint').textContent = `已填入 ${recipe.name}，改完再创建。`
         } else {
           // A settings recipe is a schedule, not a request: the schedule editor is where it belongs.
-          show('schedules')
+          showDispatch('timed')
           void loadSchedules().then(() => openEditor({ ...recipe.schedule, id: `${recipe.schedule.id}-copy` }))
           $('n-recipe-hint').textContent = `已把 ${recipe.name} 的排期带进「排期」页的编辑器（标识加了 -copy，不会和原来那条撞）。`
         }
@@ -2193,7 +3058,7 @@
       const body = await post('tickets', {
         title, request, ...(scope ? { scope } : {}), ...(attachments.length > 0 ? { attachments } : {}),
       })
-      $('new-result').textContent = JSON.stringify(body, null, 2)
+      renderCreateResult(body)
       $('n-title').value = ''; $('n-request').value = ''; $('n-scope').value = ''
       $('n-attachments').replaceChildren()
       toast(body.ticketId ? `已开 Ticket ${body.ticketId.slice(0, 8)}` : `已记录：${body.disposition}（${body.reason || ''}）`)
@@ -2201,6 +3066,36 @@
       if (body.ticketId !== undefined) { show('tickets'); await open(body.ticketId) }
     } catch (error) { $('new-result').textContent = error.message }
   })
+  /**
+   * 创建结果（U5）：以前这里印的是接口的原始 JSON，操作者要自己从 `"disposition": "observed"` 读出
+   * "所以到底建没建？"。现在先给一句人话 + 下一步能做什么，原始 JSON 收进折叠区——**折叠不等于删除**：
+   * 排障时它还在，而既有断言（`text('new-result')` 含 `"disposition": "observed"`）也因此原样通过。
+   */
+  const renderCreateResult = body => {
+    const node = $('new-result')
+    if (node === null) return
+    node.replaceChildren()
+    const outcome = body?.ticketId !== undefined && body.ticketId !== null ? 'accepted' : String(body?.disposition ?? '')
+    const head = outcome === 'accepted'
+      ? el('p', { class: 'ok' }, `已开任务 ${String(body.ticketId).slice(0, 8)}…`)
+      : outcome === 'observed'
+        ? el('p', { class: 'warn' }, '已记录，但没有执行——现在是 observe 模式，门禁只记账不派活。')
+        : el('p', { class: 'bad' }, `没有开任务：${body?.reasonText || body?.reason || outcome || '未知原因'}`)
+    node.append(head)
+    // 下一步该做什么，按结局分别说：一个只说"失败了"的结果，等于把排查工作留给操作者。
+    node.append(el('p', { class: 'muted', style: 'font-size:12px' },
+      outcome === 'accepted' ? '它已经进队列，工作槽空出来就会启动；进展在任务详情里。'
+        : outcome === 'observed' ? '想让它真的跑：把受理模式改成 auto（设置页），或到「派活」页重派一次。'
+          : '看上面的原因：发起者不在允许名单就去设置页加，来源被拒绝就去来源页看它的状态。'))
+    if (outcome === 'accepted') {
+      node.append(el('div', { class: 'row', style: 'margin-top:6px' },
+        el('button', { class: 'btn small', onclick: () => { show('tickets'); void open(body.ticketId) } }, '打开这张任务')))
+    }
+    node.append(el('details', { class: 'tech', style: 'margin-top:8px' },
+      el('summary', {}, '接口原始返回'),
+      el('pre', {}, JSON.stringify(body, null, 2))))
+  }
+
   $('save-settings').addEventListener('click', async () => {
     let value
     try { value = JSON.parse($('settings').value) } catch (error) { $('settings-error').textContent = `不是合法 JSON：${error.message}`; return }
@@ -2215,6 +3110,19 @@
       $('prompt-error').textContent = ''; toast(`提示词已保存（修订 ${body.revision}）`); await loadPrompts()
     } catch (error) { $('prompt-error').textContent = error.message }
   })
+  // 单角色恢复：PUT 的仍是整份文档，所以另一个角色必须带上它当前的值，否则"只恢复 worker"会顺手抹掉 orchestrator。
+  for (const role of ['worker', 'orchestrator']) {
+    $(`p-${role}`).addEventListener('input', renderPromptMeta)
+    $(`p-${role}-reset`).addEventListener('click', async () => {
+      const other = role === 'worker' ? 'orchestrator' : 'worker'
+      try {
+        const body = await put('prompts', { [role]: '', [other]: $(`p-${other}`).value })
+        $('prompt-error').textContent = ''
+        toast(`${role} 已恢复内置（修订 ${body.revision}）`)
+        await loadPrompts()
+      } catch (error) { $('prompt-error').textContent = error.message }
+    })
+  }
   $('reset-prompts').addEventListener('click', async () => {
     try { await put('prompts', { worker: '', orchestrator: '' }); toast('已恢复内置提示词'); await loadPrompts() }
     catch (error) { $('prompt-error').textContent = error.message }
