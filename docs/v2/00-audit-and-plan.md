@@ -6383,3 +6383,78 @@ chat 层多一个 `appSecret` → 拒；**并且拒绝信息点名那个字段**
 
 **当前状态**：`0.6.2` · 远端 HEAD `34aef379d7bc` · MIT · public ·
 闸门 **0 / 950 条** · 真浏览器 **84/84**（本轮连跑两次）· 产物 `b03c1643e4d0cbaf`（354514 字节）。
+
+
+## 4.117 首次真机实装：三个只有实装才会暴露的问题
+
+操作者给了真 token 与频道目录，于是第一次把 Telegram 桥**装到 launchd 下真跑**。三件事只有走到这一步才会暴露：
+
+### 1. 我的日志把最有用的那部分丢了
+
+守护进程一直 `poll-failed`，而日志只有 `"error":"fetch failed"`。**node 的 `fetch` 把真因放在 `.cause` 上**，
+外层消息永远只是 "fetch failed"。加 `describeError()`（走两层 cause，把 `code` 提出来），重启后立刻看到：
+
+```
+"message":"fetch failed","name":"TypeError",
+"cause":"self-signed certificate in certificate chain","causeCode":"SELF_SIGNED_CERT_IN_CHAIN"
+```
+
+> 教训：**只记 `error.message` 的日志等于没记**。而这条缺陷的代价很具体——
+> 同一个桥在终端里跑正常、在 launchd 下失败，两边的日志**一模一样**，无从下手。
+
+### 2. 真因是环境，而且是最典型的那一种
+
+这台机器用代理做 **TLS 拦截**（DNS 把 `api.telegram.org` 解析到 `198.18.5.89`，那是代理的 fake-IP 段），
+CA 被加进系统证书包，而信任它靠的是 `~/.zprofile` 里的 `export NODE_EXTRA_CA_CERTS=/etc/ssl/cert.pem`。
+**launchd 不读 `.zprofile`**，所以守护进程里的 node 不信任那个 CA。
+
+把这一行写进 env 文件后立即通：`bot-identified {"id":<bot-id>,"username":"<bot-username>"}`，
+之后 `alive {"failures":0}` 心跳正常。**退避也顺带被验证了**：失败 1→5 次的间隔从 5 秒拉到约 60 秒。
+
+同类第二条（尚未在这台机器上触发，但一定会在别处触发）：**launchd 的 PATH 只有 `/usr/bin:/bin:/usr/sbin:/sbin`**，
+面板生成的单元用 `env node`，可能找不到 node。实装时我直接写了绝对路径
+`/opt/homebrew/opt/node@24/bin/node`。两条都写进了两份平台 README 与面板引导。
+
+### 3. 我生成的守护单元模板里有两个 `~` 的 bug
+
+**两种单元都不展开 `~`，而且原因不同**：
+
+| | 错的写法 | 为什么不展开 | 修法 |
+| --- | --- | --- | --- |
+| systemd | `EnvironmentFile=~/.config/...` | systemd 不做 shell 展开 | `%h/.config/...`（它自己的 home 说明符） |
+| launchd | `. "~/.config/..."` | 写在**双引号里**（为容忍路径带空格），而**双引号内波浪号不展开** | `. "$HOME/..."`（引号内会展开） |
+
+实装时我用的是绝对路径，所以没踩到；但**操作者照面板生成的默认值装，两种都会失败**，
+而且失败信息是"找不到 `~/...` 这个文件"，看起来像路径写错了。已修，并加了 5 条断言
+（正向断 `EnvironmentFile=%h/...` 与 `"$HOME/...`，反向断不含 `~/`，外加"操作者自己填 `~/x` 也要被换成 `%h/x`"）。
+
+### 我自己的守卫判据也错过一次
+
+写盘前的符号检查我写成 `s.count('envFileFor(') >= 2`，而**定义是 `envFileFor = (`、调用只有一处**，
+于是守卫误判"没注入"、整个面板改动没写盘。守卫拦下了错误的写盘（这是它的作用），但判据本身错了。
+> 教训：**符号存在性检查要数"定义 + 调用"这样的完整形状**，别数括号——数括号会被空格与写法差异骗到。
+
+### 文档漂移测试立刻抓住了我自己的新文档
+
+我在 README 里加了第二张表（"不是桥读、但 node 读的变量"），行格式与第一张一样，
+于是漂移测试报"文档写了但代码不读"。**它是对的**：那张表里的变量桥的代码确实不读。
+
+修法不是改格式绕过它，而是**让测试认识这个二分**：按 `### 不是桥读` 切开，
+第一张表与代码双向比对，第二张表则**断言其中的变量都不被代码读**——
+于是"把变量放错表"也会红。这比原来的检查更强。
+
+### 实装结果（可核对）
+
+```
+✓ env 文件：~/.config/myagent/bridges/telegram.env（-rw-------，在两棵树之外，token 在仓内 0 命中）
+✓ LaunchAgent：~/Library/LaunchAgents/ai.myagent.bridge.telegram.plist（plutil -lint OK）
+✓ launchctl list：21274  0  ai.myagent.bridge.telegram
+✓ 只有一个桥进程（两个会抢 getUpdates 的 offset）
+✓ 日志：bot-identified → alive {"failures":0}
+✓ myagent 侧：chat.enabled=true，channels=[{id:telegram, waiting:0, settling:0, pendingReplies:0}]
+✓ 真浏览器 87/87（频道配上后，原先跳过的三条 N5 健康检查这次真的在断言：0|0|还没有）
+✓ 完整闸门退出码 0、952 条；产物哈希未变 b03c1643e4d0cbaf（只动了 panel/bridges/tests）
+```
+
+**还没做的**：操作者尚未给 bot 发过消息，所以 `identities` 还是空的、`lastAcceptedAt` 还是"还没有"。
+第一条消息到了之后，面板「等映射」会出现他的 Telegram 数字 id，映射成 `operator`（已在 `allowedSenders` 里）即可。

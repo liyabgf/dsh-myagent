@@ -1,3 +1,5 @@
+import { describeError } from './log.mjs'
+
 /**
  * The loop every bridge runs: poll, back off when something throws, stop cleanly on a signal, and say once in a
  * while that it is still alive.
@@ -28,7 +30,9 @@ export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs =
         if (result !== undefined && result !== null) log.debug?.('poll', result)
       } catch (error) {
         failures += 1
-        log.error?.('poll-failed', { failures, error: String(error?.message ?? error) })
+        // `describeError` rather than `error.message`: for a failed fetch the message is only "fetch failed",
+        // and the reason that tells you what to fix is on `.cause`.
+        log.error?.('poll-failed', { failures, ...describeError(error) })
       }
       if (Date.now() - lastHeartbeat >= heartbeatMs) {
         lastHeartbeat = Date.now()

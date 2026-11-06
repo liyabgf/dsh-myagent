@@ -15,6 +15,7 @@
 import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parse } from './frontmatter.mjs'
+import { describeError } from './log.mjs'
 
 const OUT = 'out'
 const SENT = 'sent'
@@ -66,7 +67,7 @@ export async function drainOut({ directory, send, log = {}, keepDays = 7 }) {
       await send({ thread: fields.thread === '' || fields.thread === undefined ? undefined : fields.thread, text: body, name: entry.name })
     } catch (error) {
       // Leave it where it is: the next drain tries again, and myagent's own retry may rewrite the same bytes.
-      log.error?.('reply-send-failed', { name: entry.name, error: String(error) })
+      log.error?.('reply-send-failed', { name: entry.name, ...describeError(error) })
       tally.failed += 1
       continue
     }

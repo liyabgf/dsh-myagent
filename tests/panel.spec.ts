@@ -3834,6 +3834,17 @@ describe('平台接入页与每频道健康（N5）', () => {
     // launchd 没有 EnvironmentFile，所以用 shell 先 source 再 exec——凭据仍然不进 plist。
     expect(plist).toContain('set -a; . ')
     expect(plist).toContain('KeepAlive')
+    // `~` 在两种单元里都不展开，而且原因不同（systemd 不做 shell 展开；launchd 那层写在双引号里，
+    // 而双引号内波浪号不展开）。这是实装时真的踩到的：终端里能跑，当守护进程就找不到 env 文件。
+    expect(unit).toContain('EnvironmentFile=%h/.config/myagent/bridges/')
+    expect(unit).not.toContain('EnvironmentFile=~/')
+    expect(plist).toContain('"$HOME/.config/myagent/bridges/')
+    expect(plist).not.toContain('"~/')
+    // 操作者填了 ~/ 开头的路径也要被换成目标格式，而不是原样塞进单元里。
+    type('unit-env', '~/secrets/tg.env')
+    click(button('systemd'))
+    await settle()
+    expect(text('platform-guide')).toContain('EnvironmentFile=%h/secrets/tg.env')
     expect(plist).toContain('ai.myagent.bridge.')
     // 两种单元都不许出现"带着值的凭据赋值"。第一版写的是 /TOKEN\s*=\s*\S/，太松：
     // 引导里的 env 模板本身就是 `TELEGRAM_BOT_TOKEN=` 后跟换行与注释，于是把自己的模板判成了泄漏。

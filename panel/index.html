@@ -2680,11 +2680,32 @@
    * systemd 有 EnvironmentFile；launchd 没有，所以用一层 shell 先 source 再 exec。
    * 内联密钥的单元会被面板渲染、被截图、被提交进版本库——三条路都通向泄漏。
    */
+  /**
+   * 守护单元里 env 文件的写法。
+   *
+   * **`~` 在两种单元里都不展开**，而且是两种不同的原因——这是实装时踩到的（终端里手动跑正常、
+   * 当守护进程就失败）：
+   * - systemd 的 `EnvironmentFile=` 不做 shell 展开，要用它自己的 home 说明符 `%h`；
+   * - launchd 那层是 `/bin/sh -c`，而它写在**双引号里**（`. "$envFile"`，为了容忍路径带空格），
+   *   **双引号里波浪号不展开**，于是会去找一个字面叫 `~/...` 的文件。要用 `$HOME`（引号内会展开）。
+   *
+   * 所以：操作者填了 `~/...` 就按目标格式换掉；填了绝对路径就原样用。
+   */
+  const envFileFor = (kind, channelId) => {
+    const typed = (unitDraft.envFile || '').trim()
+    const base = `.config/myagent/bridges/${channelId}.env`
+    if (typed === '' || typed.startsWith('~/')) {
+      const relative = typed === '' ? base : typed.slice(2)
+      return kind === 'systemd' ? `%h/${relative}` : `$HOME/${relative}`
+    }
+    return typed
+  }
+
   const unitText = kind => {
     const platform = PLATFORMS[platformPick]
     const repo = (unitDraft.repo || '').trim()
     const channelId = unitDraft.channel || platformPick
-    const envFile = (unitDraft.envFile || '').trim() || `~/.config/myagent/bridges/${channelId}.env`
+    const envFile = envFileFor(kind, channelId)
     const prefix = repo === '' ? '/ABSOLUTE/PATH/TO/myagent' : repo.replace(/\/$/, '')
     const script = `${prefix}/${platform.dir}/${platform.entry}`
     if (kind === 'systemd') {
@@ -2786,7 +2807,14 @@ WantedBy=default.target
             el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => copy(unitText(unitKind)) }, '复制单元')),
           el('pre', { style: 'max-height:260px;overflow:auto' }, unitText(unitKind))),
       el('h3', { style: 'margin-top:12px' }, '注意'),
-      el('ul', { class: 'plain' }, ...platform.notes.map(note => el('li', { class: 'muted' }, note))))
+      el('ul', { class: 'plain' },
+        ...platform.notes.map(note => el('li', { class: 'muted' }, note)),
+        // 两条与平台无关、但几乎每个人都会撞上的（第一条是实装这台机器时真的撞到的）：
+        el('li', { class: 'muted' }, '终端里手动跑正常、当守护进程就失败，几乎都是环境变量：launchd 与 systemd '
+          + '都不读你的 .zprofile / .bashrc。若本机用代理做 TLS 拦截，node 需要 NODE_EXTRA_CA_CERTS 指到系统证书包，'
+          + '否则报 SELF_SIGNED_CERT_IN_CHAIN——把它写进 env 文件。'),
+        el('li', { class: 'muted' }, 'launchd 的 PATH 只有 /usr/bin:/bin:/usr/sbin:/sbin，env node 可能找不到 node：'
+          + '把单元里的 node 换成绝对路径（which node），或在 env 文件里设 PATH。')))
     // 频道下拉的当前值要在重画之后恢复：整块替换会把 select 打回第一项。
     const select = $('unit-channel')
     if (select !== null) select.value = unitDraft.channel

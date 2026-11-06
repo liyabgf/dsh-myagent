@@ -24,6 +24,8 @@ import { drainOut } from '../bridges/lib/outbound.mjs'
 import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform.mjs'
 // @ts-expect-error -- see above
 import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
+// @ts-expect-error -- see above
+import { describeError } from '../bridges/lib/log.mjs'
 import { readFileSync as read } from 'node:fs'
 
 const directories: string[] = []
@@ -373,8 +375,18 @@ describe('the bridge docs cannot drift from the bridge code', () => {
       const code = read(`bridges/${platform}/bridge.mjs`, 'utf8')
       const doc = read(`bridges/${platform}/README.md`, 'utf8')
       const inCode = new Set([...code.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g)].map(m => m[1]!))
-      // The README's env table lists names in backticks in the first column.
-      const inDoc = new Set([...doc.matchAll(/^\| `([A-Z][A-Z0-9_]*)`/gm)].map(m => m[1]!))
+      // The README has TWO variable tables and the split is the point: one lists what the BRIDGE reads (compared
+      // against the code below), the other lists what NODE reads (`NODE_EXTRA_CA_CERTS`, `PATH`) which the bridge's
+      // own code never mentions — an operator still has to set them, and the daemon is exactly where they go missing.
+      // Comparing the whole document against the code would call that second table a lie, so it is scoped here, and
+      // the split itself is asserted: a variable in the wrong table fails.
+      const parts = doc.split('### 不是桥读')
+      const bridgePart = parts[0] ?? ''
+      const nodePart = parts[1] ?? ''
+      const inDoc = new Set([...bridgePart.matchAll(/^\| `([A-Z][A-Z0-9_]*)`/gm)].map(m => m[1]!))
+      const nodeLevel = [...nodePart.matchAll(/^\| `([A-Z][A-Z0-9_]*)`/gm)].map(m => m[1]!)
+      expect(nodeLevel.length, '"node 读的"那张表不见了').toBeGreaterThan(0)
+      expect(nodeLevel.filter(name => inCode.has(name)), '这些是桥自己读的，不该在 node 那张表里').toEqual([])
       expect(inCode.size, '桥没有读任何环境变量？').toBeGreaterThan(0)
       // 集合相等是主断言，两条方向性断言只为了让失败信息说清是哪一边漂了。
       // 0.8 强形式量出"文档写了但代码不读"那条是**唯一守卫**（删掉它，多写一个没人读的变量就无人发现），
@@ -403,5 +415,32 @@ describe('the bridge docs cannot drift from the bridge code', () => {
     expect(doc).toContain('reply_unroutable') // an address was written and nothing is there to receive it
     expect(doc).toContain('7 天')             // MYAGENT_REPLY_KEEP_DAYS default
     expect(doc).toContain('60 秒')            // the backoff ceiling in run.mjs
+  })
+})
+
+describe('a failure says why, not just that it failed', () => {
+  /**
+   * Node's `fetch` reports "fetch failed" and puts the reason on `.cause`. Logging only the message produced a
+   * daemon that could not be diagnosed from its own log: the same bridge worked in a terminal and failed under
+   * launchd, and the two looked identical. The cause (`SELF_SIGNED_CERT_IN_CHAIN`) was the whole answer.
+   */
+  it('lifts the cause and its code out of a wrapped fetch failure', () => {
+    const wrapped = Object.assign(new TypeError('fetch failed'), {
+      cause: Object.assign(new Error('self-signed certificate in certificate chain'), { code: 'SELF_SIGNED_CERT_IN_CHAIN' }),
+    })
+    expect(describeError(wrapped)).toEqual({
+      message: 'fetch failed', name: 'TypeError',
+      cause: 'self-signed certificate in certificate chain', causeCode: 'SELF_SIGNED_CERT_IN_CHAIN',
+    })
+  })
+
+  it('walks one more level, because undici nests, and keeps a plain error plain', () => {
+    const deep = Object.assign(new Error('outer'), {
+      cause: Object.assign(new Error('middle'), { cause: Object.assign(new Error('inner'), { code: 'ENOTFOUND' }) }),
+    })
+    expect(describeError(deep)).toMatchObject({ message: 'outer', cause: 'middle', rootCause: 'inner', rootCauseCode: 'ENOTFOUND' })
+    expect(describeError(new Error('just this'))).toEqual({ message: 'just this' })
+    expect(describeError('a string')).toEqual({ message: 'a string' })
+    expect(describeError(undefined)).toEqual({ message: 'undefined' })
   })
 })

@@ -57,6 +57,20 @@ chmod 600 ~/.config/myagent/bridges/lark-main.env
 | `MYAGENT_REPLY_KEEP_DAYS` | | `7` | `out/sent/` 保留几天（0 = 永久） |
 | `BRIDGE_LOG_LEVEL` | | `info` | `debug` 打印每条跳过的消息及原因 |
 
+### 不是桥读、但 node 读的两个变量
+
+> 这两个**不在上面的表里**是故意的：表由测试与代码里的 `process.env.*` 双向比对
+> （`tests/bridges.spec.ts`），而它们是 **node 自己**读的，桥的代码里不会出现——写进表里会让那条测试红。
+
+| 变量 | 什么时候需要 |
+| --- | --- |
+| `NODE_EXTRA_CA_CERTS` | 本机用**代理做 TLS 拦截**（Clash/Surge 一类的 TUN + MITM）时。症状很典型：**终端里手动跑正常，当守护进程就报 `SELF_SIGNED_CERT_IN_CHAIN`**——因为 launchd 与 systemd **都不读你的 `.zprofile` / `.bashrc`**，而那个变量通常正是在那里 export 的。指到系统证书包即可，例如 `NODE_EXTRA_CA_CERTS=/etc/ssl/cert.pem`（macOS） |
+| `PATH` | launchd 的 PATH 只有 `/usr/bin:/bin:/usr/sbin:/sbin`。面板生成的单元用 `env node`，**可能找不到 node**：把单元里的 node 换成绝对路径（`which node`），或在 env 文件里设 `PATH` |
+
+**排障的第一步永远是看日志里的 `cause`**：桥的错误行带 `cause` / `causeCode` / `rootCause`，
+因为 node 的 `fetch` 失败时外层消息只有 `fetch failed`，真正的原因在 `.cause` 上
+（`ENOTFOUND`、`ECONNREFUSED`、`SELF_SIGNED_CERT_IN_CHAIN`…）。只记外层消息的日志等于没记。
+
 ## 4. 跑起来
 
 ```sh
