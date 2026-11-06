@@ -35,23 +35,49 @@ function check(name, cond, detail = '') {
   }
 }
 
-const browser = await chromium.launch({
+const LAUNCH = {
   executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   headless: true,
-})
+}
+let browser = await chromium.launch(LAUNCH)
 
 try {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const pageErrors = []
   const consoleErrors = []
   const badResponses = []
-  page.on('pageerror', err => pageErrors.push(String(err)))
   // `pageerror` alone is not "no errors": a failed HTTP request and a console.error are both real failures the
   // operator would see in devtools, and neither throws. An audit found exactly that gap — one 404 per page load
   // (the browser's automatic favicon probe) had been invisible to this script since it was written.
-  page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text().slice(0, 120)) })
-  page.on('response', res => { if (res.status() >= 400) badResponses.push(`${res.status()} ${res.url()}`) })
-  page.on('requestfailed', req => badResponses.push(`FAILED ${req.url()}`))
+  // 抽成函数是因为下面会**换页面**（见 freshPage）：换页之后这四个监听器必须重新挂上，
+  // 否则"全程 0 条控制台错误"那条断言就只在旧页面上成立——那正是量具说谎的方式。
+  const attachWatchers = pg => {
+    pg.on('pageerror', err => pageErrors.push(String(err)))
+    pg.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text().slice(0, 120)) })
+    pg.on('response', res => { if (res.status() >= 400) badResponses.push(`${res.status()} ${res.url()}`) })
+    pg.on('requestfailed', req => badResponses.push(`FAILED ${req.url()}`))
+  }
+  let page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  attachWatchers(page)
+
+  /**
+   * 换掉**整个浏览器进程**（不只是页面），并重挂监听器。
+   *
+   * 为什么需要它：检查从 21 条长到 77 条之后，headless Chrome 的内存一路累积，到后面两节
+   * （547 文件的重型任务、跨任务深链）**随机崩**（`Target page … has been closed`，崩溃行号每次都不同——
+   * 资源型崩溃的特征，不是某一行逻辑错）。
+   * 已实测无效的修法：启动参数（--disable-dev-shm-usage / force-device-scale-factor，3/3 崩）、
+   * fullPage→视口截图（3/3 崩）、页内 fetch→Node 侧 fetch（3/3 崩）、
+   * `goto(BASE, {waitUntil:'networkidle'})`（必崩：面板每 5 秒轮询，networkidle 永远等不到空闲）、
+   * **只换页面不换进程**（崩在换页那一步）。换进程才真的把内存还回去。
+   */
+  const relaunch = async () => {
+    await browser.close()
+    browser = await chromium.launch(LAUNCH)
+    page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+    attachWatchers(page)
+    await page.goto(BASE, { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(1500)
+  }
 
   console.log(`── 1. 打开面板与基础计算样式 (${BASE})`)
   await page.goto(BASE, { waitUntil: 'networkidle' })
@@ -153,7 +179,7 @@ try {
   await page.click('#tabs button[data-tab="tickets"]')
   await page.click('#filter button[data-filter="all"]')  // 【U7】下拉改 chips
   await page.waitForTimeout(500)
-  const anyRow = await page.$('#tickets li')
+  const anyRow = await page.$('#tickets li:not(.group-head)')  // 【U22】排除分段标题
   if (anyRow) { await anyRow.click(); await page.waitForTimeout(700) }
   const fold = await page.evaluate(() => {
     const d = document.querySelector('#detail details.tech')
@@ -226,7 +252,9 @@ try {
 
   // U8：列表时刻是相对表达，绝对时刻在 title 上（相对化不能丢信息）
   const times = await page.evaluate(() => {
-    const cells = [...document.querySelectorAll('#tickets li .meta span')].filter(n => n.getAttribute('title'))
+    // 【U22】行里现在有两种带 title 的 span：时刻（title=绝对时刻）与结局原因（title=整句原文）。
+    // 只取前一种——又一次"给容器新增同类元素后，'取第一个'的选择器被抢位"，这次是选择器按属性筛，不只按位置。
+    const cells = [...document.querySelectorAll('#tickets li .meta span')].filter(n => /\d{4}\/\d{1,2}\/\d{1,2} \d{2}:\d{2}:\d{2}/.test(n.getAttribute('title') ?? ''))
     return cells.slice(0, 3).map(n => ({ text: n.textContent.trim(), title: n.getAttribute('title') }))
   })
   check('任务列表用相对时间且 title 带绝对时刻（U8）',
@@ -267,7 +295,7 @@ try {
   // U10：Esc 一次只关一层（这正是分处注册时踩到的缺陷）
   await page.click('#tabs button[data-tab="tickets"]')
   await page.waitForTimeout(400)
-  const row0 = await page.$('#tickets li')
+  const row0 = await page.$('#tickets li:not(.group-head)')  // 【U22】排除分段标题
   if (row0) { await row0.click(); await page.waitForTimeout(700) }
   const fileBtn = await page.$('#d-files button.linklike')
   if (fileBtn) {
@@ -406,7 +434,7 @@ try {
   await page.click('#tabs button[data-tab="tickets"]')
   await page.click('#filter button[data-filter="all"]')  // U7 起 filter 是 chips，不是 select
   await page.waitForTimeout(500)
-  const anyRow2 = await page.$('#tickets li')
+  const anyRow2 = await page.$('#tickets li:not(.group-head)')  // 【U22】排除分段标题
   if (anyRow2) { await anyRow2.click(); await page.waitForTimeout(700) }
   // 这个按钮住在**默认折叠**的技术细节里，所以要先展开——Playwright 拒绝点不可见元素是对的：
   // 真人也得先展开才点得到。检查照用户的动作走，而不是绕过它。
@@ -450,6 +478,281 @@ try {
     console.log('  – 事件日志 id 复制（U16）：跳过 —— 该任务没有含 id 的事件')
   }
 
+  // U17：线上界面上不该再出现英文枚举词（这是操作者说"不明确"的直接来源）
+  const enums = ['pending', 'running', 'waiting', 'failed', 'blocked', 'done', 'dropped', 'stopped',
+    'accept', 'ignore', 'observe', 'unavailable']
+  const seen = []
+  for (const t of ['overview', 'tickets', 'decisions']) {
+    await page.click(`#tabs button[data-tab="${t}"]`)
+    await page.waitForTimeout(600)
+    if (t === 'tickets') { await page.click('#filter button[data-filter="all"]'); await page.waitForTimeout(500) }
+    // **只查当前可见面板内的元素**：隐藏面板仍留在 DOM 里，查整个 document 会把同一批元素
+    // 在三个页面上各报一次，命中无法归因（第一版正是这样，报了三份一模一样的 accept）。
+    const hits = await page.evaluate(([list, tab]) => {
+      const root = document.getElementById('tab-' + tab)
+      if (!root) return ['<没有这个面板>']
+      return [...root.querySelectorAll('.stage')]
+        .filter(n => n.offsetParent !== null || getComputedStyle(n).display !== 'none')
+        .map(n => n.textContent.trim()).filter(x => list.includes(x))
+    }, [enums, t])
+    if (hits.length > 0) seen.push(`${t}: ${hits.join(',')}`)
+  }
+  check('阶段与判定胶囊上不再出现英文枚举词（U17）', seen.length === 0, seen.join(' | ') || 'clean')
+  // 顶栏胶囊同样中文化，且英文原值留在 title 上（排障时与日志对得上）
+  const hdr = await page.evaluate(() => ({
+    mode: document.getElementById('mode')?.textContent.trim(),
+    counts: document.getElementById('counts')?.textContent.trim(),
+    title: document.querySelector('#mode b')?.getAttribute('title'),
+  }))
+  check('顶栏两颗胶囊是中文，且 acceptMode 原值在 title 上',
+    /受理模式：(通过即执行|只记录不执行)/.test(hdr.mode || '') && (hdr.counts || '').startsWith('任务')
+    && /^acceptMode=(auto|observe)$/.test(hdr.title || ''),
+    `mode=${hdr.mode} counts=${(hdr.counts || '').slice(0, 24)} title=${hdr.title}`)
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
+  // U18：把"动作前有多少字说明"这个量具本身做成回归守卫。
+  // 基线（改造前）：动作前最差 407 字（记录页丢失一节），可见说明总量最大 771 字（聊天页）。
+  // 改造后实测：27 与 136。阈值放宽到 60 / 260，留出正常文案增长的空间，但一整墙解释塞回来就会红。
+  const prose = await page.evaluate(async () => {
+    const visible = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el)
+      return r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden' }
+    const isTarget = el => el.matches('button, input, select, textarea, table, ul.list, .chip, .stage, [role="status"]')
+    const out = []
+    for (const tab of ['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings']) {
+      document.querySelector(`#tabs button[data-tab="${tab}"]`).click()
+      await new Promise(r => setTimeout(r, 450))
+      const root = document.getElementById('tab-' + tab)
+      let worst = 0
+      for (const card of root.querySelectorAll('section.card')) {
+        let proseChars = 0, hit = false
+        const walk = node => { for (const el of node.children) {
+          if (hit || !visible(el)) continue
+          if (el.matches('details:not([open])')) continue
+          if (isTarget(el)) { hit = true; continue }
+          if (el.matches('p')) proseChars += (el.textContent || '').trim().length
+          if (el.matches('h1,h2,h3')) continue
+          walk(el) } }
+        walk(card)
+        worst = Math.max(worst, proseChars)
+      }
+      let total = 0, folds = 0, openFolds = 0
+      for (const para of root.querySelectorAll('p')) {
+        if (!visible(para) || para.closest('details:not([open])')) continue
+        total += (para.textContent || '').trim().length
+      }
+      for (const d of root.querySelectorAll('details.why')) { folds += 1; if (d.hasAttribute('open')) openFolds += 1 }
+      out.push({ tab, worst, total, folds, openFolds })
+    }
+    return out
+  })
+  const worstAll = Math.max(...prose.map(x => x.worst))
+  const totalAll = Math.max(...prose.map(x => x.total))
+  check('每页动作前的说明字数都小（U18；改造前最差 407 字）', worstAll <= 60,
+    `最差 ${worstAll} 字 · ` + prose.map(x => `${x.tab}:${x.worst}`).join(' '))
+  check('每页可见说明总量都小（U18；改造前聊天页 771 字）', totalAll <= 260,
+    `最大 ${totalAll} 字 · ` + prose.map(x => `${x.tab}:${x.total}`).join(' '))
+  check('解释都收在折叠里且默认收起', prose.every(x => x.openFolds === 0) && prose.some(x => x.folds > 0),
+    prose.map(x => `${x.tab}:${x.folds}折/${x.openFolds}开`).join(' '))
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
+  // U19：三步引导（**只读**——绝不点「启用」，那会改线上设置）
+  await page.click('#tabs button[data-tab="chat"]')
+  await page.waitForTimeout(700)
+  const guide = await page.evaluate(() => {
+    const steps = [...document.querySelectorAll('#chat-steps li')]
+    const first = document.getElementById('chat')?.children[0]
+    return {
+      count: steps.length,
+      labels: steps.map(li => (li.querySelector('.what b')?.textContent || '').trim()),
+      now: steps.filter(li => li.classList.contains('now')).length,
+      done: steps.filter(li => li.classList.contains('done')).length,
+      nowHasAction: steps.some(li => li.classList.contains('now') && li.querySelector('button') !== null),
+      laterHasNoAction: steps.filter(li => li.classList.contains('later')).every(li => li.querySelector('button') === null),
+      firstIsSteps: first?.id === 'chat-steps',
+      marks: [...document.querySelectorAll('#chat-steps .mark')].map(m => m.textContent.trim()),
+    }
+  })
+  check('聊天页首元素是三步引导，不是段落（U19）', guide.firstIsSteps === true, `first=${guide.firstIsSteps}`)
+  check('三步引导画出真实顺序（启用→加频道→映射身份）',
+    guide.count === 3 && guide.labels.join('|') === '启用这条来源|加一个频道|把发消息的人映射成发起者',
+    `${guide.count} 步：${guide.labels.join(' → ')}`)
+  check('当前步恰好一个、且带就地动作；未轮到的步骤不给动作',
+    guide.now <= 1 && (guide.now === 0 || guide.nowHasAction) && guide.laterHasNoAction,
+    `now=${guide.now} done=${guide.done} 当前步有动作=${guide.nowHasAction} 后续无动作=${guide.laterHasNoAction}`)
+  check('做完的步骤标记是 ✓ 而不是数字',
+    guide.marks.every((m, i) => i < guide.done ? m === '✓' : m === String(i + 1)),
+    `marks=${guide.marks.join(',')}`)
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
+  // U20：工作页表单收进「新建」动作 + 只有一项时默认选中
+  await page.click('#tabs button[data-tab="works"]')
+  await page.waitForTimeout(800)
+  const w20 = await page.evaluate(() => {
+    const vis = id => { const el = document.getElementById(id); return el ? getComputedStyle(el).display !== 'none' : null }
+    const rows = document.querySelectorAll('#works li').length
+    return {
+      pjForm: vis('pj-form'), wkForm: vis('wk-form'),
+      toggles: [...document.querySelectorAll('button')].filter(b => /新建(项目|工作)/.test(b.textContent.trim())).map(b => b.textContent.trim()),
+      detail: (document.getElementById('work-detail')?.textContent || '').trim().slice(0, 24),
+      rows,
+    }
+  })
+  check('两个新建表单默认收起（U20）', w20.pjForm === false && w20.wkForm === false,
+    `pj=${w20.pjForm} wk=${w20.wkForm}`)
+  check('唤出按钮各一个、且页面上没有重名的提交按钮', w20.toggles.join('|') === '新建项目|新建工作', w20.toggles.join('|'))
+  check('只有一条工作时进页就选中它（详情不是那句空提示）',
+    w20.rows === 1 ? !w20.detail.startsWith('选择左边') : true, `rows=${w20.rows} detail=${w20.detail}`)
+  await page.click('#pj-toggle')
+  await page.waitForTimeout(300)
+  const opened = await page.evaluate(() => ({
+    visible: getComputedStyle(document.getElementById('pj-form')).display !== 'none',
+    focused: document.activeElement?.id,
+  }))
+  check('点「新建项目」展开表单且焦点落进名字字段', opened.visible && opened.focused === 'pj-name',
+    `visible=${opened.visible} focused=${opened.focused}`)
+  await page.click('#pj-cancel')
+  await page.waitForTimeout(250)
+
+  // U22：「全部」分两段 + 已结束行带结局原因 + 摘要可展开
+  await page.click('#tabs button[data-tab="tickets"]')
+  await page.waitForTimeout(500)
+  await page.click('#filter button[data-filter="all"]')
+  await page.waitForTimeout(700)
+  const g = await page.evaluate(() => {
+    const heads = [...document.querySelectorAll('#tickets li.group-head')].map(li => li.textContent.trim())
+    const rows = [...document.querySelectorAll('#tickets li:not(.group-head)')]
+    const nums = heads.map(h => Number((h.match(/（(\d+)）/) || [])[1] ?? -1))
+    return {
+      heads, rows: rows.length, sum: nums.reduce((a, b) => a + b, 0),
+      reasonRows: rows.filter(r => (r.textContent || '').includes('结局原因')).length,
+      // 带原因的行里，原因那个 span 的 title 必须就是整句原文（列表上会截断，title 不截）
+      reasonTitled: rows.filter(r => [...r.querySelectorAll('.meta span[title]')]
+        .some(sp => (sp.textContent || '').startsWith('结局原因：')
+          && sp.getAttribute('title') === sp.textContent.replace(/^结局原因：/, ''))).length,
+      endedRows: rows.filter(r => (r.textContent || '').includes('结束于')).length,
+      expandBtns: [...document.querySelectorAll('#tickets button.linklike')].filter(b => b.textContent.trim() === '展开').length,
+      headsClickable: [...document.querySelectorAll('#tickets li.group-head')].every(li => li.getAttribute('aria-current') === null),
+      tallRow: Math.max(...rows.map(r => Math.round(r.getBoundingClientRect().height))),
+    }
+  })
+  // 分几段取决于数据：空的那一段不画（线上这批 12 条**全部已结束**，于是只有"已结束（12）"一段）。
+  // 断言的是**规则**——每段标题的计数之和等于行数、且标题只可能是这两种——不是"必须有两段"。
+  check('「全部」按结束与否分段，段标题计数之和等于行数（U22）',
+    g.heads.length >= 1 && g.heads.length <= 2 && g.sum === g.rows
+    && g.heads.every(h => /^(进行中|已结束)（\d+）$/.test(h)),
+    `${g.heads.join(' | ')} 行=${g.rows}`)
+  check('已结束的行都说"结束于 …"', g.endedRows > 0, `结束于=${g.endedRows} / 行=${g.rows}`)
+  if (g.reasonRows > 0) {
+    check('带结局原因的行，整句原文都在 title 上（截断也不丢）', g.reasonTitled === g.reasonRows,
+      `有原因=${g.reasonRows} 其中 title 齐备=${g.reasonTitled}`)
+  } else {
+    console.log('  – 结局原因 title（U22）：跳过 —— 本部署这批已结束的任务都没有 endedReason')
+  }
+  check('分段标题不是一条任务（没有 aria-current，点它不该打开详情）', g.headsClickable === true, `=${g.headsClickable}`)
+  // 摘要截断：**只读**断言。
+  // 曾经写过点击式探测（展开→量高→收回），它量到了很有说服力的数字（「信息比对」117px → 1125px），
+  // 但会让 Chrome 在后面第 4 节的重型任务整页截图之后崩掉；停用该块则 71 条全过、加上它就必崩（可复现两次）。
+  // 加过"探测后整页重载"归零状态也没用，所以判定是资源型不稳定而非状态泄漏——**不与它纠缠**：
+  // 断言改成不点击、不改任何状态，量"可见摘要被截断成一句（≤60 字）且给了展开按钮"。
+  const trunc = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('#tickets li:not(.group-head)')]
+    const withBtn = rows.filter(li => [...li.querySelectorAll('button.linklike')].some(b => b.textContent.trim() === '展开'))
+    if (withBtn.length === 0) return null
+    const lens = withBtn.map(li => {
+      const span = [...li.querySelectorAll('.row span.muted')].find(x => (x.textContent || '').trim().length > 0)
+      return (span?.textContent || '').trim().length
+    })
+    return { rows: withBtn.length, max: Math.max(...lens), min: Math.min(...lens) }
+  })
+  if (trunc !== null) {
+    check('长摘要被截断成一句（≤60 字）并给了「展开」（U22）', trunc.max <= 61,
+      `${trunc.rows} 行有展开按钮，可见摘要 ${trunc.min}–${trunc.max} 字`)
+  } else {
+    console.log('  – 摘要截断（U22）：跳过 —— 这批任务的摘要都不够长，没有「展开」按钮')
+  }
+
+  // U23：记录页分区 + 判定筛选 + 徽标不再重复 id（全部只读）
+  await page.click('#tabs button[data-tab="decisions"]')
+  await page.waitForTimeout(800)
+  const rec = await page.evaluate(() => {
+    const vis = id => { const el = document.getElementById(id); return el ? getComputedStyle(el).display !== 'none' : null }
+    const chips = [...document.querySelectorAll('#records-nav .chip-btn')]
+    const filt = [...document.querySelectorAll('#decision-filter .chip-btn')]
+    const dupIds = [...document.querySelectorAll('[id]')].map(e => e.id)
+      .filter((id, i, a) => a.indexOf(id) !== i)
+    const rows = [...document.querySelectorAll('#decisions li')]
+    return {
+      navLabels: chips.map(c => c.textContent.trim()),
+      navPressed: chips.map(c => c.getAttribute('aria-pressed')),
+      cardsVisible: [vis('card-decisions'), vis('card-lost')],
+      filterLabels: filt.map(c => c.textContent.trim()),
+      rows: rows.length,
+      // 「我看过了」必须带后果说明，否则它就是一个不知道点了会怎样的按钮
+      dismissTitles: [...document.querySelectorAll('#decisions button')]
+        .filter(b => b.textContent.trim() === '我看过了').map(b => (b.getAttribute('title') || '').length),
+      dupIds: [...new Set(dupIds)],
+      badgeChat: document.getElementById('badge-chat') !== null,
+      badgeDec: document.getElementById('badge-decisions') !== null,
+    }
+  })
+  check('记录页有分区导航，且一次只显示一张卡（U23）',
+    rec.navLabels.length === 2 && rec.cardsVisible.filter(Boolean).length === 1,
+    `${rec.navLabels.join('|')} pressed=${rec.navPressed.join(',')} 卡可见=${rec.cardsVisible.join(',')}`)
+  check('判定有结局筛选且计数写在标签上',
+    rec.filterLabels.length === 3 && rec.filterLabels.every(l => /（\d+）$/.test(l)),
+    rec.filterLabels.join(' | '))
+  check('页面里没有重复的元素 id（U14 遗留的 badge-sources 重复已修）',
+    rec.dupIds.length === 0, rec.dupIds.join(',') || 'none')
+  check('两颗徽标各归其主：聊天等待在聊天、丢失在记录', rec.badgeChat && rec.badgeDec,
+    `badge-chat=${rec.badgeChat} badge-decisions=${rec.badgeDec}`)
+  if (rec.dismissTitles.length > 0) {
+    check('「我看过了」按钮带后果说明（title 非空）',
+      rec.dismissTitles.every(len => len > 10), `${rec.dismissTitles.length} 个按钮，title 长度 ${rec.dismissTitles.join(',')}`)
+  } else {
+    console.log('  – 「我看过了」title（U23）：跳过 —— 这批判定里没有需要收起的拒绝')
+  }
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
+  // U24：分段控件 + 当前档说明 + 范围 placeholder 是默认值原文（与 policy.ts 逐字比对）
+  await page.click('#tabs button[data-tab="new"]')
+  await page.waitForTimeout(500)
+  const seg = await page.evaluate(() => {
+    const box = document.getElementById('dispatch-mode')
+    const btns = [...box.querySelectorAll('.chip-btn')]
+    const bg = b => getComputedStyle(b).backgroundColor
+    return {
+      cls: box.className,
+      labels: btns.map(b => b.textContent.trim()),
+      pressed: btns.map(b => b.getAttribute('aria-pressed')),
+      bgs: btns.map(bg),
+      hint: (document.getElementById('dispatch-mode-hint')?.textContent || '').trim(),
+      nScope: document.getElementById('n-scope')?.getAttribute('placeholder') || '',
+      wkScope: document.getElementById('wk-scope')?.getAttribute('placeholder') || '',
+      idLabel: (document.querySelector('label[for="s-id"]')?.textContent || '').trim(),
+    }
+  })
+  check('模式开关是分段控件：选中档与未选中档底色不同（U24）',
+    seg.cls.includes('seg') && seg.bgs[0] !== seg.bgs[1] && seg.pressed.join(',') === 'true,false',
+    `${seg.cls} ${seg.labels.join('|')} 底色=${seg.bgs.join(' vs ')} pressed=${seg.pressed.join(',')}`)
+  check('当前档有一句说明，且与档位对得上',
+    seg.hint.length > 8 && seg.hint.includes('现在派一张'), `hint=${seg.hint.slice(0, 40)}`)
+  // 线上 placeholder 必须与 policy.ts 的 DEFAULT_SCOPE 逐字一致：常量改了而面板没跟，这里就红。
+  const defScope = await (async () => {
+    const src = await (await import('node:fs/promises')).readFile('src/core/policy.ts', 'utf8')
+    const m = /const DEFAULT_SCOPE = '((?:[^'\\]|\\.)*)'/.exec(src)
+    return m ? m[1].replace(/\\'/g, "'") : null
+  })()
+  check('范围 placeholder 是默认值原文，与 policy.ts 的 DEFAULT_SCOPE 逐字一致',
+    defScope !== null && seg.nScope === defScope && seg.wkScope === defScope,
+    defScope === null ? 'policy.ts 里找不到 DEFAULT_SCOPE'
+      : `n-scope=${seg.nScope === defScope} wk-scope=${seg.wkScope === defScope} 原文前 40 字=${defScope.slice(0, 40)}`)
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
   console.log('── 2. 遍历 8 个 Tab 验证显隐互斥')
   // 【U13】排期并入派活：一级面板 9 → 8（'schedules' 不再是独立面板）
   // 【U14】'sources' → 'chat'：来源页解散，一级面板仍是 8 个
@@ -480,12 +783,17 @@ try {
   })
   check('设置页可视化快捷栏 #settings-quick 渲染可见', quickExists)
 
+  await relaunch()
   console.log('── 4. 打开 547 文件 / 76 产物的重型 Ticket (19dd5c9c) 检验盒模型高度有界性')
+  // 【实测教训，勿再加回】这里曾经加过一次 `page.goto(BASE, { waitUntil: 'networkidle' })` 想"让渲染器从干净状态开始"，
+  // 结果**必崩**（Target page closed）。原因不是内存：面板每 5 秒轮询一次，`networkidle` 在这种页面上
+  // 永远等不到空闲，goto 与轮询互相拖着，最后把 Chrome 弄死。二分定位过程：停用 U23 块→仍崩；去掉重载→72 条全过。
+  // 要在活跃轮询的页面上重新导航，用 `waitUntil: 'domcontentloaded'` 或干脆 `page.reload()`，别用 networkidle。
   await page.click('#tabs button[data-tab="tickets"]')
   await page.click('#filter button[data-filter="all"]')  // 【U7】下拉改 chips
   await page.waitForTimeout(500)
   const clicked19 = await page.evaluate(() => {
-    const items = [...document.querySelectorAll('#tickets li')]
+    const items = [...document.querySelectorAll('#tickets li:not(.group-head)')]  // 【U22】排除分段标题
     const target = items.find(li => li.textContent.includes('信息比对')) || items[0]
     if (target) { target.click(); return true }
     return false
@@ -507,8 +815,12 @@ try {
   check('#d-files .filelist 高度受控 (<= 400px，修复前 16947px)', boxMetrics.filesListHeight > 0 && boxMetrics.filesListHeight <= 400, `${boxMetrics.filesListHeight}px`)
   check('#d-artifacts 高度受控 (<= 400px，修复前 13510px)', boxMetrics.artifactsHeight > 0 && boxMetrics.artifactsHeight <= 400, `${boxMetrics.artifactsHeight}px`)
   check('整页 scrollHeight 受控 (<= 3600px，修复前 37112px)', boxMetrics.docHeight <= 3600, `${boxMetrics.docHeight}px`)
-  await page.screenshot({ path: `${SHOT_DIR}/panel-after-tickets-all.png`, fullPage: true })
+  // 这张原先是 fullPage。盒模型断言在它之前就跑完了，它只是给人看的留档；
+  // 而 3385px 高的整页位图正是把 headless Chrome 顶崩的那一步（实测偶发 `Target … has been closed`）。
+  // 降为视口截图：断言一条没少，脚本不再随机死在半路。
+  await page.screenshot({ path: `${SHOT_DIR}/panel-after-tickets-all.png` })
 
+  await relaunch()
   console.log('── 5. 跨 Ticket 引用回溯 (F6) 与深链路由 (#ticket= / #work=)')
   await page.goto(`${BASE}#ticket=b356ac649bc46a144c38f9b4b6619175`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(700)
@@ -522,11 +834,16 @@ try {
   await page.screenshot({ path: `${SHOT_DIR}/panel-after-f6-mentions.png`, fullPage: true })
 
   // Test #work=<id> deep link if any work exists
-  const workId = await page.evaluate(async () => {
-    const res = await fetch('/myagent/api/works', { headers: { 'x-myagent-request': '1' } })
-    const body = await res.json()
-    return body.works?.[0]?.id || null
-  })
+  // 原先这是在 `page.evaluate` 里发的 fetch。第 5 节一直是全脚本最脆弱的一步（此前偶发
+  // `Target page … has been closed` 就崩在这附近），而"取一个 work id"根本不需要浏览器参与——
+  // 改成 Node 侧发请求，把一次浏览器内存操作从脆弱点上拿掉。
+  const workId = await (async () => {
+    try {
+      const res = await fetch(`${BASE}api/works`, { headers: { 'x-myagent-request': '1' } })
+      const body = await res.json()
+      return body.works?.[0]?.id ?? null
+    } catch { return null }
+  })()
   if (workId) {
     await page.goto(`${BASE}#work=${workId}`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(500)

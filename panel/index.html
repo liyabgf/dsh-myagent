@@ -64,6 +64,13 @@
   .stage.running { color: var(--accent); border-color: var(--accent); background: var(--accent-bg) }
   .stage.attention, .stage.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-bg) }
   .stage.done { color: var(--ok); border-color: var(--ok); background: var(--ok-bg) }
+  /* 待启动：既不是好事也不是坏事，给它中性色。以前 stageClass 对它返回空串，于是它没有任何底色，
+     在一排彩色胶囊里看起来像"渲染坏了"，而它其实是一种真实状态（U17）。 */
+  .stage.pending { color: var(--muted); border-color: var(--line-strong); background: var(--subtle) }
+  /* 列表分段标题（U22）：它不是可点的一行，所以要和任务行明显不同，否则会被当成一条任务。 */
+  ul.list > li.group-head { background: transparent; border-bottom: 1px solid var(--line); padding: 8px 2px 4px;
+    font-size: 12px; letter-spacing: .02em }
+  ul.list > li.group-head:hover { background: transparent }
   .stage.failed, .stage.blocked, .stage.bad { color: var(--bad); border-color: var(--bad); background: var(--bad-bg) }
   section.card { border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px;
                  background: var(--card); box-shadow: var(--shadow) }
@@ -144,6 +151,35 @@
   details.tech[open] > summary { border-bottom: 1px solid var(--line) }
   details.tech .kv { border: 0; background: transparent; margin: 8px 12px }
   .prompt-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: var(--subtle) }
+  /* 「为什么这么说」折叠（U18）：解释不删，只是不再挡在动作前面。 */
+  /* 三步引导（U19）：把"先做什么"画出来，而不是让人从四个小节里自己推断顺序。 */
+  /* 收进"新建"动作的表单（U20）：页内展开，不用原生弹窗（那东西不能样式化、也读不到焦点管理）。 */
+  .form-fold { border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; margin-top: 8px;
+               background: var(--subtle) }
+  /* 分段控件（U24）：比 chips 重，因为它切换的是整页内容，不是一个筛选条件。 */
+  .seg { display: flex; border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; background: var(--subtle) }
+  .seg > .chip-btn { flex: 1 1 0; border: 0; border-radius: 0; background: transparent; padding: 9px 12px;
+                     font-size: 13px; font-weight: 600; color: var(--muted) }
+  .seg > .chip-btn + .chip-btn { border-left: 1px solid var(--line-strong) }
+  .seg > .chip-btn[aria-pressed="true"] { background: var(--accent); color: #fff }
+  ol.steps { list-style: none; margin: 0 0 12px; padding: 0; counter-reset: step }
+  ol.steps > li { display: flex; gap: 8px; align-items: baseline; padding: 7px 10px; border-radius: 10px;
+                  border: 1px solid var(--line); margin-bottom: 6px; background: var(--subtle) }
+  ol.steps > li.now { border-color: var(--accent); background: var(--accent-bg) }
+  ol.steps > li.done { opacity: .72 }
+  ol.steps > li .mark { flex: none; width: 18px; height: 18px; line-height: 17px; text-align: center; border-radius: 50%;
+                  border: 1px solid var(--line-strong); font-size: 11px; color: var(--muted) }
+  ol.steps > li.now .mark { border-color: var(--accent); color: var(--accent); font-weight: 600 }
+  ol.steps > li.done .mark { border-color: var(--ok); color: var(--ok) }
+  ol.steps > li .what { flex: 1 1 auto }
+  ol.steps > li.later .what { color: var(--muted) }
+  details.why { margin: 4px 0 8px }
+  details.why > summary { cursor: pointer; color: var(--muted); font-size: 12px; list-style: none; user-select: none }
+  details.why > summary::-webkit-details-marker { display: none }
+  details.why > summary::before { content: '?'; display: inline-block; width: 13px; height: 13px; line-height: 12px;
+    text-align: center; border: 1px solid var(--line-strong); border-radius: 50%; margin-right: 6px; font-size: 10px }
+  details.why[open] > summary::before { content: '\00d7' }
+  details.why > .why-body { padding: 6px 0 2px 10px; margin: 4px 0 0 5px; border-left: 2px solid var(--line) }
   .set-sec { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; background: var(--subtle) }
   .set-sec label { margin: 6px 0 2px }
   #settings-dirty { border: 1px solid var(--warn); background: var(--warn-bg); color: var(--warn);
@@ -237,8 +273,10 @@
     <button data-tab="tickets" aria-selected="false">任务<span class="badge hidden" id="badge-tickets"></span></button>
     <button data-tab="works">工作</button>
     <button data-tab="new">派活</button>
-    <button data-tab="decisions">记录<span class="badge muted-badge hidden" id="badge-sources"></span></button>
-    <button data-tab="chat">聊天<span class="badge muted-badge hidden" id="badge-sources"></span></button>
+    <!-- U14 遗留的真 bug：两个按钮上都是 id="badge-sources"，而 $() 只取第一个，
+         于是徽标一直画在「记录」上、聊天那颗永远是空的。U23 拆开：丢失归记录，聊天等待归聊天。 -->
+    <button data-tab="decisions">记录<span class="badge hidden" id="badge-decisions"></span></button>
+    <button data-tab="chat">聊天<span class="badge muted-badge hidden" id="badge-chat"></span></button>
     <button data-tab="settings">设置</button>
     <button data-tab="prompts">提示词</button>
   </nav>
@@ -248,13 +286,15 @@
     <div class="ov-kpis" id="ov-kpis"></div>
     <section class="card">
       <h2>需要你处理</h2>
-      <p class="muted">三样东西以前散在三个页面：等你回答的任务、等你映射身份的聊天消息、队列彻底放弃的请求。
-        它们是同一个问题的三种形态——<b>无人值守的系统里，只有你能推进的事</b>。</p>
+      <details class="why"><summary>这三样为什么放在一起</summary><div class="why-body"><p class="muted">
+        它们以前散在三个页面：等你回答的任务、等你映射身份的聊天消息、队列彻底放弃的请求。
+        它们是同一个问题的三种形态——<b>无人值守的系统里，只有你能推进的事</b>。</p></div></details>
       <div id="ov-attention"><span class="muted">读取中…</span></div>
     </section>
     <section class="card">
       <h2>活从哪来</h2>
-      <p class="muted">每个来源现在是在跑还是停了、下次什么时候看、最近一次产出是什么时候。</p>
+      <details class="why"><summary>这张表怎么读</summary><div class="why-body"><p class="muted">
+        每个来源现在是在跑还是停了、下次什么时候看、最近一次产出是什么时候。</p></div></details>
       <div id="ov-sources"><span class="muted">读取中…</span></div>
     </section>
     <div class="grid">
@@ -292,27 +332,47 @@
       <div>
         <section class="card">
           <h2>项目</h2>
-          <p class="muted">项目把同类的工作归到一起，是「这个客户」「这个产品」那一层。点开一个只看它的。</p>
+          <details class="why"><summary>项目是干什么的</summary><div class="why-body"><p class="muted">
+            项目把同类的工作归到一起，是「这个客户」「这个产品」那一层。点开一个只看它下面的工作。</p></div></details>
           <ul class="list" id="projects"></ul>
-          <label for="pj-name">新建项目</label>
-          <input type="text" id="pj-name" maxlength="120" placeholder="例如：竞品观察">
-          <label for="pj-note">备注（可留空）</label>
-          <input type="text" id="pj-note" maxlength="2000" placeholder="这个项目是干什么的">
-          <div class="row" style="margin-top:8px"><button class="btn" id="pj-create">新建项目</button></div>
+          <!-- U20：表单收进「新建项目」这个动作里。原先它永远摊开，与列表争同一屏，
+               于是"我想看看有哪些项目"和"我要建一个"两件事在页面上没有主次。 -->
+          <div class="row" style="margin-top:8px"><button class="btn small" id="pj-toggle">新建项目</button></div>
+          <div class="form-fold hidden" id="pj-form">
+            <label for="pj-name">名字</label>
+            <input type="text" id="pj-name" maxlength="120" placeholder="例如：竞品观察">
+            <label for="pj-note">备注（可留空）</label>
+            <input type="text" id="pj-note" maxlength="2000" placeholder="这个项目是干什么的">
+            <div class="row" style="margin-top:8px">
+              <button class="btn" id="pj-create">创建项目</button>
+              <button class="btn" id="pj-cancel">取消</button>
+            </div>
+          </div>
         </section>
         <section class="card">
           <h2>工作</h2>
-          <p class="muted" id="works-hint">工作是一条同类活的流水：Ticket 创建后归进去，按归入的先后排队。</p>
+          <!-- U18：概念解释与导航提示原先共用一个 #works-hint，于是"折起来"会连导航一起藏掉。拆开：
+               概念进折叠，#works-hint 只在选中了某个项目时出现（那时它说的是"怎么退回全部"）。 -->
+          <details class="why"><summary>工作是干什么的</summary><div class="why-body"><p class="muted">
+            工作是一条同类活的流水：任务创建后归进去，按归入的先后排队。</p></div></details>
+          <p class="muted hidden" id="works-hint"></p>
           <ul class="list" id="works"></ul>
-          <label for="wk-name">新建工作</label>
-          <input type="text" id="wk-name" maxlength="120" placeholder="例如：周报">
-          <label for="wk-project">所属项目（可留空）</label>
-          <select id="wk-project"><option value="">不属于任何项目</option></select>
-          <label for="wk-scope">范围（可留空：这条流水里每个 Ticket 都默认遵守的边界）</label>
-          <textarea id="wk-scope" style="min-height:60px"></textarea>
-          <label for="wk-note">备注（可留空）</label>
-          <input type="text" id="wk-note" maxlength="2000" placeholder="这条流水是什么">
-          <div class="row" style="margin-top:8px"><button class="btn" id="wk-create">新建工作</button></div>
+          <div class="row" style="margin-top:8px"><button class="btn small" id="wk-toggle">新建工作</button></div>
+          <div class="form-fold hidden" id="wk-form">
+            <label for="wk-name">名字</label>
+            <input type="text" id="wk-name" maxlength="120" placeholder="例如：周报">
+            <label for="wk-project">所属项目（可留空）</label>
+            <select id="wk-project"><option value="">不属于任何项目</option></select>
+            <label for="wk-scope">范围（可留空：这条流水里每张任务都默认遵守的边界）</label>
+            <textarea id="wk-scope" style="min-height:60px" placeholder="Work in this Ticket's own directory. Produce files there and report what they are; do not change anything outside it."></textarea>
+            <p class="muted" style="font-size:12px">留空则每张任务用它自己的默认范围（原文即 placeholder 里那句英文）。</p>
+            <label for="wk-note">备注（可留空）</label>
+            <input type="text" id="wk-note" maxlength="2000" placeholder="这条流水是什么">
+            <div class="row" style="margin-top:8px">
+              <button class="btn" id="wk-create">创建工作</button>
+              <button class="btn" id="wk-cancel">取消</button>
+            </div>
+          </div>
         </section>
       </div>
       <section class="card" id="work-detail"><span class="muted">选择左边一个项目或工作。</span></section>
@@ -322,28 +382,41 @@
   <div id="tab-new" class="hidden">
     <!-- U13：排期与手动派活合成一页。它们走的是**同一道门禁**、写的是同一种请求，
          差别只在"现在派"还是"到点派"——分成两个一级菜单，是把系统内部的实现分类当成了操作者的分类。 -->
-    <div class="chips" id="dispatch-mode" role="group" aria-label="派活方式" style="margin-bottom:12px">
+    <!-- U24：这两个 chip 切换的是**完全不同的两套内容**，份量却只是两个小胶囊。改成分段控件，
+         并在下面用一句话说清当前这一档是什么——按钮文字保持"一次性派/定时派"不变（断言钉着它们）。 -->
+    <div class="seg" id="dispatch-mode" role="group" aria-label="派活方式">
       <button class="chip-btn" data-mode="once" aria-pressed="true">一次性派</button>
       <button class="chip-btn" data-mode="timed" aria-pressed="false">定时派</button>
     </div>
+    <p class="muted" id="dispatch-mode-hint" style="font-size:12px;margin:6px 0 12px"></p>
     <div id="dispatch-once">
     <section class="card">
       <h2>派一个活</h2>
-      <p class="muted">和定时任务、投递到收件目录的文件走同一道门禁。observe 模式下只记录、不执行。</p>
+      <details class="why"><summary>这一页派出去的活会经过什么</summary><div class="why-body"><p class="muted">
+        和定时任务、投递到收件目录的文件走<b>同一道门禁</b>。受理模式是「只记录不执行」时，这一条只会被记下来、
+        不会真的跑（顶栏那颗胶囊随时告诉你现在是哪种）。</p></div></details>
       <label for="n-recipe">从配方开始（可选）</label>
       <select id="n-recipe"><option value="">空白开始</option></select>
-      <p class="muted" id="n-recipe-hint">配方就是 examples/ 里那几个文件，选一个会把标题、请求和范围填好，你再改。</p>
+      <!-- U24 顺带：删掉"配方就是 examples/ 里那几个文件"——那是仓库路径，对操作者没有意义。 -->
+      <p class="muted" id="n-recipe-hint">选一个会把标题、要做的事和范围填好，你再改。</p>
       <label for="n-title">标题</label>
       <input type="text" id="n-title" maxlength="200" placeholder="例如：整理本周竞品动态">
       <label for="n-request">要做的事（写给一个不能反问你的同事）</label>
       <textarea id="n-request" style="min-height:160px" placeholder="产出什么、放在哪里、怎样算做完"></textarea>
-      <label for="n-scope">范围（可留空，用默认：只在自己的目录里工作）</label>
-      <textarea id="n-scope" style="min-height:60px"></textarea>
+      <label for="n-scope">范围（可留空）</label>
+      <!-- U24：placeholder 填的是**默认值的原文**（policy.ts 的 DEFAULT_SCOPE），不是一句中文转述。
+           原先标签写"用默认：只在自己的目录里工作"，而留空真正得到的是下面这句英文——
+           转述与实值不一致，操作者按转述理解就会错。它是英文，因为这句话是给执行者（worker）看的指令。 -->
+      <textarea id="n-scope" style="min-height:60px" placeholder="Work in this Ticket's own directory. Produce files there and report what they are; do not change anything outside it."></textarea>
+      <details class="why"><summary>留空会用什么，为什么它是英文</summary><div class="why-body"><p class="muted" style="font-size:12px">
+        留空就用上面 placeholder 里那句默认范围（<code>policy.ts</code> 的 DEFAULT_SCOPE）。它是写给执行者的指令，
+        所以是英文；界面给你的说明是中文，两者不冲突。想更窄就在这里写，例如「只读 data/，不要改代码」。</p></div></details>
       <label>随任务带过去的文件（绝对路径，一行一个）</label>
       <div id="n-attachments" class="stack" style="margin-top:0"></div>
       <div class="row" style="margin-top:6px">
         <button class="btn small" id="add-attachment">加一个文件</button>
-        <span class="muted">起跑前会被复制进 Ticket 自己的目录；路径读不到就让 Ticket 失败，不会硬跑。</span>
+        <details class="why"><summary>这些文件会怎样</summary><div class="why-body"><span class="muted">
+          起跑前会被复制进这张任务自己的目录；路径读不到就让它失败，不会硬跑。</span></div></details>
       </div>
       <div class="row" style="margin-top:12px"><button class="btn" id="create">创建 Ticket</button></div>
       <pre id="new-result" class="muted"></pre>
@@ -352,13 +425,17 @@
     <div id="dispatch-timed" class="hidden">
     <section class="card">
       <h2>排期</h2>
-      <p class="muted">到点自动派活，走的是和手动派活同一道门禁。时区 <b id="sched-zone">—</b> · 上次触发 <span id="sched-last">—</span></p>
+      <details class="why"><summary>定时派和一次性派差在哪</summary><div class="why-body"><p class="muted">
+        到点自动派活，走的是和手动派活<b>同一道门禁</b>。</p></div></details>
+      <p class="muted">时区 <b id="sched-zone">—</b> · 上次触发 <span id="sched-last">—</span></p>
       <ul class="list" id="schedules"></ul>
       <div class="row" style="margin-top:10px"><button class="btn" id="sched-new">新建排期</button></div>
     </section>
     <section class="card hidden" id="sched-editor">
       <h2 id="sched-editor-title">新建排期</h2>
-      <label for="s-id">标识</label>
+      <!-- U24：「标识」是 id 的直译，读不出它是什么。只改名，不动下面那行提示——
+           它是 JS 动态写的（编辑已有排期时会变成"不可改"的警告），U18 的折叠规矩针对静态说明墙，不针对随上下文变化的警告。 -->
+      <label for="s-id">排期代号</label>
       <input type="text" id="s-id" maxlength="40" placeholder="digest">
       <p class="muted" id="s-id-hint">小写字母开头，只能含小写字母、数字和短横线。它是「下次触发」记在哪个键下的依据，改了就会重算。</p>
       <label for="s-name">名字（可留空，留空就用请求的第一行）</label>
@@ -373,8 +450,9 @@
       <div id="s-fields"></div>
       <label for="s-prompt">要做的事（写给一个不能反问你的同事）</label>
       <textarea id="s-prompt" style="min-height:140px" placeholder="产出什么、放在哪里、怎样算做完"></textarea>
-      <label for="s-scope">范围（可留空，用默认：只在自己的目录里工作）</label>
-      <textarea id="s-scope" style="min-height:60px"></textarea>
+      <label for="s-scope">范围（可留空）</label>
+      <textarea id="s-scope" style="min-height:60px" placeholder="Work in this Ticket's own directory. Produce files there and report what they are; do not change anything outside it."></textarea>
+      <p class="muted" style="font-size:12px">留空就用默认范围（与「一次性派」那一档同一句，原文见那边的 placeholder）。</p>
       <label class="row" style="margin-top:8px"><input type="checkbox" id="s-enabled" checked> 启用</label>
       <div class="row" style="margin-top:10px">
         <button class="btn" id="sched-preview">预览下次触发</button>
@@ -389,26 +467,38 @@
   </div>
 
   <div id="tab-decisions" class="hidden">
-    <section class="card">
+    <!-- U23：判定与丢失是两件事（前者每条请求都有、后者是异常才有），所以给分区导航，
+         一次只看一件；两个数字都在标签上，不用进去才知道有没有事。 -->
+    <div class="chips" id="records-nav" role="group" aria-label="记录分区" style="margin-bottom:12px">
+      <button class="chip-btn" data-rec="decisions" aria-pressed="true">判定</button>
+      <button class="chip-btn" data-rec="lost" aria-pressed="false">丢失的请求</button>
+    </div>
+    <section class="card" id="card-decisions">
       <h2>判定</h2>
-      <p class="muted">每个 Trigger 的判定：accepted 开 Ticket，observed 只记录，ignored 附原因。</p>
+      <div class="chips" id="decision-filter" role="group" aria-label="筛选判定" style="margin-bottom:8px"></div>
+      <!-- U17 漏网：这句是静态 markup、不是渲染出来的枚举，所以中文化那轮没扫到它。 -->
+      <details class="why"><summary>这三种结局分别是什么意思</summary><div class="why-body"><p class="muted">
+        每条请求门禁怎么判的：<b>已受理</b>的会开一张任务，<b>只记录</b>的仅留档不执行，<b>已拒绝</b>的附上原因。</p></div></details>
       <ul class="list" id="decisions"></ul>
     </section>
     <!-- U14/U15：丢失的请求搬到这里。它与判定是同一类东西——"门与队列对一个请求做了什么"——
          而以前它被埋在「来源」页的第四个分区里。 -->
-    <section class="card">
+    <section class="card hidden" id="card-lost">
       <h2>丢失的请求</h2>
       <!-- The remedy is stated here, in markup, so it does not depend on a read that may have failed: the operator who
            gets here because something is broken is the one who must not find an empty box. -->
-      <p class="muted">队列对一个请求重试 5 次（15s、30s、60s 退避）仍失败就<b>放弃</b>它，并删掉自己那一行——此后没有任何一轮
-        pass 会再看它一眼，重启也不会把它捡回来。放弃时会留下一条记录，这一节就是读它的地方。
-        它<b>不是</b>门禁判定：门禁可能根本没跑到出结论，所以这里没有 Decision、也没有 Ticket。</p>
-      <p class="muted"><b>这里没有「重放」按钮，因为它做不到。</b>没有任何路由能把一条已经放弃的请求重新塞回队列，
-        一个只能失败的按钮比没有按钮更坏。<b>系统也不会自动重放它。</b>能做的只有两件事：修好让它失败的原因，
-        然后让来源再产出一次同样的请求（收件目录里再放一个文件、排期到点再触发、让对方再发一次）——门禁会重新跑一遍，
-        <code>lost</code> 行<b>不算重复</b>，所以不会被短路成「这条已经处理过了」；或者在「派活」页手动画一条，
-        那是<b>新的一条</b>请求，不是重放这一条。</p>
+      <!-- U18：状态提到最前面。原先 150 字 + 209 字解释排在状态之前，要读 359 字才看到"到底有没有丢"。 -->
       <div id="lost"></div>
+      <details class="why"><summary>为什么会丢、为什么这里没有「重放」按钮</summary><div class="why-body">
+        <p class="muted">队列对一个请求重试 5 次（15s、30s、60s 退避）仍失败就<b>放弃</b>它，并删掉自己那一行——此后没有任何一轮
+          pass 会再看它一眼，重启也不会把它捡回来。放弃时会留下一条记录，这一节就是读它的地方。
+          它<b>不是</b>门禁判定：门禁可能根本没跑到出结论，所以这里没有判定、也没有任务。</p>
+        <p class="muted"><b>这里没有「重放」按钮，因为它做不到。</b>没有任何路由能把一条已经放弃的请求重新塞回队列，
+          一个只能失败的按钮比没有按钮更坏。<b>系统也不会自动重放它。</b>能做的只有两件事：修好让它失败的原因，
+          然后让来源再产出一次同样的请求（收件目录里再放一个文件、排期到点再触发、让对方再发一次）——门禁会重新跑一遍，
+          <code>lost</code> 行<b>不算重复</b>，所以不会被短路成「这条已经处理过了」；或者在「派活」页手动画一条，
+          那是<b>新的一条</b>请求，不是重放这一条。</p>
+      </div></details>
     </section>
   </div>
 
@@ -418,9 +508,10 @@
   <div id="tab-chat" class="hidden">
     <section class="card">
       <h2>聊天</h2>
-      <p class="muted">平台桥把消息写进频道目录，就成了这里的一条请求；报告原路写回同一个目录的 <code>out/</code>。
+      <details class="why"><summary>聊天这条来源是怎么工作的</summary><div class="why-body"><p class="muted">
+        平台桥把消息写进频道目录，就成了这里的一条请求；报告原路写回同一个目录的 <code>out/</code>。
         身份必须被<b>映射</b>才成为发起者：没映射的消息<b>留住</b>（不产生 Trigger，也不拒绝，文件留在原处），
-        加进映射表之后下一次扫描就受理它——拒绝是不可逆的，留住不是。</p>
+        加进映射表之后下一次扫描就受理它——拒绝是不可逆的，留住不是。</p></div></details>
       <div id="chat"></div>
     </section>
   </div>
@@ -428,8 +519,9 @@
   <div id="tab-settings" class="hidden">
     <section class="card">
       <h2>设置</h2>
-      <p class="muted">按区改，改完点那一区自己的「保存这一区」。也可以展开最下面的 JSON 直接改整份——两边随时同步。
-        字段含义见 README。</p>
+      <p class="muted">按区改，改完点那一区自己的「保存这一区」。</p>
+      <details class="why"><summary>还能怎么改</summary><div class="why-body"><p class="muted">
+        也可以展开最下面的「高级」直接改整份 JSON——两边随时同步。字段含义见 README。</p></div></details>
       <!-- 脏状态（U11）：改了没保存却切走，是最容易白干的一件事，所以要说出来。 -->
       <div id="settings-dirty" class="hidden" role="status">有未保存的更改。点某一区的「保存这一区」，或点下面的「保存」保存整份。</div>
       <!-- `id="settings-quick"` 沿用：它原是三个快捷字段（U 阶段 A），U11 把它长成完整的分区表单。
@@ -715,8 +807,11 @@
   const renderHeader = () => {
     if (!state) return
     const problems = Object.entries(state.health || {}).filter(([, v]) => v && v.ok === false)
-    $('mode').innerHTML = `受理模式 <b class="${state.settings.acceptMode === 'auto' ? 'ok' : 'warn'}">${escapeText(state.settings.acceptMode)}</b>${state.paused ? ' · <b class="warn">已暂停</b>' : ''}`
-    $('counts').innerHTML = `Ticket <b>${state.counts.open}</b> 进行中 · <b class="${(state.counts.attention ?? 0) > 0 ? 'warn' : ''}">${state.counts.attention ?? 0}</b> 等人 · <b>${state.counts.ended}</b> 已结束`
+    // 【U17】顶栏这颗胶囊原先直接印 auto/observe；同一种数据在聊天页已中文化，两处必须一致。
+    $('mode').innerHTML = `受理模式：<b class="${state.settings.acceptMode === 'auto' ? 'ok' : 'warn'}" title="acceptMode=${escapeText(state.settings.acceptMode)}">${escapeText(zh(ACCEPT_MODE_ZH, state.settings.acceptMode))}</b>${state.paused ? ' · <b class="warn">已暂停</b>' : ''}`
+    // 【U17】U7 只把导航里的 Ticket 改成了「任务」，顶栏这颗漏了；"等人"也统一成"等你回答"——
+    // 同一个事实原先有三种说法（等人 / 等人回答 / 等你回答），操作者要自己判断它们是不是一回事。
+    $('counts').innerHTML = `任务 <b>${state.counts.open}</b> 进行中 · <b class="${(state.counts.attention ?? 0) > 0 ? 'warn' : ''}">${state.counts.attention ?? 0}</b> 等你回答 · <b>${state.counts.ended}</b> 已结束`
     const slots = state.counts.workerSlots || {}
     $('slots').innerHTML = `工作槽 <b>${slots.used ?? 0}/${slots.max ?? 0}</b> · 队列 <b>${Object.values(state.counts.effects || {}).reduce((a, b) => a + b, 0)}</b>`
     $('health').innerHTML = problems.length === 0
@@ -762,46 +857,150 @@
       badgeTickets.textContent = String(n)
       badgeTickets.classList.toggle('hidden', !(n > 0))
     }
-    const badgeSources = $('badge-sources')
-    if (badgeSources !== null) {
-      const chatN = chatStale ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
-      const lostObj = (state.counts || {}).lost
-      const lostN = lostObj === undefined ? 0 : (lostObj.rows ?? 0) + (lostObj.payloads ?? 0)
-      const total = chatN + lostN
-      badgeSources.textContent = String(total)
-      badgeSources.classList.toggle('hidden', !(total > 0))
+    // U23：一颗徽标只说一件事。原先聊天等待与丢失被加成同一个数挂在同一个按钮上（还因为 id 重复而只画出一颗），
+    // 于是"记录 3"既可能是三条丢失、也可能是三条等映射——数字对了，含义没了。
+    const chatN = chatStale ? 0 : (((state.chat || {}).waiting || {}).count ?? 0)
+    const lostObj = (state.counts || {}).lost
+    const lostN = lostObj === undefined ? 0 : (lostObj.rows ?? 0) + (lostObj.payloads ?? 0)
+    for (const [id, count] of [['badge-chat', chatN], ['badge-decisions', lostN]]) {
+      const badge = $(id)
+      if (badge === null) continue
+      badge.textContent = String(count)
+      badge.classList.toggle('hidden', !(count > 0))
     }
     if (state.setupProblem) toast(state.setupProblem)
   }
 
   // -------------------------------------------------------------- tickets
 
-  const stageClass = stage => /running|progress/.test(stage) ? 'running'
-    : /waiting|attention|blocked/.test(stage) ? 'attention'
-    : /done|ready/.test(stage) ? 'done' : /failed|dropped|stopped/.test(stage) ? 'failed' : ''
+  /**
+   * 中文词表（U17）。键集**逐字对应** `src/core/model.ts` 的联合类型：
+   *   TicketStage     = pending | running | waiting | failed | blocked | done | dropped | stopped
+   *   DecisionOutcome = accept | ignore | observe | unavailable
+   *   GateReason      = src/core/policy.ts 的 GATE_REASONS 九个键
+   *
+   * 取值不在表里时**原样显示英文**而不是空字符串：界面宁可露出一个没翻译的词，
+   * 也不能把"我不知道这是什么"画成一片空白（纪律 0.10：穷尽或响亮，不要静默兜底）。
+   * 原先 `stageClass()` 的正则匹配了 progress/attention/ready 三个**枚举里不存在的值**，
+   * 却漏了真实存在的 `pending`——待启动的任务因此一直没有颜色。
+   */
+  const STAGE_ZH = {
+    pending: '待启动', running: '进行中', waiting: '等你回答', blocked: '被上游挡着',
+    failed: '失败', done: '已完成', dropped: '已放弃', stopped: '已停止',
+  }
+  const OUTCOME_ZH = { accept: '已受理', ignore: '已拒绝', observe: '只记录', unavailable: '无法判定' }
+  const REASON_ZH = {
+    accepted: '门禁放行了这条请求',
+    paused: '系统处于暂停中',
+    source_disabled: '产出这条请求的来源没有启用',
+    unknown_source: '没有配置这一类来源',
+    sender_not_allowed: '这个发起者不在允许名单里',
+    system_actor: '系统事件不能派活，只有名单上的人可以',
+    empty_request: '请求没有正文，无从授权',
+    observed: '受理模式是「只记录不执行」（observe）：只记下"本来会受理"，不执行',
+  }
+  const ACCEPT_MODE_ZH = { observe: '只记录不执行', auto: '通过即执行' }
+  /** 中文化但绝不丢原值：英文原串一律挂在 title 上，排障时与日志对得上。 */
+  const zh = (table, value) => table[value] ?? String(value ?? '—')
+
+  /**
+   * 「为什么这么说」折叠（U18）。
+   *
+   * 那些长解释每一句单独看都是对的（停用≠清空、丢失不能重放、拒绝不可逆），问题是**位置**：
+   * 把"为什么"排在"做什么"前面，页面就成了必须先读完才能用的说明书。收进折叠不等于删——
+   * 文本仍在 DOM 里，既有断言照旧通过，需要时一点就展开。
+   */
+  const why = (label, ...kids) => el('details', { class: 'why' },
+    el('summary', {}, label), el('div', { class: 'why-body' }, ...kids))
+
+  const stageClass = stage => stage === 'running' ? 'running'
+    : stage === 'waiting' || stage === 'blocked' ? 'attention'
+    : stage === 'done' ? 'done'
+    : stage === 'failed' || stage === 'dropped' || stage === 'stopped' ? 'failed'
+    // pending 以前落到这里之外、没有任何颜色：待启动是一种真实状态，给它中性色而不是无色。
+      : 'pending'
+
+  /** 已结束的四个阶段（`src/core/model.ts` 的 TicketOutcome）。用它分段，不用 `ticket.ended`——列表视图给的是 stage。 */
+  const ENDED_STAGES = ['done', 'dropped', 'stopped', 'failed']
+  const isEnded = ticket => ENDED_STAGES.includes(ticket.stage)
+  /** 摘要被展开的那些任务 id。放在模块级，5 秒刷新才不会把操作者刚展开的那条收回去。 */
+  let summaryOpen = new Set()
+
+  /** 摘要只留第一句：一行里塞 90 字原文会把行撑高，扫读时就找不到锚点（U22）。 */
+  const firstSentence = text => {
+    const cut = String(text ?? '').split(/(?<=[。！？\n])/)[0] ?? ''
+    return cut.length > 60 ? `${cut.slice(0, 60)}…` : cut
+  }
+
+  const ticketRow = ticket => {
+    const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
+    const ended = isEnded(ticket)
+    const opened = summaryOpen.has(ticket.id)
+    const hasMore = (ticket.summary || '').length > firstSentence(ticket.summary).length
+    return el('li', { 'aria-current': selected === ticket.id ? 'true' : 'false', onclick: () => open(ticket.id) },
+      el('div', { class: 'row' },
+        el('span', { class: 'title' }, ticket.title),
+        el('span', { class: `stage ${stageClass(ticket.stage)}`, title: ticket.stage }, zh(STAGE_ZH, ticket.stage))),
+      el('div', { class: 'meta' },
+        el('span', {}, `${ticket.via} · ${ticket.sender}`),
+        el('span', { title: when(ticket.updatedAt) }, ended ? `结束于 ${ago(ticket.updatedAt)}` : ago(ticket.updatedAt)),
+        ticket.workId ? el('span', {}, `${work ? work.name : `工作 ${ticket.workId}`} · 第 ${ticket.workSeq ?? '—'} 位`) : null,
+        ticket.waitsForPerson ? el('span', { class: 'warn' }, '等你回答') : null),
+      // 已结束的任务：**为什么结束**是这一行最该说的话，原先它只在详情页里（U22）。
+      // endedReason 是服务器组装的句子（多为英文），客户端无法穷举翻译——原文照登、挂在 title 上。
+      ended && ticket.endedReason
+        ? el('div', { class: 'meta' }, el('span', { class: 'muted', title: ticket.endedReason },
+          `结局原因：${ticket.endedReason}`))
+        : null,
+      ticket.summary
+        ? el('div', { class: 'row', style: 'align-items:baseline' },
+          el('span', { class: 'muted', style: 'font-size:12px' }, opened ? ticket.summary : firstSentence(ticket.summary)),
+          hasMore
+            ? el('button', {
+              class: 'linklike', style: 'margin-left:6px',
+              onclick: event => {
+                // 阻止冒泡：点"展开"不该顺带把这张任务打开——那是另一件事。
+                event.stopPropagation()
+                const next = new Set(summaryOpen)
+                if (opened) next.delete(ticket.id); else next.add(ticket.id)
+                summaryOpen = next
+                renderTickets(lastList)
+              },
+            }, opened ? '收起' : '展开')
+            : null)
+        : null)
+  }
+
+  /** 最近一次渲染用的列表：展开/收起摘要时要照原样重画，不能重新去要一次。 */
+  let lastList = []
 
   const renderTickets = list => {
     const node = $('tickets'); node.replaceChildren()
+    lastList = list
     $('ticket-hint').textContent = `${list.length} 条`
     // 空状态是教学时刻（§6.1）：说清下一步，并给一个直接走到那里的按钮。
     if (list.length === 0) {
       node.append(el('li', { style: 'cursor:default' }, el('div', { class: 'row', style: 'padding:6px 0' },
-        el('span', { class: 'muted' }, '没有 Ticket。'),
+        // U17 漏网：这句在 JS 里，不在静态 markup，所以那轮文案扫描没扫到它。
+        el('span', { class: 'muted' }, '没有任务。'),
         el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => show('new') }, '去派活'))))
       return
     }
-    for (const ticket of list) {
-      const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
-      node.append(el('li', { 'aria-current': selected === ticket.id ? 'true' : 'false', onclick: () => open(ticket.id) },
-        el('div', { class: 'row' },
-          el('span', { class: 'title' }, ticket.title),
-          el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)),
-        el('div', { class: 'meta' },
-          el('span', {}, `${ticket.via} · ${ticket.sender}`),
-          el('span', { title: when(ticket.updatedAt) }, ago(ticket.updatedAt)),
-          ticket.workId ? el('span', {}, `${work ? work.name : `工作 ${ticket.workId}`} · 第 ${ticket.workSeq ?? '—'} 位`) : null,
-          ticket.waitsForPerson ? el('span', { class: 'warn' }, '等人回答') : null,
-          ticket.summary ? el('span', {}, ticket.summary.slice(0, 90)) : null)))
+    /**
+     * 「全部」分两段（U22）：进行中的和已结束的是两种东西——前者要盯、后者要查。
+     * 混成一个平面列表，"全部"这一档就只是"进行中"加了噪声，没有自己的功能。
+     * 其他档已经隐含了分组（等你回答/已结束），所以不再多一层标题。
+     */
+    const groups = filterValue === 'all'
+      ? [['进行中', list.filter(ticket => !isEnded(ticket))], ['已结束', list.filter(isEnded)]]
+      : [[null, list]]
+    for (const [label, items] of groups) {
+      if (items.length === 0) continue
+      if (label !== null) {
+        node.append(el('li', { class: 'group-head', style: 'cursor:default' },
+          el('span', { class: 'muted', style: 'font-weight:600' }, `${label}（${items.length}）`)))
+      }
+      for (const ticket of items) node.append(ticketRow(ticket))
     }
   }
 
@@ -1017,7 +1216,7 @@
     node.replaceChildren()
     node.append(el('div', { class: 'row' },
       el('h2', { style: 'margin:0' }, ticket.title),
-      el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage),
+      el('span', { class: `stage ${stageClass(ticket.stage)}`, title: ticket.stage }, zh(STAGE_ZH, ticket.stage)),
       ))
     const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
     const rows = [
@@ -1541,7 +1740,7 @@
       items.push(el('div', { class: 'ov-item' },
         el('div', { class: 'hd' },
           el('span', { class: 'title' }, t.title),
-          el('span', { class: 'stage attention' }, t.stage),
+          el('span', { class: 'stage attention', title: t.stage }, zh(STAGE_ZH, t.stage)),
           el('span', { class: 'muted', style: 'font-size:12px' }, `${t.via} · ${t.sender} · ${when(t.updatedAt)}`),
           el('button', { class: 'linklike', style: 'margin-left:auto', onclick: () => { show('tickets'); void open(t.id) } }, '打开详情')),
         // 列表接口只带 summary，不带 question（那是详情接口的字段）。总览不为了显示一句话去逐条读详情——
@@ -1555,7 +1754,7 @@
     if (waitingCount > 0) {
       items.push(el('div', { class: 'ov-item' },
         el('div', { class: 'hd' }, el('span', { class: 'title' }, `${waitingCount} 条聊天消息在等身份映射`),
-          el('span', { class: 'stage attention' }, '等人'),
+          el('span', { class: 'stage attention' }, '等你回答'),
           el('button', { class: 'linklike', style: 'margin-left:auto', onclick: () => { show('chat') } }, '去映射')),
         el('p', { class: 'muted', style: 'margin:6px 0 0' }, '它们没有被拒绝，也没有变成任务：文件还在频道目录里。把身份加进映射表，下一次扫描就受理。')))
     }
@@ -1598,7 +1797,9 @@
     node.replaceChildren(el('ul', { class: 'list', style: 'max-height:none' }, ...decisions.map(d => {
       const cls = d.outcome === 'accept' ? 'done' : d.outcome === 'observe' ? 'attention' : 'failed'
       return el('li', { onclick: () => { if (d.ticketId) { show('tickets'); void open(d.ticketId) } } },
-        el('div', { class: 'row' }, el('span', { class: `stage ${cls}` }, d.outcome),
+        // U17：这是判定结局的**第二条渲染路径**（记录页那条已中文化）。同一种数据两处两种呈现，
+        // 就是操作者说的"不明确"——而它只在线上真实数据下走到，jsdom 那 252 条一条也没覆盖到。
+        el('div', { class: 'row' }, el('span', { class: `stage ${cls}`, title: d.outcome }, zh(OUTCOME_ZH, d.outcome)),
           el('span', { class: 'title' }, d.title || d.triggerId),
           el('span', { class: 'muted', style: 'margin-left:auto;font-size:12px', title: when(d.at) }, ago(d.at))))
     })))
@@ -1633,6 +1834,8 @@
 
   /** What the operator has drilled into on this page; the five-second refresh has to land them back here. */
   let worksTab = { project: null, work: null }
+  /** 进页时是否该替操作者选上唯一那一项（U20）。用完即清，所以它不会干涉之后的手动取消。 */
+  let worksAutoSelect = false
 
   const projectRow = project => el('li', {
     'aria-current': worksTab.project === project.id ? 'true' : 'false',
@@ -1670,9 +1873,10 @@
       list.append(el('li', { onclick: () => { show('tickets'); void open(ticket.id) } },
         el('div', { class: 'row' },
           el('span', { class: 'title' }, `第 ${ticket.workSeq ?? '—'} 位 · ${ticket.title}`),
-          el('span', { class: `stage ${stageClass(ticket.stage)}` }, ticket.stage)),
+          el('span', { class: `stage ${stageClass(ticket.stage)}`, title: ticket.stage }, zh(STAGE_ZH, ticket.stage))),
         el('div', { class: 'meta' },
-          el('span', {}, ticket.id),
+          // U4 只缩短了任务详情页的 id，这一处漏了：同一种数据在两个页面两种呈现，就是"不一致"。
+          el('span', { title: ticket.id }, ticket.id.length > 8 ? `${ticket.id.slice(0, 8)}…` : ticket.id),
           el('span', {}, `更新 ${when(ticket.updatedAt)}`))))
     }
     return list
@@ -1682,7 +1886,7 @@
     const node = $('projects'); node.replaceChildren()
     if (projects.length === 0) {
       node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
-        '还没有项目。在下面给它起个名字建一个，把同类的工作归到一起。')))
+        '还没有项目。点下面的「新建项目」给它起个名字，把同类的工作归到一起。')))
       return
     }
     node.append(...projects.map(projectRow))
@@ -1692,8 +1896,8 @@
     const node = $('works'); node.replaceChildren()
     if (works.length === 0) {
       node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, worksTab.project === null
-        ? '还没有工作。用下面的表单建一个，再把 Ticket 归进去：它们按归入的先后在这里排队。'
-        : '这个项目下还没有工作。用下面的表单给它建一个。')))
+        ? '还没有工作。点下面的「新建工作」建一个，再把任务归进去：它们按归入的先后在这里排队。'
+        : '这个项目下还没有工作。点下面的「新建工作」给它建一个。')))
       return
     }
     node.append(...works.map(workRow))
@@ -1748,9 +1952,9 @@
       $('work-detail').replaceChildren(el('h2', {}, '项目 / 工作'), staleLine())
       return
     }
-    $('works-hint').textContent = worksTab.project === null
-      ? '工作是一条同类活的流水：Ticket 归进去之后按归入的先后排队。'
-      : '只看这个项目里的工作；点项目那行可以退回全部。'
+    // U18：这个元素现在只说导航，不再重复概念解释（解释在上面那个折叠里）。
+    $('works-hint').textContent = worksTab.project === null ? '' : '只看这个项目里的工作；点项目那行可以退回全部。'
+    $('works-hint').classList.toggle('hidden', worksTab.project === null)
     try {
       const asks = [api('projects'), api('works')]
       if (worksTab.project !== null) asks.push(api(`works?project=${encodeURIComponent(worksTab.project)}`))
@@ -1769,9 +1973,21 @@
         // Opening a Project is also a way of saying "the next Work belongs here".
         select.value = worksTab.project
       }
+      // U20：进页时什么都没选、而列表里恰好只有一项 → 替操作者选上。
+      // 位置很要紧：放在"列表已渲染、详情还没决定"之间，于是列表不用重取（重取会多两次请求），
+      // 只有详情那一读是本来就要读的。
+      if (worksAutoSelect) {
+        worksAutoSelect = false
+        const list = filtered === undefined ? (all.works || []) : (filtered.works || [])
+        if (worksTab.project === null && worksTab.work === null && list.length === 1) {
+          // **只选工作，不选项目**：把 project 一起设上，会让"点项目行"从"打开"变成"取消选中"——
+          // 操作者点一下想打开、页面反而空了。选中态应该只落在真正被打开的那样东西上。
+          worksTab = { project: null, work: list[0].id }
+        }
+      }
       if (worksTab.work !== null) renderWorkDetail(await api(`works/${encodeURIComponent(worksTab.work)}`))
       else if (worksTab.project !== null) renderProjectDetail(await api(`projects/${encodeURIComponent(worksTab.project)}`))
-      else $('work-detail').replaceChildren(el('span', { class: 'muted' }, '选择左边一个项目或工作；里面的 Ticket 点一下就回到 Ticket 页打开。'))
+      else $('work-detail').replaceChildren(el('span', { class: 'muted' }, '选择左边一个项目或工作；里面的任务点一下就回到任务页打开。'))
     } catch (error) { shout(error) }
   }
 
@@ -1784,6 +2000,39 @@
    * 一次刷新就把操作者带回 80 条里去找那一条。
    */
   let decisionFilter = null
+  /**
+   * 记录页的两个分区（U23）与判定的结局筛选。
+   *
+   * 判定与丢失是两件事：前者每条请求都有、后者是异常才有。放一页是对的（都是"门与队列做了什么"），
+   * 但没有分区导航时，丢失那节要么被滚过去、要么（改造前）用 359 字把自己顶到眼前。
+   */
+  let recordsSection = 'decisions'
+  let outcomeFilter = 'all'
+
+  const setRecordsSection = which => {
+    recordsSection = which
+    for (const chip of $('records-nav').children) chip.setAttribute('aria-pressed', String(chip.dataset.rec === which))
+    $('card-decisions').classList.toggle('hidden', which !== 'decisions')
+    $('card-lost').classList.toggle('hidden', which !== 'lost')
+  }
+
+  /** "被拒"＝既不是受理也不是留档：ignore 与 unavailable 都是门禁没放行。 */
+  const isRefused = decision => decision.outcome !== 'accept' && decision.outcome !== 'observe'
+  const isObserved = decision => decision.outcome === 'observe'
+
+  const renderOutcomeChips = rows => {
+    const node = $('decision-filter')
+    if (node === null) return
+    const refused = rows.filter(isRefused).length
+    const observed = rows.filter(isObserved).length
+    const chips = [['all', `全部（${rows.length}）`], ['refused', `只看被拒（${refused}）`], ['observed', `只看留档（${observed}）`]]
+    node.replaceChildren(...chips.map(([value, label]) => el('button', {
+      class: 'chip-btn', 'data-outcome': value, 'aria-pressed': String(outcomeFilter === value),
+      // 被拒那一档非空时着色：这一页唯一的实用问题就是"谁被拒了、为什么"。
+      ...(value === 'refused' && refused > 0 ? { style: 'border-color: var(--bad); color: var(--bad)' } : {}),
+      onclick: () => { outcomeFilter = value; void loadDecisions() },
+    }, label)))
+  }
 
   const openTrigger = triggerId => {
     decisionFilter = triggerId
@@ -1801,7 +2050,16 @@
     const body = await api('decisions?limit=80')
     const node = $('decisions'); node.replaceChildren()
     const all_ = body.decisions || []
-    const shown = decisionFilter === null ? all_ : all_.filter(item => item.triggerId === decisionFilter)
+    // 两层筛选：trigger 深链（U15）先收窄到一条请求，结局筛选（U23）再按"被拒/留档"分。
+    const byTrigger = decisionFilter === null ? all_ : all_.filter(item => item.triggerId === decisionFilter)
+    renderOutcomeChips(byTrigger)
+    const shown = outcomeFilter === 'all' ? byTrigger
+      : byTrigger.filter(decision => outcomeFilter === 'refused' ? isRefused(decision) : isObserved(decision))
+    if (byTrigger.length > 0 && shown.length === 0) {
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
+        outcomeFilter === 'refused' ? '这一批里没有被判"被拒"的。' : '这一批里没有"只记录"的。')))
+      return
+    }
     if (decisionFilter !== null) {
       node.append(el('li', { style: 'cursor:default' }, el('div', { class: 'row' },
         el('span', { class: 'muted' }, `只看来源 Trigger ${decisionFilter} 的判定：${shown.length} 条`
@@ -1809,22 +2067,31 @@
         el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => clearTriggerFilter() }, '看全部'))))
       if (shown.length === 0) return
     }
-    if (all_.length === 0) { node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, '还没有判定。'))) ; return }
+    if (byTrigger.length === 0) {
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
+        decisionFilter === null ? '还没有判定。' : `没有来源 Trigger ${decisionFilter} 的判定。`)))
+      return
+    }
     for (const decision of shown) {
       const cls = decision.outcome === 'accept' ? 'ok' : decision.outcome === 'observe' ? 'warn' : 'bad'
       const dismissed = String(decision.detail || '').includes('[dismissed]')
       node.append(el('li', { onclick: () => { if (decision.ticketId) { show('tickets'); void open(decision.ticketId) } } },
-        el('div', { class: 'row' }, el('span', { class: `stage ${cls === 'ok' ? 'done' : cls}` }, decision.outcome),
+        el('div', { class: 'row' }, el('span', { class: `stage ${cls === 'ok' ? 'done' : cls}`, title: decision.outcome }, zh(OUTCOME_ZH, decision.outcome)),
           el('span', { class: 'title' }, decision.title || decision.triggerId),
           // A refusal the operator has looked at is marked, so the list stays a list of things to look at.
-          decision.outcome === 'accept' ? null : el('button', { class: 'btn', style: 'margin-left:auto',
+          // U23：「忽略」没说清点了会怎样。它是"我看过了，把它从待看清单里收起"——
+          // 判定记录本身不删，详情里会留下 dismissed 标记；说清后果，按钮才敢点。
+          decision.outcome === 'accept' ? null : el('button', {
+            class: 'btn', style: 'margin-left:auto',
+            title: '标记为已看过：这条会从待看清单里收起。判定记录本身不删，详情里会留下 dismissed 标记。',
             onclick: async event => {
               event.stopPropagation()
-              if (dismissed) return toast('这条已经忽略过了')
-              try { await post(`decisions/${encodeURIComponent(decision.id)}/dismiss`, {}); toast('已忽略'); await loadDecisions() }
+              if (dismissed) return toast('这条已经看过了')
+              try { await post(`decisions/${encodeURIComponent(decision.id)}/dismiss`, {}); toast('已看过'); await loadDecisions() }
               catch (error) { toast(error.message) }
-            } }, dismissed ? '已忽略' : '忽略')),
-        el('div', { class: 'meta' }, el('span', { title: when(decision.at) }, ago(decision.at)), el('span', {}, decision.reasonText || decision.reason),
+            } }, dismissed ? '已看过' : '我看过了')),
+        el('div', { class: 'meta' }, el('span', { title: when(decision.at) }, ago(decision.at)), // 人读的那一行是中文；服务器算好的英文原句挂 title，一字不丢（它是给日志对齐用的）。
+        el('span', { title: decision.reasonText || decision.reason }, zh(REASON_ZH, decision.reason) || decision.reasonText || decision.reason),
           decision.detail ? el('span', {}, decision.detail) : null)))
     }
   }
@@ -2112,6 +2379,11 @@
   const setDispatchMode = mode => {
     dispatchMode = mode
     for (const chip of $('dispatch-mode').children) chip.setAttribute('aria-pressed', String(chip.dataset.mode === mode))
+    // 当前这一档是什么，一句话说清（U24）：分段控件告诉你"有两档"，这句话告诉你"你现在在哪一档、它会干什么"。
+    const hint = $('dispatch-mode-hint')
+    if (hint !== null) hint.textContent = mode === 'once'
+      ? '现在派一张：填完点「创建 Ticket」，立刻走门禁。'
+      : '到点自动派：下面这些排期各自按自己的时刻触发，走的门禁与手动派活完全相同。'
     $('dispatch-once').classList.toggle('hidden', mode !== 'once')
     $('dispatch-timed').classList.toggle('hidden', mode !== 'timed')
     if (mode === 'timed') void loadSchedules()
@@ -2145,6 +2417,64 @@
   }
 
   /** The whole settings document with one map replaced, so no other key — channels included — silently disappears. */
+  /**
+   * 启用/停用聊天这条来源（U19）。
+   *
+   * 这一页原先只印一句"来源已停用：消息不会被读取"，而开关在设置页——**只报问题不给下一步**。
+   * 写的是整份设置文档里的 `sources.chat.enabled` 一个键，其余设置、频道与身份映射原样不动。
+   */
+  const saveChatEnabled = async enabled => {
+    const settings = state.settings
+    try {
+      await put('settings', {
+        ...settings,
+        sources: { ...settings.sources, chat: { ...settings.sources.chat, enabled } },
+      })
+    } catch (error) { return toast(error.message) }
+    toast(enabled ? '已启用聊天来源：下一次扫描就会读频道目录' : '已停用聊天来源：不再读、也不再回，目录里的消息留在原处')
+    try { await post('pass', {}) } catch { /* 来源自己的轮询会做同一件事 */ }
+    await load()
+  }
+
+  /**
+   * 三步引导（U19）：启用来源 → 加频道 → 映射身份。
+   *
+   * 这一页原先按"队列 / 频道 / 映射 / 计数"排小节，**没有体现这个先后**：第一次来的人分不清该先做哪一件，
+   * 而在来源停用、频道为空时，上面每一节都只会说"这里什么都没有"。把顺序画出来，空页面就变成了待办清单。
+   */
+  const renderChatSteps = (policy, channels, identities) => {
+    const chatEnabled = policy.enabled === true
+    const hasChannel = (channels || []).some(channel => channel.enabled !== false)
+    const hasIdentity = Object.keys(identities || {}).length > 0
+    const steps = [
+      { label: '启用这条来源', detail: '停用着的时候，频道目录里的消息不会被读取', done: chatEnabled,
+        action: () => void saveChatEnabled(true), actionLabel: '启用', focus: null },
+      { label: '加一个频道', detail: '它就是这条来源在读的那个目录；回复写进它的 out/', done: hasChannel,
+        action: null, actionLabel: '', focus: 'ch-id' },
+      { label: '把发消息的人映射成发起者', detail: '没映射的消息会被留住，不会变成任务，也不会被拒绝', done: hasIdentity,
+        action: null, actionLabel: '', focus: 'c-platform' },
+    ]
+    // 当前步 = 第一个还没做完的；三步都齐了就没有"当前步"，整块收成一行确认。
+    const nowIndex = steps.findIndex(step => !step.done)
+    return el('ol', { class: 'steps', id: 'chat-steps' }, ...steps.map((step, i) => {
+      const cls = step.done ? 'done' : i === nowIndex ? 'now' : 'later'
+      return el('li', { class: cls, 'data-step': String(i + 1) },
+        el('span', { class: 'mark' }, step.done ? '✓' : String(i + 1)),
+        el('span', { class: 'what' },
+          el('b', {}, step.label),
+          i === nowIndex ? el('span', { class: 'muted', style: 'font-size:12px' }, ` · ${step.detail}`) : null),
+        step.done ? null
+          : i === nowIndex && step.action !== null
+            ? el('button', { class: 'btn small', onclick: step.action }, step.actionLabel)
+            : i === nowIndex && step.focus !== null
+              ? el('button', {
+                class: 'btn small',
+                onclick: () => { const field = $(step.focus); field?.scrollIntoView?.({ block: 'center' }); field?.focus() },
+              }, '去填')
+              : null)
+    }))
+  }
+
   /** 频道的保存：整份设置文档减去/加上一条频道，其余设置与身份映射原样不动（与 saveIdentities 同一条形状）。 */
   const saveChannels = channels => {
     const settings = state.settings
@@ -2255,7 +2585,7 @@
     }
     node.append(el('span', { class: 'ok' }, `「${actor}」在 allowedSenders 里，门禁会受理它的请求。`),
       policy.acceptMode === 'observe'
-        ? el('span', { class: 'warn' }, ' 但受理模式是 observe：只记录，不执行。')
+        ? el('span', { class: 'warn' }, ' 但受理模式是「只记录不执行」（observe）：这一条只会被记下来，不会真的跑。')
         : null)
   }
 
@@ -2319,6 +2649,9 @@
     const status = (state.sources || {}).chat
     const allowed = policy.allowedSenders || []
 
+    // U19：引导排第一，状态胶囊第二，解释全在折叠里（U18）。
+    node.append(renderChatSteps(policy, channels, identities))
+
     node.append(el('div', { class: 'tools' },
       el('span', { class: 'chip' }, '来源 ', status === undefined
         ? el('b', { class: 'bad' }, '没在跑')
@@ -2326,10 +2659,20 @@
       el('span', { class: 'chip' }, policy.enabled ? '已启用' : el('b', { class: 'warn' }, '已停用')),
       policy.paused ? el('span', { class: 'chip' }, el('b', { class: 'warn' }, '已暂停')) : null,
       policy.deny ? el('span', { class: 'chip' }, el('b', { class: 'warn' }, '已拒绝（deny）')) : null,
-      el('span', { class: 'chip' }, `受理模式 ${policy.acceptMode === 'observe' ? 'observe（只记录，不执行）' : policy.acceptMode || '—'}`),
-      el('span', { class: 'chip' }, `allowedSenders ${allowed.length === 0 ? '（名单是空的：谁都不能发起工作）' : allowed.join('、')}`),
+      el('span', { class: 'chip', title: `acceptMode=${policy.acceptMode ?? '—'}` },
+        `受理模式：${zh(ACCEPT_MODE_ZH, policy.acceptMode)}`),
+      el('span', { class: 'chip', title: 'allowedSenders' },
+        `允许发起者：${allowed.length === 0 ? '（名单是空的：谁都不能发起工作）' : allowed.join('、')}`),
       status && status.detail ? el('span', { class: 'chip' }, status.detail) : null,
-      status && status.lastTriggerAt ? el('span', { class: 'chip' }, `最近触发 ${when(status.lastTriggerAt)}`) : null))
+      status && status.lastTriggerAt ? el('span', { class: 'chip' }, `最近触发 ${when(status.lastTriggerAt)}`) : null,
+      // U19：启用是"下一步"，所以它在引导里；停用是"往回一步"，放在状态这一排最右（危险动作靠右）。
+      // 没有它的话，这一页只能启用不能停用，操作者又得回设置页——那就是 U14 遗漏的那个坑的另一半。
+      policy.enabled === true
+        ? el('button', {
+          class: 'btn small danger', style: 'margin-left:auto',
+          onclick: () => void saveChatEnabled(false),
+        }, '停用这条来源')
+        : null))
 
     // ---- the waiting queue: the security-critical block, and the one with an action attached
     node.append(el('h2', { style: 'margin-top:14px' }, '未映射的消息'))
@@ -2341,11 +2684,13 @@
     const noFrom = id => /\(no from\)$/.test(id)
     if (status === undefined) {
       lines.push(el('p', { class: 'warn' }, '这个来源现在没在跑，所以读不到它留住了什么——这不表示「队列为空」。'
-        + '原因在上面的健康表里（source:chat）。'))
+        + '原因在顶栏「状态」抽屉里（那一行叫 source:chat）。'))
     } else if (policy.enabled !== true) {
-      lines.push(el('p', { class: 'warn' }, '来源已停用：频道目录里的消息不会被读取，也不会被受理。'
-        + '停用不是清空——重新启用之后，下一次扫描就会读到还留在目录里的那些。'),
-      el('p', { class: 'muted' }, '所以这里没有任何等待中的消息，也不表示「没有消息」，它表示「没人在看」。'))
+      // U18：一句状态留在外面，"为什么这么读"收进折叠。
+      lines.push(el('p', { class: 'warn' }, '来源已停用：频道目录里的消息不会被读取，也不会被受理。'),
+        why('停用不等于清空', el('p', { class: 'muted' },
+          '停用不是清空——重新启用之后，下一次扫描就会读到还留在目录里的那些。'
+          + '所以这里没有任何等待中的消息，也不表示「没有消息」，它表示「没人在看」。')))
     } else if (policy.paused === true || policy.deny === true) {
       lines.push(el('p', { class: 'warn' }, policy.paused === true
         ? '来源已暂停：消息留在原处，不产生 Trigger 也不产生判定；解除之后，被留住的那条和下一条一起被受理。'
@@ -2381,10 +2726,14 @@
                 if (name !== null) name.focus()
               },
             }, '映射它'))))),
-      more > 0 ? el('p', { class: 'muted' }, `还有 ${more} 个身份没有列出来（健康板一行只点名前 5 个）。剩下的就在频道目录里：`
-        + '一个顶层 *.md 文件就是一条消息，文件名即消息的身份；把它们加进下面的映射表，下一次扫描会连它们一起受理。') : null,
-      el('p', { class: 'muted' }, '留住而不是拒绝，是为了让「加映射」这个动作还来得及：Trigger 的 id 是消息身份的纯函数，'
-        + '一旦被门禁拒绝存成 ignored，同一条消息就永远不会被重新评估。'))
+      more > 0 ? el('p', { class: 'muted' }, `还有 ${more} 个身份没有列出来（这里只点名前 5 个）。`) : null,
+      // U18：这两段是"为什么"，不是"现在怎么样"——收进折叠，一个字没删。
+      why('剩下的在哪、为什么是留住而不是拒绝',
+        el('p', { class: 'muted' }, more > 0
+          ? '剩下的就在频道目录里：一个顶层 *.md 文件就是一条消息，文件名即消息的身份；把它们加进下面的映射表，下一次扫描会连它们一起受理。'
+          : '频道目录里一个顶层 *.md 文件就是一条消息，文件名即消息的身份；把它加进下面的映射表，下一次扫描就会受理它。'),
+        el('p', { class: 'muted' }, '留住而不是拒绝，是为了让「加映射」这个动作还来得及：Trigger 的 id 是消息身份的纯函数，'
+          + '一旦被门禁拒绝存成 ignored，同一条消息就永远不会被重新评估。')))
     } else {
       lines.push(el('p', { class: 'ok' }, '没有等着的消息：目录里每条消息的发送者都在下面的映射表里。'))
     }
@@ -2427,8 +2776,9 @@
     // ---- the identity map: platform id → the name it speaks as → why it is on the table
     const mapped = Object.entries(identities)
     node.append(el('h2', { style: 'margin-top:14px' }, `身份映射（${mapped.length}）`),
-      el('p', { class: 'muted' }, '这张表回答「你是谁」，不回答「你可以做什么」：授权范围仍然只来自设置与排期，'
-        + '一个已映射但不是操作者的发送者不能给自己写 scope。改这张表会移动 policyVersion，并通知在跑的 Ticket。'),
+      why('这张表管什么、不管什么', el('p', { class: 'muted' },
+        '这张表回答「你是谁」，不回答「你可以做什么」：授权范围仍然只来自设置与排期，'
+        + '一个已映射但不是操作者的发送者不能给自己写范围。改这张表会移动授权版本（policyVersion），并通知在跑的任务。')),
       mapped.length === 0
         ? el('p', { class: 'warn' }, '映射表是空的：任何平台 id 的消息都会被留住，一条也不会被受理。')
         : table(['平台 id', '发起者', '备注', '门禁', ''], mapped.map(([platform, item]) => {
@@ -2478,13 +2828,14 @@
       el('div', { class: 'tools' },
         el('span', { class: 'chip' }, '已排队 ', el('b', {}, String(sends.queued ?? 0))),
         el('span', { class: 'chip' }, '无处可发 ', el('b', {}, String(sends.nowhere ?? 0)))),
-      el('p', { class: 'muted' }, '「已排队」是报告被送回请求来的那个平台：走效果队列，所以失败会重试、会去重、有记录。'),
-      el('p', { class: 'muted' }, '「无处可发」不是错误。它数的是值得告诉某人、但它的 Trigger 没有带回复地址的报告——'
-        + '排期和收件目录来的活就是这样，它们本来就没有回去的路。规则是「什么都不做也必须看得见」，'
-        + '所以这里给一个数，而不是一片安静；某一张 Ticket 到底有没有地址，在它自己详情页的「回复地址」行里。'),
-      el('p', { class: 'muted' }, `两个数都是本次挂载以来的（挂载于 ${when(state.mountedAt)}），插件重载会归零。`
-        + '已经发出去的回复在频道目录的 out/ 里；重试到彻底放弃的那一句在 Ticket 目录的 REPLY-UNDELIVERED.md 里，'
-        + '并在它自己的历史里留下一条 reply_lost。'))
+      why('这两个数怎么读',
+        el('p', { class: 'muted' }, '「已排队」是报告被送回请求来的那个平台：走效果队列，所以失败会重试、会去重、有记录。'),
+        el('p', { class: 'muted' }, '「无处可发」不是错误。它数的是值得告诉某人、但它的 Trigger 没有带回复地址的报告——'
+          + '排期和收件目录来的活就是这样，它们本来就没有回去的路。规则是「什么都不做也必须看得见」，'
+          + '所以这里给一个数，而不是一片安静；某一张任务到底有没有地址，在它自己详情页的「回复地址」行里。'),
+        el('p', { class: 'muted' }, `两个数都是本次挂载以来的（挂载于 ${when(state.mountedAt)}），插件重载会归零。`
+          + '已经发出去的回复在频道目录的 out/ 里；重试到彻底放弃的那一句在任务目录的 REPLY-UNDELIVERED.md 里，'
+          + '并在它自己的历史里留下一条 reply_lost。')))
   }
 
   // ------------------------------------------------------------- settings
@@ -2819,8 +3170,24 @@
     if (name === 'chat') renderChat()
     // U13：排期不再是独立面板；它在「派活」页的定时模式下，进页时按当前模式决定读不读。
     if (name === 'new' && dispatchMode === 'timed') void loadSchedules()
-    if (name === 'decisions') { void loadDecisions(); void loadLost() }
-    if (name === 'works') void loadWorksTab()
+    // U23：进记录页时，**有丢失就先看丢失**——那是异常，判定是常态；把异常排在常态前面才对得起"记录"这一页。
+    if (name === 'decisions') {
+      const lostObj = (state?.counts || {}).lost
+      const lostN = lostObj === undefined ? 0 : (lostObj.rows ?? 0) + (lostObj.payloads ?? 0)
+      setRecordsSection(lostN > 0 ? 'lost' : 'decisions')
+      void loadDecisions()
+      // **无条件读丢失**：分区只决定"先看哪一块"，不能决定"读不读"。
+      // 第一版把 loadLost() 挪进了 setRecordsSection('lost') 分支，而那个分支只在 lostN>0 时才走——
+      // 于是 counts.lost 为空、或丢失视图过时的部署里，这一节从"有句话"退回"一片空白"（4 条测试当场抓住）。
+      void loadLost()
+    }
+    // U20：进这一页时如果什么都没选、而列表里恰好只有一项，就替操作者选上——
+    // 落地即空、还要先点一下才看得见内容，是没有理由的一步。**只在进页时判一次**：
+    // 放在每次重画里判，就会把"再点一次取消选中"这个动作立刻撤销掉。
+    if (name === 'works') {
+      worksAutoSelect = worksTab.project === null && worksTab.work === null
+      void loadWorksTab()
+    }
     if (name === 'tickets') { void loadTickets(); if (selected !== null) void showDetail() }
     // Polling a Ticket nobody is looking at only spends requests.
     if (name !== 'tickets') stopPolling()
@@ -2931,6 +3298,9 @@
     if (viewing !== null) { viewing = null; renderFileView(selected ?? '') }
   })
   for (const chip of $('dispatch-mode').children) chip.addEventListener('click', () => setDispatchMode(chip.dataset.mode))
+  // 进页就把当前档的说明画上：否则 hint 是空的，而"你现在在哪一档"恰恰是分段控件没说的那一半。
+  setDispatchMode(dispatchMode)
+  for (const chip of $('records-nav').children) chip.addEventListener('click', () => setRecordsSection(chip.dataset.rec))
   for (const button of $('tabs').children) button.addEventListener('click', () => show(button.dataset.tab))
   for (const chip of $('filter').children) chip.addEventListener('click', () => { setFilter(chip.dataset.filter); void loadTickets() })
   $('refresh').addEventListener('click', () => void load(true))
@@ -2984,6 +3354,22 @@
   })
 
   // ------------------------------------------------------- schedule editor
+  // U20：两个表单各自收进一个「新建」动作。展开时把焦点送到第一个字段——
+  // 唤出一个表单却不把光标放进去，等于让人再点一次。
+  for (const [toggle, fold, first] of [['pj-toggle', 'pj-form', 'pj-name'], ['wk-toggle', 'wk-form', 'wk-name']]) {
+    $(toggle).addEventListener('click', () => {
+      const box = $(fold)
+      const opening = box.classList.contains('hidden')
+      box.classList.toggle('hidden', !opening)
+      $(toggle).textContent = opening ? '收起' : (fold === 'pj-form' ? '新建项目' : '新建工作')
+      if (opening) $(first)?.focus()
+    })
+    $(fold.replace('-form', '-cancel')).addEventListener('click', () => {
+      $(fold).classList.add('hidden')
+      $(toggle).textContent = fold === 'pj-form' ? '新建项目' : '新建工作'
+    })
+  }
+
   $('sched-new').addEventListener('click', () => openEditor(null))
   $('s-kind').addEventListener('change', () => renderTimingFields(null))
   $('sched-preview').addEventListener('click', async () => {
@@ -3085,7 +3471,7 @@
     // 下一步该做什么，按结局分别说：一个只说"失败了"的结果，等于把排查工作留给操作者。
     node.append(el('p', { class: 'muted', style: 'font-size:12px' },
       outcome === 'accepted' ? '它已经进队列，工作槽空出来就会启动；进展在任务详情里。'
-        : outcome === 'observed' ? '想让它真的跑：把受理模式改成 auto（设置页），或到「派活」页重派一次。'
+        : outcome === 'observed' ? '想让它真的跑：把受理模式改成「通过即执行」（设置页），或到「派活」页重派一次。'
           : '看上面的原因：发起者不在允许名单就去设置页加，来源被拒绝就去来源页看它的状态。'))
     if (outcome === 'accepted') {
       node.append(el('div', { class: 'row', style: 'margin-top:6px' },
