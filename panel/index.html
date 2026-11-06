@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- An inline icon, because without one the browser probes /favicon.ico on every load and the host answers 404:
+     a console error on every page view, which is noise that trains the operator to ignore the console — and which
+     this panel's own verification script did not even look at until an audit found it. A data: URI makes no request. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M8 11h16M8 16h16M8 21h10' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
 <title>myagent</title>
 <style>
   :root {
     color-scheme: light dark;
     --bg: #f8fafc; --surface: #ffffff; --card: #ffffff; --subtle: #f1f5f9;
-    --fg: #0f172a; --muted: #64748b; --line: #e2e8f0; --line-strong: #cbd5e1;
+    --fg: #0f172a; --muted: #5d6b7e; --line: #e2e8f0; --line-strong: #cbd5e1;
     --ok: #15803d; --ok-bg: #dcfce7; --warn: #b45309; --warn-bg: #fef3c7;
     --bad: #b91c1c; --bad-bg: #fee2e2; --accent: #2563eb; --accent-bg: #eff6ff;
     --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);

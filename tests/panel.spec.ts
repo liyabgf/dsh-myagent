@@ -3340,6 +3340,13 @@ describe('the utility class that hides things', () => {
 })
 
 describe('bounded box-model CSS, cross-Ticket citation backlinks (F6), deep links, and quick settings', () => {
+  it('declares an icon, so the browser does not probe /favicon.ico and 404 on every page load', () => {
+    // Asserted at the source level because jsdom makes no favicon request at all — the 404 only exists in a real
+    // browser, which is exactly the class of fact §4.49 says this suite is structurally blind to. The real-browser
+    // script asserts the consequence (zero console errors, zero failed requests); this pins the cause.
+    expect(PAGE).toMatch(/<link rel="icon" href="data:image\/svg\+xml,/)
+  })
+
   it('bounds .filelist and pre heights in CSS so a 547-file Ticket cannot inflate the document to 37,112 px', () => {
     expect(PAGE).toMatch(/\.filelist\s*\{[^}]*max-height:\s*260px[^}]*overflow-y:\s*auto/)
     expect(PAGE).toMatch(/pre\s*\{[^}]*max-height:\s*240px[^}]*overflow-y:\s*auto/)

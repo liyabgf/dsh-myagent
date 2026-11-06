@@ -43,7 +43,15 @@ const browser = await chromium.launch({
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const pageErrors = []
+  const consoleErrors = []
+  const badResponses = []
   page.on('pageerror', err => pageErrors.push(String(err)))
+  // `pageerror` alone is not "no errors": a failed HTTP request and a console.error are both real failures the
+  // operator would see in devtools, and neither throws. An audit found exactly that gap — one 404 per page load
+  // (the browser's automatic favicon probe) had been invisible to this script since it was written.
+  page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text().slice(0, 120)) })
+  page.on('response', res => { if (res.status() >= 400) badResponses.push(`${res.status()} ${res.url()}`) })
+  page.on('requestfailed', req => badResponses.push(`FAILED ${req.url()}`))
 
   console.log(`── 1. 打开面板与基础计算样式 (${BASE})`)
   await page.goto(BASE, { waitUntil: 'networkidle' })
@@ -152,6 +160,8 @@ try {
   }
 
   check('全程 0 页面未捕获异常 (pageerror)', pageErrors.length === 0, `errors=${pageErrors.length}`)
+  check('全程 0 条控制台错误 (console.error)', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | ') || 'clean')
+  check('全程 0 条失败请求 (>=4xx)', badResponses.length === 0, badResponses.slice(0, 2).join(' | ') || 'clean')
 } finally {
   await browser.close()
 }
