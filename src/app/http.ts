@@ -218,6 +218,9 @@ function chatView(host: HttpHost, health: Record<string, { ok: boolean; detail?:
   // round 36, and this is the second reason that reword was not free.) The regular expression stays as the path for a
   // Source that does not expose `waiting()`; `tests/http.spec.ts` pins the wording, so a reword fails loudly there.
   const structured = (source as { waiting?: () => { count: number; ids: string[]; more: number } } | undefined)?.waiting?.()
+  // 每频道的健康（N5）：面板要能说"这一个频道的桥没在跑"，而全局一个 waiting 数说不出是哪个频道。
+  // 同样用可选调用，因为跑着旧 bundle 的宿主的 Source 没有这个方法——缺席就是缺席，不画成 0。
+  const channelFacts = (source as { channels?: () => unknown[] } | undefined)?.channels?.() ?? []
   const found = structured === undefined ? WAITING_LINE.exec(health['source:chat']?.detail ?? '') : null
   const named = structured !== undefined ? structured.ids : (found === null ? [] : found[2]!.split(', '))
   const trailing = structured === undefined ? MORE_IDS.exec(named.at(-1) ?? '') : null
@@ -226,6 +229,7 @@ function chatView(host: HttpHost, health: Record<string, { ok: boolean; detail?:
       enabled: settings.sources.chat.enabled, paused: own.paused, deny: own.deny,
       acceptMode: own.acceptMode, allowedSenders: [...own.allowedSenders],
     },
+    channels: channelFacts,
     waiting: {
       // Omitted rather than 0 when no chat Source is running: "not running" and "nothing is waiting" are different
       // facts, and showing 0 for the first is the quiet kind of wrong this panel keeps getting caught by.

@@ -37,9 +37,11 @@ grep -q '^结论：通过' "$log" || { echo "✗ 最后一次闸门未通过，�
 echo "  ✓ 完整闸门通过：$(grep -E '^── 计数' "$log" | tail -1 | sed 's/^── //')"
 echo "  ✓ 产物：$(grep '^结论：通过' "$log" | tail -1 | sed 's/^结论：通过。//')"
 # 树必须静止（0.13 的补充：一个还在写的树量出来的东西没有意义）
-h1=$(cd "$SRC" && find src tests scripts panel prompts -type f -exec shasum -a 256 {} + | shasum -a 256 | cut -c1-16)
+# bridges/ 也在里面：它会被 rsync 同步进公开仓（排除清单里没有它），所以"树是否静止"必须把它算进去。
+# 漏掉它的后果是——发布时正好有个桥文件在被写，公开仓收到半截文件，而两次测量都显示"静止"。
+h1=$(cd "$SRC" && find src tests scripts panel prompts bridges -type f -exec shasum -a 256 {} + | shasum -a 256 | cut -c1-16)
 sleep 2
-h2=$(cd "$SRC" && find src tests scripts panel prompts -type f -exec shasum -a 256 {} + | shasum -a 256 | cut -c1-16)
+h2=$(cd "$SRC" && find src tests scripts panel prompts bridges -type f -exec shasum -a 256 {} + | shasum -a 256 | cut -c1-16)
 [ "$h1" = "$h2" ] || { echo "✗ 真源在两次测量之间变了（$h1 → ${h2}）：有东西还在写，先让它停下" >&2; exit 1; }
 echo "  ✓ 真源静止（${h1}）"
 

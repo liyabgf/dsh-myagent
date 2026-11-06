@@ -983,3 +983,59 @@ describe('archive and delete a Project or a Work over HTTP (U21)', () => {
     })
   })
 })
+
+describe('per-channel health on the state route (N5)', () => {
+  /**
+   * The panel can only show what the route carries, so the pass-through is asserted here rather than trusted:
+   * `channels()` existing on the Source and `chat.channels` existing on the wire are two separate facts, and a
+   * capability the route never carries is a capability the operator does not have.
+   */
+  it('carries each channel’s held count, uncollected replies and last intake — and never invents a zero', async () => {
+    await withChat(async context => {
+      const state0 = await context.host.request(api('state'), { headers: PANEL_HEADERS })
+      const before = (state0.json as { chat: { channels?: { id: string; pendingReplies: number; lastAcceptedAt?: string }[] } }).chat.channels
+      expect(before, 'chat.channels 缺席').toBeDefined()
+      expect(before!.map(item => item.id)).toEqual(['ops'])
+      // Nothing has ever been owed back or accepted: those are absent/zero as facts, not as guesses.
+      expect(before![0]!.pendingReplies).toBe(0)
+      expect(before![0]!.lastAcceptedAt).toBeUndefined()
+
+      // An answer myagent wrote that no bridge has collected — the number that means "the bridge is not running".
+      await context.host.request(api('tickets'), { method: 'POST', body: { title: '一份报告', request: '写今天的摘要' } })
+      mkdirSync(join(context.channel, 'out'), { recursive: true })
+      writeFileSync(join(context.channel, 'out', 'reply-deadbeef.md'), '已经查完了。', 'utf8')
+      // A held message: an identity nobody has mapped.
+      const held = join(context.channel, 'held.md')
+      writeFileSync(held, '---\nfrom: U99NOBODY\nid: msg-9\n---\n陌生人的话\n', 'utf8')
+      const aged = new Date(Date.now() - 5_000)
+      utimesSync(held, aged, aged)
+      await settle(context)
+
+      const state1 = await context.host.request(api('state'), { headers: PANEL_HEADERS })
+      const after = (state1.json as { chat: { channels: { id: string; waiting: number; pendingReplies: number }[] } }).chat.channels
+      expect(after[0]).toMatchObject({ id: 'ops', enabled: true, waiting: 1, pendingReplies: 1 })
+    })
+  })
+
+  it('lists a disabled channel as disabled instead of dropping it, so “off” and “never configured” differ', async () => {
+    await withChat(async context => {
+      await context.host.request(api('settings'), {
+        method: 'PUT',
+        body: {
+          acceptMode: 'auto', allowedSenders: ['operator', 'alice'],
+          sources: {
+            inbox: { directory: context.inbox, pollMs: 1000 },
+            chat: {
+              enabled: true, identities: { U01ABCDEF: { actor: 'alice' } },
+              channels: [{ id: 'ops', directory: context.channel, enabled: false }], pollMs: 1000,
+            },
+          },
+        },
+      })
+      await settle(context)
+      const response = await context.host.request(api('state'), { headers: PANEL_HEADERS })
+      const channels = (response.json as { chat: { channels: { id: string; enabled: boolean }[] } }).chat.channels
+      expect(channels).toEqual([{ id: 'ops', enabled: false, waiting: 0, settling: 0, pendingReplies: 0 }])
+    })
+  })
+})

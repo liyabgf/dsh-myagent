@@ -85,6 +85,27 @@ type ChatSettings = Settings['sources']['chat']
 type ChatChannel = ChatSettings['channels'][number]
 
 /** One message file's parsed shape: the platform's metadata, and the body that becomes the request text. */
+/**
+ * One channel's health, as facts rather than as a sentence (U21-round / N5).
+ *
+ * The three numbers answer the only three questions an operator has about a bridge they cannot see:
+ * - `waiting` — messages held because their platform identity is not mapped. The operator's to answer.
+ * - `pendingReplies` — answers written to `out/` that no bridge has collected. **This one being non-zero for a while
+ *   means the bridge is not running**, which is otherwise invisible: myagent did its part and the room heard nothing.
+ * - `lastAcceptedAt` — when something last came in, so "the bridge is connected but the room is quiet" is
+ *   distinguishable from "nothing has arrived in three days".
+ */
+export interface ChannelFact {
+  readonly id: string
+  readonly enabled: boolean
+  readonly waiting: number
+  readonly settling: number
+  readonly pendingReplies: number
+  readonly lastAcceptedAt?: string
+  /** Why this channel could not be read, when it could not be. A channel that errors must not look like a quiet one. */
+  readonly error?: string
+}
+
 interface Message {
   /** The platform identity the file asserts; '' when it asserts none, which is held as unmapped. */
   readonly from: string
@@ -144,6 +165,8 @@ export class ChatSource implements TwoWaySource {
   private last: SourceStatus = { ok: true }
   /** `waiting` is a gauge recomputed from the directories each pass; the rest accumulate for the life of the instance. */
   private readonly counts = { accepted: 0, ignored: 0, observed: 0, duplicate: 0, waiting: 0, unhandled: 0 }
+  /** Per-channel facts from the last pass; empty until the first scan has run. */
+  private channelFacts: ChannelFact[] = []
   /** The waiting queue as data, not as a sentence. Set by the same pass that composes the health line. */
   private waitingNow: { count: number; ids: string[]; more: number } = { count: 0, ids: [], more: 0 }
   private lastTriggerAt?: string
@@ -178,6 +201,14 @@ export class ChatSource implements TwoWaySource {
    * looks like the problem went away. The sentence and this record are composed from the same values in one place.
    */
   waiting(): { count: number; ids: string[]; more: number } { return this.waitingNow }
+
+  /**
+   * Every configured channel's health from the last pass, disabled ones included.
+   *
+   * Disabled channels are listed rather than dropped: the panel has to be able to say "this one exists and is off",
+   * because a channel that vanished from the list looks like a channel that was never configured.
+   */
+  channels(): ChannelFact[] { return this.channelFacts }
 
   /** One poll: take whatever has settled in every enabled channel, then wait for the configured interval. */
   private async pollOnce(): Promise<void> {
@@ -241,10 +272,15 @@ export class ChatSource implements TwoWaySource {
     let waiting = 0
     const waitingIds: string[] = []
     let channels = 0
+    const facts: ChannelFact[] = []
     for (const channel of chat.channels) {
       // A disabled channel is not read at all — not even counted: a message sitting in a directory nobody promised
       // to watch is not "waiting" on anything, and saying so would train the operator to ignore the waiting line.
-      if (!channel.enabled) continue
+      // It IS still listed in `facts`, because "off" and "never configured" must not look the same on screen.
+      if (!channel.enabled) {
+        facts.push({ id: channel.id, enabled: false, waiting: 0, settling: 0, pendingReplies: 0 })
+        continue
+      }
       channels++
       if (this.stopped) break
       try {
@@ -252,10 +288,22 @@ export class ChatSource implements TwoWaySource {
         settling += found.settling
         waiting += found.waiting
         waitingIds.push(...found.ids)
+        // `outboundFacts` is skipped for a channel that could not be read: its zeros would otherwise sit next to
+        // the error and read as "nothing pending either", which is not something anybody knows.
+        const outbound = found.error === undefined ? await this.outboundFacts(channel.directory) : { pendingReplies: 0 }
+        facts.push({
+          id: channel.id, enabled: true, waiting: found.waiting, settling: found.settling,
+          ...(found.error === undefined ? {} : { error: found.error }),
+          ...outbound,
+        })
       } catch (error) {
+        // A channel that could not be read says so on its own row: without this it would render as zeros, and
+        // "0 waiting, 0 pending" is exactly what a healthy quiet channel looks like.
+        facts.push({ id: channel.id, enabled: true, waiting: 0, settling: 0, pendingReplies: 0, error: reason(error) })
         issues.push(`channel ${channel.id}: ${reason(error)}`)
       }
     }
+    this.channelFacts = facts
     this.counts.waiting = waiting
     if (waiting > 0) {
       // The line the contract names (§2.2): how many, which platform ids, and the two ways out. Held messages are
@@ -287,10 +335,40 @@ export class ChatSource implements TwoWaySource {
     this.last = { ok: true, detail, lastTriggerAt: this.lastTriggerAt, counts: { ...this.counts } }
   }
 
+  /**
+   * The two facts about a channel that its own scan does not produce: how many answers are waiting for a bridge to
+   * collect them, and when something last came in.
+   *
+   * Both are deliberately cheap, because this runs for every channel on every pass:
+   * - `out/` is listed and its top-level `*.md` counted — those are replies myagent wrote and nobody has taken.
+   *   `sent/` (a bridge's own) and dotfiles are not counted, so a bridge that is keeping its history does not look
+   *   like a pile of undelivered answers.
+   * - `lastAcceptedAt` is the **directory's** mtime, not the newest file's: adding an entry moves a directory's mtime,
+   *   which is exactly "something was accepted", and it costs one `stat` instead of a `readdir` plus a `stat` per
+   *   archived message. On a filesystem that did not move it this would read as stale rather than as wrong.
+   *
+   * A failure here is not a failure of the channel: the scan already took what it took, so these two are reported as
+   * absent rather than turning a working channel into an error row.
+   */
+  private async outboundFacts(directory: string): Promise<{ pendingReplies: number; lastAcceptedAt?: string }> {
+    let pendingReplies = 0
+    try {
+      const entries = await readdir(join(directory, OUT_DIR), { withFileTypes: true })
+      pendingReplies = entries.filter(entry => entry.isFile() && !entry.name.startsWith('.')
+        && entry.name.toLowerCase().endsWith('.md')).length
+    } catch { /* no `out/` yet: nothing has ever been owed back through this channel */ }
+    try {
+      const info = await stat(join(directory, TAKEN.accepted))
+      return { pendingReplies, lastAcceptedAt: new Date(info.mtimeMs).toISOString() }
+    } catch {
+      return { pendingReplies }
+    }
+  }
+
   /** One channel's directory: what is settling, what is waiting, and everything taken. */
   private async scanChannel(
     channel: ChatChannel, chat: ChatSettings, issues: string[],
-  ): Promise<{ settling: number; waiting: number; ids: string[] }> {
+  ): Promise<{ settling: number; waiting: number; ids: string[]; error?: string }> {
     const directory = channel.directory
     let entries: Dirent[]
     try {
@@ -300,7 +378,9 @@ export class ChatSource implements TwoWaySource {
       // Named, not swallowed: a channel that cannot be read looks exactly like a channel nobody writes to, and only
       // one of those is a fact the operator can do nothing about.
       issues.push(`channel ${channel.id}: could not read ${directory}: ${reason(error)}`)
-      return { settling: 0, waiting: 0, ids: [] }
+      // Returned as well as reported: the per-channel row has to say WHY it is empty, because "could not read" and
+      // "nobody writes here" are the same zeros and only one of them is something the operator can fix.
+      return { settling: 0, waiting: 0, ids: [], error: `could not read ${directory}: ${reason(error)}` }
     }
     // The mapping is a logical guard, so the real boundary is the directory's permissions — the same fact the inbox
     // reports, and more load-bearing here: whoever can write to this directory can submit work as any mapped

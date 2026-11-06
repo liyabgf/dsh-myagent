@@ -10,6 +10,10 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+// @ts-expect-error -- 桥是零依赖 .mjs，没有类型声明；复制一份形状到 .d.ts 就是第二份会漂移的副本。
+import { writeMessage } from '../bridges/lib/inbound.mjs'
+// @ts-expect-error -- 同上
+import { drainOut } from '../bridges/lib/outbound.mjs'
 import { HealthBoard } from '../src/app/health.ts'
 import type { Effects } from '../src/app/effects.ts'
 import {
@@ -504,6 +508,165 @@ describe('a disposition state this Source does not handle', () => {
       rmSync(join(ops, 'unhandled', parked[0]!))
       await source.poll()
       expect(context.health.problems()).toEqual([])
+    } finally { await source.stop() }
+  })
+})
+
+describe('a platform bridge on the other end of this contract', () => {
+  /**
+   * The two halves of the file contract, each exercised by the OTHER implementation.
+   *
+   * Everything else in this file writes message files with this file's own `drop`/`message` helpers and reads replies
+   * by looking at the bytes. That can only prove the Source agrees with itself. Here the inbound file is written by
+   * the bridge kit that ships to operators, and the outbound file the Source writes is consumed by that same kit — so
+   * a change to either side that the other does not understand fails here, and only here.
+   */
+  it('accepts what the bridge kit writes, and the kit delivers what the Source owes back', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      // Inbound: the real kit, with a Telegram-shaped identity (`<chatId>-<messageId>`) and a forum topic as thread.
+      const written = await writeMessage({
+        directory: ops, from: 'U01ABCDEF', id: '-100200-12', thread: '9', title: '周报群',
+        body: '整理本周的周报',
+      })
+      // The Source skips a file younger than SETTLE_MS (`src/sources/chat.ts:66,331`) so it never reads one that is
+      // still being written. A bridge's file is always brand new, so backdate it here exactly as this file's own
+      // `drop` helper does — and note the operator-visible consequence: a message is read up to one second plus one
+      // poll interval after it arrives, which belongs in the bridge's README rather than in a bug report.
+      const settled = new Date(Date.now() - 5_000)
+      utimesSync(written, settled, settled)
+      await source.poll()
+
+      const triggers = context.triggers()
+      expect(triggers).toHaveLength(1)
+      const trigger = triggers[0]!.trigger
+      // The identity the bridge asserted is the one the operator mapped: the Source never infers a person.
+      expect(trigger.actor).toEqual({ id: 'alice', kind: 'person' })
+      expect(trigger.text).toBe('整理本周的周报')
+      expect(trigger.replyTo).toMatchObject({ kind: 'chat', channel: 'ops' })
+      expect(trigger.title).toBe('周报群')
+      // The Source claimed it, so the file the bridge wrote is now under `accepted/` — not read twice.
+      expect(readdirSync(join(ops, 'accepted')).filter(name => name.endsWith('-12.md'))).toHaveLength(1)
+      expect(readdirSync(ops).filter(name => name.endsWith('.md'))).toEqual([])
+
+      // Outbound: what the Source owes, read back by the kit that has to post it to a chat room.
+      await source.deliver({ kind: 'chat', channel: 'ops', thread: '9' }, '已经整理好了，放在 report.md。')
+      const sent: { thread?: string; text: string; name: string }[] = []
+      const tally = await drainOut({
+        directory: ops,
+        send: async (reply: { thread?: string; text: string; name: string }) => { sent.push(reply) },
+      })
+      expect(tally).toMatchObject({ sent: 1, failed: 0 })
+      expect(sent).toHaveLength(1)
+      // The thread survived the round trip, which is what routes the answer back into the same forum topic.
+      expect(sent[0]!.thread).toBe('9')
+      expect(sent[0]!.text).toBe('已经整理好了，放在 report.md。')
+      // And it is out of `out/`, so the next drain cannot post it to the room a second time.
+      expect(readdirSync(join(ops, 'out'))).toEqual(['sent'])
+    } finally { await source.stop() }
+  })
+
+  it('holds what the bridge wrote for an identity nobody has mapped yet — the bridge must not guess one', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      const held = await writeMessage({ directory: ops, from: 'U99NOBODY', id: '-100200-13', body: '陌生人的一句话' })
+      const settledAt = new Date(Date.now() - 5_000)
+      utimesSync(held, settledAt, settledAt)
+      await source.poll()
+      // No Trigger and no Decision: the file stays exactly where the bridge put it, and mapping it later is enough.
+      expect(context.triggers()).toHaveLength(0)
+      expect(context.tickets()).toHaveLength(0)
+      expect(readdirSync(ops).filter(name => name.endsWith('.md'))).toEqual(['msg--100200-13.md'])
+    } finally { await source.stop() }
+  })
+})
+
+describe('per-channel health (N5)', () => {
+  /**
+   * Three numbers, and the reason each exists: `waiting` is the operator's to answer, `pendingReplies` is how you can
+   * tell a bridge stopped running (myagent did its part and the room heard nothing), and `lastAcceptedAt` separates
+   * "connected but quiet" from "nothing has arrived in days".
+   */
+  it('reports each channel separately, and lists a disabled one instead of dropping it', async () => {
+    const ops = directory()
+    const dev = directory()
+    const off = directory()
+    const context = harness(doc({ channels: [channel('ops', ops), channel('dev', dev), channel('off', off, false)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      // One held message in `ops` (an identity nobody has mapped), nothing anywhere else.
+      drop(ops, 'a.md', message({ from: 'U99NOBODY', id: 'msg-1' }, '陌生人的话'))
+      await source.poll()
+      const facts = source.channels()
+      expect(facts.map(item => item.id)).toEqual(['ops', 'dev', 'off'])
+      const byId = Object.fromEntries(facts.map(item => [item.id, item]))
+      expect(byId.ops).toMatchObject({ enabled: true, waiting: 1, pendingReplies: 0 })
+      expect(byId.dev).toMatchObject({ enabled: true, waiting: 0, pendingReplies: 0 })
+      // A disabled channel is listed as off. Dropping it would make "off" and "never configured" look the same,
+      // and the panel would have no way to offer turning it back on.
+      expect(byId.off).toMatchObject({ enabled: false })
+      // The global waiting number and the per-channel one come from the same pass, so they cannot disagree.
+      expect(source.waiting().count).toBe(1)
+    } finally { await source.stop() }
+  })
+
+  it('counts answers a bridge has not collected, and ignores the bridge’s own history and temporaries', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      await source.deliver({ kind: 'chat', channel: 'ops' }, '已经查完了。')
+      await source.poll()
+      expect(source.channels()[0]!.pendingReplies).toBe(1)
+      // A bridge that has delivered it moves it under `out/sent/`; that must not read as an undelivered answer,
+      // or a bridge that keeps its history would look permanently broken.
+      mkdirSync(join(ops, 'out', 'sent'), { recursive: true })
+      const pending = readdirSync(join(ops, 'out')).find(name => name.endsWith('.md'))!
+      writeFileSync(join(ops, 'out', 'sent', pending), readFileSync(join(ops, 'out', pending), 'utf8'), 'utf8')
+      rmSync(join(ops, 'out', pending))
+      writeFileSync(join(ops, 'out', '.tmp-half'), 'a bridge mid-write', 'utf8')
+      await source.poll()
+      expect(source.channels()[0]!.pendingReplies).toBe(0)
+    } finally { await source.stop() }
+  })
+
+  it('says when something last came in, and stays silent rather than guessing when nothing ever has', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      await source.poll()
+      expect(source.channels()[0]!.lastAcceptedAt).toBeUndefined()
+      drop(ops, 'a.md', message({ from: 'U01ABCDEF', id: 'msg-1' }, '整理周报'))
+      await source.poll()
+      expect(source.channels()[0]!.lastAcceptedAt).toEqual(expect.any(String))
+      expect(new Date(source.channels()[0]!.lastAcceptedAt!).getTime()).not.toBeNaN()
+    } finally { await source.stop() }
+  })
+
+  it('reports a channel it could not read as an error, never as a row of zeros', async () => {
+    const ops = directory()
+    const broken = join(ops, 'not-a-dir')
+    const context = harness(doc({ channels: [channel('ops', ops), channel('broken', broken)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      // A file where a directory was promised: reading it throws.
+      writeFileSync(broken, 'x', 'utf8')
+      await source.poll()
+      const row = source.channels().find(item => item.id === 'broken')!
+      expect(row.error).toEqual(expect.any(String))
+      // And the healthy channel next to it is unaffected — one broken directory must not blank the whole page.
+      expect(source.channels().find(item => item.id === 'ops')!.error).toBeUndefined()
     } finally { await source.stop() }
   })
 })

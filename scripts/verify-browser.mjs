@@ -802,6 +802,59 @@ try {
   // 与其每次崩了再往前挪一次 relaunch，不如把它放在**每个大节之前**：换浏览器进程是真的把内存还回去，
   // 而换页面不是（实测过）。代价是几次导航，收益是脚本不再随机死。
   await relaunch()
+  // N5：平台接入页与每频道健康（只读）。**断规则不断数据**：宿主可能还跑着没有 channels() 的旧 bundle，
+  // 那时健康列显示"—"是正确的；把它断成数字就会因为部署新旧而红。
+  await page.click('#tabs button[data-tab="chat"]')
+  await page.waitForTimeout(900)
+  const onboarding = await page.evaluate(() => {
+    const pick = [...document.querySelectorAll('#platform-pick .chip-btn')]
+    const head = [...document.querySelectorAll('#chat table thead th')].map(th => th.textContent.trim())
+    const firstRow = [...(document.querySelectorAll('#chat table tbody tr')[0]?.querySelectorAll('td') ?? [])]
+      .map(td => td.textContent.trim())
+    return {
+      platforms: pick.map(b => b.textContent.trim()),
+      pressed: pick.map(b => b.getAttribute('aria-pressed')),
+      head, firstRow,
+      guide: (document.getElementById('platform-guide')?.textContent || '').length,
+    }
+  })
+  check('平台目录列出能做的、没做的与不能做的（N5）',
+    onboarding.platforms.some(p => p.includes('Telegram')) && onboarding.platforms.some(p => p.includes('飞书'))
+      && onboarding.platforms.some(p => p.includes('（未做）')) && onboarding.platforms.some(p => p.includes('（无官方路径）')),
+    onboarding.platforms.join(' | '))
+  check('默认选中一个平台并给出了引导正文',
+    onboarding.pressed.filter(v => v === 'true').length === 1 && onboarding.guide > 200,
+    `pressed=${onboarding.pressed.join(',')} 引导 ${onboarding.guide} 字`)
+  // 断规则不断数据的形状（这条纪律本仓已错过四次）：这个部署可能一个频道都没配，表就不渲染，
+  // 表头自然为空——那不是缺陷，是"没有可断言的对象"。U12 的频道表检查就是这么写的，照它办。
+  if (onboarding.head.length > 0) {
+    check('频道表带三个健康列（积压/待取回信/最近进气）',
+      ['积压', '待取回信', '最近进气'].every(col => onboarding.head.includes(col)),
+      onboarding.head.join('|'))
+  } else {
+    console.log('  – 健康列（N5）：跳过 —— 本部署没有配置任何频道，表未渲染')
+  }
+  if (onboarding.firstRow.length > 0) {
+    // 每一列要么是数字/相对时间，要么是"—"；空字符串意味着渲染漏了一格。
+    check('健康列不留空格子（缺席画"—"，不画成空白）',
+      onboarding.firstRow.slice(3, 6).every(cell => cell.length > 0),
+      onboarding.firstRow.slice(3, 6).join('|'))
+  } else {
+    console.log('  – 健康列取值（N5）：跳过 —— 这个部署还没有配置任何频道')
+  }
+  // 凭据不许出现在页面上：生成的单元只引用 env 文件。
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('#platform-guide button')].find(b => b.textContent.trim() === 'systemd')
+    if (btn) btn.click()
+  })
+  await page.waitForTimeout(600)
+  const unitText = await page.evaluate(() => document.getElementById('platform-guide')?.textContent || '')
+  check('生成的守护单元引用 env 文件，且不含带值的凭据',
+    unitText.includes('EnvironmentFile=') && !/(TOKEN|SECRET|PASSWORD)\s*=\s*["']?[A-Za-z0-9_-]{8,}/.test(unitText),
+    `EnvironmentFile=${unitText.includes('EnvironmentFile=')} 命中带值凭据=${/(TOKEN|SECRET|PASSWORD)\s*=\s*["']?[A-Za-z0-9_-]{8,}/.test(unitText)}`)
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
   console.log('── 2. 遍历 8 个 Tab 验证显隐互斥')
   // 【U13】排期并入派活：一级面板 9 → 8（'schedules' 不再是独立面板）
   // 【U14】'sources' → 'chat'：来源页解散，一级面板仍是 8 个

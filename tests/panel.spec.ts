@@ -2821,7 +2821,9 @@ describe('the chat Source', () => {
     for (const node of tables) expect(read(node), read(node)).not.toMatch(/[[{}"]/)
     // 【U12 产品变更】频道表多了「操作」列——这一节原先只读，指引把人送去改 JSON，那就是记在案的债。
     // 旧断言：toEqual(['频道', '目录', '状态'])
-    expect(all('th', tables[0]!).map(node => node.textContent)).toEqual(['频道', '目录', '状态', '操作'])
+    expect(all('th', tables[0]!).map(node => node.textContent)).toEqual(// 【N5 产品变更】频道表多了三列健康数据。旧值：['频道', '目录', '状态', '操作']。
+      // 加它的理由：全局一个 waiting 数说不出是**哪个**频道，而"待取回信"长期非零就等于"桥没在跑"。
+      ['频道', '目录', '状态', '积压', '待取回信', '最近进气', '操作'])
     expect(read(all('tbody tr', tables[0]!)[0]!)).toContain('/chat/ops')
     // A channel that is switched off is neither read nor answered, and that is worth more than a missing row.
     expect(read(all('tbody tr', tables[0]!)[1]!)).toContain('停用（不读，也不回）')
@@ -3726,6 +3728,126 @@ describe('Esc 的优先级与空态的下一步（U10）', () => {
     click(button('去派活', byId('tickets')))
     await settle()
     expect(byId('tab-new').classList.contains('hidden')).toBe(false)
+  })
+})
+
+describe('平台接入页与每频道健康（N5）', () => {
+  const facts = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    id: 'ops', enabled: true, waiting: 2, settling: 0, pendingReplies: 3,
+    lastAcceptedAt: LATER, ...over,
+  })
+  /**
+   * 频道表是从 **settings** 建的，健康数是从 Source 的 `channels()` 来的——两个来源，同一批 id。
+   * 只给一个的话表里根本没有那一行（第一版就是这么红的：`rows.find(...)` 返回 undefined）。
+   */
+  const chatWith = (facts: Record<string, unknown>[]): Routes => {
+    const channels = facts.map(fact => ({ id: fact.id as string, directory: `/tmp/ch/${fact.id as string}`, enabled: true }))
+    return routes({
+      'GET state': chatState({
+        chat: chatView({ channels: facts, waiting: { count: 2, ids: ['U9'] } }),
+        settings: { ...(chatState().settings as Record<string, unknown>),
+          sources: { chat: { enabled: true, identities: {}, channels } } },
+      }),
+    })
+  }
+
+  it('频道表把三个健康数分开报，并且"读不到"不与"没人写"混成同一片零', async () => {
+    await mount(chatWith([facts(), facts({ id: 'dev', waiting: 0, pendingReplies: 0, lastAcceptedAt: undefined }),
+      facts({ id: 'broken', waiting: 0, pendingReplies: 0, error: 'ENOTDIR: not a directory' })]))
+    click(button('聊天'))
+    await settle()
+    const rows = all('#chat table tbody tr').map(node => all('td', node).map(cell => read(cell)))
+    const byId = Object.fromEntries(rows.map(cells => [cells[0] as string, cells]))
+    expect(byId.ops).toBeDefined()
+    // 待取回信 = 3 是"桥没在跑"的信号，所以要显眼（warn），并且 title 说明它是什么。
+    const pending = all('#chat table tbody tr')[0]!.querySelectorAll('td')[4]!
+    expect(read(pending)).toBe('3')
+    expect(pending.querySelector('span')!.getAttribute('title')).toContain('桥没在跑')
+    // 读不到的频道说"读不到"并把原因放 title，而不是显示 0——0 与"健康的安静频道"长得一样。
+    const brokenRow = rows.find(cells => cells[0] === 'broken')!
+    expect(brokenRow[2]).toBe('读不到')
+    expect(brokenRow[3]).toBe('—')
+    // 从没受理过消息的频道说"还没有"，而不是编一个时间。
+    const devRow = rows.find(cells => cells[0] === 'dev')!
+    expect(devRow[5]).toBe('还没有')
+  })
+
+  it('旧 bundle 没有 channels() 时不画数字——缺席就是缺席，画成 0 是撒谎', async () => {
+    await mount(chatWith([]))
+    click(button('聊天'))
+    await settle()
+    const cells = all('#chat table tbody tr')[0]?.querySelectorAll('td')
+    expect(cells === undefined || read(cells[3]!) === '—').toBe(true)
+  })
+
+  it('平台目录把没做的和不能做的也列出来，并当场说清，而不是让人以为配置没找对', async () => {
+    await mount(chatWith([facts()]))
+    click(button('聊天'))
+    await settle()
+    const labels = all('#platform-pick .chip-btn').map(node => read(node))
+    expect(labels.some(label => label.includes('Telegram'))).toBe(true)
+    expect(labels.some(label => label.includes('飞书'))).toBe(true)
+    expect(labels.some(label => label.includes('企业微信（未做）'))).toBe(true)
+    expect(labels.some(label => label.includes('个人微信 / 个人 QQ（无官方路径）'))).toBe(true)
+    // 选中"无官方路径"那一项时，说清为什么不做并给替代，而不是给一份跑不通的步骤。
+    click(button('个人微信 / 个人 QQ（无官方路径）'))
+    await settle()
+    expect(text('platform-guide')).toContain('没有官方机器人 API')
+    expect(text('platform-guide')).toContain('企业微信')
+    expect(text('platform-guide')).not.toContain('env 文件')
+  })
+
+  it('就绪的平台给分步、env 变量名与可复制的命令', async () => {
+    await mount(chatWith([facts()]))
+    click(button('聊天'))
+    await settle()
+    click(button('飞书 / Lark'))
+    await settle()
+    expect(text('platform-guide')).toContain('im.message.receive_v1')
+    expect(text('platform-guide')).toContain('LARK_APP_ID=')
+    expect(text('platform-guide')).toContain('npm install')
+    // 三条平台硬约束要出现在界面上，而不是只在源码注释里。
+    expect(text('platform-guide')).toContain('一个应用只能跑一个桥')
+    expect(text('platform-guide')).toContain('3 秒')
+    click(button('Telegram'))
+    await settle()
+    expect(text('platform-guide')).toContain('TELEGRAM_BOT_TOKEN=')
+    expect(text('platform-guide')).toContain('@BotFather')
+    // 那一秒的稳定窗口要写出来，否则操作者会把"发出去没反应"当故障报。
+    expect(text('platform-guide')).toContain('1 秒')
+  })
+
+  it('生成的守护单元只引用 env 文件，绝不内联凭据', async () => {
+    await mount(chatWith([facts()]))
+    click(button('聊天'))
+    await settle()
+    type('unit-repo', '/srv/myagent')
+    click(button('systemd'))
+    await settle()
+    const unit = text('platform-guide')
+    expect(unit).toContain('EnvironmentFile=')
+    expect(unit).toContain('ExecStart=/usr/bin/env node /srv/myagent/bridges/telegram/bridge.mjs')
+    expect(unit).toContain('Restart=always')
+    click(button('launchd'))
+    await settle()
+    const plist = text('platform-guide')
+    // launchd 没有 EnvironmentFile，所以用 shell 先 source 再 exec——凭据仍然不进 plist。
+    expect(plist).toContain('set -a; . ')
+    expect(plist).toContain('KeepAlive')
+    expect(plist).toContain('ai.myagent.bridge.')
+    // 两种单元都不许出现"带着值的凭据赋值"。第一版写的是 /TOKEN\s*=\s*\S/，太松：
+    // 引导里的 env 模板本身就是 `TELEGRAM_BOT_TOKEN=` 后跟换行与注释，于是把自己的模板判成了泄漏。
+    // 要钉的事实是**凭据行一律留空**，所以匹配"= 后面跟着一段像值的字符"。
+    for (const text_ of [unit, plist]) {
+      expect(text_).not.toMatch(/(TOKEN|SECRET|KEY|PASSWORD)\s*=\s*["']?[A-Za-z0-9_\-]{8,}/)
+    }
+    // 并且引导给出的每一个凭据变量都留空，等操作者自己填——面板从不代填，也就从不曾见过那个值。
+    const envLines = all('#platform-guide pre')[0] !== undefined ? read(all('#platform-guide pre')[0]!) : ''
+    for (const name of ['TELEGRAM_BOT_TOKEN', 'MYAGENT_CHANNEL_DIR']) {
+      expect(envLines).toContain(`${name}=`)
+      expect(envLines).not.toContain(`${name}=?`)
+    }
+    expect(envLines.split('\n').filter(line => /^[A-Z_]+=[^\s]/.test(line))).toEqual([])
   })
 })
 

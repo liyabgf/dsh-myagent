@@ -1,0 +1,407 @@
+/**
+ * The platform bridges, tested against the file contract rather than against a platform.
+ *
+ * A bridge cannot be tested against Telegram or Lark here — that needs credentials and a live account, which is why
+ * every platform keeps an operator-acceptance step. What CAN be tested offline is everything that can be wrong
+ * without a network: the bytes a bridge writes, whether the real chat Source accepts them, whether a re-delivered
+ * event stays one message, and whether a reply is sent exactly once.
+ *
+ * The end-to-end half (bridge writes → the REAL `ChatSource` reads → a Trigger appears) lives in
+ * `tests/chat.spec.ts`, next to the harness that builds a Source; the tests here cover the kit and the mapping.
+ */
+import { mkdtemp, readFile, readdir, rm, writeFile, mkdir } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, describe, expect, it } from 'vitest'
+// @ts-expect-error -- the bridges are dependency-free `.mjs` so an operator can run them with no build step; they
+// carry no type declarations, and duplicating their shapes in a `.d.ts` would be a second copy able to drift.
+import { parse, scalar, stringify } from '../bridges/lib/frontmatter.mjs'
+// @ts-expect-error -- see above
+import { messageFileName, writeMessage } from '../bridges/lib/inbound.mjs'
+// @ts-expect-error -- see above
+import { drainOut } from '../bridges/lib/outbound.mjs'
+// @ts-expect-error -- see above
+import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform.mjs'
+// @ts-expect-error -- see above
+import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
+import { readFileSync as read } from 'node:fs'
+
+const directories: string[] = []
+const directory = async (): Promise<string> => {
+  const path = await mkdtemp(join(tmpdir(), 'myagent-bridge-'))
+  directories.push(path)
+  return path
+}
+afterAll(async () => { await Promise.all(directories.map(path => rm(path, { recursive: true, force: true }))) })
+
+const ME = { id: 77, username: 'myagent_bot', first_name: 'myagent' }
+
+/** 桥从 `out/` 读到的东西——`.mjs` 没有类型声明，所以在这里写清它的形状。 */
+type Reply = { thread?: string; text: string; name: string }
+
+describe('the message file the bridge writes', () => {
+  it('writes the exact front matter the Source parses, with the body as the request text', () => {
+    expect(stringify({ from: 'U01', id: '5-12', thread: '9', title: '周报群' }, 'Sort out this week.')).toBe(
+      '---\nfrom: U01\nid: 5-12\nthread: 9\ntitle: 周报群\n---\nSort out this week.\n')
+  })
+
+  it('omits absent fields instead of writing empty ones — an empty `from` would read as "asserts no identity"', () => {
+    const text: string = stringify({ from: 'U01', id: '', thread: undefined, title: null }, 'hi')
+    expect(text).toBe('---\nfrom: U01\n---\nhi\n')
+  })
+
+  it('sanitizes rather than escapes, because the Source strips quotes but does NOT unescape backslashes', () => {
+    // A newline would split the value across two head lines and the tail would be dropped by the parser.
+    expect(scalar('line one\nline two')).toBe('line one line two')
+    // The parser strips ONE leading and ONE trailing quote, so a value that already has them is wrapped in the
+    // other kind and survives intact.
+    expect(parse(`---\ntitle: ${scalar('"周报"')}\n---\nx`).fields.title).toBe('"周报"')
+    expect(parse(`---\ntitle: ${scalar("it's here")}\n---\nx`).fields.title).toBe("it's here")
+    // A value carrying BOTH quote kinds cannot be wrapped losslessly; losing a quote is cosmetic, splitting a field is not.
+    expect(parse(`---\ntitle: ${scalar(`say "hi" it's fine`)}\n---\nx`).fields.title).not.toContain('\n')
+  })
+
+  it('survives a value that looks like front matter syntax — a colon, a hash, a fence', () => {
+    const text = stringify({ from: 'U01', title: 're: #3 --- 紧急' }, 'body: with a colon')
+    const back = parse(text)
+    expect(back.fields.from).toBe('U01')
+    expect(back.fields.title).toBe('re: #3 --- 紧急')
+    expect(back.body).toBe('body: with a colon')
+  })
+
+  it('reads back what it wrote, field for field', () => {
+    const fields = { from: 'U01ABCDEF', id: '998877-12', thread: 't-9', title: 'weekly alerts' }
+    expect(parse(stringify(fields, 'Sort out this week\u2019s alerts.')).fields).toEqual(fields)
+  })
+})
+
+describe('writing a message into a channel directory', () => {
+  it('names the file after the message identity alone, so a re-delivery is the same bytes and not a second message', async () => {
+    const dir = await directory()
+    const message = { directory: dir, from: 'U01', id: '5-12', thread: '9', title: '周报群', body: '整理周报' }
+    const first = await writeMessage(message)
+    const second = await writeMessage({ ...message, body: '整理周报' })
+    expect(first).toBe(second)
+    expect(messageFileName('5-12')).toBe('msg-5-12.md')
+    // One file, not two: the S31 lesson, on the bridge side this time.
+    expect((await readdir(dir)).filter(name => name.endsWith('.md'))).toEqual(['msg-5-12.md'])
+  })
+
+  it('never leaves a temporary that the Source could read as a message', async () => {
+    const dir = await directory()
+    await writeMessage({ directory: dir, from: 'U01', id: '5-13', body: 'x' })
+    const names = await readdir(dir)
+    // The Source skips dotfiles and non-`.md` names; the temporary is both, and it is renamed away in any case.
+    expect(names.filter(name => name.startsWith('.tmp-'))).toEqual([])
+    expect(names).toEqual(['msg-5-13.md'])
+  })
+
+  it('makes a file name that is safe on a filesystem and can never start with a dot', () => {
+    // 斜杠先被换成短横、再剥掉前导点，所以开头是两个短横：路径分隔符没了，`.` 也当不了首字符。
+    expect(messageFileName('../../etc/passwd')).toBe('msg--..-etc-passwd.md')
+    expect(messageFileName('.hidden')).toBe('msg-hidden.md')
+    expect(messageFileName('')).toBe('msg-unnamed.md')
+  })
+})
+
+describe('consuming the replies myagent owes back', () => {
+  const dropReply = async (dir: string, name: string, text: string): Promise<void> => {
+    await mkdir(join(dir, 'out'), { recursive: true })
+    await writeFile(join(dir, 'out', name), text, 'utf8')
+  }
+
+  it('hands the thread and the text to the sender, and only then moves the file out of the way', async () => {
+    const dir = await directory()
+    await dropReply(dir, 'reply-aaa.md', '---\nthread: 9\n---\n已经查完了。')
+    const sent: Reply[] = []
+    const tally = await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply) } })
+    expect(sent).toEqual([{ thread: '9', text: '已经查完了。', name: 'reply-aaa.md' }])
+    expect(tally).toMatchObject({ sent: 1, failed: 0 })
+    expect(await readdir(join(dir, 'out'))).toEqual(['sent'])
+    expect(await readdir(join(dir, 'out', 'sent'))).toEqual(['reply-aaa.md'])
+  })
+
+  it('leaves the file in place when sending fails, so the next drain tries again — at-least-once, never at-most-once', async () => {
+    const dir = await directory()
+    await dropReply(dir, 'reply-bbb.md', 'still here')
+    const first = await drainOut({ directory: dir, send: async () => { throw new Error('rate limited') } })
+    expect(first).toMatchObject({ sent: 0, failed: 1 })
+    expect(await readdir(join(dir, 'out'))).toContain('reply-bbb.md')
+    // And the retry succeeds, sending the same text once.
+    const sent: string[] = []
+    const second = await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply.text) } })
+    expect(second).toMatchObject({ sent: 1, failed: 0 })
+    expect(sent).toEqual(['still here'])
+  })
+
+  it('does not post the same reply twice when myagent retries a delivery it already made', async () => {
+    const dir = await directory()
+    await dropReply(dir, 'reply-ccc.md', 'done')
+    const sent: string[] = []
+    await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply.text) } })
+    // myagent's retry writes the same bytes under the same name; the bridge has already delivered it.
+    await dropReply(dir, 'reply-ccc.md', 'done')
+    const tally = await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply.text) } })
+    expect(sent).toEqual(['done'])
+    expect(tally.skipped).toBe(1)
+  })
+
+  it('reads a reply with no front matter as having no thread, which is what deliver writes when there is none', async () => {
+    const dir = await directory()
+    await dropReply(dir, 'reply-ddd.md', 'plain answer')
+    const sent: Reply[] = []
+    await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply) } })
+    expect(sent).toEqual([{ thread: undefined, text: 'plain answer', name: 'reply-ddd.md' }])
+  })
+
+  it('treats a missing out/ as "nothing owed yet", not as an error', async () => {
+    const dir = await directory()
+    const tally = await drainOut({ directory: dir, send: async () => { throw new Error('must not be called') } })
+    expect(tally).toEqual({ sent: 0, failed: 0, skipped: 0 })
+  })
+
+  it('ignores subdirectories and dotfiles, so its own bookkeeping is never sent to a chat room', async () => {
+    const dir = await directory()
+    await dropReply(dir, 'reply-eee.md', 'real')
+    await mkdir(join(dir, 'out', 'sent'), { recursive: true })
+    await writeFile(join(dir, 'out', '.tmp-nope'), 'temporary', 'utf8')
+    await writeFile(join(dir, 'out', 'notes.txt'), 'not a reply', 'utf8')
+    const sent: string[] = []
+    await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply.text) } })
+    expect(sent).toEqual(['real'])
+  })
+})
+
+describe('the Telegram mapping', () => {
+  const groupMessage = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    message_id: 12, from: { id: 555, first_name: '李', last_name: '杨' },
+    chat: { id: -100200, type: 'supergroup', title: '周报群' }, text: '整理周报', ...over,
+  })
+
+  it('identifies a message by chat AND message id, because message_id alone repeats across chats', () => {
+    const a = mapUpdate({ message: groupMessage() }, ME, { mode: 'all' })
+    const b = mapUpdate({ message: groupMessage({ chat: { id: -999, type: 'supergroup', title: '别的群' } }) }, ME, { mode: 'all' })
+    expect(a.message.id).toBe('-100200-12')
+    expect(b.message.id).toBe('-999-12')
+    expect(a.message.id).not.toBe(b.message.id)
+  })
+
+  it('takes the platform user id as the identity to be mapped, and never invents one', () => {
+    expect(mapUpdate({ message: groupMessage() }, ME, { mode: 'all' }).message.from).toBe('555')
+    // No `from` means no person: a channel broadcast. Holding it would leave a file nobody can ever map.
+    const anonymous = mapUpdate({ message: groupMessage({ from: undefined }) }, ME, { mode: 'all' })
+    expect(anonymous.skip).toBe('no-sender')
+  })
+
+  it('recognizes an @mention from entities, not from a substring, and strips the handle from the request', () => {
+    const text = '@myagent_bot 整理周报'
+    const update = { message: groupMessage({ text, entities: [{ offset: 0, length: 12, type: 'mention' }] }) }
+    expect(mentionsBot(update.message, ME)).toBe(true)
+    expect(mapUpdate(update, ME).message.body).toBe('整理周报')
+    // A plain occurrence of the name in prose is not an address to the bot.
+    expect(mentionsBot(groupMessage({ text: 'someone mentioned myagent_bot once' }), ME)).toBe(false)
+  })
+
+  it('recognizes /command@bot as addressed to this bot, and not /command for another', () => {
+    const mine = groupMessage({ text: '/start@myagent_bot', entities: [{ offset: 0, length: 18, type: 'bot_command' }] })
+    const theirs = groupMessage({ text: '/start@other_bot', entities: [{ offset: 0, length: 16, type: 'bot_command' }] })
+    expect(mentionsBot(mine, ME)).toBe(true)
+    expect(mentionsBot(theirs, ME)).toBe(false)
+    expect(cleanText(mine, ME)).toBe('')
+  })
+
+  it('applies the mode: mentions forwards DMs and addressed group messages, dm only DMs, all everything', () => {
+    const dm = { message: groupMessage({ chat: { id: 555, type: 'private' }, text: '私下问一句' }) }
+    const quiet = { message: groupMessage({ text: '群里闲聊' }) }
+    expect(mapUpdate(dm, ME, { mode: 'mentions' }).message).toBeDefined()
+    expect(mapUpdate(quiet, ME, { mode: 'mentions' }).skip).toBe('not-mentioned')
+    expect(mapUpdate(dm, ME, { mode: 'dm' }).message).toBeDefined()
+    expect(mapUpdate(quiet, ME, { mode: 'dm' }).skip).toBe('not-a-dm')
+    expect(mapUpdate(quiet, ME, { mode: 'all' }).message).toBeDefined()
+  })
+
+  it('carries a forum topic as the thread, so the answer lands in the same topic', () => {
+    const mapped = mapUpdate({ message: groupMessage({ message_thread_id: 9 }) }, ME, { mode: 'all' })
+    expect(mapped.message.thread).toBe('9')
+  })
+
+  it('titles a group message with the group and a DM with the person, because that is what an operator reads', () => {
+    expect(mapUpdate({ message: groupMessage() }, ME, { mode: 'all' }).message.title).toBe('周报群')
+    const dm = mapUpdate({ message: groupMessage({ chat: { id: 555, type: 'private' } }) }, ME)  // 私聊不受 mentions 限制
+    expect(dm.message.title).toBe('李 杨')
+  })
+
+  it('honours a chat allow list and skips the bot’s own messages', () => {
+    expect(mapUpdate({ message: groupMessage() }, ME, { mode: 'all', chatAllowList: ['-1'] }).skip).toBe('chat-not-allowed')
+    expect(mapUpdate({ message: groupMessage({ from: { id: 77, first_name: 'myagent' } }) }, ME, { mode: 'all' }).skip).toBe('own-message')
+  })
+
+  it('skips a message with nothing to ask — a sticker, or a mention with no words after it', () => {
+    expect(mapUpdate({ message: groupMessage({ text: undefined, sticker: {} }) }, ME, { mode: 'all' }).skip).toBe('no-text')
+    const only = { message: groupMessage({ text: '@myagent_bot', entities: [{ offset: 0, length: 12, type: 'mention' }] }) }
+    expect(mapUpdate(only, ME).skip).toBe('no-text')
+  })
+})
+
+/**
+ * The Lark/Feishu mapping. Event shapes are the ones the official SDK's normalizer reads
+ * (`larksuite/node-sdk`, `channel/normalize/index.ts`): `content` is a JSON STRING, mentions arrive as `@_user_N`
+ * placeholders plus a `mentions` array, and there are three different sender ids.
+ */
+describe('the Lark mapping', () => {
+  const BOT = { botOpenId: 'ou_bot' }
+  // 测与 @ 无关的行为时要用 all：**未 @ 的群消息在解析正文之前就被过滤掉**（这是有意的——闲聊不该白花一次解析），
+  // 所以默认的 mentions 模式下这些用例根本走不到被断言的那一步（第一版就是这么红了 4 条）。
+  const ALL = { botOpenId: 'ou_bot', mode: 'all' as const }
+  const textEvent = (over: Record<string, unknown> = {}, sender: Record<string, unknown> = { open_id: 'ou_alice' }) => ({
+    sender: { sender_id: sender },
+    message: {
+      message_id: 'om_abc123', chat_id: 'oc_room', chat_type: 'group', message_type: 'text',
+      content: JSON.stringify({ text: '整理本周的周报' }), create_time: '1776838695000', ...over,
+    },
+  })
+
+  it('parses content as a JSON string — the single most common way a Lark bridge produces empty requests', () => {
+    expect(contentText('text', JSON.stringify({ text: '你好' }))).toBe('你好')
+    // An object instead of a string is what a bridge that guessed the shape would pass in.
+    expect(contentText('text', { text: '你好' } as unknown as string)).toBe('')
+  })
+
+  it('flattens a rich-text post into title plus lines, because a request may arrive as a post', () => {
+    const post = JSON.stringify({
+      title: '本周告警',
+      content: [[{ tag: 'text', text: '第一条 ' }, { tag: 'at', user_id: 'ou_x' }], [{ tag: 'a', text: '看这个链接' }]],
+    })
+    expect(contentText('post', post)).toBe('本周告警\n第一条 \n看这个链接')
+  })
+
+  it('takes the sender open_id and keeps taking it — three ids for one person must not become three identities', () => {
+    expect(mapEvent(textEvent(), ALL).message.from).toBe('ou_alice')
+    // open_id wins even when the other two are present, so the mapping key never changes shape mid-life.
+    const all = mapEvent(textEvent({}, { open_id: 'ou_alice', union_id: 'on_alice', user_id: 'u_alice' }), ALL)
+    expect(all.message.from).toBe('ou_alice')
+    // And when there is no open_id at all, the fallback is deterministic rather than whichever key arrived first.
+    expect(mapEvent(textEvent({}, { user_id: 'u_bob' }), ALL).message.from).toBe('u_bob')
+    expect(mapEvent(textEvent({}, {}), ALL).skip).toBe('no-sender')
+  })
+
+  it('uses root_id as the thread, and never parent_id — replying to the parent nests one level deeper each time', () => {
+    expect(mapEvent(textEvent({ root_id: 'om_root', parent_id: 'om_parent', thread_id: 'omt_1' }), ALL).message.thread).toBe('om_root')
+    expect(mapEvent(textEvent({ thread_id: 'omt_1', parent_id: 'om_parent' }), ALL).message.thread).toBe('omt_1')
+    expect(mapEvent(textEvent({ parent_id: 'om_parent' }), ALL).message.thread).toBeUndefined()
+  })
+
+  it('detects a mention of THIS bot from the mentions array, and strips the placeholder from the request', () => {
+    const event = textEvent({
+      content: JSON.stringify({ text: '@_user_1 整理本周的周报' }),
+      mentions: [{ key: '@_user_1', id: { open_id: 'ou_bot', union_id: 'on_bot' }, name: 'myagent' }],
+    })
+    expect(mentionInfo(event.message, 'ou_bot').mentionedBot).toBe(true)
+    expect(mapEvent(event, BOT).message.body).toBe('整理本周的周报')
+    // A mention of somebody else is not a request to the bot.
+    const other = textEvent({
+      content: JSON.stringify({ text: '@_user_1 你看一下' }),
+      mentions: [{ key: '@_user_1', id: { open_id: 'ou_carol' }, name: 'Carol' }],
+    })
+    expect(mapEvent(other, BOT).skip).toBe('not-mentioned')
+  })
+
+  it('still sees @all when Feishu omits the mentions array, which the SDK records as frequent', () => {
+    const event = textEvent({ content: JSON.stringify({ text: '@_all 今天有人值班吗' }) })
+    expect(mentionInfo(event.message, 'ou_bot').mentionAll).toBe(true)
+    expect(mapEvent(event, BOT).message.body).toBe('今天有人值班吗')
+  })
+
+  it('is permissive when the bot open_id could not be read, and says so rather than filtering silently', () => {
+    const event = textEvent({
+      content: JSON.stringify({ text: '@_user_1 别人的事' }),
+      mentions: [{ key: '@_user_1', id: { open_id: 'ou_carol' } }],
+    })
+    // No botOpenId: any mention counts. The bridge logs that the filter is loose.
+    expect(mapEvent(event, { mode: 'mentions' }).message).toBeDefined()
+  })
+
+  it('treats a p2p chat as addressed, and applies the mode filter to groups', () => {
+    const dm = textEvent({ chat_type: 'p2p', chat_id: 'ou_alice' })
+    expect(mapEvent(dm, BOT).message.isDirect).toBe(true)
+    expect(mapEvent(textEvent(), BOT).skip).toBe('not-mentioned')
+    expect(mapEvent(textEvent(), { ...BOT, mode: 'all' }).message).toBeDefined()
+    expect(mapEvent(dm, { ...BOT, mode: 'dm' }).message).toBeDefined()
+    expect(mapEvent(textEvent({ chat_type: 'group' }), { ...BOT, mode: 'dm' }).skip).toBe('not-a-dm')
+  })
+
+  it('skips what has no words to act on, and names the type so the operator can tell a sticker from a bug', () => {
+    expect(mapEvent(textEvent({ message_type: 'image', content: JSON.stringify({ image_key: 'img_1' }) }), ALL).skip)
+      .toBe('no-text:image')
+    expect(mapEvent(textEvent({ content: '{not json' }), ALL).skip).toBe('no-text:text')
+    expect(mapEvent(textEvent({ content: JSON.stringify({ text: '@_user_1' }), mentions: [{ key: '@_user_1', id: { open_id: 'ou_bot' } }] }), ALL).skip)
+      .toBe('no-text:text')
+  })
+
+  it('identifies a message by its own id, which in Lark is globally unique and needs no chat prefix', () => {
+    // Telegram's message_id repeats across chats and had to be prefixed; Lark's `om_...` does not, and prefixing it
+    // would make the same message a different identity in two channels for no reason.
+    expect(mapEvent(textEvent(), ALL).message.id).toBe('om_abc123')
+    expect(mapEvent(textEvent({ chat_id: 'oc_other' }), ALL).message.id).toBe('om_abc123')
+  })
+
+  it('honours a chat allow list and skips the bot talking to itself', () => {
+    expect(mapEvent(textEvent(), { ...BOT, chatAllowList: ['oc_elsewhere'] }).skip).toBe('chat-not-allowed')
+    expect(mapEvent(textEvent({}, { open_id: 'ou_bot' }), { ...BOT, mode: 'all' }).skip).toBe('own-message')
+  })
+
+  it('keeps mention placeholders out of the request text in every form', () => {
+    expect(stripMentions('@_user_1 @_user_2 看看  @_all')).toBe('看看')
+  })
+})
+
+describe('the bridge docs cannot drift from the bridge code', () => {
+  /**
+   * An operator's only source of truth for "what do I set" is the README, and the only source of truth for what is
+   * actually read is the code. Those two drift silently, and the failure looks like a broken bridge rather than a
+   * stale table: the operator sets a variable that nothing reads, or misses one that is required.
+   *
+   * So they are compared here, in both directions. This is the third layer of the same idea used elsewhere in this
+   * project (the panel placeholder vs `DEFAULT_SCOPE`, the route table vs the walkthrough): when one fact lives in
+   * two files, a test has to own the comparison.
+   */
+  const platforms = ['telegram', 'lark'] as const
+  const shared = ['MYAGENT_CHANNEL_DIR', 'MYAGENT_REPLY_KEEP_DAYS', 'BRIDGE_LOG_LEVEL']
+
+  for (const platform of platforms) {
+    it(`every variable ${platform} reads is documented, and every documented one is read`, () => {
+      const code = read(`bridges/${platform}/bridge.mjs`, 'utf8')
+      const doc = read(`bridges/${platform}/README.md`, 'utf8')
+      const inCode = new Set([...code.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g)].map(m => m[1]!))
+      // The README's env table lists names in backticks in the first column.
+      const inDoc = new Set([...doc.matchAll(/^\| `([A-Z][A-Z0-9_]*)`/gm)].map(m => m[1]!))
+      expect(inCode.size, '桥没有读任何环境变量？').toBeGreaterThan(0)
+      // 集合相等是主断言，两条方向性断言只为了让失败信息说清是哪一边漂了。
+      // 0.8 强形式量出"文档写了但代码不读"那条是**唯一守卫**（删掉它，多写一个没人读的变量就无人发现），
+      // 所以补了这条：它守的是同一个事实的更强形式，删掉任何一条方向性断言它都还在。
+      expect([...inDoc].sort(), 'README 的环境变量表与代码读的必须完全一致').toEqual([...inCode].sort())
+      expect([...inCode].filter(name => !inDoc.has(name)), '代码读了但文档没写').toEqual([])
+      expect([...inDoc].filter(name => !inCode.has(name)), '文档写了但代码不读').toEqual([])
+    })
+
+    it(`${platform} documents the variables it shares with the kit, and the required ones as required`, () => {
+      const doc = read(`bridges/${platform}/README.md`, 'utf8')
+      for (const name of shared) expect(doc, name).toContain(`\`${name}\``)
+      // A required variable must be marked as such: an operator who cannot tell which lines to fill in cannot start.
+      const required = [...doc.matchAll(/^\| `([A-Z][A-Z0-9_]*)` \| ✅/gm)].map(m => m[1]!)
+      expect(required).toContain('MYAGENT_CHANNEL_DIR')
+      expect(required.length).toBeGreaterThanOrEqual(2)
+    })
+  }
+
+  it('the contract README states the numbers an operator will otherwise report as bugs', () => {
+    const doc = read('bridges/README.md', 'utf8')
+    // Each of these is a real constant in the code; documenting them is what turns "it did nothing for a second"
+    // from a bug report into a known behaviour.
+    expect(doc).toContain('512 KiB')          // MAX_BYTES
+    expect(doc).toContain('SETTLE_MS')        // the one-second window
+    expect(doc).toContain('reply_unroutable') // an address was written and nothing is there to receive it
+    expect(doc).toContain('7 天')             // MYAGENT_REPLY_KEEP_DAYS default
+    expect(doc).toContain('60 秒')            // the backoff ceiling in run.mjs
+  })
+})

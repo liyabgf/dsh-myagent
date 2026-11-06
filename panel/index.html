@@ -514,6 +514,22 @@
         加进映射表之后下一次扫描就受理它——拒绝是不可逆的，留住不是。</p></div></details>
       <div id="chat"></div>
     </section>
+
+    <!-- N5：接入一个平台。面板只做**接入与配置**，不托管桥进程——
+         桥是长寿命进程，而插件随时可能被宿主重载；进程存活交给操作系统（launchd/systemd），
+         面板负责把配置写对、把要跑的命令和守护单元生成出来。**凭据永不进设置文档**：
+         设置页的高级区会把整份 JSON 渲染出来，写进去的 token 就等于画在屏幕上。 -->
+    <section class="card">
+      <h2>接入一个平台</h2>
+      <details class="why"><summary>桥是什么，为什么它不在这个面板里跑</summary><div class="why-body"><p class="muted">
+        桥是一个独立的小程序：一头连平台（收消息、发回信），一头把消息写成频道目录里的 <code>.md</code> 文件。
+        myagent 只认文件，所以换平台不用改 myagent。<br>
+        它<b>不由面板启动</b>：桥要一直跑，而插件随时可能被宿主重载，把长寿命进程挂在插件上等于把它的命交给一次重载。
+        所以下面生成的是 <b>launchd / systemd 守护单元</b>，由操作系统负责拉起与重启。<br>
+        <b>凭据放在 env 文件里（权限 600），不要贴进面板</b>：生成的单元只引用那个文件。</p></div></details>
+      <div class="chips" id="platform-pick" role="group" aria-label="选择平台"></div>
+      <div id="platform-guide"></div>
+    </section>
   </div>
 
   <div id="tab-settings" class="hidden">
@@ -2585,6 +2601,209 @@
   }
 
   /** 频道的保存：整份设置文档减去/加上一条频道，其余设置与身份映射原样不动（与 saveIdentities 同一条形状）。 */
+  /** 每频道健康：id → 事实。来自 Source 自己的 `channels()`，缺席就是缺席，不画成 0。 */
+  let channelHealth = new Map()
+
+  /**
+   * 平台目录（N5）。`ready` 的两个仓里就有；`planned` 的还没写；`none` 的**没有官方路径**——
+   * 写出来只会让人以为"配置没找对"。逆向协议（各种 hook）违反平台条款、封号风险高，所以直接说不做并给替代。
+   */
+  const PLATFORMS = {
+    telegram: {
+      label: 'Telegram', status: 'ready', dir: 'bridges/telegram', entry: 'bridge.mjs', deps: false,
+      env: [
+        ['TELEGRAM_BOT_TOKEN', '找 @BotFather 建一个 bot 拿到的 token', true],
+        ['MYAGENT_CHANNEL_DIR', '这个频道的目录（与下面选的频道一致）', true],
+        ['TELEGRAM_MODE', 'mentions（默认：私聊 + 群里 @ 它）/ dm / all', false],
+        ['TELEGRAM_CHATS', '只收这些 chat id（逗号分隔），留空即不限', false],
+      ],
+      steps: [
+        '在 Telegram 里找 @BotFather，/newbot 建一个机器人，拿到 token。',
+        '把机器人拉进群（或在私聊里开始）。群里的默认模式是「只认 @ 它的消息」。',
+        '在上面的「频道」表里加一条频道，记下它的目录，把目录填进 env 文件。',
+        '写 env 文件（chmod 600），先手动跑一次看日志，再交给守护单元。',
+        '在群里 @ 它说一句话 → 回这一页看「等映射」里出现的平台 id → 把它映射成一个人 → 下一次扫描就受理。',
+      ],
+      notes: ['长轮询，不需要公网地址。',
+        '消息发出后最多 1 秒 + 一个轮询间隔才被读到（Source 有 1 秒稳定窗口，防读到写了一半的文件）——这一秒不是故障。'],
+    },
+    lark: {
+      label: '飞书 / Lark', status: 'ready', dir: 'bridges/lark', entry: 'bridge.mjs', deps: true,
+      env: [
+        ['LARK_APP_ID', '开发者后台 → 凭证与基础信息', true],
+        ['LARK_APP_SECRET', '同上', true],
+        ['MYAGENT_CHANNEL_DIR', '这个频道的目录（与下面选的频道一致）', true],
+        ['LARK_MODE', 'mentions（默认）/ dm / all', false],
+        ['LARK_CHATS', '只收这些 chat_id（逗号分隔），留空即不限', false],
+        ['LARK_BOT_OPEN_ID', '机器人自己的 open_id；留空自动读，读不到就退化成「任何 @ 都算」（日志会说）', false],
+        ['LARK_DOMAIN', 'feishu（默认）或 lark（海外）', false],
+      ],
+      steps: [
+        '在开发者后台建一个企业自建应用，拿到 App ID 与 App Secret。',
+        '给应用加「机器人」能力，开通权限：读取与发送单聊/群聊消息。',
+        '事件订阅选长连接模式，订阅 im.message.receive_v1（免公网地址、免加解密）。',
+        '发布应用版本并通过企业管理员审核，否则事件不会推。',
+        '装依赖再跑：这个桥是套件里唯一要 npm install 的（长连接是 protobuf，理由写在它的文件头）。',
+        '在群里 @ 它 → 回这一页把出现的 open_id 映射成一个人。',
+      ],
+      notes: ['一个应用只能跑一个桥：推送是集群分发不是广播，跑两个会把消息劈成两半，而两边看起来都健康。',
+        '事件必须 3 秒内处理完否则平台重推——所以桥收到事件只写一个文件就返回，入站路径上不调任何 API。',
+        '长连接只支持事件订阅，不支持卡片回调。'],
+    },
+    wecom: { label: '企业微信', status: 'planned', notes: ['计划中：走企业微信自建应用（官方路径）。'] },
+    dingtalk: { label: '钉钉', status: 'planned', notes: ['计划中：企业内部应用 + Stream 模式（免公网）。'] },
+    discord: { label: 'Discord', status: 'planned', notes: ['计划中：Bot + Gateway websocket（免公网）。'] },
+    slack: { label: 'Slack', status: 'planned', notes: ['计划中：Socket Mode（免公网）。'] },
+    qq: { label: 'QQ 官方机器人', status: 'planned', notes: ['计划中：需要开发者资质与审核，主动消息有频率限制——动手前先核清当前政策。'] },
+    wechat: {
+      label: '个人微信 / 个人 QQ', status: 'none',
+      notes: ['没有官方机器人 API。市面上的逆向协议（hook 类）违反服务条款、封号风险高，本仓不做。',
+        '要微信就走企业微信（上面那一项）。'],
+    },
+  }
+
+  /** 当前选中的平台，与生成守护单元用的两个输入。 */
+  let platformPick = 'telegram'
+  let unitKind = null
+  const unitDraft = { repo: '', envFile: '', channel: '' }
+
+  const platformCommand = (key, repo) => {
+    const platform = PLATFORMS[key]
+    const prefix = repo === '' ? '<myagent 仓库绝对路径>' : repo.replace(/\/$/, '')
+    return platform.deps
+      ? `cd ${prefix}/${platform.dir} && npm install && node ${platform.entry}`
+      : `node ${prefix}/${platform.dir}/${platform.entry}`
+  }
+
+  /**
+   * 守护单元文本。两种都**只引用 env 文件**，绝不内联凭据：
+   * systemd 有 EnvironmentFile；launchd 没有，所以用一层 shell 先 source 再 exec。
+   * 内联密钥的单元会被面板渲染、被截图、被提交进版本库——三条路都通向泄漏。
+   */
+  const unitText = kind => {
+    const platform = PLATFORMS[platformPick]
+    const repo = (unitDraft.repo || '').trim()
+    const channelId = unitDraft.channel || platformPick
+    const envFile = (unitDraft.envFile || '').trim() || `~/.config/myagent/bridges/${channelId}.env`
+    const prefix = repo === '' ? '/ABSOLUTE/PATH/TO/myagent' : repo.replace(/\/$/, '')
+    const script = `${prefix}/${platform.dir}/${platform.entry}`
+    if (kind === 'systemd') {
+      return `[Unit]
+Description=myagent ${platform.label} bridge (${channelId})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 凭据只从这个文件来（chmod 600），不写进单元：单元会被 systemctl cat 打出来、被截图、被提交。
+EnvironmentFile=${envFile}
+ExecStart=/usr/bin/env node ${script}
+Restart=always
+RestartSec=5
+# 一个应用只能跑一个桥（飞书是集群分发，Telegram 的 offset 也会互相抢）。
+
+[Install]
+WantedBy=default.target
+`
+    }
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>ai.myagent.bridge.${channelId}</string>
+  <!-- launchd 没有 EnvironmentFile，所以用一层 shell 先 source env 文件再 exec：
+       凭据留在 600 的文件里，不出现在这个 plist 中（plist 会被面板渲染、被截图、被提交）。 -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string><string>-c</string>
+    <string>set -a; . "${envFile}"; set +a; exec /usr/bin/env node ${script}</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>5</integer>
+  <key>StandardOutPath</key><string>${envFile}.log</string>
+  <key>StandardErrorPath</key><string>${envFile}.log</string>
+</dict>
+</plist>
+<!-- 装：拷到 ~/Library/LaunchAgents/ 再 launchctl load ~/Library/LaunchAgents/ai.myagent.bridge.${channelId}.plist -->
+`
+  }
+
+  const renderPlatformGuide = () => {
+    const node = $('platform-guide')
+    if (node === null) return
+    const platform = PLATFORMS[platformPick]
+    node.replaceChildren()
+    if (platform.status === 'none') {
+      node.append(el('div', { class: 'stack', style: 'margin-top:10px' },
+        ...platform.notes.map(note => el('p', { class: 'warn', style: 'margin:0' }, note))))
+      return
+    }
+    if (platform.status === 'planned') {
+      node.append(el('p', { class: 'muted', style: 'margin-top:10px' },
+        '还没做。契约是现成的（见 bridges/README.md 的「加一个新平台」），照着 Telegram 那个桥抄一个适配器即可。'),
+      el('ul', { class: 'plain' }, ...platform.notes.map(note => el('li', { class: 'muted' }, note))))
+      return
+    }
+    const channels = state.settings?.sources?.chat?.channels ?? []
+    node.append(
+      el('ol', { class: 'steps', style: 'margin-top:10px' }, ...platform.steps.map(step => el('li', {}, step))),
+      el('h3', { style: 'margin-top:12px' }, '1. env 文件（凭据只放这里，chmod 600）'),
+      el('pre', {}, platform.env.map(([name, why, required]) =>
+        `# ${why}${required ? '' : '（可选）'}\n${name}=`).join('\n')),
+      el('h3', { style: 'margin-top:12px' }, '2. 跑起来'),
+      el('div', { class: 'row' },
+        el('input', {
+          type: 'text', id: 'unit-repo', style: 'flex:1', placeholder: '/myagent 仓库的绝对路径',
+          value: unitDraft.repo, oninput: event => { unitDraft.repo = event.target.value },
+        }),
+        el('button', { class: 'btn small', onclick: () => copy(platformCommand(platformPick, (unitDraft.repo || '').trim())) }, '复制命令')),
+      el('pre', {}, platformCommand(platformPick, (unitDraft.repo || '').trim())),
+      platform.deps ? el('p', { class: 'muted', style: 'font-size:12px' }, '这个桥要先 npm install（长连接是 protobuf，理由写在它的文件头）。') : null,
+      el('h3', { style: 'margin-top:12px' }, '3. 交给操作系统看护'),
+      el('div', { class: 'row', style: 'flex-wrap:wrap;gap:6px' },
+        el('select', {
+          id: 'unit-channel', style: 'width:auto',
+          onchange: event => { unitDraft.channel = event.target.value; renderPlatformGuide() },
+        },
+        el('option', { value: '' }, '选一个频道（决定单元名与 env 文件名）'),
+        ...channels.map(channel => el('option', { value: channel.id }, channel.id))),
+        el('input', {
+          type: 'text', id: 'unit-env', style: 'flex:1;min-width:220px',
+          placeholder: 'env 文件路径（默认 ~/.config/myagent/bridges/<频道>.env）',
+          value: unitDraft.envFile, oninput: event => { unitDraft.envFile = event.target.value },
+        }),
+        el('button', { class: 'btn small', onclick: () => { unitKind = 'systemd'; renderPlatformGuide() } }, 'systemd'),
+        el('button', { class: 'btn small', onclick: () => { unitKind = 'launchd'; renderPlatformGuide() } }, 'launchd')),
+      unitKind === null
+        ? el('p', { class: 'muted', style: 'font-size:12px' },
+          '选 systemd 或 launchd，这里出现可复制的单元文本。单元里不含任何凭据，只有对 env 文件的引用。')
+        : el('div', { class: 'stack' },
+          el('div', { class: 'row' },
+            el('b', { style: 'font-size:12px' }, unitKind === 'systemd'
+              ? `~/.config/systemd/user/myagent-bridge-${unitDraft.channel || platformPick}.service`
+              : `~/Library/LaunchAgents/ai.myagent.bridge.${unitDraft.channel || platformPick}.plist`),
+            el('button', { class: 'btn small', style: 'margin-left:auto', onclick: () => copy(unitText(unitKind)) }, '复制单元')),
+          el('pre', { style: 'max-height:260px;overflow:auto' }, unitText(unitKind))),
+      el('h3', { style: 'margin-top:12px' }, '注意'),
+      el('ul', { class: 'plain' }, ...platform.notes.map(note => el('li', { class: 'muted' }, note))))
+    // 频道下拉的当前值要在重画之后恢复：整块替换会把 select 打回第一项。
+    const select = $('unit-channel')
+    if (select !== null) select.value = unitDraft.channel
+  }
+
+  const renderPlatformPick = () => {
+    const node = $('platform-pick')
+    if (node === null) return
+    node.replaceChildren(...Object.entries(PLATFORMS).map(([key, platform]) => el('button', {
+      class: 'chip-btn', 'data-platform': key, 'aria-pressed': String(platformPick === key),
+      // 没做的与不能做的也留在目录里并当场说清：只列能做的，会让人以为其它平台是"配置没找对"。
+      ...(platform.status === 'none' ? { style: 'opacity:.65' } : {}),
+      onclick: () => { platformPick = key; unitKind = null; renderPlatformPick(); renderPlatformGuide() },
+    }, platform.label + (platform.status === 'ready' ? '' : platform.status === 'planned' ? '（未做）' : '（无官方路径）'))))
+    renderPlatformGuide()
+  }
+
   const saveChannels = channels => {
     const settings = state.settings
     return put('settings', {
@@ -2737,6 +2956,8 @@
    * behind by a route the host does not have.
    */
   const renderChat = () => {
+    // 每频道健康来自 Source 自己的 channels()；旧 bundle 没有这个方法，缺席就不画数字（画成 0 是撒谎）。
+    channelHealth = new Map(((state.chat || {}).channels ?? []).map(item => [item.id, item]))
     const node = $('chat')
     if (node === null) return
     // Read what the operator has typed BEFORE rebuilding, so the refresh hands it back to them.
@@ -2858,11 +3079,33 @@
       channels.length === 0
         // 【U12】空态指向下面的表单，而不是让人去改 JSON；JSON 那条路仍在（设置页的高级折叠区），所以两处都提到。
         ? el('p', { class: 'muted' }, '还没有频道：用下面的表单加一条（也可以在「设置」页的高级区直接改 sources.chat.channels）。')
-        : table(['频道', '目录', '状态', '操作'], channels.map(channel => [
+        : table(['频道', '目录', '状态', '积压', '待取回信', '最近进气', '操作'], channels.map(channel => {
+          // 每频道健康（N5）：三个数各自回答一个问题——积压是"你要去映射身份"，
+          // 待取回信是"**桥没在跑**"（myagent 已经写完答案，没人来取），最近进气区分"连着但安静"与"三天没动静"。
+          const fact = channelHealth.get(channel.id)
+          return [
           channel.id, channel.directory,
           channel.enabled === false
             ? el('span', { class: 'warn' }, '停用（不读，也不回）')
-            : el('span', { class: 'ok' }, '启用'),
+            : fact?.error !== undefined
+              // 读不到的频道必须说出为什么：否则它和"没人往这儿写"是同一片零，而只有一个是能修的。
+              ? el('span', { class: 'bad', title: fact.error }, '读不到')
+              : el('span', { class: 'ok' }, '启用'),
+          fact === undefined || channel.enabled === false
+            ? el('span', { class: 'muted' }, '—')
+            : fact.error !== undefined
+              ? el('span', { class: 'muted', title: fact.error }, '—')
+              : el('span', { class: fact.waiting > 0 ? 'warn' : '' }, String(fact.waiting)),
+          fact === undefined || channel.enabled === false || fact.error !== undefined
+            ? el('span', { class: 'muted' }, '—')
+            // 长期非零 = 桥停了。这是"答案没送到"与"答案本来就不欠"唯一的区分点。
+            : el('span', { class: fact.pendingReplies > 0 ? 'warn' : '', title: 'out/ 里还没被桥取走的回信数；长期非零说明桥没在跑' },
+              String(fact.pendingReplies)),
+          fact === undefined || channel.enabled === false || fact.error !== undefined
+            ? el('span', { class: 'muted' }, '—')
+            : fact.lastAcceptedAt === undefined
+              ? el('span', { class: 'muted', title: '这个频道从来没有受理过消息' }, '还没有')
+              : el('span', { title: when(fact.lastAcceptedAt) }, ago(fact.lastAcceptedAt)),
           el('span', { class: 'row' },
             el('button', { class: 'btn small', onclick: () => toggleChannel(channel.id) },
               channel.enabled === false ? '启用' : '停用'),
@@ -2872,7 +3115,8 @@
                 el('button', { class: 'btn small danger', onclick: () => removeChannel(channel.id) }, '确认删除'),
                 el('button', { class: 'btn small', onclick: () => { confirmChannel = null; renderChat() } }, '取消'))
               : el('button', { class: 'btn small danger', onclick: () => { confirmChannel = channel.id; renderChat() } }, '删除')),
-        ])))
+          ]
+        })))
 
     // ---- 加一个频道（U12）：这一节原先只读，指引把人送去改 JSON——那就是记在案的债
     node.append(el('div', { class: 'stack', style: 'margin-top:10px' },
@@ -3276,7 +3520,10 @@
     // Entering the page reads the lost detail once. The five-second refresh does not: it redraws the COUNTS from the
     // `state` it already fetched, and re-reading twenty payloads of raw text nobody is re-reading is not a refresh.
     // U14：来源页解散。聊天自成页；丢失的请求归记录页，所以进记录页时把两份都读。
-    if (name === 'chat') renderChat()
+    // 引导**只在切页时渲染**，不在 5 秒刷新里重画：那块有操作者正在输入的两个路径，
+    // 每 5 秒整块替换会把输入吃掉（与总览行内回答的草稿同一类 bug）。代价是引导里的频道下拉可能滞后，
+    // 而"输入被吃掉"比"下拉滞后"严重得多。
+    if (name === 'chat') { renderChat(); renderPlatformPick() }
     // U13：排期不再是独立面板；它在「派活」页的定时模式下，进页时按当前模式决定读不读。
     if (name === 'new' && dispatchMode === 'timed') void loadSchedules()
     // U23：进记录页时，**有丢失就先看丢失**——那是异常，判定是常态；把异常排在常态前面才对得起"记录"这一页。

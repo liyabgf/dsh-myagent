@@ -420,3 +420,46 @@ describe('disabling a Source is an authorization change, for every kind', () => 
     expect(after, `${kind} enabled ${current} → ${!current} did not move the version`).not.toBe(policyVersion(base))
   })
 })
+
+describe('platform credentials cannot be stored in settings (N5 / bridges)', () => {
+  /**
+   * The operator's decision was that a bridge's credentials live in an env file the bridge itself reads, and never in
+   * `myagent.json`. That decision only holds if the schema ENFORCES it — and it does, via `.strict()` on both
+   * `channels[]` and `identities`. This is the test that keeps it true.
+   *
+   * It matters more than a style preference: the settings page renders the whole document in its advanced JSON editor,
+   * so a token stored here would be painted on screen, screenshotted, and committed. `.strict()` is the reason the
+   * panel can generate a daemon unit that references an env file instead of inlining a secret.
+   */
+  it('refuses an unknown field on a channel, and says which field', () => {
+    expect(() => parseSettings({
+      sources: { chat: { channels: [{ id: 'ops', directory: '/tmp/ops', enabled: true, token: 'hunter2' }] } },
+    })).toThrowError(/token/)
+  })
+
+  it('refuses an unknown field on an identity mapping', () => {
+    expect(() => parseSettings({
+      sources: { chat: { identities: { U01: { actor: 'alice', secret: 'hunter2' } } } },
+    })).toThrowError(/secret/)
+  })
+
+  it('refuses a credential-shaped field at the chat level too', () => {
+    expect(() => parseSettings({
+      sources: { chat: { appSecret: 'hunter2' } },
+    })).toThrowError(/appSecret/)
+  })
+
+  it('still accepts the documented shape, so this is a boundary and not a ban on configuring', () => {
+    const parsed = parseSettings({
+      sources: {
+        chat: {
+          enabled: true,
+          identities: { U01ABCDEF: { actor: 'alice', note: 'me' } },
+          channels: [{ id: 'ops', directory: '/tmp/ops', enabled: true }],
+        },
+      },
+    })
+    expect(parsed.sources.chat.channels).toEqual([{ id: 'ops', directory: '/tmp/ops', enabled: true }])
+    expect(parsed.sources.chat.identities).toEqual({ U01ABCDEF: { actor: 'alice', note: 'me' } })
+  })
+})

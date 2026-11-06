@@ -1,0 +1,16 @@
+{
+  "name": "myagent-bridge-lark",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "飞书/Lark 桥：长连接事件订阅 → myagent 聊天频道目录。唯一需要装依赖的桥。",
+  "scripts": {
+    "start": "node bridge.mjs"
+  },
+  "dependencies": {
+    "@larksuiteoapi/node-sdk": "^1.53.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
