@@ -65,6 +65,19 @@ rsync -a --delete \
 cp -R "$SRC/lib/." "$PUB/lib/"
 echo "  ✓ 代码、文档、prompts、panel、lib 已同步；保留项：${KEEP[*]}"
 
+# 该同步的每一个文件都真的在公开仓工作树里吗？在**推送之前**查，否则会把一个坏树推上去再报错——
+# 0.6.1 就是这么发生的：远端核实在第 7 步，而推送在第 6 步。
+# 这个检查抓的是"排除清单或 .gitignore 悄悄吞掉了一个目录"，两次都发生过（rsync 的 lib、.gitignore 的 lib/）。
+expected=$(cd "$SRC" && find src tests scripts panel prompts bridges docs -type f \
+  ! -name '.DS_Store' ! -path '*/node_modules/*' | sort)
+missing=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  [ -e "$PUB/$f" ] || { echo "  ✗ 公开仓工作树缺：$f" >&2; missing=$((missing + 1)); }
+done <<<"$expected"
+[ "$missing" -eq 0 ] || { echo "✗ 少了 $missing 个文件，不发布（查 rsync 排除清单与 .gitignore 的锚定）" >&2; exit 1; }
+echo "  ✓ 该发布的文件都在（$(grep -c . <<<"$expected") 个）"
+
 # ── 3. 脱敏：按性质，不按形态 ────────────────────────────────────────────────
 step "3/7 脱敏"
 python3 - "$PUB" <<'PY'
