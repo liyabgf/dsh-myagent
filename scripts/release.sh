@@ -53,8 +53,13 @@ step "2/7 同步"
 # 于是副本慢慢变成一份谁也不认识的混合物。显式保留 + 显式删除才是可核对的。
 KEEP=(LICENSE SECURITY.md examples/real-run-1-collect examples/real-run-2-compare)
 for k in "${KEEP[@]}"; do [ -e "$PUB/$k" ] || echo "  ! 保留项不存在：${k}（首次发布时应先创建）"; done
+# `/lib` 而不是 `lib`：不带斜杠的 rsync 排除模式匹配**任何层级**的同名目录，于是 bridges/lib
+# （六个套件模块）跟着顶层的 bundle 目录一起被排掉了——公开仓里的桥因此**跑不起来**
+# （它们 import '../lib/*.mjs'），而当时的"7/7 远端核实"全绿，因为它只比 HEAD 与版本号。
+# node_modules / .git / .DS_Store 保持不锚定：那三个正是"任何层级都要排"。
+# 注：这段注释必须在 rsync **之前**——插在反斜杠续行中间的话，`#` 会被当成 rsync 的参数（试过，报 usage）。
 rsync -a --delete \
-  --exclude node_modules --exclude .git --exclude lib --exclude .DS_Store \
+  --exclude node_modules --exclude .git --exclude /lib --exclude .DS_Store \
   --exclude LICENSE --exclude SECURITY.md --exclude 'examples/real-run-*' \
   "$SRC"/ "$PUB"/
 cp -R "$SRC/lib/." "$PUB/lib/"
@@ -199,4 +204,16 @@ echo "  ✓ HEAD 一致：${local_head:0:12}"
 gh api "repos/$REPO/contents/package.json?ref=main" --jq '.content' 2>/dev/null | base64 -d \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"  远端 version: {d['version']} | license: {d['license']} | private: {d.get('private','（无）')}\")"
 gh api "repos/$REPO/commits/main" --jq '"  远端最新提交: " + .sha[0:12] + "  " + (.commit.message | split("\n")[0])'
+# 远端必须有本地要发布的每一个文件。只比 HEAD 与版本号看不出"少同步了一整个目录"——
+# bridges/lib 就这么丢过一次，而核实步骤报了全绿。
+expected=$(cd "$SRC" && find src tests scripts panel prompts bridges docs -type f \
+  ! -name '.DS_Store' ! -path '*/node_modules/*' | sort)
+remote_paths=$(gh api "repos/$REPO/git/trees/main?recursive=1" --jq '.tree[].path' 2>/dev/null | sort)
+missing=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  grep -qxF "$f" <<<"$remote_paths" || { echo "  ✗ 远端缺：$f" >&2; missing=$((missing + 1)); }
+done <<<"$expected"
+[ "$missing" -eq 0 ] || { echo "✗ 公开仓少了 $missing 个文件（同步或排除清单有问题）" >&2; exit 1; }
+echo "  ✓ 远端文件齐全：$(grep -c . <<<"$expected") 个（src tests scripts panel prompts bridges docs）"
 echo "  ✓ 发布完成。安装命令：install_bundle target: github:$REPO"
