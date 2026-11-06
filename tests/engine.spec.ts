@@ -992,3 +992,103 @@ describe('binding a Session to a Ticket', () => {
     expect(second[1]!.detail).toEqual({ sessionId: 'worker-replacement' })
   })
 })
+
+describe('archive and delete a Project or a Work (U21)', () => {
+  /** One Project, one Work in it, and one accepted Ticket classified into that Work: a real link to test against. */
+  const withWorkInUse = () => {
+    const h = harness()
+    const project = h.engine.createProject({ name: '竞品观察' })
+    const work = h.engine.createWork({ name: '周报', projectId: project.id })
+    const received = h.engine.receive(trigger())
+    const ticket = h.engine.attachWork(received.ticketId!, work.id)
+    return { ...h, project, work, ticket }
+  }
+
+  it('archiving hides a Work from the default list, keeps it readable, and unarchiving brings it back', () => {
+    const { engine, project, work } = withWorkInUse()
+    const archived = engine.archiveWork(work.id)
+    expect(archived.archivedAt).toBe('2026-11-02T12:00:00.000Z')
+    // Gone from what an operator chooses from…
+    expect(engine.works().map(item => item.id)).not.toContain(work.id)
+    expect(engine.works(project.id)).toEqual([])
+    // …but still there to read: archiving is not deleting, and a detail view that hid it would look like data loss.
+    expect(engine.work(work.id)?.name).toBe('周报')
+    expect(engine.works(undefined, true).map(item => item.id)).toContain(work.id)
+
+    const back = engine.unarchiveWork(work.id)
+    expect(back.archivedAt).toBeUndefined()
+    expect(engine.works().map(item => item.id)).toContain(work.id)
+  })
+
+  it('archiving a Project leaves its Works and their Tickets exactly as they were', () => {
+    const { engine, memory, project, work, ticket } = withWorkInUse()
+    engine.archiveProject(project.id)
+    expect(engine.projects().map(item => item.id)).not.toContain(project.id)
+    expect(engine.projects(true).map(item => item.id)).toContain(project.id)
+    // The Work under it is untouched, and so is the Ticket's place in that Work's history.
+    expect(engine.work(work.id)).toMatchObject({ name: '周报', projectId: project.id })
+    // Vitest 的 toMatchObject 要求键**存在**，所以「没有归档」要单独说，不能塞进上面那个对象里。
+    expect(engine.work(work.id)!.archivedAt).toBeUndefined()
+    expect(memory.tickets.get(ticket.id)).toMatchObject({ workId: work.id, workSeq: 1 })
+  })
+
+  it('deleting a Work takes the assignment away from its Tickets, and each one says so in its own history', () => {
+    const { engine, memory, work, ticket } = withWorkInUse()
+    const result = engine.deleteWork(work.id)
+    expect(result).toEqual({ deleted: work.id, detachedTickets: 1 })
+    // The record is gone — from the list AND from a direct read, which is what "delete for good" means.
+    expect(engine.work(work.id)).toBeUndefined()
+    expect(engine.works(undefined, true).map(item => item.id)).not.toContain(work.id)
+    // The Ticket is not: a Ticket is a real thing that happened, and deleting a grouping never reaches into it.
+    const after = memory.tickets.get(ticket.id)!
+    expect(after.workId).toBeUndefined()
+    expect(after.workSeq).toBeUndefined()
+    expect(after.title).toBe(ticket.title)
+    expect(after.assignments).toHaveLength(ticket.assignments.length)
+    // And it is not silent: the Ticket's own history says its assignment was taken away, and names the Work.
+    const events = memory.events.list(ticket.id).filter(event => event.type === 'unclassified')
+    expect(events).toHaveLength(1)
+    expect(events[0]!.detail).toMatchObject({ workId: work.id, workSeq: 1, reason: 'work_deleted' })
+    expect(events[0]!.by).toEqual({ kind: 'person' })
+  })
+
+  it('deleting a Project leaves its Works alive, with no Project', () => {
+    const { engine, memory, project, work, ticket } = withWorkInUse()
+    const result = engine.deleteProject(project.id)
+    expect(result).toEqual({ deleted: project.id, detachedWorks: 1 })
+    expect(engine.project(project.id)).toBeUndefined()
+    // The Work survives and now belongs to no Project; the Ticket under it is untouched.
+    expect(engine.work(work.id)).toMatchObject({ name: '周报' })
+    expect(engine.work(work.id)!.projectId).toBeUndefined()
+    expect(engine.works(undefined).map(item => item.id)).toContain(work.id)
+    expect(memory.tickets.get(ticket.id)).toMatchObject({ workId: work.id, workSeq: 1 })
+  })
+
+  it('deleting something that is not there is an error, not a silent success', () => {
+    const { engine } = withWorkInUse()
+    // UserError 带着一个人话消息（errors.ts 的表），错误码是给日志的——断言断人话那一层。
+    expect(() => engine.deleteWork('work-nope')).toThrowError('No Work has this id')
+    expect(() => engine.deleteProject('project-nope')).toThrowError('No Project has this id')
+    expect(() => engine.archiveWork('work-nope')).toThrowError('No Work has this id')
+    expect(() => engine.unarchiveProject('project-nope')).toThrowError('No Project has this id')
+    // 而且是 UserError（400 那一类：操作者能改的错），不是内部错误（500）。
+    expect(() => engine.deleteWork('work-nope')).toThrowError(UserError)
+  })
+
+  it('a delete that fails part-way through leaves everything as it was — including the event it had already written', () => {
+    const { engine, memory, work, ticket } = withWorkInUse()
+    const realSave = memory.tickets.save.bind(memory.tickets)
+    // Fail on the first Ticket save of the deletion. `record()` runs BEFORE the save inside `mutate`, so this is the
+    // interesting case: the event is already appended when the failure lands, and a transaction that only rolled back
+    // the Ticket would leave a history entry for a deletion that never happened.
+    memory.tickets.save = (next: Ticket): void => {
+      if (next.id === ticket.id) throw new Error('磁盘满了')
+      realSave(next)
+    }
+    expect(() => engine.deleteWork(work.id)).toThrowError('磁盘满了')
+    // Nothing moved: the Work is still there, the Ticket still belongs to it, and no `unclassified` event survives.
+    expect(engine.work(work.id)?.name).toBe('周报')
+    expect(memory.tickets.get(ticket.id)).toMatchObject({ workId: work.id, workSeq: 1 })
+    expect(memory.events.list(ticket.id).filter(event => event.type === 'unclassified')).toEqual([])
+  })
+})

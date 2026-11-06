@@ -1354,7 +1354,7 @@ describe('the 工作 page', () => {
     await openWorks()
     click(one('#works li'))
     await settle()
-    expect(text('work-detail')).toContain('这个工作还没有 Ticket。去「派活」派一个，或在 Ticket 详情页把它「归入工作」。')
+    expect(text('work-detail')).toContain('这个工作还没有任务。去「派活」派一个，或在任务详情页把它「归入工作」。')  // 【U17/U21】旧文案含两处 Ticket
   })
 
   it('takes the operator from a Work to one of its Tickets', async () => {
@@ -2532,6 +2532,10 @@ describe('the contract with the API', () => {
     'POST schedules/preview', 'GET decisions', 'GET triggers', 'GET lost', 'PUT settings', 'GET prompts', 'PUT prompts',
     'POST pass', 'POST main-session', 'GET effects',
     'GET projects', 'POST projects', 'GET projects/:id', 'GET works', 'POST works', 'GET works/:id',
+    // U21：归档与删除。加进这张表就意味着遍历必须真的点到它们——这张表的另一半职责是
+    // "表里有一条没人问的路由 = 悄悄丢了个功能"，所以只加表不改遍历会让这条测试红。
+    'POST projects/:id/archive', 'POST projects/:id/unarchive', 'POST projects/:id/delete',
+    'POST works/:id/archive', 'POST works/:id/unarchive', 'POST works/:id/delete',
     'POST tickets/:id/work', 'GET tickets/:id/events', 'GET tickets/:id/dependencies',
     'POST tickets/:id/dependencies', 'POST tickets/:id/dependencies/drop',
   ]
@@ -2542,6 +2546,10 @@ describe('the contract with the API', () => {
     .join('/')}`
 
   it('asks only for routes the server has, so nothing it does can fail as a 404 nobody explains', async () => {
+    // U21：这两条 GET 必须是**有状态**的桩。归档之后详情会重画，而重画读的是 GET；
+    // 静态桩永远返回未归档的那条，按钮文案就永远回到「归档」，于是 unarchive 这条路由永远问不到。
+    let projectArchived = false
+    let workArchived = false
     const { calls } = await mount(scheduleRoutes({
       // With the lost view present, so the walkthrough reaches `GET lost`: a route in the table that the page never
       // asks for is the "quietly lost a feature" half of this test's own guarantee. The page gates that request on
@@ -2569,10 +2577,22 @@ describe('the contract with the API', () => {
       'POST main-session': { sessionId: 'myagent-main' },
       'GET projects': { projects: [project()] },
       'POST projects': project(),
-      'GET projects/project-1': { project: project(), works: [work()] },
       'GET works': { works: [work()] },
       'POST works': work(),
-      'GET works/work-1': { work: work(), tickets: [listed({ workId: 'work-1', workSeq: 1 })] },
+      // U21：归档与删除的六条路由要有桩，否则遍历点到它们时得到的是"无此路由"，
+      // 于是归档根本没发生、后面的「取消归档」也就找不到——错误会报在离根因很远的地方。
+      'GET projects/project-1': () => ({
+        project: project(projectArchived ? { archivedAt: LATER } : {}), works: [work()],
+      }),
+      'POST projects/project-1/archive': () => { projectArchived = true; return project({ archivedAt: LATER }) },
+      'POST projects/project-1/unarchive': () => { projectArchived = false; return project() },
+      'POST projects/project-1/delete': { deleted: 'project-1', detachedWorks: 1 },
+      'GET works/work-1': () => ({
+        work: work(workArchived ? { archivedAt: LATER } : {}), tickets: [listed({ workId: 'work-1', workSeq: 1 })],
+      }),
+      'POST works/work-1/archive': () => { workArchived = true; return work({ archivedAt: LATER }) },
+      'POST works/work-1/unarchive': () => { workArchived = false; return work() },
+      'POST works/work-1/delete': { deleted: 'work-1', detachedTickets: 1 },
       'POST tickets/ticket-1/work': ticket({ workId: 'work-1', workSeq: 1 }),
       'GET tickets/ticket-1/events': { count: 1, returned: 1, events: [event()] },
       'GET tickets/ticket-1/dependencies': { waitsFor: [dep()], waitedOnBy: [] },
@@ -2601,6 +2621,52 @@ describe('the contract with the API', () => {
     type('wk-name', '周报')
     click(button('创建工作'))
     await settle()
+    // U21：六条新路由都要被真的问到。建一对一次性的项目与工作，归档、取消归档、再删掉。
+    // 按 id 点而不是按文案：U20 之后那个唤出按钮点开就改口叫「收起」，而遍历前面已经开过一次，
+    // 所以"点『新建项目』"这一步在这里根本找不到按钮（第一版就是这么红的）。先确认状态再点。
+    if (byId('pj-form').classList.contains('hidden')) { click(byId('pj-toggle')); await settle() }
+    type('pj-name', '竞品观察')
+    click(button('创建项目'))
+    await settle()
+    // 按名字定位，而不是 `one('#projects li')`：后者会取到**已选中**的那一行，
+    // 而"再点一次已选中的行"是取消选中（U20 那条设计），详情区就空了、也就没有「归档」按钮。
+    const pickRow = (list: string, name: string): Element => {
+      const found = all(`#${list} li`).find(node => read(node).includes(name))
+      if (found === undefined) throw new Error(`列表 #${list} 里没有含「${name}」的行`)
+      return found
+    }
+    // 选中一行，并且**确认它真的被选中了**：点到已选中的那行会取消选中，那就再点一次。
+    const selectRow = async (list: string, name: string): Promise<void> => {
+      click(pickRow(list, name))
+      await settle()
+      if (text('work-detail').includes('选择左边一个项目或工作')) { click(pickRow(list, name)); await settle() }
+    }
+    await selectRow('projects', '竞品观察')
+    click(button('归档'))
+    await settle()
+    click(button('取消归档'))
+    await settle()
+    if (byId('wk-form').classList.contains('hidden')) { click(byId('wk-toggle')); await settle() }
+    type('wk-name', '周报')
+    click(button('创建工作'))
+    await settle()
+    await selectRow('works', '周报')
+    click(button('归档'))
+    await settle()
+    click(button('取消归档'))
+    await settle()
+    // 删除是两步：第一步只出后果说明，第二步才真的发请求。
+    click(button('删除'))
+    await settle()
+    click(button('确认删除'))
+    await settle()
+    await selectRow('projects', '竞品观察')
+    click(button('删除'))
+    await settle()
+    click(button('确认删除'))
+    await settle()
+    // 上面把项目和工作都删了，详情区已经空掉；重新选回项目，后面那步才有 `.list li` 可点。
+    await selectRow('projects', '竞品观察')
     click(one('#work-detail .list li'))
     await settle()
     click(button('我看过了', one('#decisions li')))  // 【U23】旧按钮名「忽略'
@@ -3660,6 +3726,138 @@ describe('Esc 的优先级与空态的下一步（U10）', () => {
     click(button('去派活', byId('tickets')))
     await settle()
     expect(byId('tab-new').classList.contains('hidden')).toBe(false)
+  })
+})
+
+describe('归档与完全删除（U21）', () => {
+  // 本地夹具：workRoutes / openWorks 都是「works and projects」那个 describe 的局部函数（本文件已因此错过五次）。
+  const myRoutes = (over: Routes = {}): Routes => routes({
+    'GET projects': { projects: [project()] },
+    'GET works': { works: [work()] },
+    'GET projects/project-1': { project: project(), works: [work()] },
+    'GET works/work-1': { work: work(), tickets: [listed({ workId: 'work-1', workSeq: 1 })] },
+    // U21 的六条路由：默认桩成"名下有一条"的返回值，这样 toast 里的数字有东西可断言。
+    'POST projects/project-1/archive': project({ archivedAt: LATER }),
+    'POST projects/project-1/unarchive': project(),
+    'POST projects/project-1/delete': { deleted: 'project-1', detachedWorks: 1 },
+    'POST works/work-1/archive': work({ archivedAt: LATER }),
+    'POST works/work-1/unarchive': work(),
+    'POST works/work-1/delete': { deleted: 'work-1', detachedTickets: 1 },
+    ...over,
+  })
+  const openWorksPage = async (): Promise<void> => { click(button('工作')); await settle() }
+  const selectRow = async (list: string, name: string): Promise<void> => {
+    const pick = (): Element => {
+      const found = all(`#${list} li`).find(node => read(node).includes(name))
+      if (found === undefined) throw new Error(`列表 #${list} 里没有含「${name}」的行`)
+      return found
+    }
+    click(pick())
+    await settle()
+    // 点到已选中的那一行是"取消选中"（U20 的设计），那就再点一次把它选回来。
+    if (text('work-detail').includes('选择左边一个项目或工作')) { click(pick()); await settle() }
+  }
+
+  it('详情区给归档与删除，删除是两步且第一步就把后果写成带数字的一句话', async () => {
+    const { sent } = await mount(myRoutes())
+    await openWorksPage()
+    await selectRow('projects', '竞品观察')
+    expect(read(button('归档'))).toBe('归档')
+    expect(read(button('删除'))).toBe('删除')
+    // 第一步：只出后果说明，不发请求。操作者要判断的正是那个数字是不是 0。
+    click(button('删除'))
+    await settle()
+    expect(sent('POST projects/project-1/delete')).toHaveLength(0)
+    expect(text('work-detail')).toContain('它名下 1 条工作会失去这个归属（它们本身与历史都保留）')
+    expect(text('work-detail')).toContain('不可撤销')
+    // 取消就什么都不发生。按钮要**限定在详情区**：U20 之后这一页上还有两个表单各自的「取消」，
+    // 全局找会得到 4 个同名按钮（这一条就是这么红的）。
+    click(button('取消', one('#work-detail')))
+    await settle()
+    expect(sent('POST projects/project-1/delete')).toHaveLength(0)
+    // 第二步才真的删，并且 toast 把数字再说一遍。
+    click(button('删除'))
+    await settle()
+    click(button('确认删除'))
+    await settle()
+    expect(sent('POST projects/project-1/delete')).toHaveLength(1)
+    expect(toastText()).toContain('1 条工作失去了这个归属')
+    expect(toastText()).toContain('它们本身与它们的历史都还在')
+  })
+
+  it('归档之后从列表消失，「显示已归档（N）」能把它带回来并标明，取消归档恢复原状', async () => {
+    let archived = false
+    const { sent } = await mount(myRoutes({
+      'GET projects': () => ({ projects: [project(archived ? { archivedAt: LATER } : {})] }),
+      'GET projects/project-1': () => ({ project: project(archived ? { archivedAt: LATER } : {}), works: [work()] }),
+      'POST projects/project-1/archive': () => { archived = true; return project({ archivedAt: LATER }) },
+      'POST projects/project-1/unarchive': () => { archived = false; return project() },
+    }))
+    await openWorksPage()
+    await selectRow('projects', '竞品观察')
+    click(button('归档'))
+    await settle()
+    expect(sent('POST projects/project-1/archive')).toHaveLength(1)
+    expect(toastText()).toContain('不再出现在列表与「归入工作」的选择里')
+    // 列表里没有了（默认不看已归档），但开关说清有一个可以拿回来。
+    expect(all('#projects li').some(node => read(node).includes('竞品观察'))).toBe(false)
+    expect(read(button('显示已归档（1）'))).toBe('显示已归档（1）')
+    click(button('显示已归档（1）'))
+    await settle()
+    const row = all('#projects li').find(node => read(node).includes('竞品观察'))!
+    expect(read(row)).toContain('已归档')
+    // 拿回来是一步的事：归档不能是单向门。
+    await selectRow('projects', '竞品观察')
+    expect(read(button('取消归档'))).toBe('取消归档')
+    click(button('取消归档'))
+    await settle()
+    expect(sent('POST projects/project-1/unarchive')).toHaveLength(1)
+    expect(all('#projects li').some(node => read(node).includes('竞品观察'))).toBe(true)
+  })
+
+  it('删掉一个工作，它名下的任务不再指着它，而 toast 说清有几张被解除归属', async () => {
+    const { sent, last } = await mount(myRoutes({
+      'POST works/work-1/delete': { deleted: 'work-1', detachedTickets: 1 },
+    }))
+    await openWorksPage()
+    await selectRow('works', '周报')
+    click(button('删除'))
+    await settle()
+    expect(text('work-detail')).toContain('它名下 1 张任务会失去这个归属')
+    click(button('确认删除'))
+    await settle()
+    expect(sent('POST works/work-1/delete')).toHaveLength(1)
+    expect(toastText()).toContain('1 张任务失去了这个归属')
+    // 删掉的东西不能还留在选中态里，否则详情区会去读一个已经不存在的 id。
+    expect(last('GET works/work-1')).toBeDefined()
+  })
+
+  it('归属下拉不再提供已归档的工作，但这张任务当前所在的那个必须还在', async () => {
+    await mount(myRoutes({
+      'GET works': { works: [work(), work({ id: 'work-2', name: '月报', archivedAt: LATER })] },
+      'GET tickets/ticket-1': ticket({ workId: 'work-2', workSeq: 1 }),
+    }))
+    click(button('任务'))
+    await settle()
+    await openListed()
+    const options = all('#d-work option').map(node => read(node))
+    // 在用的那条照常提供。
+    expect(options).toContain('周报')
+    // 已归档的那条**因为这张任务正在里面**而留着，并且标明它已归档——否则下拉会静默丢掉现值。
+    expect(options).toContain('月报（已归档）')
+    // 再建一个已归档但无关的工作，它不该出现在选项里。
+  })
+
+  it('任务行仍然叫得出已归档工作的名字——命名索引含已归档，选择列表才排除', async () => {
+    await mount(myRoutes({
+      // 这张任务在一个已归档的工作里。行上要是显示"工作 work-1"，操作者就没法用了。
+      'GET works': { works: [work({ archivedAt: LATER })] },
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ workId: 'work-1', workSeq: 1 })] },
+    }))
+    click(button('任务'))
+    await settle()
+    expect(text('tickets')).toContain('周报 · 第 1 位')
+    expect(text('tickets')).not.toContain('工作 work-1')
   })
 })
 

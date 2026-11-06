@@ -95,6 +95,8 @@ export interface ProjectRepository {
   save(project: Project): void
   get(id: string): Project | undefined
   list(): Project[]
+  /** Take the record away for good (U21). Absent from the interface until deleting was a thing an operator could ask for. */
+  remove(id: string): void
 }
 
 /** What the Engine can do with the streams of tasks that Tickets belong to. */
@@ -104,6 +106,8 @@ export interface WorkRepository {
   list(): Work[]
   /** The Works of one Project, oldest first; an absent `projectId` asks for the Works in no Project. */
   byProject(projectId: string | undefined): Work[]
+  /** Take the record away for good (U21). */
+  remove(id: string): void
 }
 
 export interface DecisionRepository {
@@ -643,12 +647,117 @@ export class Engine {
     })
   }
 
-  /** Every Project, oldest first. */
-  projects(): Project[] { return this.repos.projects.list() }
+  /**
+   * Every Project, oldest first. Archived ones are left out unless asked for (U21): they are still real records with
+   * real history under them, they are just not part of what an operator is choosing from right now.
+   */
+  projects(includeArchived = false): Project[] {
+    const all = this.repos.projects.list()
+    return includeArchived ? all : all.filter(project => project.archivedAt === undefined)
+  }
 
-  /** Every Work, or the Works of one Project when asked. */
-  works(projectId?: string): Work[] {
-    return projectId === undefined ? this.repos.works.list() : this.repos.works.byProject(projectId)
+  /** Every Work, or the Works of one Project when asked. Archived ones are left out unless asked for (U21). */
+  works(projectId?: string, includeArchived = false): Work[] {
+    const all = projectId === undefined ? this.repos.works.list() : this.repos.works.byProject(projectId)
+    return includeArchived ? all : all.filter(work => work.archivedAt === undefined)
+  }
+
+  /**
+   * Archive and unarchive, and delete for good (U21).
+   *
+   * The two are different answers to different situations, which is why an operator gets both:
+   *
+   * - **Archive** is for a grouping that is finished or wrong-but-used. It leaves every list and every choice, keeps
+   *   its Works and their Tickets and their history exactly as they are, and can be undone. Nothing is lost.
+   * - **Delete** is for a grouping that should never have existed. The record goes away, and so does the link that
+   *   pointed at it — a deleted Work's Tickets keep living with no Work, a deleted Project's Works keep living with no
+   *   Project. **Deleting a grouping never reaches into the work itself**: a Ticket is a real thing that happened, and
+   *   each one whose assignment is taken away gets an `unclassified` event saying so, with the Work's id in the detail.
+   *   That is what keeps "delete it completely" and "nothing disappears silently" true at the same time.
+   *
+   * Both run inside one transaction, so a failure part-way through (a Ticket that will not save) leaves everything
+   * exactly as it was rather than half-deleted.
+   */
+  archiveProject(id: string): Project {
+    return this.tx.atomic(() => {
+      const project = this.requireProject(id)
+      const next: Project = { ...project, archivedAt: this.now() }
+      this.repos.projects.save(next)
+      return next
+    })
+  }
+
+  unarchiveProject(id: string): Project {
+    return this.tx.atomic(() => {
+      const { archivedAt: _dropped, ...rest } = this.requireProject(id)
+      const next = rest as Project
+      this.repos.projects.save(next)
+      return next
+    })
+  }
+
+  /** Delete a Project; its Works survive with no Project. Returns how many were detached, so the UI can say it. */
+  deleteProject(id: string): { deleted: string; detachedWorks: number } {
+    return this.tx.atomic(() => {
+      this.requireProject(id)
+      const children = this.repos.works.byProject(id)
+      for (const work of children) {
+        const { projectId: _dropped, ...rest } = work
+        this.repos.works.save(rest as Work)
+      }
+      this.repos.projects.remove(id)
+      return { deleted: id, detachedWorks: children.length }
+    })
+  }
+
+  archiveWork(id: string): Work {
+    return this.tx.atomic(() => {
+      const work = this.requireWork(id)
+      const next: Work = { ...work, archivedAt: this.now() }
+      this.repos.works.save(next)
+      return next
+    })
+  }
+
+  unarchiveWork(id: string): Work {
+    return this.tx.atomic(() => {
+      const { archivedAt: _dropped, ...rest } = this.requireWork(id)
+      const next = rest as Work
+      this.repos.works.save(next)
+      return next
+    })
+  }
+
+  /** Delete a Work; its Tickets survive with no Work, each with an `unclassified` event. */
+  deleteWork(id: string): { deleted: string; detachedTickets: number } {
+    return this.tx.atomic(() => {
+      this.requireWork(id)
+      const tickets = this.repos.tickets.byWork(id)
+      for (const ticket of tickets) {
+        // Through `mutate`, the same door every other Ticket change goes in: it saves inside this transaction, so a
+        // Ticket that refuses to save rolls the whole deletion back instead of leaving it half-done.
+        this.mutate(ticket.id, current => {
+          this.record(ticket.id, 'unclassified', { kind: 'person' },
+            { workId: id, workSeq: current.workSeq ?? null, reason: 'work_deleted' })
+          const { workId: _w, workSeq: _s, ...rest } = current
+          return rest as Ticket
+        })
+      }
+      this.repos.works.remove(id)
+      return { deleted: id, detachedTickets: tickets.length }
+    })
+  }
+
+  private requireProject(id: string): Project {
+    const project = this.repos.projects.get(id)
+    if (project === undefined) throw new UserError('project_missing')
+    return project
+  }
+
+  private requireWork(id: string): Work {
+    const work = this.repos.works.get(id)
+    if (work === undefined) throw new UserError('work_missing')
+    return work
   }
 
   /** A Work's Projects, or every Project when asked for none. */

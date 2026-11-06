@@ -753,6 +753,55 @@ try {
   await page.click('#tabs button[data-tab="overview"]')
   await page.waitForTimeout(300)
 
+  // U21：归档与删除的按钮与两步确认（删除第一步**不发任何请求**——面板侧已断言——所以点它再取消是只读安全的）
+  await page.click('#tabs button[data-tab="works"]')
+  await page.waitForTimeout(800)
+  const lifecycle = await page.evaluate(() => {
+    const detail = document.getElementById('work-detail')
+    const btns = [...(detail?.querySelectorAll('button') ?? [])].map(b => b.textContent.trim())
+    return { btns, hasDetail: detail !== null }
+  })
+  check('工作详情带「归档」与「删除」按钮（U21）',
+    lifecycle.btns.includes('归档') && lifecycle.btns.includes('删除'),
+    lifecycle.btns.join(' | '))
+  if (lifecycle.btns.includes('删除')) {
+    await page.evaluate(() => {
+      const detail = document.getElementById('work-detail')
+      const btn = [...detail.querySelectorAll('button')].find(b => b.textContent.trim() === '删除')
+      if (btn) btn.click()
+    })
+    await page.waitForTimeout(700)
+    const confirmState = await page.evaluate(() => {
+      const detail = document.getElementById('work-detail')
+      const text = detail?.textContent || ''
+      const btns = [...(detail?.querySelectorAll('button') ?? [])].map(b => b.textContent.trim())
+      // 断言用**全文**，只在失败信息里截断：确认行在详情的末尾（任务列表之后），
+      // 第一版把 slice(0,300) 的结果同时拿去断言，于是量到的是"开头那 300 字里没有确认行"——量具自己错了。
+      return { text, head: text.slice(0, 120), tail: text.slice(-180), btns }
+    })
+    check('删除是两步确认，且后果带数字并说明不可撤销',
+      // 断**规则**不断数据形状：名下有东西时说"N 张任务/条工作会失去这个归属"，没有时说"它名下没有东西"。
+      // 线上这个工作恰好 0 张任务，第一版只认前一种，就红了（与 U12 频道表、U22 分组同一课）。
+      /确认删除？/.test(confirmState.text)
+        && (/\d+ (张任务|条工作)会失去这个归属/.test(confirmState.text) || /它名下没有东西/.test(confirmState.text))
+        && /不可撤销/.test(confirmState.text)
+        && confirmState.btns.includes('确认删除') && confirmState.btns.includes('取消'),
+      `尾部=${confirmState.tail} 按钮=${confirmState.btns.join('/')}`)
+    // 立刻取消，不留在确认态。
+    await page.evaluate(() => {
+      const detail = document.getElementById('work-detail')
+      const btn = [...detail.querySelectorAll('button')].find(b => b.textContent.trim() === '取消')
+      if (btn) btn.click()
+    })
+    await page.waitForTimeout(600)
+  }
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
+  // 每加一批检查，崩溃点就往前提一次（§4.107 记的是第 4/5 节，U21 的块加进来后变成了第 2 节）。
+  // 与其每次崩了再往前挪一次 relaunch，不如把它放在**每个大节之前**：换浏览器进程是真的把内存还回去，
+  // 而换页面不是（实测过）。代价是几次导航，收益是脚本不再随机死。
+  await relaunch()
   console.log('── 2. 遍历 8 个 Tab 验证显隐互斥')
   // 【U13】排期并入派活：一级面板 9 → 8（'schedules' 不再是独立面板）
   // 【U14】'sources' → 'chat'：来源页解散，一级面板仍是 8 个

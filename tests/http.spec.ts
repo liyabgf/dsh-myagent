@@ -885,3 +885,101 @@ describe('the requests the queue gave up on', () => {
     })
   })
 })
+
+describe('archive and delete a Project or a Work over HTTP (U21)', () => {
+  // 局部 helper：那对 post/get 是上一个 describe 的局部函数（本文件已因作用域错过一次，不再赌）。
+  const post = (context: Deployment, path: string, body?: unknown) =>
+    context.host.request(api(path), { method: 'POST', body: (body ?? {}) as Record<string, unknown> })
+  const get = (context: Deployment, path: string) => context.host.request(api(path))
+  const names = (json: unknown, key: 'projects' | 'works'): string[] =>
+    ((json as Record<string, { name: string }[]>)[key] ?? []).map(item => item.name)
+
+  it('archives a Project out of the list, keeps it readable, and unarchives it', async () => {
+    await withDeployment(async context => {
+      const created = await post(context, 'projects', { name: '客户 A' })
+      const id = (created.json as { id: string }).id
+
+      const archived = await post(context, `projects/${id}/archive`)
+      expect(archived.status).toBe(200)
+      expect((archived.json as { archivedAt?: string }).archivedAt).toEqual(expect.any(String))
+      expect(names((await get(context, 'projects')).json, 'projects')).toEqual([])
+      // `?archived=1` is how an operator gets it back on screen in order to undo this.
+      expect(names((await get(context, 'projects?archived=1')).json, 'projects')).toEqual(['客户 A'])
+      // Reading it directly still works: archiving hides it from choices, it does not hide the record.
+      expect((await get(context, `projects/${id}`)).status).toBe(200)
+
+      const back = await post(context, `projects/${id}/unarchive`)
+      expect((back.json as { archivedAt?: string }).archivedAt).toBeUndefined()
+      expect(names((await get(context, 'projects')).json, 'projects')).toEqual(['客户 A'])
+    })
+  })
+
+  it('deleting a Work clears its Tickets’ assignment and leaves the reason in the Ticket’s own history', async () => {
+    await withDeployment(async context => {
+      const work = await post(context, 'works', { name: '周报' })
+      const workId = (work.json as { id: string }).id
+      const ticket = await createTicket(context)
+      await post(context, `tickets/${ticket}/work`, { workId })
+
+      const deleted = await post(context, `works/${workId}/delete`)
+      expect(deleted.status).toBe(200)
+      expect(deleted.json).toEqual({ deleted: workId, detachedTickets: 1 })
+      expect(names((await get(context, 'works')).json, 'works')).toEqual([])
+      // Gone for good, not merely hidden: even `?archived=1` does not bring it back.
+      expect(names((await get(context, 'works?archived=1')).json, 'works')).toEqual([])
+      expect((await get(context, `works/${workId}`)).status).toBe(404)
+
+      // The Ticket is still there, with no Work, and its history says why.
+      const view = (await get(context, `tickets/${ticket}`)).json as { workId?: string }
+      expect(view.workId).toBeUndefined()
+      const events = (await get(context, `tickets/${ticket}/events?limit=50`)).json as
+        { events: { type: string; detail?: Record<string, unknown> }[] }
+      const unclassified = events.events.filter(event => event.type === 'unclassified')
+      expect(unclassified).toHaveLength(1)
+      expect(unclassified[0]!.detail).toMatchObject({ workId, reason: 'work_deleted' })
+    })
+  })
+
+  it('deleting a Project leaves its Works alive with no Project', async () => {
+    await withDeployment(async context => {
+      const project = await post(context, 'projects', { name: '客户 A' })
+      const projectId = (project.json as { id: string }).id
+      const work = await post(context, 'works', { name: '周报', projectId })
+      const workId = (work.json as { id: string }).id
+
+      const deleted = await post(context, `projects/${projectId}/delete`)
+      expect(deleted.json).toEqual({ deleted: projectId, detachedWorks: 1 })
+      expect((await get(context, `projects/${projectId}`)).status).toBe(404)
+      const after = (await get(context, `works/${workId}`)).json as { work: { projectId?: string; name: string } }
+      expect(after.work.name).toBe('周报')
+      expect(after.work.projectId).toBeUndefined()
+    })
+  })
+
+  it('says so in words when the id is not there, instead of succeeding quietly', async () => {
+    await withDeployment(async context => {
+      for (const path of ['projects/nope/archive', 'projects/nope/unarchive', 'projects/nope/delete',
+        'works/nope/archive', 'works/nope/unarchive', 'works/nope/delete']) {
+        const response = await post(context, path)
+        // **404**, and that is the established mapping rather than an accident: http.ts turns a `UserError` whose code
+        // says something is missing into a 404 and every other `UserError` into a 400 ("a 400 or 404 raised while
+        // parsing a request or looking a record up"). Don't "fix" this to 400 — the body is what carries the sentence.
+        expect(response.status, path).toBe(404)
+        expect(JSON.stringify(response.json), path).toContain('has this id')
+        expect(JSON.stringify(response.json), path).toContain(path.startsWith('projects') ? 'project_missing' : 'work_missing')
+      }
+    })
+  })
+
+  it('a Project’s own page still lists its archived Works, because reading is not choosing', async () => {
+    await withDeployment(async context => {
+      const project = await post(context, 'projects', { name: '客户 A' })
+      const projectId = (project.json as { id: string }).id
+      const work = await post(context, 'works', { name: '周报', projectId })
+      await post(context, `works/${(work.json as { id: string }).id}/archive`)
+      expect(names((await get(context, 'works')).json, 'works')).toEqual([])
+      const page = await get(context, `projects/${projectId}`)
+      expect(names(page.json, 'works')).toEqual(['周报'])
+    })
+  })
+})

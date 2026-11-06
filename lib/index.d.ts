@@ -117,6 +117,14 @@ interface Project {
   readonly createdAt: string;
   /** What this Project is for, in the operator's own words. */
   readonly note?: string;
+  /**
+   * When this Project was archived, if it was (U21).
+   *
+   * Optional, so every record written before this field existed is still valid — and the sqlite store keeps the whole
+   * record as JSON in one column, so adding it needs no migration. An archived Project leaves the default lists and the
+   * "which Work does this belong to" choices while everything under it stays exactly as it was.
+   */
+  readonly archivedAt?: string;
 }
 /**
  * A recurring or ongoing stream of tasks, which many Tickets belong to over time.
@@ -134,6 +142,8 @@ interface Work {
   /** What every Ticket in this Work is authorized to do, unless the Ticket's own scope narrows it. */
   readonly scope?: string;
   readonly note?: string;
+  /** When this Work was archived, if it was (U21). Same shape and same reason as `Project.archivedAt`. */
+  readonly archivedAt?: string;
 }
 /**
  * One edge in the graph of work: `downstream` must not run until `upstream` has finished.
@@ -155,7 +165,13 @@ interface Dependency {
   readonly on: 'done' | 'ended';
 }
 /** Every kind of fact the log records about one Ticket's life. */
-type TicketEventType = 'created' | 'launched' | 'delivered' | 'delivery_failed' | 'report' | 'turn_ended' | 'input' | 'retried' | 'interrupted' | 'resumed' | 'stopped' | 'failed' | 'ended' | 'classified' | 'session_bound' | 'dependency' | 'rescued' | 'rule_stopped' | 'escalated' | 'reply_lost' | 'notice_lost';
+type TicketEventType = 'created' | 'launched' | 'delivered' | 'delivery_failed' | 'report' | 'turn_ended' | 'input' | 'retried' | 'interrupted' | 'resumed' | 'stopped' | 'failed' | 'ended' | 'classified' | 'session_bound' | 'dependency' |
+/**
+ * A Ticket's Work assignment was taken away (U21: the Work was deleted). Its own type rather than a `classified`
+ * event with a null in it, because the event log is the operator's audit trail and "classified: nothing" reads like
+ * a bug. Nothing switches exhaustively over these types, so adding one cannot strand a case.
+ */
+'unclassified' | 'rescued' | 'rule_stopped' | 'escalated' | 'reply_lost' | 'notice_lost';
 /**
  * One recorded fact about a Ticket's life, written inside the transaction that made it true.
  *
@@ -776,6 +792,8 @@ interface ProjectRepository {
   save(project: Project): void;
   get(id: string): Project | undefined;
   list(): Project[];
+  /** Take the record away for good (U21). Absent from the interface until deleting was a thing an operator could ask for. */
+  remove(id: string): void;
 }
 /** What the Engine can do with the streams of tasks that Tickets belong to. */
 interface WorkRepository {
@@ -784,6 +802,8 @@ interface WorkRepository {
   list(): Work[];
   /** The Works of one Project, oldest first; an absent `projectId` asks for the Works in no Project. */
   byProject(projectId: string | undefined): Work[];
+  /** Take the record away for good (U21). */
+  remove(id: string): void;
 }
 interface DecisionRepository {
   get(id: string): DecisionRecord | undefined;
@@ -1005,10 +1025,45 @@ declare class Engine {
    * belonged to is bookkeeping, not new authorization.
    */
   attachWork(ticketId: string, workId: string): Ticket;
-  /** Every Project, oldest first. */
-  projects(): Project[];
-  /** Every Work, or the Works of one Project when asked. */
-  works(projectId?: string): Work[];
+  /**
+   * Every Project, oldest first. Archived ones are left out unless asked for (U21): they are still real records with
+   * real history under them, they are just not part of what an operator is choosing from right now.
+   */
+  projects(includeArchived?: boolean): Project[];
+  /** Every Work, or the Works of one Project when asked. Archived ones are left out unless asked for (U21). */
+  works(projectId?: string, includeArchived?: boolean): Work[];
+  /**
+   * Archive and unarchive, and delete for good (U21).
+   *
+   * The two are different answers to different situations, which is why an operator gets both:
+   *
+   * - **Archive** is for a grouping that is finished or wrong-but-used. It leaves every list and every choice, keeps
+   *   its Works and their Tickets and their history exactly as they are, and can be undone. Nothing is lost.
+   * - **Delete** is for a grouping that should never have existed. The record goes away, and so does the link that
+   *   pointed at it — a deleted Work's Tickets keep living with no Work, a deleted Project's Works keep living with no
+   *   Project. **Deleting a grouping never reaches into the work itself**: a Ticket is a real thing that happened, and
+   *   each one whose assignment is taken away gets an `unclassified` event saying so, with the Work's id in the detail.
+   *   That is what keeps "delete it completely" and "nothing disappears silently" true at the same time.
+   *
+   * Both run inside one transaction, so a failure part-way through (a Ticket that will not save) leaves everything
+   * exactly as it was rather than half-deleted.
+   */
+  archiveProject(id: string): Project;
+  unarchiveProject(id: string): Project;
+  /** Delete a Project; its Works survive with no Project. Returns how many were detached, so the UI can say it. */
+  deleteProject(id: string): {
+    deleted: string;
+    detachedWorks: number;
+  };
+  archiveWork(id: string): Work;
+  unarchiveWork(id: string): Work;
+  /** Delete a Work; its Tickets survive with no Work, each with an `unclassified` event. */
+  deleteWork(id: string): {
+    deleted: string;
+    detachedTickets: number;
+  };
+  private requireProject;
+  private requireWork;
   /** A Work's Projects, or every Project when asked for none. */
   project(id: string): Project | undefined;
   /** One Work, when it exists. */
@@ -1316,6 +1371,7 @@ declare class Projects implements ProjectRepository {
   save(project: Project): void;
   get(id: string): Project | undefined;
   list(): Project[];
+  remove(id: string): void;
 }
 declare class Works implements WorkRepository {
   private readonly db;
@@ -1324,6 +1380,7 @@ declare class Works implements WorkRepository {
   get(id: string): Work | undefined;
   list(): Work[];
   byProject(projectId: string | undefined): Work[];
+  remove(id: string): void;
 }
 declare class Tickets implements TicketRepository {
   private readonly db;

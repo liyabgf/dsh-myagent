@@ -379,14 +379,28 @@ function table(host: HttpHost): readonly Route[] {
     }),
     // Project, Work and the edges between Tickets. These were Engine commands with no caller at all, which is the
     // difference between "tested" and "usable": nothing an operator could reach exercised them.
-    route('GET', 'projects', () => ({ projects: host.engine.projects() })),
+    // `?archived=1` includes the archived ones. Lists are for choosing, so they hide archived by default (U21);
+    // a detail view is for reading, so it never hides anything — see `projects/:id` below.
+    route('GET', 'projects', ({ query }) => ({ projects: host.engine.projects(query.get('archived') === '1') })),
     route('POST', 'projects', async ({ body }) => host.engine.createProject(BodySchemas.project.parse(await body()))),
     route('GET', 'projects/:id', ({ params }) => {
       const project = host.engine.project(params.id!)
       if (project === undefined) throw new RouteError(404, 'No Project has this id')
-      return { project, works: host.engine.works(project.id) }
+      // Archived Works are included here on purpose: opening a Project to read it must not look like losing data.
+      return { project, works: host.engine.works(project.id, true) }
     }),
-    route('GET', 'works', ({ query }) => ({ works: host.engine.works(query.get('project') ?? undefined) })),
+    route('GET', 'works', ({ query }) => ({
+      works: host.engine.works(query.get('project') ?? undefined, query.get('archived') === '1'),
+    })),
+    // Archive / unarchive / delete, for Projects and Works (U21). POST rather than DELETE: a delete here is a command
+    // with a result the caller has to read (how many Tickets lost their Work), and the route table's other commands
+    // — `decisions/:id/dismiss`, `tickets/:id/stop` — are POSTs for the same reason.
+    route('POST', 'projects/:id/archive', ({ params }) => host.engine.archiveProject(params.id!)),
+    route('POST', 'projects/:id/unarchive', ({ params }) => host.engine.unarchiveProject(params.id!)),
+    route('POST', 'projects/:id/delete', ({ params }) => host.engine.deleteProject(params.id!)),
+    route('POST', 'works/:id/archive', ({ params }) => host.engine.archiveWork(params.id!)),
+    route('POST', 'works/:id/unarchive', ({ params }) => host.engine.unarchiveWork(params.id!)),
+    route('POST', 'works/:id/delete', ({ params }) => host.engine.deleteWork(params.id!)),
     route('POST', 'works', async ({ body }) => host.engine.createWork(BodySchemas.work.parse(await body()))),
     route('GET', 'works/:id', ({ params }) => {
       const work = host.engine.work(params.id!)

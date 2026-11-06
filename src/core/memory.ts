@@ -47,6 +47,7 @@ class ProjectStore implements ProjectRepository {
   save(project: Project): void { this.records.set(project.id, project) }
   get(id: string): Project | undefined { return this.records.get(id) }
   list(): Project[] { return [...this.records.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) }
+  remove(id: string): void { this.records.delete(id) }
   snapshot(): Map<string, Project> { return new Map(this.records) }
   restore(snapshot: Map<string, Project>): void { this.records.clear(); for (const [id, record] of snapshot) this.records.set(id, record) }
 }
@@ -57,6 +58,7 @@ class WorkStore implements WorkRepository {
   get(id: string): Work | undefined { return this.records.get(id) }
   list(): Work[] { return [...this.records.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) }
   byProject(projectId: string | undefined): Work[] { return this.list().filter(work => work.projectId === projectId) }
+  remove(id: string): void { this.records.delete(id) }
   snapshot(): Map<string, Work> { return new Map(this.records) }
   restore(snapshot: Map<string, Work>): void { this.records.clear(); for (const [id, record] of snapshot) this.records.set(id, record) }
 }

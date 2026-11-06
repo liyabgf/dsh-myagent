@@ -86,6 +86,14 @@ export interface Project {
   readonly createdAt: string
   /** What this Project is for, in the operator's own words. */
   readonly note?: string
+  /**
+   * When this Project was archived, if it was (U21).
+   *
+   * Optional, so every record written before this field existed is still valid — and the sqlite store keeps the whole
+   * record as JSON in one column, so adding it needs no migration. An archived Project leaves the default lists and the
+   * "which Work does this belong to" choices while everything under it stays exactly as it was.
+   */
+  readonly archivedAt?: string
 }
 
 /**
@@ -104,6 +112,8 @@ export interface Work {
   /** What every Ticket in this Work is authorized to do, unless the Ticket's own scope narrows it. */
   readonly scope?: string
   readonly note?: string
+  /** When this Work was archived, if it was (U21). Same shape and same reason as `Project.archivedAt`. */
+  readonly archivedAt?: string
 }
 
 /**
@@ -130,6 +140,12 @@ export interface Dependency {
 export type TicketEventType =
   | 'created' | 'launched' | 'delivered' | 'delivery_failed' | 'report' | 'turn_ended' | 'input'
   | 'retried' | 'interrupted' | 'resumed' | 'stopped' | 'failed' | 'ended' | 'classified' | 'session_bound' | 'dependency'
+  /**
+   * A Ticket's Work assignment was taken away (U21: the Work was deleted). Its own type rather than a `classified`
+   * event with a null in it, because the event log is the operator's audit trail and "classified: nothing" reads like
+   * a bug. Nothing switches exhaustively over these types, so adding one cannot strand a case.
+   */
+  | 'unclassified'
   | 'rescued' | 'rule_stopped' | 'escalated' | 'reply_lost' | 'notice_lost'
 
 /**

@@ -380,6 +380,7 @@ class Projects implements ProjectRepository {
     return (this.db.prepare('SELECT record FROM projects ORDER BY createdAt').all() as { record: string }[])
       .map(row => read<Project>(row.record))
   }
+  remove(id: string): void { this.db.prepare('DELETE FROM projects WHERE id = ?').run(id) }
 }
 
 class Works implements WorkRepository {
@@ -402,6 +403,7 @@ class Works implements WorkRepository {
     return (this.db.prepare('SELECT record FROM works WHERE projectId IS ? ORDER BY createdAt').all(projectId ?? null) as { record: string }[])
       .map(row => read<Work>(row.record))
   }
+  remove(id: string): void { this.db.prepare('DELETE FROM works WHERE id = ?').run(id) }
 }
 
 class Tickets implements TicketRepository {

@@ -1034,7 +1034,9 @@
   /** Every Work, so a Ticket's 归属 is a name and the classify box has something to offer. Names are a courtesy. */
   const readWorks = async () => {
     try {
-      const body = await api('works')
+      // `?archived=1`：这个索引是给任务行**命名**用的，不是给人挑的。
+      // 读不是选——已归档的工作里仍然有任务，它们不该因为归属被归档就退化成"工作 9f3c…"。
+      const body = await api('works?archived=1')
       worksIndex = new Map((body.works || []).map(work => [work.id, work]))
     } catch { /* the id still identifies the Work; a failed lookup must not blank the list it labels */ }
   }
@@ -1284,11 +1286,17 @@
     // Filing is offered on ended Tickets too: putting last month's work into the Work it belonged to is bookkeeping,
     // not new authorization, and the Engine agrees. Not offered at all when the plugin cannot take the answer —
     // a button that can only fail is worse than no button, and the banner already says why.
+    // U21：已归档的工作不再作为**新的**归属提供——归档的意思就是"别再往这里放东西"。
+    // 但这张任务**当前就在**的那个必须留在选项里，否则下拉会静默丢掉它的现值，
+    // 看上去像"归属没了"，而实际上什么都没改。
     const choices = [...worksIndex.values()]
+      .filter(item => item.archivedAt === undefined || item.id === ticket.workId)
     if (backend !== false) {
       const workSelect = el('select', { id: 'd-work', style: 'width:auto' },
         el('option', { value: '' }, choices.length === 0 ? '还没有工作——先在「工作」页建一个' : '选择一个工作'),
-        ...choices.map(item => el('option', { value: item.id }, item.name)))
+        // 那一个"当前就在的已归档工作"要标出来，否则操作者分不清它和在用的那些有什么不同。
+        ...choices.map(item => el('option', { value: item.id },
+          item.archivedAt !== undefined ? `${item.name}（已归档）` : item.name)))
       workSelect.value = draft.work
       node.append(el('div', { class: 'row', style: 'margin-top:8px' },
         el('span', { class: 'muted' }, '归入工作'), workSelect,
@@ -1818,7 +1826,8 @@
     // One extra read buys the whole list its Work labels; a row that says "工作 9f3c…" is a row the operator cannot use.
     const [body, works] = await Promise.all([
       api(`tickets?state=${filterValue}&limit=80`),
-      backend === false ? { works: [] } : api('works').catch(() => ({ works: [] })),
+      // 同上：这一读也是为了整份列表的工作名，所以含已归档。
+      backend === false ? { works: [] } : api('works?archived=1').catch(() => ({ works: [] })),
     ])
     worksIndex = new Map((works.works || []).map(work => [work.id, work]))
     currentList = body.tickets
@@ -1836,6 +1845,79 @@
   let worksTab = { project: null, work: null }
   /** 进页时是否该替操作者选上唯一那一项（U20）。用完即清，所以它不会干涉之后的手动取消。 */
   let worksAutoSelect = false
+  /**
+   * 已归档的项目/工作要不要显示（U21）。默认不显示——列表是用来"选"的，不是用来翻旧账的；
+   * 但必须能显示出来，否则归档就成了单向门，操作者再也没法把它拿回来。
+   */
+  let worksShowArchived = false
+  /**
+   * 哪一条正在等第二步确认：删除不可逆，一次点击不够。
+   * 名字带 Record 是因为 `confirmDelete` 已经被任务详情里"删依赖边"的两步确认占用了——
+   * 两个不同的确认状态共用一个变量，会让确认 A 时把 B 的确认也带出来（写盘前的语法检查抓到的）。
+   */
+  let confirmDeleteRecord = null
+
+  /** 归档/取消归档。写的是那一条记录自己的 `archivedAt`，它名下的东西一样都不动。 */
+  const archiveRecord = async (kind, id, archive) => {
+    try { await post(`${kind}s/${encodeURIComponent(id)}/${archive ? 'archive' : 'unarchive'}`, {}) }
+    catch (error) { return toast(error.message) }
+    toast(archive
+      ? '已归档：它不再出现在列表与「归入工作」的选择里，底下的东西原样保留，随时可以取消归档'
+      : '已取消归档：它回到列表里了')
+    await loadWorksTab()
+  }
+
+  /**
+   * 完全删除。记录本身消失，**它名下的东西不消失**：工作的任务变成"没有归属"，项目的工作变成"不属于任何项目"，
+   * 每张被解除归属的任务在自己的历史里留一条 `unclassified`。这是"完全删除"与"没有东西静默消失"能同时成立的唯一办法。
+   */
+  const deleteRecord = async (kind, id) => {
+    let result
+    try { result = await post(`${kind}s/${encodeURIComponent(id)}/delete`, {}) }
+    catch (error) { return toast(error.message) }
+    confirmDeleteRecord = null
+    // 选中态也要清掉：刚删掉的东西不能再是"当前选中"，否则详情区会去读一个已经不存在的 id。
+    if (worksTab.project === id) worksTab = { project: null, work: null }
+    else if (worksTab.work === id) worksTab = { project: worksTab.project, work: null }
+    const detached = kind === 'work' ? (result.detachedTickets ?? 0) : (result.detachedWorks ?? 0)
+    const word = kind === 'work' ? '张任务' : '条工作'
+    toast(detached > 0
+      ? `已删除。${detached} ${word}失去了这个归属——它们本身与它们的历史都还在。`
+      : '已删除。它名下没有东西。')
+    await loadWorksTab()
+  }
+
+  /**
+   * 归档 / 取消归档 / 删除 三个按钮（项目与工作共用一套，因为语义完全一样）。
+   *
+   * 删除是两步：第一步说清后果**并带上数字**——"它名下 3 张任务会失去归属"比"确定吗？"有用得多，
+   * 因为操作者要判断的正是那个数字是不是 0。
+   */
+  const lifecycleButtons = (kind, record, childCount, childWord) => {
+    const id = record.id
+    const archived = record.archivedAt !== undefined
+    return el('div', { class: 'row', style: 'margin-top:12px;gap:6px;flex-wrap:wrap' },
+      el('button', { class: 'btn small', onclick: () => void archiveRecord(kind, id, !archived) },
+        archived ? '取消归档' : '归档'),
+      archived ? el('span', { class: 'muted', style: 'font-size:12px' }, `归档于 ${when(record.archivedAt)}`) : null,
+      confirmDeleteRecord === id
+        ? el('span', { class: 'row', style: 'gap:6px;flex-wrap:wrap' },
+          el('span', { class: 'warn', style: 'font-size:12px' },
+            `确认删除？${childCount > 0 ? `它名下 ${childCount} ${childWord}会失去这个归属（它们本身与历史都保留）` : '它名下没有东西'}；这条记录会消失，不可撤销。`),
+          el('button', { class: 'btn small danger', onclick: () => void deleteRecord(kind, id) }, '确认删除'),
+          el('button', { class: 'btn small', onclick: () => { confirmDeleteRecord = null; void loadWorksTab() } }, '取消'))
+        : el('button', {
+          class: 'btn small danger', style: 'margin-left:auto',
+          onclick: () => { confirmDeleteRecord = id; void loadWorksTab() },
+        }, '删除'))
+  }
+
+  /** 「显示已归档（N）」开关：作为列表最后一项画出来，这样它就在它管的那个列表下面。 */
+  const archivedToggle = count => el('li', { style: 'cursor:default' },
+    el('div', { class: 'row', style: 'padding:4px 0' },
+      el('button', {
+        class: 'btn small', onclick: () => { worksShowArchived = !worksShowArchived; void loadWorksTab() },
+      }, worksShowArchived ? '隐藏已归档' : `显示已归档（${count}）`)))
 
   const projectRow = project => el('li', {
     'aria-current': worksTab.project === project.id ? 'true' : 'false',
@@ -1845,7 +1927,9 @@
       void loadWorksTab()
     },
   },
-  el('div', { class: 'row' }, el('span', { class: 'title' }, project.name)),
+  el('div', { class: 'row' }, el('span', { class: 'title' }, project.name),
+    // 已归档也要能被认出来：它出现在列表里只因为操作者要求看已归档的，不能让它看起来和在用的一样。
+    project.archivedAt !== undefined ? el('span', { class: 'chip', style: 'margin-left:6px' }, '已归档') : null),
   el('div', { class: 'meta' },
     el('span', { title: when(project.createdAt) }, ago(project.createdAt)),
     project.note ? el('span', {}, project.note) : null))
@@ -1854,7 +1938,8 @@
     'aria-current': worksTab.work === work.id ? 'true' : 'false',
     onclick: () => { worksTab.work = work.id; void loadWorksTab() },
   },
-  el('div', { class: 'row' }, el('span', { class: 'title' }, work.name)),
+  el('div', { class: 'row' }, el('span', { class: 'title' }, work.name),
+    work.archivedAt !== undefined ? el('span', { class: 'chip', style: 'margin-left:6px' }, '已归档') : null),
   el('div', { class: 'meta' },
     work.projectId ? el('span', {}, (projectsIndex.get(work.projectId) || {}).name || work.projectId) : null,
     el('span', { title: when(work.createdAt) }, ago(work.createdAt)),
@@ -1865,7 +1950,7 @@
     const list = el('ul', { class: 'list' })
     if (tickets.length === 0) {
       list.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
-        '这个工作还没有 Ticket。去「派活」派一个，或在 Ticket 详情页把它「归入工作」。')))
+        '这个工作还没有任务。去「派活」派一个，或在任务详情页把它「归入工作」。')))
       return list
     }
     const ordered = [...tickets].sort((first, second) => (first.workSeq ?? 0) - (second.workSeq ?? 0))
@@ -1882,25 +1967,35 @@
     return list
   }
 
-  const renderProjects = projects => {
+  const renderProjects = (projects, archivedCount = 0) => {
     const node = $('projects'); node.replaceChildren()
     if (projects.length === 0) {
-      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
-        '还没有项目。点下面的「新建项目」给它起个名字，把同类的工作归到一起。')))
+      // U21：空态**也要**把开关画出来。原先开关追加在空态的 return 之后，于是"全部归档"这一种情况下
+      // 页面上没有任何办法把它们拿回来——归档在最需要撤销的时候变成了单向门。
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, archivedCount > 0
+        ? `没有在用的项目。已归档的有 ${archivedCount} 个：用下面的开关把它们显示出来，可以取消归档。`
+        : '还没有项目。点下面的「新建项目」给它起个名字，把同类的工作归到一起。')))
+      if (archivedCount > 0 || worksShowArchived) node.append(archivedToggle(archivedCount))
       return
     }
     node.append(...projects.map(projectRow))
+    if (archivedCount > 0 || worksShowArchived) node.append(archivedToggle(archivedCount))
   }
 
-  const renderWorks = works => {
+  const renderWorks = (works, archivedCount = 0) => {
     const node = $('works'); node.replaceChildren()
     if (works.length === 0) {
-      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, worksTab.project === null
-        ? '还没有工作。点下面的「新建工作」建一个，再把任务归进去：它们按归入的先后在这里排队。'
-        : '这个项目下还没有工作。点下面的「新建工作」给它建一个。')))
+      // 同上：空态也要给开关，理由一样。
+      node.append(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' }, archivedCount > 0
+        ? `没有在用的工作。已归档的有 ${archivedCount} 条：用下面的开关把它们显示出来，可以取消归档。`
+        : worksTab.project === null
+          ? '还没有工作。点下面的「新建工作」建一个，再把任务归进去：它们按归入的先后在这里排队。'
+          : '这个项目下还没有工作。点下面的「新建工作」给它建一个。')))
+      if (archivedCount > 0 || worksShowArchived) node.append(archivedToggle(archivedCount))
       return
     }
     node.append(...works.map(workRow))
+    if (archivedCount > 0 || worksShowArchived) node.append(archivedToggle(archivedCount))
   }
 
   const renderWorkDetail = body => {
@@ -1909,7 +2004,7 @@
       ['工作', work.id],
       ['项目', work.projectId ? ((projectsIndex.get(work.projectId) || {}).name || work.projectId) : '不属于任何项目'],
       ['创建', when(work.createdAt)],
-      ['Ticket', `${tickets.length} 张，按归入的先后排`],
+      ['任务', `${tickets.length} 张，按归入的先后排`],   // U17 漏网：这是渲染出来的行标签，不是静态 markup
     ]
     $('work-detail').replaceChildren(
       el('div', { class: 'row' },
@@ -1919,11 +2014,12 @@
         }, '← 看它的项目') : null),
       el('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, String(v))])),
       el('h2', { style: 'margin-top:14px' }, '范围'),
-      work.scope ? el('pre', {}, work.scope) : el('p', { class: 'muted' }, '没有写范围：这条流水里的 Ticket 各自用自己的范围。'),
+      work.scope ? el('pre', {}, work.scope) : el('p', { class: 'muted' }, '没有写范围：这条流水里的任务各自用自己的范围。'),
       el('h2', { style: 'margin-top:14px' }, '备注'),
       work.note ? el('pre', {}, work.note) : el('p', { class: 'muted' }, '没有备注。'),
-      el('h2', { style: 'margin-top:14px' }, `Ticket（${tickets.length}）`),
-      ticketRows(tickets))
+      el('h2', { style: 'margin-top:14px' }, `任务（${tickets.length}）`),
+      ticketRows(tickets),
+      lifecycleButtons('work', work, tickets.length, '张任务'))
   }
 
   const renderProjectDetail = body => {
@@ -1939,8 +2035,10 @@
       project.note ? el('pre', {}, project.note) : el('p', { class: 'muted' }, '没有备注。'),
       el('h2', { style: 'margin-top:14px' }, `工作（${works.length}）`),
       works.length === 0
-        ? el('p', { class: 'muted' }, '这个项目下还没有工作。用左边的表单建一个，项目已经选好了。')
-        : el('ul', { class: 'list' }, ...works.map(workRow)))
+        ? el('p', { class: 'muted' }, '这个项目下还没有工作。点下面的「新建工作」建一个，项目已经选好了。')
+        : el('ul', { class: 'list' }, ...works.map(workRow)),
+      // U21：归档与删除。放在详情区而不是列表行上——列表是用来选的，对一条记录动手是另一件事。
+      lifecycleButtons('project', project, works.length, '条工作'))
   }
 
   const loadWorksTab = async () => {
@@ -1956,13 +2054,24 @@
     $('works-hint').textContent = worksTab.project === null ? '' : '只看这个项目里的工作；点项目那行可以退回全部。'
     $('works-hint').classList.toggle('hidden', worksTab.project === null)
     try {
-      const asks = [api('projects'), api('works')]
-      if (worksTab.project !== null) asks.push(api(`works?project=${encodeURIComponent(worksTab.project)}`))
-      const [projects, all, filtered] = await Promise.all(asks)
+      // U21：一次把已归档的也取回来（`?archived=1`），显示与计数都在客户端按开关过滤。
+      // 这样"显示已归档"不必再发一次请求，而且开关标签上的数字是真实的。
+      const asks = [api('projects?archived=1'), api('works?archived=1')]
+      if (worksTab.project !== null) {
+        asks.push(api(`works?project=${encodeURIComponent(worksTab.project)}&archived=1`))
+      }
+      const [projectsAll, allAll, filteredAll] = await Promise.all(asks)
+      const live = list => (list || []).filter(item => item.archivedAt === undefined)
+      const shown = list => (worksShowArchived ? (list || []) : live(list))
+      const projects = { projects: shown(projectsAll.projects) }
+      const all = { works: allAll.works }            // 索引要含已归档：任务可能还指着它们，名字得能解析出来
+      const filtered = filteredAll === undefined ? undefined : { works: shown(filteredAll.works) }
+      const archivedProjects = (projectsAll.projects || []).length - live(projectsAll.projects).length
+      const archivedWorks = (allAll.works || []).length - live(allAll.works).length
       worksIndex = new Map((all.works || []).map(work => [work.id, work]))
       projectsIndex = new Map((projects.projects || []).map(project => [project.id, project]))
-      renderProjects(projects.projects || [])
-      renderWorks(filtered === undefined ? all.works || [] : filtered.works || [])
+      renderProjects(projects.projects || [], archivedProjects)
+      renderWorks(filtered === undefined ? shown(all.works) : filtered.works || [], archivedWorks)
       // The Project choices are re-read with the list, and the operator's pick survives that.
       const select = $('wk-project')
       const picked = select.value
