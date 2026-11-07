@@ -9,7 +9,7 @@
  * a kind that only ever produces), and the two refusal CODES need the thrown error object, which the queue hands only
  * to its own give-up hook.
  */
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, utimesSync, writeFileSync, symlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { OutcomeDelivery, sendKey, UNDELIVERED_FILE } from '../src/app/delivery.ts'
@@ -237,9 +237,12 @@ describe('a reply that goes out', () => {
       expect(context.runtime.store.effectCounts()).toEqual({})
       const replies = readdirSync(join(context.channel, 'out')).map(name =>
         readFileSync(join(context.channel, 'out', name), 'utf8')).sort()
+      // 【产品变更】旧断言：
+      //   expect(replies).toEqual(['---\nthread: t-9\n---\na different sentence', '---\nthread: t-9\n---\nthe same sentence'])
+      // 改动理由：出站信封新增 `ticket: <ticketId>` 头，供统一路由网关记录平台消息 ID 到 Ticket 的映射以实现引用回复续接。
       expect(replies).toEqual([
-        '---\nthread: t-9\n---\na different sentence',
-        '---\nthread: t-9\n---\nthe same sentence',
+        `---\nthread: t-9\nticket: ${ticket.id}\n---\na different sentence`,
+        `---\nthread: t-9\nticket: ${ticket.id}\n---\nthe same sentence`,
       ])
     } finally { await context.runtime.stop() }
   })
@@ -465,6 +468,39 @@ describe('the front desk writing back to whoever asked (S3a)', () => {
     try {
       const outcome = runtime(context).replyToRequester('nosuchticket', '有人吗')
       expect(outcome).toEqual({ sent: false, reason: 'There is no Ticket nosuchticket.' })
+    } finally { await context.runtime.stop() }
+  })
+})
+
+describe('outbound file delivery on a ready report (Pkg 2)', () => {
+  it('attaches verified files inside the Ticket directory to the outbound envelope, and refuses symbolic links', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      const dir = ticket.execution!.directory
+      mkdirSync(dir, { recursive: true })
+      const validFile = join(dir, 'summary.csv')
+      writeFileSync(validFile, 'company,round\nDeepSeek,A\n', 'utf8')
+      const outside = join(context.stateDir, 'secret-outside.txt')
+      writeFileSync(outside, 'do-not-leak', 'utf8')
+      symlinkSync(outside, join(dir, 'leaked.txt'))
+
+      context.runtime.delivery.report(ticket, {
+        state: 'ready',
+        summary: '研究完成，数据见附件。',
+        files: ['summary.csv', 'leaked.txt', '../secret-outside.txt'],
+        at: '2026-11-07T10:00:00.000Z',
+      })
+      await settle(context.runtime)
+
+      const out = readdirSync(join(context.channel, 'out')).filter(name => name.endsWith('.md'))
+      expect(out).toHaveLength(1)
+      const envelope = readFileSync(join(context.channel, 'out', out[0]!), 'utf8')
+      const head = envelope.slice(0, envelope.indexOf('\n---\n', 4))
+      expect(head).toContain(`ticket: ${ticket.id}`)
+      expect(head).toContain(`files: ${validFile}`)
+      expect(head).not.toContain('leaked.txt')
+      expect(head).not.toContain('secret-outside.txt')
     } finally { await context.runtime.stop() }
   })
 })

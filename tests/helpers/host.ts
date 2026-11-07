@@ -58,7 +58,7 @@ export interface RegisteredTool {
  */
 export interface RecordedGuard {
   readonly agentId: string
-  readonly guard: () => string | undefined
+  readonly guard: (execution?: { readonly name?: string; readonly arguments?: unknown }) => string | undefined
 }
 
 /** What a stub agent records, which is what a test asserts on. */
@@ -77,7 +77,7 @@ export interface AgentRecord {
     tools: {
       register(definition: RegisteredTool['definition']): () => void
       restrict(filter: { allow?: readonly string[] }): () => void
-      guard(guard: () => string | undefined): () => void
+      guard(guard: (execution?: { readonly name?: string; readonly arguments?: unknown }) => string | undefined): () => void
       get(name: string, scope?: unknown): unknown
     }
   }
@@ -176,7 +176,7 @@ export function fakeAgent(id: string, tools: RegisteredTool[], restrictions: { a
           return () => {}
         },
         // Recorded, so a test can ask what a Session is told once its authorization is over.
-        guard: (deny: () => string | undefined) => { guards.push({ agentId: id, guard: deny }); return () => {} },
+        guard: (deny: (execution?: { readonly name?: string; readonly arguments?: unknown }) => string | undefined) => { guards.push({ agentId: id, guard: deny }); return () => {} },
         get: () => ({}),
       },
     },
@@ -229,7 +229,7 @@ export interface StubHost {
    * The guard now registered on `agentId` — the last one, because a rebind registers a second and releases the first.
    * Its answer is what a Session is told when it calls a tool with no live Ticket behind it.
    */
-  guardOf(agentId: string): (() => string | undefined) | undefined
+  guardOf(agentId: string): ((execution?: { readonly name?: string; readonly arguments?: unknown }) => string | undefined) | undefined
   /**
    * The tool names myagent registered on one Session, in registration order.
    *

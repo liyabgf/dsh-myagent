@@ -60,6 +60,7 @@ export async function writeMessage(message) {
     ...(message.id === undefined ? {} : { id: message.id }),
     ...(message.thread === undefined ? {} : { thread: message.thread }),
     ...(message.title === undefined ? {} : { title: message.title }),
+    ...(message.replyToTicket === undefined || message.replyToTicket === '' ? {} : { 'reply-to-ticket': message.replyToTicket }),
   }, message.body)
   const target = join(message.directory, name)
   const temporary = join(message.directory, `.tmp-${process.pid}-${randomBytes(4).toString('hex')}`)

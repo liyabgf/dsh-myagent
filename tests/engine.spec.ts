@@ -1187,3 +1187,35 @@ describe('deleting a Ticket, at the Engine level (S4)', () => {
     expect(memory.decisions.list().some(row => row.triggerId === triggerId)).toBe(true)
   })
 })
+
+describe('stopping queued Tickets and advancing waiting state on answer (Pkg 3)', () => {
+  it('sets attention when turnEnded synthesizes a waiting report, and advances the report to progress when answered', () => {
+    const { engine, memory } = harness()
+    const made = engine.receive(trigger())
+    const id = made.ticketId!
+    const assignmentId = memory.tickets.get(id)!.assignments[0]!.id
+    engine.inputsDelivered(id, assignmentId, [])
+
+    engine.turnEnded(id, assignmentId, '已完成第一阶段，等待确认')
+    const waitingTicket = memory.tickets.get(id)!
+    expect(waitingTicket.attention).toBeUndefined()
+    expect(waitingTicket.assignments[0]!.report?.state).toBe('waiting')
+
+    const answered = engine.answer(id, '按照你的理解继续推进')
+    expect(answered.assignments[0]!.report?.state).toBe('progress')
+  })
+
+  it('closes a pending Assignment when a queued Ticket is stopped before it ever started', () => {
+    const { engine, memory, executor } = harness()
+    // Simulate a queued launch that has not started its Assignment yet
+    executor.engine = undefined
+    const made = engine.receive(trigger({ id: 'trigger-queued-stop' }))
+    const id = made.ticketId!
+    expect(memory.tickets.get(id)!.assignments[0]!.state).toBe('pending')
+
+    const stopped = engine.stopTicket(id, '取消排队中的重复任务')
+    expect(stopped.ended).toMatchObject({ outcome: 'stopped', reason: '取消排队中的重复任务' })
+    expect(stopped.assignments[0]!.state).toBe('ended')
+    expect(stopped.assignments[0]!.endedReason).toBe('stopped')
+  })
+})

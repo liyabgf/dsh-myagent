@@ -6,8 +6,8 @@
  * a worker's directory is whatever a model decided to create — it may hold a dependency tree, a cache, or a very large
  * file, and the panel asks for this on a timer.
  */
-import { readdir, readFile, stat } from 'node:fs/promises'
-import { extname, join, relative, resolve, sep } from 'node:path'
+import { lstat, readdir, readFile, realpath } from 'node:fs/promises'
+import { dirname, extname, join, relative, resolve, sep } from 'node:path'
 
 /** Directories that are never what the operator is looking for: dependencies and caches a worker may have made. */
 const SKIP = new Set(['node_modules', '.git', '__pycache__', '.venv', 'venv', '.mypy_cache', '.pytest_cache', '.ruff_cache'])
@@ -56,6 +56,47 @@ export function resolveInside(root: string, requested: string): string | undefin
   return absolute === base || absolute.startsWith(base + sep) ? absolute : undefined
 }
 
+/**
+ * Resolve a path inside `root` and verify its physical location on disk:
+ * - lexical traversal (`../`) is refused;
+ * - symbolic links at the leaf or anywhere along the path inside `root` are refused;
+ * - the canonical `realpath` of the target must lie strictly inside `realpath(root)`.
+ *
+ * This closes the cross-Ticket symlink escape where a worker creates `ln -s ../other-ticket/raw raw` inside its own
+ * directory and a file route or artifact reader follows it into another Ticket's workspace.
+ */
+export async function resolveRealInside(root: string, requested: string): Promise<string | undefined> {
+  const lexical = resolveInside(root, requested)
+  if (lexical === undefined) return undefined
+  let realRoot: string
+  try {
+    realRoot = await realpath(root)
+  } catch {
+    return undefined
+  }
+  const rel = relative(resolve(root), lexical)
+  if (rel === '') return realRoot
+  const parts = rel.split(sep)
+  let current = resolve(root)
+  for (const part of parts) {
+    current = join(current, part)
+    let info
+    try {
+      info = await lstat(current)
+    } catch {
+      return undefined
+    }
+    if (info.isSymbolicLink()) return undefined
+  }
+  let realTarget: string
+  try {
+    realTarget = await realpath(lexical)
+  } catch {
+    return undefined
+  }
+  return realTarget === realRoot || realTarget.startsWith(realRoot + sep) ? lexical : undefined
+}
+
 /** List a Ticket's directory, sorted by path, bounded by {@link MAX_ENTRIES} and {@link MAX_DEPTH}. */
 export async function listFiles(root: string): Promise<FileListing> {
   const files: FileEntry[] = []
@@ -70,14 +111,18 @@ export async function listFiles(root: string): Promise<FileListing> {
       if (SKIP.has(entry.name) || entry.name === '.DS_Store') continue
       const absolute = join(directory, entry.name)
       const path = relative(root, absolute)
-      if (entry.isDirectory()) {
+      // Never list or traverse a symbolic link: a link pointing at a sibling Ticket's directory would make this
+      // Ticket's listing (and S4's deletion consequence preview) count another Ticket's files as its own.
+      if (entry.isSymbolicLink()) continue
+      let info
+      try { info = await lstat(absolute) } catch { continue }
+      if (info.isSymbolicLink()) continue
+      if (info.isDirectory()) {
         files.push({ path, directory: true, size: 0, text: false })
         await walk(absolute, depth + 1)
         continue
       }
-      if (!entry.isFile()) continue
-      let info
-      try { info = await stat(absolute) } catch { continue }
+      if (!info.isFile()) continue
       files.push({
         path, directory: false, size: info.size, text: isTextFile(entry.name, info.size),
         mtime: new Date(info.mtimeMs).toISOString(),
@@ -90,7 +135,8 @@ export async function listFiles(root: string): Promise<FileListing> {
 
 /** One file's bytes as base64, which the panel turns into text or a download. */
 export async function readForPanel(absolute: string): Promise<{ base64: string; size: number; mtime: string }> {
-  const info = await stat(absolute)
+  const info = await lstat(absolute)
+  if (info.isSymbolicLink()) throw new Error(`Refused to read symbolic link: ${absolute}`)
   const bytes = await readFile(absolute)
   return { base64: bytes.toString('base64'), size: info.size, mtime: new Date(info.mtimeMs).toISOString() }
 }

@@ -1331,6 +1331,8 @@ declare class Engine {
   triggerLost(lost: LostTrigger): boolean;
   /** One Ticket when it exists, for a caller that must not make a missing one an error. */
   ticket(id: string): Ticket | undefined;
+  /** Open Tickets, oldest first. */
+  open(): Ticket[];
   /**
    * Record that the Watchdog rescued a Ticket, which is also how it counts its own rescues.
    *
@@ -1929,9 +1931,13 @@ interface SourceKind {
  * 3. A throw from `deliver` is recorded against that effect, retried with backoff, and reported on the health board; it
  *    does not touch the Ticket's own state and does not take another Source down with it.
  */
+interface DeliverOptions {
+  readonly ticketId?: string;
+  readonly files?: readonly string[];
+}
 interface TwoWaySource extends Source {
   /** Deliver a message back to the platform. Called by the effects queue, so it may be retried. */
-  deliver(replyTo: ReplyTo, text: string): Promise<void>;
+  deliver(replyTo: ReplyTo, text: string, options?: DeliverOptions): Promise<void>;
 }
 declare const name = "myagent";
 /** The services this plugin reads: agents and their Sessions, the tools and prompt registries, the web server, subprocesses. */
@@ -1945,4 +1951,4 @@ declare const inject: string[];
  * on demand instead, from the panel or from the first Ticket somebody opens in it.
  */
 declare function apply(ctx: Context, config: DeploymentConfig): Promise<void>;
-export { Actor, Artifact, ArtifactRepository, Assignment, AssignmentState, Attachment, Attention, Config, CronSpec, Cursor, Decision, DecisionOutcome, DecisionRecord, DecisionRepository, Delivery, Dependency, DependencyRepository, type DeploymentConfig, Disposition, DomainEvent, Engine, EngineOptions, EventRepository, Execution, Executor, GATE_REASONS, GateReason, GateVerdict, InputBy, LostTrigger, type Machine, Mandate, MandateVia, Memory, Policy, PolicyEffect, Project, ProjectRepository, ReceiveResult, ReplyTo, Report, ReportState, Repositories, Schedule, ScheduleSchema, Settings, SettingsSchema, Source, SourceHost, SourceKind, SourceKindName, SourceStatus, Strength, Ticket, TicketEnded, TicketEvent, TicketEventType, TicketInput, TicketNote, TicketOutcome, TicketRepository, TicketResult, TicketStage, Timing, Transaction, Trigger, TriggerRecord, TriggerRepository, TwoWaySource, USER_ERRORS, UserError, UserErrorCode, Work, WorkRepository, ZoneParts, apply, artifactPath, attachmentsOf, canRetry, describeTiming, gate, inject, key, knownTimeZone, latestAssignment, latestReport, liveTicket, localToUtc, localZone, lostTriggerOf, name, nextCron, nextRun, packageFile, parseCron, parseSettings, parseTime, payloadText, policyEffects, policyVersion, promptFile, released, runningAssignment, settingsPolicy, slug, sourcePolicy, ticketIdOf, ticketStage, undelivered, waitsForPerson, zoneParts };
+export { Actor, Artifact, ArtifactRepository, Assignment, AssignmentState, Attachment, Attention, Config, CronSpec, Cursor, Decision, DecisionOutcome, DecisionRecord, DecisionRepository, DeliverOptions, Delivery, Dependency, DependencyRepository, type DeploymentConfig, Disposition, DomainEvent, Engine, EngineOptions, EventRepository, Execution, Executor, GATE_REASONS, GateReason, GateVerdict, InputBy, LostTrigger, type Machine, Mandate, MandateVia, Memory, Policy, PolicyEffect, Project, ProjectRepository, ReceiveResult, ReplyTo, Report, ReportState, Repositories, Schedule, ScheduleSchema, Settings, SettingsSchema, Source, SourceHost, SourceKind, SourceKindName, SourceStatus, Strength, Ticket, TicketEnded, TicketEvent, TicketEventType, TicketInput, TicketNote, TicketOutcome, TicketRepository, TicketResult, TicketStage, Timing, Transaction, Trigger, TriggerRecord, TriggerRepository, TwoWaySource, USER_ERRORS, UserError, UserErrorCode, Work, WorkRepository, ZoneParts, apply, artifactPath, attachmentsOf, canRetry, describeTiming, gate, inject, key, knownTimeZone, latestAssignment, latestReport, liveTicket, localToUtc, localZone, lostTriggerOf, name, nextCron, nextRun, packageFile, parseCron, parseSettings, parseTime, payloadText, policyEffects, policyVersion, promptFile, released, runningAssignment, settingsPolicy, slug, sourcePolicy, ticketIdOf, ticketStage, undelivered, waitsForPerson, zoneParts };

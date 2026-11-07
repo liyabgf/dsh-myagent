@@ -4,10 +4,10 @@
  * Two things have to hold: an operator can see and take what a run produced without opening a terminal, and a route
  * that serves files cannot be talked into serving one outside the Ticket's directory.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { isTextFile, listFiles, MAX_FILE_BYTES, readForPanel, resolveInside } from '../src/app/files.ts'
+import { isTextFile, listFiles, MAX_FILE_BYTES, readForPanel, resolveInside, resolveRealInside } from '../src/app/files.ts'
 import { api, deployment, type Deployment } from './helpers/deployment.ts'
 import { wait } from './helpers/host.ts'
 import { tempDir } from './helpers/temp.ts'
@@ -75,6 +75,20 @@ describe('listing a directory', () => {
     expect(listing).toMatchObject({ files: [], count: 0, truncated: false })
   })
 
+  it('skips symbolic links to files and directories so a worker symlink never counts sibling assets as its own', async () => {
+    const root = sample()
+    const outside = tempDir('myagent-outside-sym-')
+    writeFileSync(join(outside, 'stolen.txt'), 'secret', 'utf8')
+    symlinkSync(outside, join(root, 'raw-link'))
+    symlinkSync(join(outside, 'stolen.txt'), join(root, 'file-link.txt'))
+    const listing = await listFiles(root)
+    const paths = listing.files.map(file => file.path)
+    expect(paths).not.toContain('raw-link')
+    expect(paths).not.toContain('raw-link/stolen.txt')
+    expect(paths).not.toContain('file-link.txt')
+    expect(listing.count).toBe(4)
+  })
+
   it('lists a directory that is gone as empty, rather than throwing at the panel', async () => {
     const listing = await listFiles(join(tempDir('myagent-gone-'), 'nope'))
     expect(listing).toMatchObject({ files: [], count: 0 })
@@ -90,6 +104,18 @@ describe('which paths may be served', () => {
     for (const escape of ['../secret.txt', 'charts/../../secret.txt', '/etc/passwd', '..']) {
       expect(resolveInside(root, escape), escape).toBeUndefined()
     }
+  })
+
+  it('refuses symbolic links and paths that physically resolve outside root via resolveRealInside and readForPanel', async () => {
+    const root = sample()
+    const outside = tempDir('myagent-outside-real-')
+    writeFileSync(join(outside, 'secret.txt'), 'outside-secret', 'utf8')
+    symlinkSync(outside, join(root, 'linked-dir'))
+    symlinkSync(join(outside, 'secret.txt'), join(root, 'linked-file.txt'))
+    expect(await resolveRealInside(root, 'RESULT.md')).toBe(join(root, 'RESULT.md'))
+    expect(await resolveRealInside(root, 'linked-file.txt')).toBeUndefined()
+    expect(await resolveRealInside(root, 'linked-dir/secret.txt')).toBeUndefined()
+    await expect(readForPanel(join(root, 'linked-file.txt'))).rejects.toThrow(/symbolic link/)
   })
 
   it('tells a text file from a binary one by name and size', () => {
@@ -160,6 +186,25 @@ describe('the panel\'s file routes', () => {
         expect(response.status, escape).toBe(400)
         expect(response.json.error).toContain('outside')
       }
+    } finally { await context.runtime.stop() }
+  })
+
+  it('refuses to serve a symbolic link or a file inside a symlinked subdirectory over HTTP', async () => {
+    const context = await deployment('auto')
+    try {
+      const { id, directory } = await ticketWithFiles(context)
+      const outside = tempDir('myagent-http-sym-')
+      writeFileSync(join(outside, 'secret.md'), '# stolen', 'utf8')
+      symlinkSync(outside, join(directory, 'raw'))
+      symlinkSync(join(outside, 'secret.md'), join(directory, 'direct-link.md'))
+
+      const res1 = await context.host.request(api(`tickets/${id}/file?path=direct-link.md`))
+      expect(res1.status).toBe(400)
+      expect(res1.json.error).toContain('outside')
+
+      const res2 = await context.host.request(api(`tickets/${id}/file?path=${encodeURIComponent('raw/secret.md')}`))
+      expect(res2.status).toBe(400)
+      expect(res2.json.error).toContain('outside')
     } finally { await context.runtime.stop() }
   })
 

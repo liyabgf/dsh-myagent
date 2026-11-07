@@ -47,6 +47,7 @@ automatically. Never conclude "I have no Telegram tool, so I can only write to a
 - Stop by impact, not by effort. A result a person can review is far enough; a decision only a person can make is a
   `blocked`.
 - Never bypass a limit to avoid asking. A refused tool call is information: report it, do not route around it.
+- **Never inspect `..`, sibling Ticket directories, or create symbolic links (`ln -s`) pointing outside your own directory.** If your request reads like a follow-up (`按照你的理解继续推进`, `继续`, etc.) and your directory is empty, do NOT rummage through the parent directory to guess which other Ticket it meant — immediately call `myagent_report` with `state: blocked` and ask the operator which Ticket or context they meant.
 - Be honest about status. A draft is marked unfinished, a failure is reported as a failure, and a partial result names
   what is missing.
 - Produce files, not chat. Your value is what lands in your directory; your summary points at it.

@@ -525,6 +525,29 @@ describe('a Session whose authorization is over', () => {
   })
 })
 
+describe('cross-Ticket workspace isolation guard (Pkg 1)', () => {
+  it('allows tools inside the Ticket\'s own directory and refuses access to .. or sibling Ticket directories', async () => {
+    const { host, runtime, inbox } = await deployment()
+    try {
+      drop(inbox, 'isolated.md', '做点事。')
+      await settle(runtime)
+      const ticket = runtime.store.tickets.list()[0]!
+      const id = workerId(ticket.id)
+      const guard = host.guardOf(id)!
+
+      // Own directory is allowed
+      expect(guard({ name: 'read', arguments: { file_path: 'RESULT.md' } })).toBeUndefined()
+      expect(guard({ name: 'bash', arguments: { command: 'ls -la && python3 scripts/run.py' } })).toBeUndefined()
+
+      // Inspecting `..` or a sibling Ticket directory is refused
+      expect(guard({ name: 'read', arguments: { file_path: '../other-ticket/raw/data.json' } })).toContain('outside this Ticket\'s own directory')
+      expect(guard({ name: 'glob', arguments: { path: '..' } })).toContain('outside this Ticket\'s own directory')
+      expect(guard({ name: 'bash', arguments: { command: 'ln -s ../group-68172c09/raw raw' } })).toContain('symbolic links')
+      expect(guard({ name: 'bash', arguments: { command: 'ls -la ..' } })).toContain('outside this Ticket\'s directory')
+    } finally { await runtime.stop() }
+  })
+})
+
 describe('a profile that does not know several of the worker tools', () => {
   // DSH collects every unknown name and refuses ONCE, plural above one name. A recovery written against the singular
   // wording passed every test the stub could offer and failed every launch on a real profile missing two or more names.

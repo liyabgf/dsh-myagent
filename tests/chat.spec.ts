@@ -30,7 +30,10 @@ class RecordingExecutor implements Executor {
   prepare(ticket: Ticket, _mandate: Mandate): Ticket {
     return { ...ticket, execution: { name: ticket.id, directory: `/tmp/work/${ticket.id}` } }
   }
-  start(ticket: Ticket, assignment: Assignment): void { this.engine?.assignmentStarted(ticket.id, assignment.id) }
+  start(ticket: Ticket, assignment: Assignment): void {
+    this.engine?.assignmentStarted(ticket.id, assignment.id)
+    this.engine?.inputsDelivered(ticket.id, assignment.id, [])
+  }
   deliver(): void { /* nothing runs here */ }
   stop(): void { /* nothing runs here */ }
 }
@@ -154,6 +157,39 @@ describe('a message from a mapped identity', () => {
       const trigger = context.triggers()[0]!.trigger
       expect(trigger.title).toBe('alice：项目启动')
       expect(trigger.title).not.toContain('msg--100200300-73')
+    } finally { await source.stop() }
+  })
+
+  it('routes a follow-up in a waiting conversation as an answer and coalesces rapid double-replies as a note instead of opening orphan Tickets', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      // 1. Original task arrives from group:-100200
+      drop(ops, 'msg-1.md', message({ from: 'U01ABCDEF', id: 'm-1', thread: 'group:-100200', title: 'Group：研究中国 AI 资本布局' }, '请研究资本网络。'))
+      await source.poll()
+      expect(context.tickets()).toHaveLength(1)
+      const original = context.tickets()[0]!
+      // `Group：` placeholder is replaced with the mapped actor name (`alice`)
+      expect(original.title).toBe('alice：研究中国 AI 资本布局')
+
+      // 2. Worker turn ends waiting for a push
+      context.host.engine.turnEnded(original.id, original.assignments[0]!.id, '已完成抓取，等待下一步指令')
+
+      // 3. Operator sends two rapid follow-up messages (just like 2618fe25 and 6faeb2e9 in the live run)
+      drop(ops, 'msg-2.md', message({ from: 'U01ABCDEF', id: 'm-2', thread: 'dm:<telegram-user-id>' }, '按照你的理解继续推进，直到完成'))
+      await source.poll()
+      drop(ops, 'msg-3.md', message({ from: 'U01ABCDEF', id: 'm-3', thread: 'dm:<telegram-user-id>' }, '补充一句：重点看中间层'))
+      await source.poll()
+
+      // Still ONLY ONE Ticket — neither follow-up spawned a duplicate orphan Ticket!
+      expect(context.tickets()).toHaveLength(1)
+      const updated = context.host.engine.ticket(original.id)!
+      expect(updated.inputs.map(i => ({ kind: i.kind, text: i.text }))).toEqual([
+        { kind: 'text', text: '按照你的理解继续推进，直到完成' },
+        { kind: 'note', text: '补充一句：重点看中间层' },
+      ])
     } finally { await source.stop() }
   })
 })

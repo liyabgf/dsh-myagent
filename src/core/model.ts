@@ -432,7 +432,7 @@ export function waitsForPerson(ticket: Ticket): boolean {
   if (ticket.ended !== undefined) return false
   if (ticket.attention !== undefined) return true
   const assignment = latestAssignment(ticket)
-  return assignment?.report?.state === 'blocked' || assignment?.report?.state === 'failed'
+  return assignment?.report?.state === 'blocked' || assignment?.report?.state === 'failed' || assignment?.report?.state === 'waiting'
 }
 
 /**

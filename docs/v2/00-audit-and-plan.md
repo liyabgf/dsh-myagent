@@ -7199,3 +7199,34 @@ M2 的强形式为什么补不出第二层，如实记：能观测"面板画没�
   - M1（`taskTitle` 丢掉内容简要只返回发起者）：红；强形式（删第一条断言）仍被第二条断言判红。
   - M2（`defaultChatTitle` 退回文件名）：红；强形式（删 `toBe('alice：项目启动')`）仍被 `not.toContain('msg--100200300-73')` 判红。
   - 还原后 SHA-256 哈希全部核对一致。
+
+
+## 4.129 跨 Ticket 越界冻结、三层统一会话路由、出站文件投递与状态机加固（0.8.5）
+
+### 1. 真机复盘（`68172c09` / `2618fe25` / `6faeb2e9`）揭示的四个漏洞
+
+1. **跨群串线（`defaultChat` 污染）**：Telegram 桥原先只在有 `message_thread_id`（Forum Topic）时才填 `thread`，普通群与私聊均为 `undefined`。出站靠 `.bridge-state.json` 的 `defaultChat` 兜底，而任何一次私聊都会把 `defaultChat` 永久钉在操作者私聊 ID 上，导致群任务 `68172c09` 的 `waiting` 通知串进私聊。
+2. **续接缺失导致连开孤儿任务**：操作者在私聊连回两条「按照你的理解继续推进，直到完成」，`ChatSource` 无条件把每条入站消息当成全新 `Trigger`，连开 `2618fe25` 与 `6faeb2e9` 两张孤儿任务。
+3. **Worker 跨目录越界与软链穿透**：`2618fe25` 拿到无上下文的追问后，跑去父目录 `workRoot` 翻找 `68172c09`，并在自己目录里建了指向对方 `raw/` 与 `txt/` 的符号链接；而 `files.ts` / `http.ts` / `runtime.ts` 原先仅做词法 `resolve()` 检查、未用 `lstat`/`realpath` 拦截软链。
+4. **群匿名管理员显示为 `Group`**：Telegram 开启匿名管理员时 `from` 是官方傀儡号 `1087968824`（`first_name: "Group"`），真实群名与签名在 `sender_chat` 与 `author_signature` 中。
+
+### 2. 四个工程包落地
+
+- **包 1（冻结跨 Ticket 文件访问风险）**：
+  - `src/app/files.ts`：新增异步物理边界解析器 `resolveRealInside(root, requested)`（逐级 `lstat` 拒绝符号链接 + `realpath` 校验物理路径在 `realpath(root)` 之下）；`listFiles` 显式跳过 `isSymbolicLink()`；`readForPanel` 用 `lstat` 拒绝软链。
+  - `src/app/http.ts` & `src/app/runtime.ts`：`GET tickets/:id/file` 与 `readArtifact` 全面接入 `lstat` + `resolveRealInside`。
+  - `src/app/executor.ts`：`copyAttachments` 强制 `basename`、拒绝软链、拒绝源路径位于 `workRoot` 内（防止把其他 Ticket 的私有文件当附件挂进来）。（注：`prepare` 命令保持在 `dirname(execution.directory)` 运行，既有测试 `executor.spec.ts:225` 与 `flow.spec.ts:163` 显式钉死了这一契约。）
+  - `src/app/sessions.ts` & `prompts/worker.md`：新增同步守卫 `guardWorkerCall`，拦截访问 `..` 或 `workRoot` 下兄弟 Ticket 目录的文件工具与 `ln -s` 命令；提示词钉死缺少上下文时必须报 `blocked`、严禁翻找父目录。
+- **包 2（三层统一会话路由 + Ticket 续接 + 出站文件投递 + 匿名管理员）**：
+  - `bridges/lib/route.mjs`（新）：统一编码 `dm:<chatId>`、`group:<chatId>`、`topic:<chatId>:<threadId>`，出站成为信封本身的纯函数，彻底消灭 `defaultChat` 跨群串线（同时向后兼容旧版裸 thread ID）。
+  - `bridges/telegram/transform.mjs` & `bridges/lark/transform.mjs`：接入 `formatRoute`；Telegram 识别 `1087968824` / `GroupAnonymousBot` / `sender_chat`，优先取 `author_signature` 或 `<群名>（匿名管理员）`，`ChatSource.normalizeChatTitle` 兜底将旧文件的 `Group：` 替换为映射后的 `actor`。
+  - `bridges/lib/inbound.mjs` & `outbound.mjs` & `src/sources/chat.ts`：出站信封带 `ticket: <id>`，桥发送后通过 `onSent` 在 `.bridge-state.json` 记录 `sentMessages[platformMsgId] = ticketId`；入站支持 `reply-to-ticket` 精确续接、同会话 `waiting/blocked` 自动转 `engine.answer()`、以及 60 秒内连发自动合并为 `engine.note()`。
+  - **受控出站文件投递**：`OutcomeDelivery` 在 `state === 'ready'` 时用 `resolveRealInside` + `lstat` 校验最多 5 个、单文件 ≤ 20 MB 的非软链真实产物写入信封 `files:`；Telegram 桥用原生 `FormData` + `sendDocument`、飞书桥用 `im.file.create` + `im.message.create(file)` 投递。
+- **包 3（任务取消、队列调度与状态转换修复）**：
+  - `src/core/model.ts` & `src/core/engine.ts`：`waitsForPerson` 纳入 `assignment.report.state === 'waiting'`（同时保持 `turnEnded` 的 `attention: undefined` 不破坏 `flow.spec.ts` 区分 DSH `blocked` 与普通 `waiting` 的契约）；`answer()` 唤醒运行中 Assignment 时将其 `waiting/blocked` 报告推进为 `progress`；`stopTicket` 改用 `latestAssignment` 覆盖 `pending` 排队中的任务。
+  - `src/app/executor.ts` & `src/app/runtime.ts`：新增 `releaseWaitingSlots()`，在 `ticket.ended` 时立即重入队所有 `pending` 任务；`used()` 将带有未投递 `text` 回答、即将唤醒的会话计入槽位占用。
+
+### 3. 变异与闸门
+
+- 包 1（M1 `resolveRealInside` 软链绕过、M2 `guardWorkerCall` 跨目录绕过）、包 2（M1 `parseRoute` 退回 `defaultChat`、M2 关闭续接仲裁）、包 3（M1 `stopTicket` 退回 `runningAssignment`、M2 `answer` 不推进 `waiting` 状态）：共 6 组变异及 0.8 强形式全部判红，还原哈希核对一致。
+- 完整四步闸门退出码 0（**1014 条测试**），真浏览器验证全绿。

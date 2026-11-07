@@ -420,6 +420,13 @@ export class Engine {
       if (current === undefined || current.state === 'ended') {
         const assignment: Assignment = { id: key('assignment', ticketId, next.assignments.length + 1), state: 'pending', createdAt: at }
         next = { ...next, assignments: [...next.assignments, assignment] }
+      } else if (current.report?.state === 'waiting' || current.report?.state === 'blocked') {
+        // Advance the running Assignment's report out of `waiting`/`blocked` once an answer is handed over, so a
+        // second message in the same conversation is not mistaken for the first answer to a still-waiting Ticket.
+        next = withAssignment(next, {
+          ...current,
+          report: { state: 'progress', summary: current.report.summary, at },
+        })
       }
       this.repos.tickets.save(next)
       this.record(ticketId, 'input', { kind: 'person' }, { kind_of_input: 'answer' })
@@ -489,7 +496,11 @@ export class Engine {
       const ticket = this.require(ticketId)
       if (!liveTicket(ticket)) throw new UserError('stop_refused')
       const at = this.now()
-      const assignment = runningAssignment(ticket)
+      // `latestAssignment` rather than `runningAssignment`: a Ticket that was queued (`pending`) behind `maxWorkers`
+      // when the operator stopped it must also have its Assignment closed and its in-flight launch halted, instead of
+      // leaving an ended Ticket with a permanently `pending` Assignment.
+      const latest = latestAssignment(ticket)
+      const assignment = latest !== undefined && latest.state !== 'ended' ? latest : undefined
       this.record(ticketId, 'stopped', { kind: 'person' }, { reason })
       let next = ended(ticket, at, 'person', 'stopped', reason)
       if (assignment !== undefined) {
@@ -1289,6 +1300,9 @@ export class Engine {
 
   /** One Ticket when it exists, for a caller that must not make a missing one an error. */
   ticket(id: string): Ticket | undefined { return this.repos.tickets.get(id) }
+
+  /** Open Tickets, oldest first. */
+  open(): Ticket[] { return this.repos.tickets.open() }
 
   /**
    * Record that the Watchdog rescued a Ticket, which is also how it counts its own rescues.

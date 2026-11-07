@@ -20,6 +20,8 @@ import { parse, scalar, stringify } from '../bridges/lib/frontmatter.mjs'
 import { messageFileName, writeMessage } from '../bridges/lib/inbound.mjs'
 // @ts-expect-error -- see above
 import { chunkText, drainOut } from '../bridges/lib/outbound.mjs'
+// @ts-expect-error -- 同上
+import { formatRoute, parseRoute } from '../bridges/lib/route.mjs'
 // @ts-expect-error -- see above
 import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform.mjs'
 // @ts-expect-error -- see above
@@ -282,6 +284,35 @@ describe('a reply too long for the door it was sent through', () => {
   })
 })
 
+describe('outbound file attachments and message receipts in drainOut (Pkg 2)', () => {
+  it('delivers verified files via sendFile, records messageId -> ticketId via onSent, and skips symlinked files', async () => {
+    const dir = await directory()
+    await mkdir(join(dir, 'out'), { recursive: true })
+    const realFile = join(dir, 'report.csv')
+    await writeFile(realFile, 'a,b\n1,2\n', 'utf8')
+    const symFile = join(dir, 'sym.csv')
+    const { symlink } = await import('node:fs/promises')
+    await symlink(realFile, symFile)
+
+    await writeFile(
+      join(dir, 'out', 'reply-with-files.md'),
+      `---\nthread: group:-100200\nticket: ticket-888\nfiles: ${realFile}, ${symFile}\n---\n报告正文`,
+      'utf8',
+    )
+    const sentFiles: string[] = []
+    const receipts: { messageId: string; ticketId: string; thread?: string }[] = []
+    const tally = await drainOut({
+      directory: dir,
+      send: async () => ({ messageId: '-100200-99' }),
+      sendFile: async ({ filePath }: { filePath: string }) => { sentFiles.push(filePath) },
+      onSent: async (r: { messageId: string; ticketId: string; thread?: string }) => { receipts.push(r) },
+    })
+    expect(tally).toMatchObject({ sent: 1, failed: 0 })
+    expect(sentFiles).toEqual([realFile])
+    expect(receipts).toEqual([{ messageId: '-100200-99', ticketId: 'ticket-888', thread: 'group:-100200' }])
+  })
+})
+
 describe('the Telegram mapping', () => {
   const groupMessage = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
     message_id: 12, from: { id: 555, first_name: '李', last_name: '杨' },
@@ -330,9 +361,39 @@ describe('the Telegram mapping', () => {
     expect(mapUpdate(quiet, ME, { mode: 'all' }).message).toBeDefined()
   })
 
-  it('carries a forum topic as the thread, so the answer lands in the same topic', () => {
-    const mapped = mapUpdate({ message: groupMessage({ message_thread_id: 9 }) }, ME, { mode: 'all' })
-    expect(mapped.message.thread).toBe('9')
+  it('always encodes a canonical conversation route into thread (dm / group / topic), eliminating defaultChat misrouting', () => {
+    // 【产品变更】旧断言：expect(mapped.message.thread).toBe('9')
+    // 改动理由：原先普通群聊与私聊的 thread 均为 undefined，导致出站依赖 .bridge-state.json 的 defaultChat，
+    // 一旦操作者在私聊发过消息，所有群聊任务的通知都会串进私聊。现在统一编码为 dm:<chatId> / group:<chatId> / topic:<chatId>:<threadId>。
+    const topic = mapUpdate({ message: groupMessage({ message_thread_id: 9 }) }, ME, { mode: 'all' })
+    expect(topic.message.thread).toBe('topic:-100200:9')
+    expect(parseRoute(topic.message.thread)).toEqual({ kind: 'topic', chatId: '-100200', threadId: '9' })
+
+    const group = mapUpdate({ message: groupMessage() }, ME, { mode: 'all' })
+    expect(group.message.thread).toBe('group:-100200')
+    expect(parseRoute(group.message.thread, { defaultChat: '<telegram-user-id>' })).toEqual({ kind: 'group', chatId: '-100200' })
+    expect(parseRoute('group:-999888', { defaultChat: '<telegram-user-id>' })?.chatId).toBe('-999888')
+
+    const dm = mapUpdate({ message: groupMessage({ chat: { id: 555, type: 'private' } }) }, ME)
+    expect(dm.message.thread).toBe('dm:555')
+    expect(parseRoute(dm.message.thread)).toEqual({ kind: 'dm', chatId: '555' })
+
+    // Legacy bare thread id fallback remains supported
+    expect(parseRoute('9', { replyRoutes: { '9': '-100200' } })).toEqual({ kind: 'legacy', chatId: '-100200', threadId: '9' })
+  })
+
+  it('labels Telegram anonymous group admins (1087968824 / GroupAnonymousBot) with author_signature or group title, never literal "Group"', () => {
+    const anon = groupMessage({
+      from: { id: 1087968824, first_name: 'Group', username: 'GroupAnonymousBot' },
+      sender_chat: { id: -100200, title: '回收站', type: 'supergroup' },
+      text: '研究中国 AI 产业资本结构',
+    })
+    const mapped = mapUpdate({ message: anon }, ME, { mode: 'all' })
+    expect(mapped.message.title).toBe('回收站（匿名管理员）：研究中国 AI 产业资本结构')
+    expect(mapped.message.title.startsWith('Group：')).toBe(false)
+
+    const signed = mapUpdate({ message: { ...anon, author_signature: '架构师' } }, ME, { mode: 'all' })
+    expect(signed.message.title).toBe('架构师：研究中国 AI 产业资本结构')
   })
 
   it('titles a message with the sender and a summary of the request, never the group name', () => {
@@ -407,10 +468,15 @@ describe('the Lark mapping', () => {
     expect(mapEvent(textEvent({}, {}), ALL).skip).toBe('no-sender')
   })
 
-  it('uses root_id as the thread, and never parent_id — replying to the parent nests one level deeper each time', () => {
-    expect(mapEvent(textEvent({ root_id: 'om_root', parent_id: 'om_parent', thread_id: 'omt_1' }), ALL).message.thread).toBe('om_root')
-    expect(mapEvent(textEvent({ thread_id: 'omt_1', parent_id: 'om_parent' }), ALL).message.thread).toBe('omt_1')
-    expect(mapEvent(textEvent({ parent_id: 'om_parent' }), ALL).message.thread).toBeUndefined()
+  it('uses root_id as the topic thread and encodes canonical group/dm/topic routes', () => {
+    // 【产品变更】旧断言：
+    //   expect(mapEvent(textEvent({ root_id: 'om_root', parent_id: 'om_parent', thread_id: 'omt_1' }), ALL).message.thread).toBe('om_root')
+    //   expect(mapEvent(textEvent({ thread_id: 'omt_1', parent_id: 'om_parent' }), ALL).message.thread).toBe('omt_1')
+    //   expect(mapEvent(textEvent({ parent_id: 'om_parent' }), ALL).message.thread).toBeUndefined()
+    // 改动理由：统一会话路由接口（bridges/lib/route.mjs），任何入站消息都携带自包含的会话坐标，消灭无 thread 时的跨群串线。
+    expect(mapEvent(textEvent({ root_id: 'om_root', parent_id: 'om_parent', thread_id: 'omt_1' }), ALL).message.thread).toBe('topic:oc_room:om_root')
+    expect(mapEvent(textEvent({ thread_id: 'omt_1', parent_id: 'om_parent' }), ALL).message.thread).toBe('topic:oc_room:omt_1')
+    expect(mapEvent(textEvent({ parent_id: 'om_parent' }), ALL).message.thread).toBe('group:oc_room')
   })
 
   it('detects a mention of THIS bot from the mentions array, and strips the placeholder from the request', () => {

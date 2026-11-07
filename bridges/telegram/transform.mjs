@@ -1,4 +1,5 @@
 import { taskTitle } from '../lib/inbound.mjs'
+import { formatRoute } from '../lib/route.mjs'
 
 /**
  * The pure half of the Telegram bridge: a platform update in, a channel message (or a reason to skip) out.
@@ -66,15 +67,35 @@ export function mapUpdate(update, me, { mode = 'mentions', chatAllowList = [] } 
   if (mode === 'mentions' && !isDirect && !mentionsBot(message, me)) return { skip: 'not-mentioned' }
   const body = cleanText(message, me)
   if (body === '') return { skip: 'no-text' }
-  const thread = message.message_thread_id === undefined ? undefined : String(message.message_thread_id)
+  const rawThread = message.message_thread_id === undefined ? undefined : String(message.message_thread_id)
+  const thread = formatRoute({
+    kind: isDirect ? 'dm' : rawThread !== undefined ? 'topic' : 'group',
+    chatId,
+    threadId: rawThread,
+  })
+  const isAnonymousAdmin = String(message.from.id) === '1087968824'
+    || message.from.username === 'GroupAnonymousBot'
+    || message.sender_chat !== undefined
   const senderName = [message.from.first_name, message.from.last_name].filter(Boolean).join(' ')
-  const senderLabel = senderName || message.from.username || `user-${message.from.id}`
+  const signature = typeof message.author_signature === 'string' ? message.author_signature.trim() : ''
+  const chatTitle = typeof message.sender_chat?.title === 'string' && message.sender_chat.title.trim() !== ''
+    ? message.sender_chat.title.trim()
+    : typeof message.chat?.title === 'string' && message.chat.title.trim() !== ''
+      ? message.chat.title.trim()
+      : ''
+  const senderLabel = isAnonymousAdmin
+    ? (signature || (chatTitle ? `${chatTitle}（匿名管理员）` : '匿名管理员'))
+    : (senderName || message.from.username || `user-${message.from.id}`)
+  const replyToMessageId = message.reply_to_message?.message_id === undefined
+    ? undefined
+    : `${chatId}-${message.reply_to_message.message_id}`
   return {
     message: {
       from: String(message.from.id),
       id: `${chatId}-${message.message_id}`,
-      ...(thread === undefined ? {} : { thread }),
-      // 标题是「发起者 + 任务内容简要」，不再用群名（群名只说明在哪说的，不说明谁要做什么，还会让目录名叫「回收站-81637106」）。
+      thread,
+      ...(replyToMessageId === undefined ? {} : { replyToMessageId }),
+      // 标题是「发起者 + 任务内容简要」，不再用群名（匿名管理员用签名或「群名（匿名管理员）」，绝不显示无意义的 "Group"）。
       title: taskTitle(senderLabel, body),
       body,
       chatId,

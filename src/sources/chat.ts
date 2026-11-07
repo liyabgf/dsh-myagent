@@ -58,9 +58,9 @@ import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promi
 import { join } from 'node:path'
 import { key, UserError } from '../core/index.ts'
 import { sourcePolicy, type Settings } from '../core/policy.ts'
-import type { ReplyTo, Trigger } from '../core/model.ts'
+import { latestReport, waitsForPerson, type ReplyTo, type Ticket, type Trigger } from '../core/model.ts'
 import type { HealthEntry } from '../app/health.ts'
-import type { SourceHost, SourceKind, SourceStatus, TwoWaySource } from './kind.ts'
+import type { DeliverOptions, SourceHost, SourceKind, SourceStatus, TwoWaySource } from './kind.ts'
 
 /** A file younger than this may still be being written, so one more poll waits for it (the inbox's window). */
 const SETTLE_MS = 1000
@@ -113,6 +113,8 @@ interface Message {
   readonly id: string
   readonly thread?: string
   readonly title?: string
+  /** Explicit Ticket id when the sender replied to a bot message that reported on a Ticket. */
+  readonly replyToTicket?: string
   readonly body: string
 }
 
@@ -142,11 +144,13 @@ function parseMessage(text: string, fileName: string): Message {
   const id = fields.id ?? ''
   const thread = fields.thread ?? ''
   const title = fields.title ?? ''
+  const replyToTicket = fields['reply-to-ticket'] ?? fields.replytoticket ?? ''
   return {
     from: fields.from ?? '',
     id: id === '' ? fileName : id,
     ...(thread === '' ? {} : { thread }),
     ...(title === '' ? {} : { title }),
+    ...(replyToTicket === '' ? {} : { replyToTicket }),
     body,
   }
 }
@@ -157,6 +161,17 @@ function parseMessage(text: string, fileName: string): Message {
  * Matches the bridge's `taskTitle` shape so a hand-dropped or legacy bridge file without a title field still names
  * who asked and what they asked for, instead of the raw `msg-<chatId>-<msgId>` file name.
  */
+/**
+ * Replace Telegram's literal `Group` anonymous-admin placeholder with the mapped actor name when the message came
+ * from an older bridge file, and fall back to `defaultChatTitle` when `title` is absent.
+ */
+function normalizeChatTitle(rawTitle: string | undefined, actor: string, body: string, fileName: string): string {
+  if (rawTitle === undefined || rawTitle.trim() === '') return defaultChatTitle(actor, body, fileName)
+  if (rawTitle === 'Group') return defaultChatTitle(actor, body, fileName)
+  if (rawTitle.startsWith('Group：')) return `${actor}：${rawTitle.slice('Group：'.length)}`
+  return rawTitle
+}
+
 function defaultChatTitle(actor: string, body: string, fileName: string): string {
   const first = body
     .split(/\r?\n/)
@@ -449,6 +464,22 @@ export class ChatSource implements TwoWaySource {
         ids.push(message.from === '' ? `${channel.id}/${entry.name} (no from)` : message.from)
         continue
       }
+      const normalizedTitle = normalizeChatTitle(message.title, mapped.actor, message.body, entry.name)
+      const continuation = this.findContinuationTarget(channel.id, message, mapped.actor)
+      if (continuation !== undefined) {
+        const triggerId = key('chat', channel.id, message.id)
+        if (continuation.mode === 'answer') {
+          this.host.engine.answer(continuation.ticket.id, message.body)
+          this.counts.accepted++
+          await this.take(path, directory, entry.name, 'accepted', `Answered Ticket ${continuation.ticket.id}`, triggerId, issues)
+        } else {
+          this.host.engine.note(continuation.ticket.id, message.body)
+          this.counts.accepted++
+          await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${continuation.ticket.id}`, triggerId, issues)
+        }
+        this.host.requestPass()
+        continue
+      }
       const trigger: Trigger = {
         // A pure function of the message's identity — channel and message id, never the scan instant, never the
         // mtime (S31). A bridge that re-delivers the same message under a fresh file write must deduplicate.
@@ -460,8 +491,7 @@ export class ChatSource implements TwoWaySource {
         // id looks like a bot, so `system`" is exactly the judgement contract §2.1 forbids — the map decides who.
         actor: { id: mapped.actor, kind: 'person' },
         text: message.body,
-        // 桥写了 title 就用桥的；没写时用「发起者 + 任务内容简要」兜底，而不是退化成 `msg--100200300-73` 这种文件名。
-        title: (message.title ?? defaultChatTitle(mapped.actor, message.body, entry.name)).slice(0, 200),
+        title: normalizedTitle.slice(0, 200),
         meta: {
           channel: channel.id, file: entry.name, from: message.from,
           ...(message.thread === undefined ? {} : { thread: message.thread }),
@@ -574,7 +604,71 @@ export class ChatSource implements TwoWaySource {
    * switched off is different in kind: an address WAS written down and nothing is there to receive it, which is
    * the exact fact `reply_unroutable` names.
    */
-  async deliver(replyTo: ReplyTo, text: string): Promise<void> {
+  /**
+   * Decide whether an inbound message is a continuation of an existing open Ticket rather than a brand-new task:
+   * 1. Explicit `reply-to-ticket` header (the sender replied directly to a bot notification for that Ticket): answers
+   *    it when waiting/blocked, or adds a note when running.
+   * 2. Same conversation route (`channel` + `thread`, or same `actor` on the channel when a Ticket is waiting for a
+   *    person): if an open Ticket is waiting for a person (`waitsForPerson` or latest report is `waiting`/`blocked`),
+   *    route as `answer`; if that Ticket was just answered within the last 60s (`inputs.at(-1)`), coalesce a rapid
+   *    double-reply as a `note` instead of spawning a duplicate orphan Ticket.
+   */
+  private findContinuationTarget(
+    channelId: string,
+    message: Message,
+    actorId: string,
+  ): { ticket: Ticket; mode: 'answer' | 'note' } | undefined {
+    const open = this.host.engine.open()
+    if (message.replyToTicket !== undefined) {
+      const explicit = open.find(t => t.id === message.replyToTicket || t.id.startsWith(message.replyToTicket!))
+      if (explicit !== undefined) {
+        const needsAnswer = waitsForPerson(explicit) || ['waiting', 'blocked'].includes(latestReport(explicit)?.state ?? '')
+        return { ticket: explicit, mode: needsAnswer ? 'answer' : 'note' }
+      }
+    }
+    // Match open Tickets originated from this chat channel by the same actor.
+    const candidates = open.filter(t => {
+      if (t.mandate.via !== 'chat' || t.mandate.sender.id !== actorId) return false
+      try {
+        const trig = this.host.engine.trigger(t.origin.triggerId)
+        if (trig.replyTo?.channel !== channelId) return false
+        if (message.thread !== undefined && trig.replyTo?.thread !== undefined && trig.replyTo.thread !== message.thread) {
+          // Allow a DM reply (`dm:<userId>`) to answer a group Ticket by the same actor only when there is no other
+          // waiting Ticket on that DM thread.
+          if (!message.thread.startsWith('dm:')) return false
+        }
+        return true
+      } catch {
+        return false
+      }
+    })
+    // Prefer exact thread match first.
+    const exactThread = candidates.filter(t => {
+      try {
+        return this.host.engine.trigger(t.origin.triggerId).replyTo?.thread === message.thread
+      } catch { return false }
+    })
+    const pool = exactThread.length > 0 ? exactThread : candidates
+    const waiting = pool.filter(t => waitsForPerson(t) || ['waiting', 'blocked'].includes(latestReport(t)?.state ?? ''))
+    if (waiting.length === 1) {
+      return { ticket: waiting[0]!, mode: 'answer' }
+    }
+    // Rapid follow-up coalescing: if a Ticket in `pool` was just answered by this person within the last 60 seconds,
+    // attach the second message as a note rather than spawning a duplicate Ticket.
+    const nowMs = Date.now()
+    const recentlyAnswered = pool.filter(t => {
+      const lastInput = t.inputs.at(-1)
+      if (lastInput === undefined || lastInput.kind !== 'text') return false
+      const ageMs = nowMs - Date.parse(lastInput.at)
+      return Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= 60_000
+    })
+    if (recentlyAnswered.length === 1) {
+      return { ticket: recentlyAnswered[0]!, mode: 'note' }
+    }
+    return undefined
+  }
+
+  async deliver(replyTo: ReplyTo, text: string, options?: DeliverOptions): Promise<void> {
     const chat = this.host.settings().sources.chat
     const channel = chat.channels.find(item => item.id === replyTo.channel)
     if (channel === undefined || !channel.enabled) {
@@ -582,9 +676,11 @@ export class ChatSource implements TwoWaySource {
     }
     const directory = join(channel.directory, OUT_DIR)
     await mkdir(directory, { recursive: true })
-    // The front matter carries the thread back to the bridge, so a platform with threads can route the answer into
-    // the right one; the hash covers it too, so the same text to a different thread is a different file.
-    const front = replyTo.thread === undefined ? '' : `---\nthread: ${replyTo.thread}\n---\n`
+    const headers: string[] = []
+    if (replyTo.thread !== undefined) headers.push(`thread: ${replyTo.thread}`)
+    if (options?.ticketId !== undefined) headers.push(`ticket: ${options.ticketId}`)
+    if (options?.files !== undefined && options.files.length > 0) headers.push(`files: ${options.files.join(', ')}`)
+    const front = headers.length === 0 ? '' : `---\n${headers.join('\n')}\n---\n`
     const name = `reply-${key('chat-reply', replyTo.channel, replyTo.thread ?? '', text)}.md`
     await writeFile(join(directory, name), `${front}${text}`, 'utf8')
   }

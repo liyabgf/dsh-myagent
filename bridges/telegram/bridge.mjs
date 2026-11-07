@@ -31,7 +31,10 @@ import { createLog } from '../lib/log.mjs'
 import { supervise } from '../lib/run.mjs'
 import { loadState, saveState } from '../lib/state.mjs'
 import { writeMessage } from '../lib/inbound.mjs'
+import { readFile } from 'node:fs/promises'
+import { basename } from 'node:path'
 import { drainOut } from '../lib/outbound.mjs'
+import { parseRoute } from '../lib/route.mjs'
 // 纯映射逻辑单独成模块：入口文件在 import 时就读环境并启动轮询，所以留在里面的东西一样都测不了。
 import { mapUpdate } from './transform.mjs'
 
@@ -108,12 +111,18 @@ const call = async (method, params = {}) => {
 let me = null
 const state = { data: {} }
 
+const MAX_SENT_LEDGER = 500
+
 const inbound = async update => {
   const mapped = mapUpdate(update, me, { mode, chatAllowList })
   if (mapped.skip !== undefined) return { skipped: mapped.skip }
-  const { chatId, isDirect, ...message } = mapped.message
-  await writeMessage({ directory, ...message })
-  // Learn where answers to this thread go: a reply file carries the thread but never the chat id.
+  const { chatId, isDirect, replyToMessageId, ...message } = mapped.message
+  const replyToTicket = replyToMessageId === undefined ? undefined : state.data.sentMessages?.[replyToMessageId]
+  await writeMessage({
+    directory,
+    ...message,
+    ...(replyToTicket === undefined ? {} : { replyToTicket }),
+  })
   const routes = { ...(state.data.replyRoutes ?? {}) }
   if (message.thread !== undefined) routes[message.thread] = chatId
   state.data = await saveState(directory, {
@@ -122,26 +131,59 @@ const inbound = async update => {
     lastInboundAt: new Date().toISOString(),
     lastInboundChat: chatId,
   })
-  log.info('message-written', { chat: chatId, thread: message.thread ?? null, from: message.from, chars: message.body.length })
+  log.info('message-written', {
+    chat: chatId, thread: message.thread ?? null, from: message.from, chars: message.body.length,
+    ...(replyToTicket === undefined ? {} : { replyToTicket }),
+  })
   return { written: 1 }
 }
 
 const outbound = async ({ thread, text, name }) => {
-  const chatId = (thread !== undefined ? state.data.replyRoutes?.[thread] : undefined) ?? state.data.defaultChat
+  const route = parseRoute(thread, state.data)
+  const chatId = route?.chatId
   if (chatId === undefined) {
-    // `reply_unroutable` is myagent's word for this; here it means the bridge has never seen a message to answer.
     throw new Error(`no chat known for thread ${thread ?? '(none)'} — the bridge has not seen an inbound message yet`)
   }
-  await call('sendMessage', {
+  const topicId = route?.kind === 'topic' || route?.kind === 'legacy' ? route.threadId : undefined
+  const sent = await call('sendMessage', {
     chat_id: chatId,
     text,
-    ...(thread === undefined ? {} : { message_thread_id: Number(thread) }),
-    // Markdown would turn an ordinary report's `*` and `_` into formatting errors, so the text goes as plain text:
-    // a reply that fails to send is worse than a reply without bold.
+    ...(topicId === undefined ? {} : { message_thread_id: Number(topicId) }),
     parse_mode: undefined,
     disable_web_page_preview: true,
   })
   state.data = await saveState(directory, { lastOutboundAt: new Date().toISOString(), lastOutboundFile: name })
+  return sent?.message_id === undefined ? undefined : { messageId: `${chatId}-${sent.message_id}` }
+}
+
+const sendOutboundFile = async ({ thread, filePath }) => {
+  const route = parseRoute(thread, state.data)
+  const chatId = route?.chatId
+  if (chatId === undefined) throw new Error(`no chat known for file on thread ${thread ?? '(none)'}`)
+  const topicId = route?.kind === 'topic' || route?.kind === 'legacy' ? route.threadId : undefined
+  const bytes = await readFile(filePath)
+  const form = new FormData()
+  form.append('chat_id', String(chatId))
+  if (topicId !== undefined) form.append('message_thread_id', String(Number(topicId)))
+  form.append('document', new Blob([bytes]), basename(filePath))
+  const response = await fetch(`${API}/bot${token}/sendDocument`, {
+    method: 'POST',
+    body: form,
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok || body.ok !== true) {
+    throw new Error(`sendDocument failed: HTTP ${response.status} ${body.description ?? ''}`.trim())
+  }
+  log.info('file-sent', { chat: chatId, file: basename(filePath), bytes: bytes.length })
+}
+
+const recordSentReceipt = async ({ messageId, ticketId }) => {
+  const existing = { ...(state.data.sentMessages ?? {}), [messageId]: ticketId }
+  const keys = Object.keys(existing)
+  if (keys.length > MAX_SENT_LEDGER) {
+    for (const k of keys.slice(0, keys.length - MAX_SENT_LEDGER)) delete existing[k]
+  }
+  state.data = await saveState(directory, { sentMessages: existing })
 }
 
 const poll = async () => {
@@ -164,7 +206,7 @@ const poll = async () => {
     if (result?.written !== undefined) written += result.written
     else if (result?.skipped !== undefined) log.debug('skipped', result)
   }
-  const replies = await drainOut({ directory, send: outbound, log, keepDays, limit: MESSAGE_LIMIT })
+  const replies = await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
   return { updates: (updates ?? []).length, written, replies }
 }
 

@@ -112,9 +112,14 @@ export interface SourceKind {
  * 3. A throw from `deliver` is recorded against that effect, retried with backoff, and reported on the health board; it
  *    does not touch the Ticket's own state and does not take another Source down with it.
  */
+export interface DeliverOptions {
+  readonly ticketId?: string
+  readonly files?: readonly string[]
+}
+
 export interface TwoWaySource extends Source {
   /** Deliver a message back to the platform. Called by the effects queue, so it may be retried. */
-  deliver(replyTo: ReplyTo, text: string): Promise<void>
+  deliver(replyTo: ReplyTo, text: string, options?: DeliverOptions): Promise<void>
 }
 
 /** Build one Trigger's id from the facts that make the event unique, so a restart cannot duplicate it. */

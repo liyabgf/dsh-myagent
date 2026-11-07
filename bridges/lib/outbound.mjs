@@ -95,7 +95,10 @@ async function readText(path) {
  *   for no reason.
  * @returns {Promise<{ sent: number, failed: number, skipped: number }>}
  */
-export async function drainOut({ directory, send, log = {}, keepDays = 7, limit = 0 }) {
+/** Maximum size of a single outbound file attachment (20 MB). */
+export const MAX_OUTBOUND_FILE_BYTES = 20 * 1024 * 1024
+
+export async function drainOut({ directory, send, sendFile, onSent, log = {}, keepDays = 7, limit = 0 }) {
   const out = join(directory, OUT)
   const sent = join(out, SENT)
   const tally = { sent: 0, failed: 0, skipped: 0 }
@@ -126,6 +129,8 @@ export async function drainOut({ directory, send, log = {}, keepDays = 7, limit 
     }
     const { fields, body } = parse(text)
     const thread = fields.thread === '' || fields.thread === undefined ? undefined : fields.thread
+    const ticket = fields.ticket === '' || fields.ticket === undefined ? undefined : fields.ticket
+    const files = (fields.files ?? '').split(',').map(f => f.trim()).filter(Boolean)
     const pieces = chunkText(body, limit)
     // Where a multi-part reply got to before it failed, so the retry does not post the first half of an answer to the
     // room a second time. Dot-prefixed, so this loop's own "never a dotfile" rule keeps it from being read as a reply.
@@ -134,33 +139,46 @@ export async function drainOut({ directory, send, log = {}, keepDays = 7, limit 
     if (pieces.length > 1) {
       try {
         const recorded = Number.parseInt(await readText(progress), 10)
-        // A number that cannot describe THIS body is stale (myagent rewrote the file with different text under the
-        // same name is impossible — the name is a hash of the text — but a hand-edited file is not), so start over
-        // rather than skipping pieces of a different message.
         if (Number.isInteger(recorded) && recorded > 0 && recorded < pieces.length) from = recorded
       } catch { /* no progress recorded: this is the first attempt */ }
     }
     let broke = false
     for (let index = from; index < pieces.length; index += 1) {
       try {
-        // `part`/`parts` only when the reply really was split: a single-piece reply has to be byte-identical to what
-        // a bridge saw before chunking existed, so an unchanged platform keeps an unchanged contract.
-        await send({
+        // `part`/`parts` and `ticket` only when present, so a single-piece reply with no ticket field stays
+        // byte-identical to what existing tests and bridges expect.
+        const receipt = await send({
           thread, text: pieces[index], name: entry.name,
+          ...(ticket === undefined ? {} : { ticket }),
           ...(pieces.length > 1 ? { part: index + 1, parts: pieces.length } : {}),
         })
+        if (ticket !== undefined && receipt?.messageId !== undefined) {
+          await onSent?.({ messageId: String(receipt.messageId), ticketId: ticket, thread })
+        }
       } catch (error) {
-        // Leave it where it is: the next drain tries again from the piece that failed, and myagent's own retry may
-        // rewrite the same bytes.
         log.error?.('reply-send-failed', { name: entry.name, part: index + 1, parts: pieces.length, ...describeError(error) })
-        // `index` IS the count of pieces the platform already accepted (0..index-1), which is exactly where a retry
-        // has to resume. Only worth recording once something has actually gone out.
         if (pieces.length > 1 && index > from) await writeFile(progress, String(index), 'utf8').catch(() => {})
         broke = true
         break
       }
     }
     if (broke) { tally.failed += 1; continue }
+    if (files.length > 0 && typeof sendFile === 'function') {
+      for (const filePath of files) {
+        try {
+          const { lstat: lstatFile } = await import('node:fs/promises')
+          const info = await lstatFile(filePath)
+          if (info.isSymbolicLink() || !info.isFile() || info.size > MAX_OUTBOUND_FILE_BYTES) {
+            log.warn?.('reply-file-skipped', { name: entry.name, filePath, size: info.size, symbolicLink: info.isSymbolicLink() })
+            continue
+          }
+          await sendFile({ thread, filePath, ticket, name: entry.name })
+        } catch (error) {
+          // A missing or rejected attachment does not block the text reply from completing.
+          log.warn?.('reply-file-failed', { name: entry.name, filePath, ...describeError(error) })
+        }
+      }
+    }
     if (pieces.length > 1) await rm(progress, { force: true }).catch(() => {})
     await mkdir(sent, { recursive: true })
     await rename(path, join(sent, entry.name))
@@ -168,6 +186,7 @@ export async function drainOut({ directory, send, log = {}, keepDays = 7, limit 
     log.info?.('reply-sent', {
       name: entry.name, thread: fields.thread ?? null, chars: body.length,
       ...(pieces.length > 1 ? { parts: pieces.length } : {}),
+      ...(files.length > 0 ? { files: files.length } : {}),
     })
   }
   if (keepDays > 0) await prune(sent, keepDays, log)

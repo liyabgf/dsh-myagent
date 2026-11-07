@@ -383,6 +383,25 @@ describe('files that came with the request', () => {
     } finally { await runtime.stop() }
   })
 
+  it('refuses to attach a file from inside workRoot (another Ticket\'s workspace) or a symbolic link', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      const otherDir = join(context.stateDir, 'work', 'other-ticket-11111111')
+      mkdirSync(otherDir, { recursive: true })
+      const stolen = join(otherDir, 'secret.csv')
+      writeFileSync(stolen, 'secret', 'utf8')
+      const path = join(context.inbox, 'steal-attach.md')
+      writeFileSync(path, `---\ntitle: 偷挂附件\nattach: ${stolen}\n---\n读附件。`, 'utf8')
+      const at = new Date(Date.now() - 5_000)
+      utimesSync(path, at, at)
+      await settle(runtime)
+      const ticket = runtime.store.tickets.list()[0]!
+      expect(ticket.assignments.at(-1)!.report).toMatchObject({ state: 'failed' })
+      expect(ticket.assignments.at(-1)!.report!.summary).toContain('workRoot')
+    } finally { await runtime.stop() }
+  })
+
   it('reports a file that cannot be copied, rather than starting the Ticket without its input', async () => {
     const context = await deployment('auto')
     const { runtime, host } = context

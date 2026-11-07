@@ -1,4 +1,5 @@
 import { taskTitle } from '../lib/inbound.mjs'
+import { formatRoute } from '../lib/route.mjs'
 
 /**
  * The pure half of the Lark/Feishu bridge: an `im.message.receive_v1` event in, a channel message (or a reason to
@@ -98,13 +99,21 @@ export function mapEvent(event, { botOpenId, mode = 'mentions', chatAllowList = 
   if (mode === 'mentions' && !isDirect && !mentionedBot && !mentionAll) return { skip: 'not-mentioned' }
   const text = stripMentions(contentText(message.message_type, message.content))
   if (text === '') return { skip: `no-text:${String(message.message_type ?? 'unknown')}` }
-  const thread = message.root_id ?? message.thread_id
+  const rawThread = message.root_id ?? message.thread_id
+  const hasTopic = rawThread !== undefined && rawThread !== ''
+  const thread = formatRoute({
+    kind: isDirect ? 'dm' : hasTopic ? 'topic' : 'group',
+    chatId,
+    threadId: hasTopic ? String(rawThread) : undefined,
+  })
+  const replyToMessageId = message.parent_id ?? message.root_id
   const derivedTitle = title ?? taskTitle(String(senderId), text)
   return {
     message: {
       from: String(senderId),
       id: String(message.message_id),
-      ...(thread === undefined || thread === '' ? {} : { thread: String(thread) }),
+      thread,
+      ...(replyToMessageId === undefined || replyToMessageId === '' ? {} : { replyToMessageId: String(replyToMessageId) }),
       title: derivedTitle,
       body: text,
       chatId,

@@ -11,7 +11,8 @@
  * "the answer never arrived" must not be indistinguishable from "no answer was ever owed".
  */
 import { accessSync, constants, mkdirSync, statSync, writeFileSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { lstat, writeFile } from 'node:fs/promises'
+import { resolveRealInside } from './files.ts'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
@@ -90,11 +91,16 @@ export interface DeliveryHost {
 }
 
 /** A reply on its way back to wherever the Ticket's request came from, as the effects queue carries it. */
+export const MAX_OUTBOUND_FILES = 5
+export const MAX_OUTBOUND_FILE_BYTES = 20 * 1024 * 1024
+
 export interface SendPayload {
   /** The Ticket the reply belongs to, which is what makes a give-up traceable to a person's own work. */
   readonly ticketId: string
   readonly replyTo: ReplyTo
   readonly text: string
+  /** Relative paths of report artifacts on a `ready` report, resolved and verified inside `sendReply`. */
+  readonly files?: readonly string[]
 }
 
 /** Where a reply that the queue gave up on is written, inside the Ticket's own directory. */
@@ -386,7 +392,10 @@ export class OutcomeDelivery implements Delivery {
     // — its own file header is "where a Report goes when it is worth telling someone" — and the platform a request
     // came from is one of those places. For every one-way Source this is the counted no-op below, so a deployment
     // with no chat Source pays one map lookup per Report and sends nothing.
-    this.send(ticket, replyText(ticket, report))
+    const files = report.state === 'ready' && report.files !== undefined && report.files.length > 0
+      ? report.files
+      : undefined
+    this.send(ticket, replyText(ticket, report), files)
   }
 
   /**
@@ -396,7 +405,7 @@ export class OutcomeDelivery implements Delivery {
    * makes one platform hiccup retryable instead of final, and what deduplicates a Report that is recorded twice. An
    * inline send loses the sentence the first time the network stumbles, and loses it silently.
    */
-  send(ticket: Ticket, text: string): void {
+  send(ticket: Ticket, text: string, files?: readonly string[]): void {
     // Resolved from the Trigger, which is the only place an address was ever written down. Never inferred from the
     // actor: an id says who asked, not where to answer, and a guessed address posts a Report to a room that never
     // asked for one (contract §3.3).
@@ -407,7 +416,10 @@ export class OutcomeDelivery implements Delivery {
       return
     }
     this.queued++
-    this.host.effects.enqueue('send', sendKey(ticket.id, replyTo, text), { ticketId: ticket.id, replyTo, text })
+    this.host.effects.enqueue('send', sendKey(ticket.id, replyTo, text), {
+      ticketId: ticket.id, replyTo, text,
+      ...(files === undefined || files.length === 0 ? {} : { files }),
+    })
   }
 
   /**
@@ -416,6 +428,29 @@ export class OutcomeDelivery implements Delivery {
    * A throw is left to ride — the queue counts it, backs off, and gives up with a trace. Catching it here would turn a
    * platform that is down into a reply that looks delivered, which is the one outcome worse than a retry.
    */
+  /**
+   * Resolve and physically verify at most `MAX_OUTBOUND_FILES` files (each <= 20 MB, regular file, not a symlink,
+   * strictly inside the Ticket's own directory) before handing their paths to a two-way Source.
+   */
+  private async resolveOutboundFiles(payload: SendPayload): Promise<string[]> {
+    if (payload.files === undefined || payload.files.length === 0) return []
+    const directory = this.host.store.tickets.get(payload.ticketId)?.execution?.directory
+    if (directory === undefined) return []
+    const verified: string[] = []
+    for (const rel of payload.files.slice(0, MAX_OUTBOUND_FILES)) {
+      const absolute = await resolveRealInside(directory, rel)
+      if (absolute === undefined) continue
+      try {
+        const info = await lstat(absolute)
+        if (info.isSymbolicLink() || !info.isFile() || info.size > MAX_OUTBOUND_FILE_BYTES) continue
+        verified.push(absolute)
+      } catch {
+        continue
+      }
+    }
+    return verified
+  }
+
   private async sendReply(payload: SendPayload): Promise<void> {
     this.complained = false
     const source = this.host.source(payload.replyTo.kind)
@@ -426,7 +461,11 @@ export class OutcomeDelivery implements Delivery {
     // gone or switched off. Here the address is fine and nothing is running that could take it: a different cause with
     // a different remedy — put a Source of that kind back, versus put the channel back.
     if (typeof deliver !== 'function') throw new UserError('reply_unreceivable', { kind: payload.replyTo.kind })
-    await deliver.call(source, payload.replyTo, payload.text)
+    const verifiedFiles = await this.resolveOutboundFiles(payload)
+    await deliver.call(source, payload.replyTo, payload.text, {
+      ticketId: payload.ticketId,
+      ...(verifiedFiles.length === 0 ? {} : { files: verifiedFiles }),
+    })
     // Reached only when the reply really went out: a throw above leaves the line this part reported standing, which is
     // the difference between "delivery works again" and "delivery stopped complaining".
     this.summarize()

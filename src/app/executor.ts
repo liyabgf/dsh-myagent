@@ -6,8 +6,8 @@
  * accepted" and "the worker heard about it" is then a retry, not a lost request. A prepare command that fails is never
  * retried — a half-made directory would look prepared to the next attempt.
  */
-import { copyFile, mkdir } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { copyFile, lstat, mkdir, realpath } from 'node:fs/promises'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
@@ -159,6 +159,18 @@ export class DshExecutor implements Executor {
   }
 
   /**
+   * Re-queue every open Ticket whose latest Assignment is still `pending`, so freeing a worker slot (via `stop` or
+   * `done`) wakes a queued Ticket on the very next pass instead of waiting out `SLOT_RETRY_MS`.
+   */
+  releaseWaitingSlots(): void {
+    for (const ticket of this.host.store.tickets.open()) {
+      const assignment = latestAssignment(ticket)
+      if (assignment === undefined || assignment.state !== 'pending') continue
+      this.host.effects.enqueue('launch', key('launch', ticket.id, assignment.id), { ticketId: ticket.id, assignmentId: assignment.id })
+    }
+  }
+
+  /**
    * Launches that began at least `olderThanMs` ago and have not produced a Session yet.
    *
    * The timestamp was already being recorded for the slot count and never read: this is what it was for. A launch that
@@ -200,10 +212,14 @@ export class DshExecutor implements Executor {
     void this.halt(ticket.id, stopReason, false)
   }
 
-  /** How many worker slots are in use: Sessions running a turn, plus launches in flight. */
+  /**
+   * How many worker slots are in use: Sessions running a turn, Sessions with undelivered person answers about to wake
+   * them, plus launches in flight.
+   */
   used(): number {
     const running = this.host.store.tickets.open()
-      .filter(ticket => runningAssignment(ticket) !== undefined && this.agentRunning(ticket.id))
+      .filter(ticket => runningAssignment(ticket) !== undefined
+        && (this.agentRunning(ticket.id) || undelivered(ticket).some(input => input.kind === 'text')))
       .map(ticket => ticket.id)
     return new Set([...running, ...this.starting.keys()]).size
   }
@@ -324,9 +340,23 @@ export class DshExecutor implements Executor {
     if (ticket.attachments.length === 0) return
     const target = join(directory, 'attachments')
     await mkdir(target, { recursive: true })
+    const root = resolve(this.host.workRoot())
+    const realRoot = await realpath(root).catch(() => root)
     for (const attachment of ticket.attachments) {
+      const safeName = basename(attachment.name)
+      if (safeName === '' || safeName === '.' || safeName === '..' || safeName !== attachment.name) {
+        throw new PrepareFailed(`The attached file name ${attachment.name} is not a plain file name`)
+      }
       try {
-        await copyFile(attachment.source, join(target, attachment.name))
+        const info = await lstat(attachment.source)
+        if (info.isSymbolicLink()) {
+          throw new Error('symbolic links may not be attached')
+        }
+        const realSource = await realpath(attachment.source)
+        if (realSource === realRoot || realSource.startsWith(realRoot + sep)) {
+          throw new Error('files inside myagent workRoot belong to other Tickets and may not be attached')
+        }
+        await copyFile(realSource, join(target, safeName))
       } catch (error) {
         throw new PrepareFailed(`The attached file ${attachment.source} could not be copied into the Ticket's directory: ${reason(error)}`)
       }

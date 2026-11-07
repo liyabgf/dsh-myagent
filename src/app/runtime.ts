@@ -40,7 +40,7 @@ import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
 import { mainTools, workerTools, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
-import { listFiles, isTextFile, readForPanel, resolveInside } from './files.ts'
+import { listFiles, isTextFile, readForPanel, resolveInside, resolveRealInside } from './files.ts'
 import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
 
 /** How often the pump runs what is due, in milliseconds. */
@@ -609,8 +609,8 @@ export class Runtime implements HttpHost {
     }
     // The same traversal guard the panel's file routes use: a registered path is data, and data does not get to decide
     // where on disk it points.
-    const absolute = resolveInside(authorized.directory, authorized.artifact.path)
-    if (absolute === undefined) return { ok: false, error: 'That artifact is not a path inside its Ticket directory.', code: 'artifact_missing' }
+    const absolute = await resolveRealInside(authorized.directory, authorized.artifact.path)
+    if (absolute === undefined) return { ok: false, error: 'That artifact is not a path inside its Ticket directory (or is a symbolic link).', code: 'artifact_missing' }
     try {
       const read = await readForPanel(absolute)
       if (!isTextFile(authorized.artifact.path, read.size)) {
@@ -1150,6 +1150,7 @@ export class Runtime implements HttpHost {
         }
         // Whatever waited for this Ticket is told at once instead of noticing at the end of a deferral interval.
         this.executor.releaseDependants(event.ticket.id)
+        this.executor.releaseWaitingSlots()
         this.refresh()
         this.passes.requestPass()
         break

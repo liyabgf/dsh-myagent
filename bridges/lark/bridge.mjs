@@ -37,7 +37,10 @@
 import { createLog } from '../lib/log.mjs'
 import { loadState, saveState } from '../lib/state.mjs'
 import { writeMessage } from '../lib/inbound.mjs'
+import { createReadStream } from 'node:fs'
+import { basename } from 'node:path'
 import { drainOut } from '../lib/outbound.mjs'
+import { parseRoute } from '../lib/route.mjs'
 import { mapEvent } from './transform.mjs'
 
 const log = createLog('lark', { level: process.env.BRIDGE_LOG_LEVEL ?? 'info' })
@@ -113,8 +116,13 @@ const onMessage = async event => {
     chatAllowList,
   })
   if (mapped.skip !== undefined) { log.debug('skipped', { reason: mapped.skip }); return }
-  const { chatId, isDirect, ...message } = mapped.message
-  await writeMessage({ directory, ...message })
+  const { chatId, isDirect, replyToMessageId, ...message } = mapped.message
+  const replyToTicket = replyToMessageId === undefined ? undefined : state.data.sentMessages?.[replyToMessageId]
+  await writeMessage({
+    directory,
+    ...message,
+    ...(replyToTicket === undefined ? {} : { replyToTicket }),
+  })
   const routes = { ...(state.data.replyRoutes ?? {}) }
   if (message.thread !== undefined) routes[message.thread] = chatId
   state.data = await saveState(directory, {
@@ -129,36 +137,58 @@ const onMessage = async event => {
 }
 
 const outbound = async ({ thread, text, name }) => {
-  const chatId = (thread !== undefined ? state.data.replyRoutes?.[thread] : undefined) ?? state.data.defaultChat
-  if (thread !== undefined) {
+  const route = parseRoute(thread, state.data)
+  const chatId = route?.chatId
+  const replyTarget = route?.kind === 'topic' || route?.kind === 'legacy' ? route.threadId : undefined
+  if (replyTarget !== undefined) {
     try {
-      // Answer inside the same reply chain. The message id a thread carries IS a message id in Lark, so this is the
-      // direct way to keep a conversation in one place instead of adding a new top-level message each time.
-      await client.request({
-        method: 'POST', url: `/open-apis/im/v1/messages/${encodeURIComponent(thread)}/reply`,
+      const res = await client.request({
+        method: 'POST', url: `/open-apis/im/v1/messages/${encodeURIComponent(replyTarget)}/reply`,
         data: { content: JSON.stringify({ text }), msg_type: 'text' },
       })
       state.data = await saveState(directory, { lastOutboundAt: new Date().toISOString(), lastOutboundFile: name })
-      return
+      const msgId = res?.data?.message_id
+      return msgId ? { messageId: String(msgId) } : undefined
     } catch (error) {
-      // Fall through to posting into the chat: an answer in the wrong place still beats no answer, and the reason is
-      // in the log rather than swallowed.
       log.warn('reply-failed-falling-back-to-chat', { thread, error: String(error?.message ?? error) })
     }
   }
   if (chatId === undefined) throw new Error(`no chat known for thread ${thread ?? '(none)'} — the bridge has not seen an inbound message yet`)
-  await client.im.message.create({
+  const res = await client.im.message.create({
     params: { receive_id_type: 'chat_id' },
     data: { receive_id: chatId, content: JSON.stringify({ text }), msg_type: 'text' },
   })
   state.data = await saveState(directory, { lastOutboundAt: new Date().toISOString(), lastOutboundFile: name })
+  const msgId = res?.data?.message_id
+  return msgId ? { messageId: String(msgId) } : undefined
+}
+
+const sendOutboundFile = async ({ thread, filePath }) => {
+  const route = parseRoute(thread, state.data)
+  const chatId = route?.chatId
+  if (chatId === undefined) throw new Error(`no chat known for file on thread ${thread ?? '(none)'}`)
+  const uploaded = await client.im.file.create({
+    data: { file_type: 'stream', file_name: basename(filePath), file: createReadStream(filePath) },
+  })
+  const fileKey = uploaded?.data?.file_key ?? uploaded?.file_key
+  if (!fileKey) throw new Error(`Lark file upload returned no file_key for ${basename(filePath)}`)
+  await client.im.message.create({
+    params: { receive_id_type: 'chat_id' },
+    data: { receive_id: chatId, content: JSON.stringify({ file_key: fileKey }), msg_type: 'file' },
+  })
+  log.info('file-sent', { chat: chatId, file: basename(filePath) })
+}
+
+const recordSentReceipt = async ({ messageId, ticketId }) => {
+  const existing = { ...(state.data.sentMessages ?? {}), [messageId]: ticketId }
+  state.data = await saveState(directory, { sentMessages: existing })
 }
 
 /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
 const startOutboundLoop = () => {
   const tick = async () => {
     try {
-      await drainOut({ directory, send: outbound, log, keepDays })
+      await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays })
     } catch (error) {
       log.error('outbound-failed', { error: String(error?.message ?? error) })
     }

@@ -6,7 +6,7 @@
  * the marker header the panel's own fetch sets.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { stat } from 'node:fs/promises'
+import { lstat } from 'node:fs/promises'
 import { z } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
@@ -16,7 +16,7 @@ import { policyVersion, ScheduleSchema, sourcePolicy, type Settings } from '../c
 import { describeTiming, localZone, nextRun } from '../core/timing.ts'
 import { PROMPT_ROLES, PromptConflict } from './prompts.ts'
 import { scheduleView } from './views.ts'
-import { isTextFile, listFiles, MAX_FILE_BYTES, readForPanel, resolveInside } from './files.ts'
+import { isTextFile, listFiles, MAX_FILE_BYTES, readForPanel, resolveInside, resolveRealInside } from './files.ts'
 import type { Recipe, WorkerProgress } from './runtime.ts'
 import { SetupError, machineView, type Machine } from '../deployment.ts'
 import type { HealthBoard } from './health.ts'
@@ -503,11 +503,14 @@ function table(host: HttpHost): readonly Route[] {
       const requested = query.get('path') ?? ''
       if (requested === '') throw new RouteError(400, 'A path is required')
       // A `../` here would turn a file route into a way out of the Ticket's directory.
-      const absolute = resolveInside(directory, requested)
-      if (absolute === undefined) throw new RouteError(400, `That path is outside this Ticket's directory`)
+      const lexical = resolveInside(directory, requested)
+      if (lexical === undefined) throw new RouteError(400, `That path is outside this Ticket's directory`)
       let info
-      try { info = await stat(absolute) } catch { throw new RouteError(404, `There is no file at ${requested}`) }
+      try { info = await lstat(lexical) } catch { throw new RouteError(404, `There is no file at ${requested}`) }
+      if (info.isSymbolicLink()) throw new RouteError(400, `That path is outside this Ticket's directory (symbolic links are refused)`) 
       if (info.isDirectory()) throw new RouteError(400, `${requested} is a directory`)
+      const absolute = await resolveRealInside(directory, requested)
+      if (absolute === undefined) throw new RouteError(400, `That path is outside this Ticket's directory`)
       if (info.size > MAX_FILE_BYTES) {
         throw new RouteError(400, `${requested} is ${(info.size / 1_048_576).toFixed(1)} MB; the panel serves up to `
           + `${Math.floor(MAX_FILE_BYTES / 1_048_576)} MB. Open it where it is: ${absolute}`)

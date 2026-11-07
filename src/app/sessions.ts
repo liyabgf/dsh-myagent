@@ -15,6 +15,8 @@ import type {} from '@deepseek-ai/dsh-workspace'
 import type {} from '@deepseek-ai/dsh-permission-presets'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-tools'
+import { lstatSync, realpathSync } from 'node:fs'
+import { dirname, resolve, sep } from 'node:path'
 import { latestReport, ticketStage, type Ticket } from '../core/model.ts'
 import { AgentDelivery } from './agent-delivery.ts'
 import type { Prompts, PromptRole } from './prompts.ts'
@@ -133,6 +135,93 @@ export function refusedNamesOf(message: string): readonly string[] {
   const segment = /unknown global tools? ((?:"[^"]*"(?:,\s*)?)+)/.exec(message)?.[1]
   if (segment === undefined) return []
   return [...segment.matchAll(/"([^"]*)"/g)].map(match => match[1]!)
+}
+
+/**
+ * Refuse any tool call by a worker that reaches into `workRoot` outside the worker's own directory, or creates a
+ * symbolic link into another Ticket's workspace.
+ *
+ * Why this exists: in the live incident (`2618fe25`), a worker given a follow-up sentence with no context inspected
+ * `..` (`workRoot`) and ran `ln -s ../group-...-68172c09/raw raw` to borrow another Ticket's files. Cross-Ticket
+ * sharing is only authorized inside a shared Work via `myagent_read_artifact`; rummaging through sibling directories
+ * bypasses both the Work boundary and the audit trail.
+ */
+export function guardWorkerCall(
+  ticket: Ticket,
+  workRoot: string,
+  execution?: { readonly name?: string; readonly arguments?: unknown },
+): string | undefined {
+  const ownDir = ticket.execution?.directory
+  if (ownDir === undefined || execution === undefined) return undefined
+  const rootLex = resolve(workRoot)
+  const ownLex = resolve(ownDir)
+  let rootReal = rootLex
+  let ownReal = ownLex
+  try { rootReal = realpathSync(rootLex) } catch { /* use lexical if not created yet */ }
+  try { ownReal = realpathSync(ownLex) } catch { /* use lexical if not created yet */ }
+
+  const checkCandidate = (rawPath: string): string | undefined => {
+    const trimmed = rawPath.trim()
+    if (trimmed === '') return undefined
+    const targetLex = resolve(ownLex, trimmed)
+    const inOwnLex = targetLex === ownLex || targetLex.startsWith(ownLex + sep)
+    const inRootLex = targetLex === rootLex || targetLex.startsWith(rootLex + sep)
+    if (inRootLex && !inOwnLex) {
+      return `Refused: ${rawPath} is in myagent's work root outside this Ticket's own directory (${ownLex}). `
+        + 'A worker may not inspect or read `..` or sibling Ticket directories; use `myagent_read_artifact` when Tickets share a Work, or report `blocked` if your prompt lacks context.'
+    }
+    // Also check physical path when the target (or its parent) exists on disk, so an existing symlink inside ownDir
+    // pointing at another Ticket's directory cannot be read through `read`/`edit`/`glob`/`grep`.
+    try {
+      const stat = lstatSync(targetLex)
+      if (stat.isSymbolicLink()) {
+        const real = realpathSync(targetLex)
+        const inOwnReal = real === ownReal || real.startsWith(ownReal + sep)
+        if (!inOwnReal) {
+          return `Refused: ${rawPath} is a symbolic link pointing outside this Ticket's directory (${real}).`
+        }
+      }
+      const real = realpathSync(targetLex)
+      const inOwnReal = real === ownReal || real.startsWith(ownReal + sep)
+      const inRootReal = real === rootReal || real.startsWith(rootReal + sep)
+      if (inRootReal && !inOwnReal) {
+        return `Refused: ${rawPath} resolves to another Ticket's directory (${real}).`
+      }
+    } catch {
+      // Target does not exist yet (e.g. write): check parent's realpath if it exists.
+      try {
+        const parentReal = realpathSync(dirname(targetLex))
+        const inOwnReal = parentReal === ownReal || parentReal.startsWith(ownReal + sep)
+        const inRootReal = parentReal === rootReal || parentReal.startsWith(rootReal + sep)
+        if (inRootReal && !inOwnReal) {
+          return `Refused: parent of ${rawPath} resolves to another Ticket's directory (${parentReal}).`
+        }
+      } catch { /* parent does not exist either */ }
+    }
+    return undefined
+  }
+
+  const args = (execution.arguments !== null && typeof execution.arguments === 'object')
+    ? execution.arguments as Record<string, unknown>
+    : {}
+  for (const key of ['file_path', 'path', 'cd', 'workdir', 'cwd']) {
+    const val = args[key]
+    if (typeof val === 'string') {
+      const denial = checkCandidate(val)
+      if (denial !== undefined) return denial
+    }
+  }
+  if (execution.name === 'bash' || execution.name === 'pwsh') {
+    const cmd = typeof args.command === 'string' ? args.command : ''
+    if (/\bln\s+-s\b/.test(cmd) && (cmd.includes('..') || cmd.includes(rootLex) || cmd.includes(rootReal))) {
+      return `Refused: creating symbolic links to parent or sibling directories is forbidden in a worker Session.`
+    }
+    if ((/(?:^|[\s;|&"'`])\.\.(?:\/|\s|$|[;&"'`])/.test(cmd)) || (cmd.includes(rootLex) && !cmd.includes(ownLex))) {
+      return `Refused: shell command references the parent work root or ` + '`..`' + ` outside this Ticket's directory (${ownLex}). `
+        + 'Stay inside your own directory; if your prompt is a follow-up that lacks context, report `blocked` with `myagent_report`.'
+    }
+  }
+  return undefined
 }
 
 function workerSection(ticket: Ticket, environment: Record<string, string>): string {
@@ -378,11 +467,14 @@ export class Sessions {
       // names the requirement and not the way to meet it — and this is the message a person meets who opened a Session
       // in the GUI, picked the worker preset and wondered why nothing reached the panel. A refusal is a teaching
       // moment, so it names the three ways work actually enters: none of them is this Session.
-      disposers.push(agent.ctx.tools.guard(() => this.host.ticketEnded(ticket.id)
-        ? `Ticket ${ticket.id} has ended, so this Session's authorization ended with it. New work needs a new Ticket: `
-          + 'dispatch it from the panel\'s 派活 tab, ask in the main Session (myagent-main), '
-          + 'or drop a request file in the inbox directory.'
-        : undefined))
+      disposers.push(agent.ctx.tools.guard((execution?: { readonly name?: string; readonly arguments?: unknown }) => {
+        if (this.host.ticketEnded(ticket.id)) {
+          return `Ticket ${ticket.id} has ended, so this Session's authorization ended with it. New work needs a new Ticket: `
+            + 'dispatch it from the panel\'s 派活 tab, ask in the main Session (myagent-main), '
+            + 'or drop a request file in the inbox directory.'
+        }
+        return guardWorkerCall(ticket, this.host.masterDir(), execution)
+      }))
     }
     for (const tool of this.host.tools(agent, ticket)) disposers.push(agent.ctx.tools.register(definitionOf(tool)))
     this.bindings.set(agent, { disposers, revision, role, ticketId: ticket?.id })
