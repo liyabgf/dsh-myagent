@@ -360,3 +360,66 @@ describe('a fourth Source kind is visible to every call site', () => {
     expect(refused.detail).not.toContain('session')
   })
 })
+
+describe('the triage switch (S3b)', () => {
+  it('ships off, so nobody pays for a judge they did not ask for', () => {
+    // 【B1 产品变更】triage 多了 desk。旧值：{ enabled: false }。默认仍是专职分诊台（B2）。
+    expect(parseSettings({}).triage).toEqual({ enabled: false, desk: 'dedicated' })
+    expect(parseSettings({ triage: { enabled: true } }).triage.enabled).toBe(true)
+  })
+
+  /**
+   * 【B1 产品变更】这条测试原先断言 `desk` **被拒绝**，因为它那时是个不能取另一个值的旋钮——
+   * 旧断言：`expect(() => parseSettings({ triage: { enabled: true, desk: 'main' } })).toThrowError(/desk/)`。
+   *
+   * 现在 B1 真的实现了（`myagent_close_ticket` 是它缺的那块），所以断言换成"两个值都收，第三个值拒"。
+   * 原来那条的理由仍然成立，只是被满足了：**一个不能取另一个值的开关比没有开关更糟**，
+   * 因为它读起来像操作者做过的选择，而两个值行为相同。
+   */
+  it('takes both desks and refuses a third, now that the second one actually works', () => {
+    expect(parseSettings({ triage: { enabled: true, desk: 'main' } }).triage.desk).toBe('main')
+    expect(parseSettings({ triage: { enabled: true, desk: 'dedicated' } }).triage.desk).toBe('dedicated')
+    expect(() => parseSettings({ triage: { desk: 'whoever' } })).toThrowError(/desk/)
+  })
+
+  it('does not move the policy version, because routing a future request invalidates no authorization', () => {
+    const base = settings({})
+    expect(policyVersion(settings({ triage: { enabled: true } }))).toBe(policyVersion(base))
+    // The contrast that makes the line above meaningful: something that DOES bear on authorization moves it.
+    expect(policyVersion(settings({ allowedSenders: ['operator', 'alice'] }))).not.toBe(policyVersion(base))
+  })
+})
+
+describe('the triage predicate itself (S3b)', () => {
+  /**
+   * The same rule the engine-level test asserts, observed one layer down: the predicate rather than the Assignment it
+   * eventually produces.
+   *
+   * It exists because 0.8 found the engine assertion to be the ONLY guard on the depth condition, and the reason is
+   * worth stating rather than papering over: `createTicket` synthesizes a `session` Trigger and a rule chain produces
+   * `rule` Triggers, so **no code today produces `source: chat|inbox|cron` together with `depth > 0`** — the depth
+   * condition is defense in depth for a combination that does not occur yet. A predicate-level test is the honest
+   * second guard for a rule that is currently unreachable end to end: it pins the rule now, so the day something does
+   * produce that combination, the guard is already known to work.
+   */
+  const trigger = (over: Record<string, unknown> = {}): Trigger => ({
+    id: 'trigger-1', source: 'chat', kind: 'chat', at: '2026-11-07T08:00:00.000Z',
+    actor: { id: 'alice', kind: 'person' }, text: '现在有几张在跑？', title: '巡视', ...over,
+  } as Trigger)
+
+  it('triages a person’s words from a Source, and nothing else', () => {
+    const on = settingsPolicy(settings({ triage: { enabled: true } }))
+    expect(on.triage(trigger())).toBe(true)
+    expect(on.triage(trigger({ source: 'inbox', kind: 'inbox' }))).toBe(true)
+    expect(on.triage(trigger({ source: 'cron', kind: 'cron' }))).toBe(true)
+    // Already in the room, or already decided.
+    expect(on.triage(trigger({ source: 'session', kind: 'session' }))).toBe(false)
+    expect(on.triage(trigger({ source: 'rule', kind: 'rule' }))).toBe(false)
+    // Defense in depth: a Ticket the desk opened must never be triaged again.
+    expect(on.triage(trigger({ meta: { depth: 1 } }))).toBe(false)
+    expect(on.triage(trigger({ meta: { depth: 0 } }))).toBe(true)
+    // Off means off, for every source.
+    const off = settingsPolicy(settings({}))
+    expect(off.triage(trigger())).toBe(false)
+  })
+})

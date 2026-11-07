@@ -354,7 +354,10 @@ export class Sessions {
    */
   async decorate(agent: Agent, ticket: Ticket | undefined): Promise<void> {
     const revision = this.host.prompts.revision()
-    const role: PromptRole = ticket === undefined ? 'orchestrator' : 'worker'
+    // A triage attempt gets the triage prompt: same Ticket facts, a different job (decide, do not do).
+    const role: PromptRole = ticket === undefined
+      ? 'orchestrator'
+      : ticket.assignments.at(-1)?.role === 'triage' ? 'triage' : 'worker'
     const binding = this.bindings.get(agent)
     if (binding !== undefined && binding.revision === revision && binding.role === role
       && binding.ticketId === ticket?.id) return

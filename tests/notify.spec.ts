@@ -185,3 +185,40 @@ describe('the panel\'s own view of a finished Ticket', () => {
   })
 
 })
+
+describe('an escalation is told once, seen from the front desk (S2)', () => {
+  /**
+   * The same rule as the chat-side test, observed from the other end and in the other harness: this deployment has no
+   * `replyTo` at all (the inbox shape), so nothing can reach a requester and the only observer is the front desk.
+   *
+   * It exists because the wiring guard in `chat-send.spec.ts` is otherwise the ONLY thing standing between the
+   * runtime's call to `isFirstEscalation` and silence: the pure function has its own unit test, and that test stays
+   * green when the mutation removes the CALL. Two layers, two directions — deleting either one leaves the other red.
+   */
+  it('wakes the front desk for the first give-up and not for the two that follow', async () => {
+    const context = await deployment('auto')
+    const runtime = context.runtime
+    try {
+      await runtime.createMainSession()
+      // 用本文件已有的 helper 起一张真实的任务：自己往 inbox 丢文件再 wait(120) 不够，扫描要一个 pass。
+      const id = await started(context)
+      const ticket = runtime.store.tickets.get(id)!
+      const host = (runtime as unknown as {
+        watchdogHost(): { escalate(ticketId: string, why: string): void }
+      }).watchdogHost()
+      const why = 'has not started after 2 attempts to rescue it; it needs a person'
+      host.escalate(ticket.id, why)
+      await settle(runtime)
+      host.escalate(ticket.id, why)
+      host.escalate(ticket.id, why)
+      await settle(runtime)
+
+      // Recorded every time — the history is what answers "how many times did we give up".
+      expect(runtime.store.events.list(ticket.id).filter(event => event.type === 'escalated')).toHaveLength(3)
+      // Told once: the front desk was woken for the first and not for the repeats.
+      const desk = context.host.agents.get('myagent-main')!
+      expect(desk.followups.filter(item => item.text.includes('the Watchdog has given up'))).toHaveLength(1)
+      expect(desk.followups.at(-1)!.text).toContain('myagent_retry_ticket')
+    } finally { await runtime.stop() }
+  })
+})

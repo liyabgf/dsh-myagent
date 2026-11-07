@@ -31,6 +31,23 @@ export interface TicketSummary {
   /** The Work this Ticket belongs to, and its place in that Work's history. Absent on Tickets made before V2. */
   readonly workId?: string
   readonly workSeq?: number
+  /**
+   * The tombstone, when this Ticket was deleted with its record kept (S4).
+   *
+   * On the summary rather than only the detail view, because the one place an operator has to be able to tell a
+   * deleted Ticket from a live one at a glance is the list — and the numbers travel with it, since after the assets
+   * are gone nothing else records how much was thrown away.
+   */
+  readonly deleted?: Ticket['deleted']
+  /**
+   * Whether the attempt behind this Ticket is a triage one: it decides what a request becomes instead of doing the
+   * work (S3b).
+   *
+   * On the summary rather than only the detail view, because the panel is where an operator works out why a Ticket
+   * looks like it is doing nothing — a triage Ticket that answers in one turn and closes is correct behaviour, and
+   * without the marker it is indistinguishable from a worker that gave up.
+   */
+  readonly triage?: boolean
   readonly waitsForPerson: boolean
   readonly question?: string
   readonly summary?: string
@@ -45,6 +62,8 @@ export function ticketSummary(ticket: Ticket): TicketSummary {
     createdAt: ticket.createdAt, updatedAt: updatedAt(ticket),
     via: ticket.mandate.via, sender: ticket.mandate.sender.id,
     directory: ticket.execution?.directory,
+    ...(ticket.deleted === undefined ? {} : { deleted: ticket.deleted }),
+    ...(latestAssignment(ticket)?.role === 'triage' ? { triage: true } : {}),
     waitsForPerson: waitsForPerson(ticket),
     question: ticket.attention?.question,
     summary: report?.summary,

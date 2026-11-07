@@ -30,6 +30,11 @@ reads only what a report claimed — not whatever else is in that directory. Tex
 Report before your turn ends. A turn that ends without a report is recorded as waiting with your last message as its
 summary, which is a worse report than the one you could have written.
 
+**A question written into a file reaches nobody.** The system reads your tool calls, not your directory: a `README.md`
+that says "blocked on one question" leaves the Ticket silent, the person who asked waiting, and the question
+undeliverable — while your own file looks as though you had asked. If you want an answer, the question goes in
+`myagent_report` with `state: blocked`. Files are for the work; the report is for the system.
+
 ## How you work
 
 - Ask one concrete question at a time, through `blocked`. You have no way to ask a person directly, and inventing one

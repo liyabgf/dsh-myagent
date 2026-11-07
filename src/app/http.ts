@@ -52,6 +52,17 @@ export interface HttpHost {
    * when the Delivery grows a member.
    */
   readonly delivery: { sends(): { readonly queued: number; readonly nowhere: number } }
+  /**
+   * Delete a Ticket and, when asked, the files it produced (S4).
+   *
+   * Narrow for the same reason `delivery` is: the route table gets one verb with one bag of options rather than the
+   * Runtime, so a route cannot stop a worker or rewrite settings on the way past. The IO lives behind it because the
+   * Engine does no IO — it authorizes and locates, and the Runtime removes.
+   */
+  deleteTicket(id: string, options: { assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing' }): Promise<{
+    deleted: string; assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing'
+    directory?: string; files?: number; bytes?: number
+  }>
   /** The artifacts a Ticket registered, in the order their reports arrived. */
   artifacts(ticketId: string): readonly Artifact[]
   /** When the plugin mounted, which is how you tell a stale bundle from a stale page. */
@@ -337,10 +348,14 @@ function table(host: HttpHost): readonly Route[] {
   return [
     route('GET', 'state', () => stateView(host)),
     route('GET', 'tickets', ({ query }) => {
-      const filter = (query.get('state') ?? 'open') as 'open' | 'ended' | 'attention' | 'all'
+      const filter = (query.get('state') ?? 'open') as 'open' | 'ended' | 'attention' | 'all' | 'deleted'
       const offset = number(query, 'offset', 0, 100_000)
       const limit = number(query, 'limit', 50, 200)
-      const tickets = host.store.tickets.page(filter === 'open' || filter === 'ended' || filter === 'attention' || filter === 'all' ? filter : 'open', offset, limit)
+      const tickets = host.store.tickets.page(
+        filter === 'open' || filter === 'ended' || filter === 'attention' || filter === 'all' || filter === 'deleted'
+          ? filter
+          : 'open',
+        offset, limit)
       return { offset, limit, count: tickets.length, tickets: tickets.map(ticketSummary) }
     }),
     route('GET', 'tickets/:id', ({ params }) => {
@@ -405,6 +420,10 @@ function table(host: HttpHost): readonly Route[] {
     route('POST', 'works/:id/archive', ({ params }) => host.engine.archiveWork(params.id!)),
     route('POST', 'works/:id/unarchive', ({ params }) => host.engine.unarchiveWork(params.id!)),
     route('POST', 'works/:id/delete', ({ params }) => host.engine.deleteWork(params.id!)),
+  // Both options default to the reversible end: keeping the assets and keeping a tombstone. An operator who wants the
+  // stronger version has to say so twice, and the panel makes them read what it costs first.
+  route('POST', 'tickets/:id/delete', async ({ params, body }) =>
+    host.deleteTicket(params.id!, BodySchemas.deleteTicket.parse(await body()))),
     route('POST', 'works', async ({ body }) => host.engine.createWork(BodySchemas.work.parse(await body()))),
     route('GET', 'works/:id', ({ params }) => {
       const work = host.engine.work(params.id!)
@@ -630,6 +649,17 @@ function table(host: HttpHost): readonly Route[] {
 
 /** The request bodies the panel may send. */
 const BodySchemas = {
+  /**
+   * What a deletion removes (S4). Two independent axes, because they are two different losses:
+   * `assets` is the produced files (recoverable only from a backup), `record` is the Ticket itself.
+   * `.strict()` so a misspelled option is refused rather than silently treated as the default — an unrecognized
+   * `asset: 'delete'` must not become "keep", and an unrecognized `records: 'nothing'` must not become a tombstone
+   * the operator believes is a full deletion.
+   */
+  deleteTicket: z.object({
+    assets: z.enum(['keep', 'delete']).default('keep'),
+    record: z.enum(['tombstone', 'nothing']).default('tombstone'),
+  }).strict(),
   create: z.object({
     // Trimmed rather than merely non-empty: whitespace would wake a worker with nothing to read.
     title: z.string().trim().min(1).max(200), request: z.string().trim().min(1).max(20_000),

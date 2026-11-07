@@ -426,13 +426,18 @@ class Tickets implements TicketRepository {
   list(): Ticket[] {
     return (this.db.prepare('SELECT record FROM tickets ORDER BY createdAt').all() as { record: string }[])
       .map(row => read<Ticket>(row.record))
+      // 墓碑对每一个列表都不可见（面板、myagent_list_tickets、Work 的子项），而 get 仍然解析得到——
+      // 指向已删任务的 note 与 artifact 于是读到「已删除」，而不是报错。
+      .filter(ticket => ticket.deleted === undefined)
   }
   open(): Ticket[] {
     return (this.db.prepare('SELECT record FROM tickets WHERE open = 1 ORDER BY createdAt').all() as { record: string }[])
       .map(row => read<Ticket>(row.record))
   }
   /** Tickets by state, newest first, for the panel's lists. */
-  page(filter: 'open' | 'ended' | 'attention' | 'all', offset: number, limit: number): Ticket[] {
+  page(filter: 'open' | 'ended' | 'attention' | 'all' | 'deleted', offset: number, limit: number): Ticket[] {
+    // `deleted` reads the tombstones, which `list` hides: a tombstone the operator cannot reach is not an audit trail.
+    if (filter === 'deleted') return this.deleted().reverse().slice(offset, offset + limit)
     const all = filter === 'open' ? this.open().reverse() : this.list().reverse()
     const wanted = filter === 'attention' ? all.filter(ticket => waitsForPerson(ticket))
       : filter === 'ended' ? all.filter(ticket => ticket.ended !== undefined) : all
@@ -446,6 +451,15 @@ class Tickets implements TicketRepository {
       attention: rows.filter(ticket => ticket.attention !== undefined).length,
     }
   }
+  /** Take the row away entirely: the `record: 'nothing'` half of a deletion (S4). */
+  remove(id: string): void { this.db.prepare('DELETE FROM tickets WHERE id = ?').run(id) }
+  /** The tombstones, for the one view that shows what was deleted. `list` hides them by design. */
+  deleted(): Ticket[] {
+    return (this.db.prepare('SELECT record FROM tickets').all() as { record: string }[])
+      .map(row => read<Ticket>(row.record))
+      .filter(ticket => ticket.deleted !== undefined)
+  }
+
 }
 
 class Decisions implements DecisionRepository {

@@ -141,6 +141,20 @@ export type TicketEventType =
   | 'created' | 'launched' | 'delivered' | 'delivery_failed' | 'report' | 'turn_ended' | 'input'
   | 'retried' | 'interrupted' | 'resumed' | 'stopped' | 'failed' | 'ended' | 'classified' | 'session_bound' | 'dependency'
   /**
+   * The front desk said something back to whoever asked for this Ticket (S3a).
+   *
+   * Its own type rather than a `delivered` reuse: `delivered` is about a worker's Report reaching its address, while
+   * this is a person-facing message the front desk chose to send, and an operator reading the history has to be able
+   * to tell "the worker answered" from "the front desk wrote to them". Adding a type is safe — nothing switches
+   * exhaustively over these (see the note above).
+   */
+  | 'replied'
+  /**
+   * The operator deleted this Ticket (S4). Recorded with what was removed and how much, because once the assets are
+   * gone the tombstone is the only evidence they ever existed.
+   */
+  | 'deleted'
+  /**
    * A Ticket's Work assignment was taken away (U21: the Work was deleted). Its own type rather than a `classified`
    * event with a null in it, because the event log is the operator's audit trail and "classified: nothing" reads like
    * a bug. Nothing switches exhaustively over these types, so adding one cannot strand a case.
@@ -245,6 +259,13 @@ export interface Assignment {
   readonly deliveredAt?: string
   /** The error of a failed Input delivery, until a delivery succeeds or the Assignment ends. */
   readonly deliveryError?: string
+  /**
+   * `triage` when this attempt decides what a request becomes instead of doing the work (S3b). Absent means a worker.
+   *
+   * On the Assignment rather than on the Ticket because it is a property of one attempt: a triage Ticket that is
+   * retried after a crash is retried AS a triage attempt, and a Ticket is never both.
+   */
+  readonly role?: 'triage'
 }
 
 /** Where and under what name a Ticket executes. */
@@ -313,6 +334,23 @@ export interface Ticket {
    * before V2.
    */
   readonly origin: { readonly triggerId: string; readonly depth?: number }
+  /**
+   * Set when the operator deleted this Ticket and chose to keep the record as a tombstone (S4).
+   *
+   * The numbers travel with it: after the directory is gone, "17 files, 2.4 MB" exists nowhere else, and a tombstone
+   * that only says "deleted" cannot answer the one question asked afterwards — how much was thrown away.
+   *
+   * Absent means the Ticket is alive. A Ticket deleted with `record: 'nothing'` has no row at all, so this field only
+   * ever describes a tombstone.
+   */
+  readonly deleted?: {
+    readonly at: string
+    /** What happened to the produced files: `keep` leaves the directory, `delete` removes it. */
+    readonly assets: 'keep' | 'delete'
+    readonly directory?: string
+    readonly files?: number
+    readonly bytes?: number
+  }
   /** The files this request brought with it, which the Executor copies into the Ticket's directory. */
   readonly attachments: readonly Attachment[]
   readonly execution?: Execution

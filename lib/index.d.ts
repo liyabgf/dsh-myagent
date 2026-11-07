@@ -167,6 +167,20 @@ interface Dependency {
 /** Every kind of fact the log records about one Ticket's life. */
 type TicketEventType = 'created' | 'launched' | 'delivered' | 'delivery_failed' | 'report' | 'turn_ended' | 'input' | 'retried' | 'interrupted' | 'resumed' | 'stopped' | 'failed' | 'ended' | 'classified' | 'session_bound' | 'dependency' |
 /**
+ * The front desk said something back to whoever asked for this Ticket (S3a).
+ *
+ * Its own type rather than a `delivered` reuse: `delivered` is about a worker's Report reaching its address, while
+ * this is a person-facing message the front desk chose to send, and an operator reading the history has to be able
+ * to tell "the worker answered" from "the front desk wrote to them". Adding a type is safe — nothing switches
+ * exhaustively over these (see the note above).
+ */
+'replied' |
+/**
+ * The operator deleted this Ticket (S4). Recorded with what was removed and how much, because once the assets are
+ * gone the tombstone is the only evidence they ever existed.
+ */
+'deleted' |
+/**
  * A Ticket's Work assignment was taken away (U21: the Work was deleted). Its own type rather than a `classified`
  * event with a null in it, because the event log is the operator's audit trail and "classified: nothing" reads like
  * a bug. Nothing switches exhaustively over these types, so adding one cannot strand a case.
@@ -261,6 +275,13 @@ interface Assignment {
   readonly deliveredAt?: string;
   /** The error of a failed Input delivery, until a delivery succeeds or the Assignment ends. */
   readonly deliveryError?: string;
+  /**
+   * `triage` when this attempt decides what a request becomes instead of doing the work (S3b). Absent means a worker.
+   *
+   * On the Assignment rather than on the Ticket because it is a property of one attempt: a triage Ticket that is
+   * retried after a crash is retried AS a triage attempt, and a Ticket is never both.
+   */
+  readonly role?: 'triage';
 }
 /** Where and under what name a Ticket executes. */
 /**
@@ -323,6 +344,23 @@ interface Ticket {
   readonly origin: {
     readonly triggerId: string;
     readonly depth?: number;
+  };
+  /**
+   * Set when the operator deleted this Ticket and chose to keep the record as a tombstone (S4).
+   *
+   * The numbers travel with it: after the directory is gone, "17 files, 2.4 MB" exists nowhere else, and a tombstone
+   * that only says "deleted" cannot answer the one question asked afterwards — how much was thrown away.
+   *
+   * Absent means the Ticket is alive. A Ticket deleted with `record: 'nothing'` has no row at all, so this field only
+   * ever describes a tombstone.
+   */
+  readonly deleted?: {
+    readonly at: string;
+    /** What happened to the produced files: `keep` leaves the directory, `delete` removes it. */
+    readonly assets: 'keep' | 'delete';
+    readonly directory?: string;
+    readonly files?: number;
+    readonly bytes?: number;
   };
   /** The files this request brought with it, which the Executor copies into the Ticket's directory. */
   readonly attachments: readonly Attachment[];
@@ -644,6 +682,13 @@ declare const SettingsSchema: z.ZodObject<{
   notify: z.ZodPrefault<z.ZodObject<{
     enabled: z.ZodDefault<z.ZodBoolean>;
   }, z.core.$strict>>;
+  triage: z.ZodPrefault<z.ZodObject<{
+    enabled: z.ZodDefault<z.ZodBoolean>;
+    desk: z.ZodDefault<z.ZodEnum<{
+      dedicated: "dedicated";
+      main: "main";
+    }>>;
+  }, z.core.$strict>>;
 }, z.core.$strict>;
 type Settings = z.infer<typeof SettingsSchema>;
 type Schedule = z.infer<typeof ScheduleSchema>;
@@ -694,6 +739,19 @@ interface Policy {
   readonly paused: boolean;
   readonly acceptMode: Settings['acceptMode'];
   gate(trigger: Trigger): GateVerdict;
+  /**
+   * Whether this Trigger's Ticket is triaged — decided by a Session that may answer, dispatch, or ask — instead of
+   * going straight to a worker.
+   *
+   * Three conditions, and each one is a decision the operator made:
+   * - the switch is on;
+   * - `depth` is 0, so a Ticket the desk opened is never triaged again (without this, dispatching would recurse until
+   *   the depth guard invented for rule chains had to catch it, and every request would cost two turns forever);
+   * - the Trigger came from a Source that carries a person's words: chat, inbox or cron. A `session` Trigger is the
+   *   operator or the front desk speaking here, and a `rule` Trigger is a decision a rule already made — triaging
+   *   either would spend a turn second-guessing somebody who was already in the room.
+   */
+  triage(trigger: Trigger): boolean;
   /** Whether an existing Mandate still holds under these settings, and why not when it does not. */
   revalidate(mandate: Mandate): {
     readonly holds: boolean;
@@ -768,6 +826,16 @@ interface TicketRepository {
   open(): Ticket[];
   /** The Tickets of one Work, in the order they joined it. */
   byWork(workId: string): Ticket[];
+  /** Take the row away entirely: the `record: 'nothing'` half of a deletion (S4). */
+  remove(id: string): void;
+  /**
+   * The tombstones: Tickets deleted with their record kept.
+   *
+   * A separate read rather than a flag on `list`, because `list` hides them by design — every consumer of it (the
+   * panel's lists, `myagent_list_tickets`, a Work's children) wants live work — and a tombstone nobody can read is
+   * not an audit trail. This is the one view that shows what was deleted and how much went with it.
+   */
+  deleted(): Ticket[];
 }
 /** What the Engine can do with the edges between Tickets. */
 interface DependencyRepository {
@@ -944,7 +1012,20 @@ declare class Engine {
     sender?: string;
     scope?: string;
     attachments?: readonly string[];
+    /**
+     * Where this Ticket's reports go, when the front desk opened it on somebody's behalf (S3a).
+     *
+     * Carried on the synthesized Trigger rather than on the Ticket, because that is the only place a reply address has
+     * ever lived and `Delivery.send` already resolves it from there — so the whole outbound path is unchanged. A
+     * front-desk Ticket without one reports to the panel and nowhere else, which is the gap this closes.
+     *
+     * Copied from another Ticket's Trigger, never typed by the caller: an address the front desk could invent is an
+     * address a prompt-injected front desk could post to.
+     */
+    replyTo?: ReplyTo;
   }): ReceiveResult;
+  /** Record that the front desk wrote back to whoever asked for this Ticket. */
+  replied(ticketId: string, detail: Record<string, unknown>): void;
   /**
    * Give a Ticket's worker a fact from elsewhere as a text Input. It grants nothing: the Mandate is the only
    * authorization, and a note never widens it.
@@ -1063,6 +1144,42 @@ declare class Engine {
     detachedTickets: number;
   };
   private requireProject;
+  /**
+   * Whether this Ticket may be deleted, with no side effects (S4).
+   *
+   * Exists so the caller can ask BEFORE doing IO: the Runtime has to measure and remove a directory, and doing that
+   * first would mean a refusal arrives after the files are already gone. The check is repeated inside `deleteTicket`,
+   * which is the authority — this one is a preview, not a permission.
+   * @throws a `UserError` naming why not.
+   */
+  assertDeletable(id: string): Ticket;
+  /**
+   * Delete a Ticket: its record, and — when asked — the assets it produced.
+   *
+   * Two axes, because they are two different losses and only one of them is recoverable:
+   * - `assets`: `keep` leaves the directory (the work may be worth more than the request), `delete` removes it.
+   * - `record`: `tombstone` keeps the row marked deleted, hidden from every list but resolvable by id; `nothing`
+   *   removes the row.
+   *
+   * The Trigger and the Decision are NEVER removed, whichever option is chosen. The Trigger id is a pure function of
+   * the request, so it is the only thing that stops the same message being accepted again as new work; and "a request
+   * arrived and was dealt with" is the one fact an unattended system must not lose. Deleting a Ticket is not deleting
+   * the record that it was ever asked for.
+   *
+   * The caller does the IO and passes in what it measured, so the tombstone can carry numbers that no longer exist
+   * anywhere else.
+   */
+  deleteTicket(id: string, options: {
+    assets: 'keep' | 'delete';
+    record: 'tombstone' | 'nothing';
+    files?: number;
+    bytes?: number;
+  }): {
+    deleted: string;
+    assets: 'keep' | 'delete';
+    record: 'tombstone' | 'nothing';
+    directory?: string;
+  };
   private requireWork;
   /** A Work's Projects, or every Project when asked for none. */
   project(id: string): Project | undefined;
@@ -1392,12 +1509,16 @@ declare class Tickets implements TicketRepository {
   list(): Ticket[];
   open(): Ticket[];
   /** Tickets by state, newest first, for the panel's lists. */
-  page(filter: 'open' | 'ended' | 'attention' | 'all', offset: number, limit: number): Ticket[];
+  page(filter: 'open' | 'ended' | 'attention' | 'all' | 'deleted', offset: number, limit: number): Ticket[];
   count(): {
     open: number;
     ended: number;
     attention: number;
   };
+  /** Take the row away entirely: the `record: 'nothing'` half of a deletion (S4). */
+  remove(id: string): void;
+  /** The tombstones, for the one view that shows what was deleted. `list` hides them by design. */
+  deleted(): Ticket[];
 }
 declare class Decisions implements DecisionRepository {
   private readonly db;
@@ -1504,7 +1625,7 @@ declare class Store implements Transaction {
   close(): void;
 }
 /** The roles that have a prompt of their own. */
-type PromptRole = 'worker' | 'orchestrator';
+type PromptRole = 'worker' | 'orchestrator' | 'triage';
 /**
  * Resolve a file this package ships, from wherever this module ended up.
  *
@@ -1539,6 +1660,7 @@ declare const USER_ERRORS: {
   readonly input_missing: "No such input on this Ticket";
   readonly project_missing: "No Project has this id";
   readonly work_missing: "No Work has this id";
+  readonly ticket_not_stopped: "That Ticket has not ended; stop it before deleting it";
   readonly empty_name: "A name cannot be empty";
   readonly collaboration_refused: "Only Tickets in the same Work can hand something to each other";
   readonly empty_text: "There is nothing to hand over: the text is empty";

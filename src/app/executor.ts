@@ -24,6 +24,19 @@ import type { Store } from './store.ts'
 
 /** How long a launch waits for a free worker slot, and a paused system waits for itself. */
 const SLOT_RETRY_MS = 2_000
+/**
+ * What the operator's Session is told when a triage Ticket is handed to it instead of to a dedicated desk (B1).
+ *
+ * The orchestrator prompt does not mention triage — it is about the operator's own requests — so the instruction
+ * travels with the message. Naming the closing tool is what makes the notice actable: without it the desk's only
+ * visible move is to open another Ticket, which is the one move that does not finish this one.
+ */
+const TRIAGE_BRIEF = 'A request came in from a Source and you are the triage desk for it (triage.desk is "main"). '
+  + 'Decide what it becomes: answer it yourself, open one or more Tickets with `myagent_create_ticket` '
+  + '(pass `report_to_ticket` = the Ticket below so the answer reaches whoever asked), or ask the operator — '
+  + 'you are the operator\'s Session, so asking is just saying it. '
+  + 'Then close the triage Ticket with `myagent_close_ticket`. Do not do the work yourself.'
+
 const PAUSED_RETRY_MS = 5_000
 const DEPENDENCY_RETRY_MS = 5_000
 /** How long a prepare command may run before it is stopped. */
@@ -233,12 +246,30 @@ export class DshExecutor implements Executor {
       const fresh = assignment.state === 'pending'
       const prepared = await this.prepareDirectory(stored, settings, fresh)
       if (this.host.closing()) throw new Later(PAUSED_RETRY_MS)
-      await this.host.sessions.ensure(prepared, settings.executor.model)
-      this.host.engine.assignmentStarted(ticketId, assignmentId)
-      await this.host.sessions.promptWorker(prepared, `launch:${assignmentId}`, this.taskText(prepared), settings.executor.model)
+      // B1 (`triage.desk: 'main'`): the operator's own Session is the desk, so there is no worker Session to make and
+      // no worker slot to hold. The request is queued into the conversation they are already in — `relay` resolves or
+      // CREATES the front desk rather than giving up quietly, which is the property that keeps a triage item from
+      // being dropped without a trace (the failure `relay`'s own comment records).
+      const toMain = assignment.role === 'triage' && settings.triage.desk === 'main'
+      if (toMain) {
+        // `relay` plays the part both `ensure` and `promptWorker` play for a worker, so the ordering that matters is
+        // kept: the assignment is marked started only AFTER the thing that could fail has succeeded. Marking it first
+        // is what a launch that cannot even reach the desk would then lie about — three existing tests assert that a
+        // failed launch leaves the Ticket `pending`, "without pretending the Ticket started".
+        await this.host.sessions.relay(`triage:${assignmentId}`,
+          `${TRIAGE_BRIEF}\n\n${this.taskText(prepared)}`)
+        this.host.engine.assignmentStarted(ticketId, assignmentId)
+      } else {
+        await this.host.sessions.ensure(prepared, settings.executor.model)
+        this.host.engine.assignmentStarted(ticketId, assignmentId)
+        await this.host.sessions.promptWorker(prepared, `launch:${assignmentId}`, this.taskText(prepared), settings.executor.model)
+      }
       // The timestamp is recorded whether or not Inputs were waiting: it is what tells a turn that ends without a
       // report apart from one that never received its work, and the fallback to `waiting` depends on it.
       this.host.engine.inputsDelivered(ticketId, assignmentId, undelivered(prepared).map(input => input.id))
+      // (The Inputs of a triage Ticket go to whichever desk took it: `relay` carries the same task text, so nothing
+      // here has to differ — the record of delivery is what tells a turn that ended without a report apart from one
+      // that never received its work, and that distinction matters for the main Session exactly as for a worker.)
       // No gauge line here. This used to record "N of M worker slots in use", and a live acceptance run caught it
       // asserting that four minutes after the slot had freed — in the same snapshot as `workerSlots.used = 0`, which
       // is the count a panel shows next to it (S38). Making it refresh per pass was worse: the refresh then overwrote

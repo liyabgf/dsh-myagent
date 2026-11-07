@@ -232,14 +232,26 @@ try {
       pressedBg: list.length ? getComputedStyle(list.find(b => b.getAttribute('aria-pressed') === 'true') || list[0]).backgroundColor : null,
     }
   })
-  check('筛选是 4 档 chips 且恰有一档处于按下态（U7）',
-    chips.count === 4 && chips.pressed.filter(v => v === 'true').length === 1,
+  // 【S4 产品变更】筛选从 4 档变 5 档，多了「已删除」。旧断言：`chips.count === 4`。
+  // 加它的理由：list 一律隐藏墓碑，所以**只有这一档能列出被删的任务**——读不到的墓碑不是审计痕迹，
+  // 而"我到底删了什么、删掉多少"是事后唯一会被问的问题。
+  check('筛选是 5 档 chips 且恰有一档处于按下态（U7 / S4）',
+    chips.count === 5 && chips.pressed.filter(v => v === 'true').length === 1,
     `${chips.labels.join('|')} pressed=${chips.pressed.join(',')}`)
+  check('「已删除」这一档在筛选里，且默认不是按下态（S4）',
+    chips.labels.includes('已删除') && chips.pressed[chips.labels.indexOf('已删除')] === 'false',
+    `${chips.labels.join('|')}`)
   await page.click('#filter button[data-filter="all"]')
   await page.waitForTimeout(400)
   const afterChip = await page.evaluate(() =>
     [...document.querySelectorAll('#filter .chip-btn')].map(b => b.getAttribute('aria-pressed')).join(','))
-  check('点「全部」后按下态跟着换档', afterChip === 'false,false,false,true', afterChip)
+  // 旧断言硬编码了位置：`afterChip === 'false,false,false,true'`。改成"按下的正是 data-filter=all 那一档"，
+  // 这样下次再加一档它不会又红一次——断的是规则（只有一档按下、且是刚点的那档），不是这一档排第几。
+  const allIndex = await page.evaluate(() =>
+    [...document.querySelectorAll('#filter .chip-btn')].findIndex(b => b.dataset.filter === 'all'))
+  const chipCount = await page.evaluate(() => document.querySelectorAll('#filter .chip-btn').length)
+  const wantPressed = Array.from({ length: chipCount }, (_, i) => String(i === allIndex)).join(',')
+  check('点「全部」后按下态跟着换档', afterChip === wantPressed && allIndex >= 0, `${afterChip} 期望 ${wantPressed}`)
   const navLabels = await page.evaluate(() =>
     [...document.querySelectorAll('#tabs button')].map(b => {
       const clone = b.cloneNode(true)

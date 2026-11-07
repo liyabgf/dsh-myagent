@@ -9,7 +9,8 @@
  * send work, read state and answer a question in the conversation they are already in.
  */
 import { z } from 'zod'
-import { latestReport, ticketStage, type Engine, type Ticket } from '../core/index.ts'
+import { latestAssignment, latestReport, ticketStage, type Engine, type Ticket } from '../core/index.ts'
+import type { ReplyTo } from '../core/model.ts'
 import { UserError, type UserErrorCode } from '../core/errors.ts'
 import type { Store } from './store.ts'
 import { ticketSummary, ticketView } from './views.ts'
@@ -67,6 +68,19 @@ export interface ToolsHost {
    * the Runtime resolves the path with the traversal guard the panel already uses and reads the file.
    */
   readArtifact(sourceTicketId: string, targetTicketId: string, path: string): Promise<ArtifactRead>
+  /**
+   * Where a Ticket's reports go, or `undefined` when no address was ever written down (S3a).
+   *
+   * A method rather than widening `store` to include `triggers`: the front desk needs one fact about one Ticket, and
+   * handing it the trigger repository would hand it every Trigger's text and actor as well.
+   */
+  returnAddressOf(ticketId: string): ReplyTo | undefined
+  /**
+   * Send text back to whoever asked for a Ticket, and answer why not when there is nowhere to send it.
+   *
+   * On the host for the same reason as `readArtifact`: it does IO, and the Engine does not.
+   */
+  replyToRequester(ticketId: string, text: string): { readonly sent: boolean; readonly address?: string; readonly reason?: string }
 }
 
 /**
@@ -189,6 +203,9 @@ export function mainTools(host: ToolsHost): Tool[] {
         title: z.string().trim().min(1).max(200).describe('A short title the panel and the worker\'s Session name show.'),
         request: z.string().trim().min(1).max(20000).describe('The work, complete enough to run unattended.'),
         scope: z.string().trim().max(2000).optional().describe('How far this work may go. Omit it for the default: work in the Ticket\'s own directory.'),
+        report_to_ticket: z.string().trim().optional().describe(
+          'Send this Ticket\'s reports to the same place as this other Ticket\'s — the id of the request you are acting on. '
+          + 'Omit it and the reports go to the panel only, which is right for work the operator asked for here and wrong for work somebody asked for in a chat room.'),
         sender: z.string().trim().max(120).optional().describe('Who asks, when it is not the operator. Must be on the allowed list.'),
         attachments: z.array(z.string().trim().min(1).max(4000)).max(20).optional()
           .describe('Absolute paths of files this work needs — a document, a spreadsheet, an image the operator attached or named. '
@@ -197,8 +214,19 @@ export function mainTools(host: ToolsHost): Tool[] {
       }).strict(),
       execute: async args => {
         try {
+          // The address is COPIED from another Ticket's Trigger, never written by the caller: an address the front
+          // desk could invent is an address a prompt-injected front desk could post reports to.
+          let replyTo
+          if (args.report_to_ticket !== undefined && args.report_to_ticket.trim() !== '') {
+            replyTo = host.returnAddressOf(args.report_to_ticket.trim())
+            if (replyTo === undefined) {
+              return { error: `Ticket ${args.report_to_ticket.trim()} has no reply address to copy, so the new Ticket would report to the panel only. `
+                + 'Omit report_to_ticket if that is what you want, or reply to the requester with myagent_reply instead.' }
+            }
+          }
           const result = host.engine.createTicket({
             title: args.title, text: args.request, scope: args.scope, sender: args.sender, attachments: args.attachments,
+            ...(replyTo === undefined ? {} : { replyTo }),
           })
           const decision = result.disposition.state === 'accepted' || result.disposition.state === 'ignored' || result.disposition.state === 'observed'
             ? host.engine.decisionOf(result.disposition.decisionId) : undefined
@@ -251,6 +279,21 @@ export function mainTools(host: ToolsHost): Tool[] {
       },
     }),
     tool({
+      name: 'myagent_reply',
+      description: 'Write back to whoever asked for a Ticket — the person in the chat room, not the worker. '
+        + 'Use it to answer something you can answer yourself, to ask them the question a worker could not, or to say what became of the work. '
+        + 'It sends a message and changes nothing else: the Ticket keeps running, and this does not replace myagent_answer_ticket, which is how a worker gets an answer.',
+      schema: z.object({
+        ticket_id: z.string().trim().min(1).describe('The Ticket whose requester should hear this. The address is taken from it; you cannot name one.'),
+        text: z.string().trim().min(1).max(20000).describe('What to say, in words for a person: no tool names and no paths on this machine.'),
+      }).strict(),
+      execute: async args => {
+        const outcome = host.replyToRequester(args.ticket_id, args.text)
+        if (!outcome.sent) return { error: outcome.reason ?? 'There is nowhere to send this.' }
+        return { ticket_id: args.ticket_id, sent_to: outcome.address }
+      },
+    }),
+    tool({
       name: 'myagent_note_ticket',
       description: 'Give a working Ticket a fact — a path, a correction, a constraint — without ending or restarting it. It grants nothing: the scope is unchanged.',
       schema: z.object({ ticket_id: z.string().trim().min(1), text: z.string().trim().min(1).max(20000) }).strict(),
@@ -272,6 +315,39 @@ export function mainTools(host: ToolsHost): Tool[] {
         try {
           const ticket = host.engine.stopTicket(args.ticket_id, args.reason ?? 'A person stopped this Ticket')
           return { ticket_id: ticket.id, stage: ticketStage(ticket), outcome: ticket.ended?.outcome }
+        } catch (error) { return refusal(error) }
+      },
+    }),
+    tool({
+      name: 'myagent_close_ticket',
+      description: 'Finish a TRIAGE Ticket — one you were handed as the desk, not one doing work. '
+        + 'Use it after you have decided: answered the request yourself, opened the Ticket(s) it became, or concluded it needs no work. '
+        + 'Only `ready`, `dropped` and `failed` are accepted: a triage Ticket that still needs somebody is not closed, it is a question, '
+        + 'and in this mode you are the operator\'s own Session, so asking is just saying it. '
+        + 'It refuses any Ticket that is not a triage one — stopping real work is `myagent_stop_ticket`.',
+      schema: z.object({
+        ticket_id: z.string().trim().min(1),
+        state: z.enum(['ready', 'dropped', 'failed']).describe(
+          '`ready` you answered it or dispatched it; `dropped` it needed no work; `failed` you could not route it.'),
+        summary: z.string().trim().min(1).max(20000).describe(
+          'What you decided, and what follows from it. With `ready` this is delivered to whoever asked, so write it for them: no tool names, no paths on this machine.'),
+      }).strict(),
+      execute: async args => {
+        const ticket = host.store.tickets.get(args.ticket_id)
+        if (ticket === undefined) return { error: `There is no Ticket ${args.ticket_id}.` }
+        // Restricted to triage on purpose. Without this the front desk would gain a second way to end any Ticket —
+        // one that reports a result instead of withdrawing the authorization, which reads as "the work finished".
+        if (latestAssignment(ticket)?.role !== 'triage') {
+          return {
+            error: `Ticket ${args.ticket_id.slice(0, 8)} is not a triage Ticket, so it is not yours to close. `
+              + 'A worker reports on its own work; to end one from here, use myagent_stop_ticket.',
+          }
+        }
+        try {
+          // No `at`: the Engine stamps the time itself, and a caller-supplied one would be a second opinion about
+          //          // when this happened.
+          const updated = host.engine.report(args.ticket_id, { state: args.state, summary: args.summary })
+          return { ticket_id: updated.id, stage: ticketStage(updated), state: args.state }
         } catch (error) { return refusal(error) }
       },
     }),

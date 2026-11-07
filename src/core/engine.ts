@@ -11,7 +11,7 @@ import {
   type Artifact, type Dependency, type Project, type TicketEvent, type TicketEventType, type Work,
   canRetry, latestAssignment, liveTicket, released, runningAssignment, type Assignment, type Attachment, type Decision,
   type Disposition,
-  type Mandate, type Report, type Ticket, type TicketInput, type TicketOutcome, type Trigger,
+  type Mandate, type ReplyTo, type Report, type Ticket, type TicketInput, type TicketOutcome, type Trigger,
 } from './model.ts'
 import { GATE_REASONS, policyEffects, type Policy, type PolicyEffect } from './policy.ts'
 import type { Settings } from './policy.ts'
@@ -68,6 +68,16 @@ export interface TicketRepository {
   open(): Ticket[]
   /** The Tickets of one Work, in the order they joined it. */
   byWork(workId: string): Ticket[]
+  /** Take the row away entirely: the `record: 'nothing'` half of a deletion (S4). */
+  remove(id: string): void
+  /**
+   * The tombstones: Tickets deleted with their record kept.
+   *
+   * A separate read rather than a flag on `list`, because `list` hides them by design — every consumer of it (the
+   * panel's lists, `myagent_list_tickets`, a Work's children) wants live work — and a tombstone nobody can read is
+   * not an audit trail. This is the one view that shows what was deleted and how much went with it.
+   */
+  deleted(): Ticket[]
 }
 
 /** What the Engine can do with the edges between Tickets. */
@@ -292,7 +302,12 @@ export class Engine {
         sender: trigger.actor, via: verdict.via, at,
       }
       const ticketId = key('ticket', trigger.id)
-      const assignment: Assignment = { id: key('assignment', ticketId, 1), state: 'pending', createdAt: at }
+      // Triage is a Policy question, not an Engine one: the Engine has no settings, only the projection of them
+      // (`policyOf()`), which is why the switch, the depth rule and the list of Sources live in policy.ts.
+      const assignment: Assignment = {
+        id: key('assignment', ticketId, 1), state: 'pending', createdAt: at,
+        ...(policy.triage(trigger) ? { role: 'triage' as const } : {}),
+      }
       // A Trigger may name the Work its Ticket belongs to — a rule's `then.workId`, or a schedule bound to one later.
       // Classified here rather than by a follow-up command so that it is part of the same fact as the Ticket's
       // creation: a rule-produced Ticket that belongs to no Work is invisible in every grouping the operator has.
@@ -344,6 +359,17 @@ export class Engine {
    */
   createTicket(request: {
     title: string; text: string; sender?: string; scope?: string; attachments?: readonly string[]
+    /**
+     * Where this Ticket's reports go, when the front desk opened it on somebody's behalf (S3a).
+     *
+     * Carried on the synthesized Trigger rather than on the Ticket, because that is the only place a reply address has
+     * ever lived and `Delivery.send` already resolves it from there — so the whole outbound path is unchanged. A
+     * front-desk Ticket without one reports to the panel and nowhere else, which is the gap this closes.
+     *
+     * Copied from another Ticket's Trigger, never typed by the caller: an address the front desk could invent is an
+     * address a prompt-injected front desk could post to.
+     */
+    replyTo?: ReplyTo
   }): ReceiveResult {
     const at = this.now()
     const attachments = (request.attachments ?? []).filter(path => path.trim() !== '')
@@ -354,12 +380,21 @@ export class Engine {
       source: 'session', kind: 'session', at,
       actor: { id: request.sender ?? 'operator', kind: 'person' },
       text: request.text, title: request.title,
+      ...(request.replyTo === undefined ? {} : { replyTo: request.replyTo }),
       meta: {
         ...(request.scope === undefined ? {} : { scope: request.scope }),
         ...(attachments.length === 0 ? {} : { attachments }),
       },
     }
     return this.receive(trigger)
+  }
+
+  /** Record that the front desk wrote back to whoever asked for this Ticket. */
+  replied(ticketId: string, detail: Record<string, unknown>): void {
+    this.tx.atomic(() => {
+      this.require(ticketId)
+      this.record(ticketId, 'replied', { kind: 'agent', id: 'front-desk' }, detail)
+    })
   }
 
   /**
@@ -752,6 +787,72 @@ export class Engine {
     const project = this.repos.projects.get(id)
     if (project === undefined) throw new UserError('project_missing')
     return project
+  }
+
+  /**
+   * Whether this Ticket may be deleted, with no side effects (S4).
+   *
+   * Exists so the caller can ask BEFORE doing IO: the Runtime has to measure and remove a directory, and doing that
+   * first would mean a refusal arrives after the files are already gone. The check is repeated inside `deleteTicket`,
+   * which is the authority — this one is a preview, not a permission.
+   * @throws a `UserError` naming why not.
+   */
+  assertDeletable(id: string): Ticket {
+    const ticket = this.require(id)
+    // A live Ticket is not deletable: its worker holds an authorization that is still in force, its Session may be
+    // mid-turn, and deleting the record under a running attempt leaves a Session writing into a directory nobody
+    // owns. Stopping is the verb for that, and it is the operator's to say.
+    if (ticket.ended === undefined) throw new UserError('ticket_not_stopped')
+    return ticket
+  }
+
+  /**
+   * Delete a Ticket: its record, and — when asked — the assets it produced.
+   *
+   * Two axes, because they are two different losses and only one of them is recoverable:
+   * - `assets`: `keep` leaves the directory (the work may be worth more than the request), `delete` removes it.
+   * - `record`: `tombstone` keeps the row marked deleted, hidden from every list but resolvable by id; `nothing`
+   *   removes the row.
+   *
+   * The Trigger and the Decision are NEVER removed, whichever option is chosen. The Trigger id is a pure function of
+   * the request, so it is the only thing that stops the same message being accepted again as new work; and "a request
+   * arrived and was dealt with" is the one fact an unattended system must not lose. Deleting a Ticket is not deleting
+   * the record that it was ever asked for.
+   *
+   * The caller does the IO and passes in what it measured, so the tombstone can carry numbers that no longer exist
+   * anywhere else.
+   */
+  deleteTicket(id: string, options: {
+    assets: 'keep' | 'delete'
+    record: 'tombstone' | 'nothing'
+    files?: number
+    bytes?: number
+  }): { deleted: string; assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing'; directory?: string } {
+    return this.tx.atomic(() => {
+      const ticket = this.assertDeletable(id)
+      const directory = ticket.execution?.directory
+      const detail = {
+        assets: options.assets, record: options.record,
+        ...(directory === undefined ? {} : { directory }),
+        ...(options.files === undefined ? {} : { files: options.files }),
+        ...(options.bytes === undefined ? {} : { bytes: options.bytes }),
+      }
+      this.record(id, 'deleted', { kind: 'person' }, detail)
+      if (options.record === 'nothing') {
+        this.repos.tickets.remove(id)
+        return { deleted: id, assets: options.assets, record: options.record, ...(directory === undefined ? {} : { directory }) }
+      }
+      this.mutate(id, current => ({
+        ...current,
+        deleted: {
+          at: this.now(), assets: options.assets,
+          ...(directory === undefined ? {} : { directory }),
+          ...(options.files === undefined ? {} : { files: options.files }),
+          ...(options.bytes === undefined ? {} : { bytes: options.bytes }),
+        },
+      }))
+      return { deleted: id, assets: options.assets, record: options.record, ...(directory === undefined ? {} : { directory }) }
+    })
   }
 
   private requireWork(id: string): Work {

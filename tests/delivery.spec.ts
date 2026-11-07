@@ -3,7 +3,7 @@ import { writeFileSync } from 'node:fs'
 import { hostname } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { headline, relayText, resultDocument, type NotifyPayload } from '../src/app/delivery.ts'
+import { escalationRelayText, escalationText, headline, isFirstEscalation, relayText, resultDocument, type NotifyPayload } from '../src/app/delivery.ts'
 import { LockHeld, takeLock } from '../src/app/lock.ts'
 import type { Ticket } from '../src/core/model.ts'
 import { tempDir } from './helpers/temp.ts'
@@ -112,5 +112,48 @@ describe('the state lock', () => {
     first.release()
     const third = takeLock(path)
     third.release()
+  })
+})
+
+describe('what the Watchdog giving up is worth telling (S2)', () => {
+  /**
+   * Until S2 this fact reached two places — the Ticket's history and the health board — and both are read by the
+   * operator at this machine. The person who asked in a chat room heard nothing, and was left waiting on work that
+   * will never move again without them.
+   */
+  it('tells a requester in words they can act on, and leaves myagent’s own machinery out', () => {
+    const text = escalationText(ticket(), 'has not started after 2 attempts to rescue it; it needs a person')
+    expect(text).toContain('整理本周竞品动态 — needs a person')
+    expect(text).toContain('has not started after 2 attempts to rescue it')
+    expect(text).toContain('Nothing further will happen')
+    // Neither means anything to somebody on a platform: the directory is on this machine, the tool is registered in a
+    // Session they are not in. Telling them to use either would be a false instruction.
+    expect(text).not.toContain('myagent_retry_ticket')
+    expect(text).not.toContain('/tmp/work/digest-ticket-1')
+  })
+
+  it('tells the front desk the same fact with the means to act, because it is the one place that can', () => {
+    const text = escalationRelayText(ticket(), 'has not started after 2 attempts to rescue it; it needs a person')
+    expect(text).toContain('ticket-1')
+    expect(text).toContain('the Watchdog has given up')
+    expect(text).toContain('myagent_retry_ticket')
+    expect(text).toContain('myagent_stop_ticket')
+    expect(text).toContain('Directory: /tmp/work/digest-ticket-1')
+  })
+
+  it('names a Ticket that never started as one, rather than printing an empty path', () => {
+    const text = escalationRelayText(ticket({ execution: undefined }), 'it needs a person')
+    expect(text).toContain('(none — it never started)')
+  })
+
+  /**
+   * The Watchdog re-escalates on every pass for as long as a Ticket stays past `maxActions`. Telling the requester
+   * each time would message them every `everyMs`, and a repeated alarm trains a person to ignore it — so the history
+   * keeps every escalation and the telling happens once.
+   */
+  it('counts only the first escalation as one worth pushing', () => {
+    expect(isFirstEscalation([{ type: 'created' }, { type: 'launched' }])).toBe(true)
+    expect(isFirstEscalation([{ type: 'created' }, { type: 'escalated' }])).toBe(false)
+    expect(isFirstEscalation([])).toBe(true)
   })
 })

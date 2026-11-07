@@ -245,6 +245,230 @@ describe('a reply that goes out', () => {
   })
 })
 
+describe('a Ticket that stopped without an answer (S1)', () => {
+  /**
+   * `waiting` is the state a Ticket gets when its worker's turn ended with nothing to show — an abort, a crash, a turn
+   * that ran out. It used to be grouped with `progress` as "for the panel alone", and the cost was concrete: the panel
+   * filed the Ticket under "needs you" while the person who asked in a chat room heard nothing at all, because a chat
+   * requester has never seen the panel. The work was stopped and only a person could restart it.
+   *
+   * The rule now is the two-condition one: tell somebody when silence makes it worse AND nobody else is going to look.
+   * `progress` still fails the first condition and must keep sending nothing — a progress line per turn in a chat room
+   * is how a bot gets muted.
+   */
+  const waiting = { state: 'waiting' as const, summary: 'The worker ended its turn without a report.', at: '2026-11-07T04:00:00.000Z' }
+
+  it('reaches the requester, and says what became of the work rather than calling it dropped', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      context.runtime.delivery.report(ticket, waiting)
+      await settle(context.runtime)
+      const out = readdirSync(join(context.channel, 'out')).filter(name => name.endsWith('.md'))
+      expect(out).toHaveLength(1)
+      const reply = readFileSync(join(context.channel, 'out', out[0]!), 'utf8')
+      expect(reply).toContain('stopped, needs a push')
+      expect(reply).toContain('The worker ended its turn without a report.')
+      // Not 'dropped': a dropped Ticket was judged to need no work, and this one has work that has stopped.
+      expect(reply).not.toContain('dropped')
+      // The requester is not told about myagent's own tools or directories — they cannot act on either.
+      expect(reply).not.toContain('myagent_retry_ticket')
+      expect(reply).not.toContain(ticket.execution!.directory)
+    } finally { await context.runtime.stop() }
+  })
+
+  it('wakes the front desk with the way to act, because a notice in a history nobody reads is not an escalation', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      context.runtime.delivery.report(ticket, waiting)
+      await settle(context.runtime)
+      const told = context.host.agents.get('myagent-main')!.followups.at(-1)!.text
+      expect(told).toContain('stopped, needs a push')
+      // The front desk is the one place that can act without the operator, so it gets the tool name.
+      expect(told).toContain('myagent_retry_ticket')
+      expect(told).toContain('myagent_stop_ticket')
+    } finally { await context.runtime.stop() }
+  })
+
+  it('still sends nothing for progress — the other half of the rule, and the one that keeps a chat room quiet', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      const before = context.runtime.delivery.sends().queued
+      context.runtime.delivery.report(ticket, { state: 'progress', summary: '读了 12 个文件', at: '2026-11-07T04:00:00.000Z' })
+      await settle(context.runtime)
+      expect(context.runtime.delivery.sends().queued).toBe(before)
+      expect(existsSync(join(context.channel, 'out'))).toBe(false)
+    } finally { await context.runtime.stop() }
+  })
+})
+
+describe('progress and giving up, routed (S2)', () => {
+  it('progress reaches the front desk and never the requester — one line per turn in a room is how a bot gets muted', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      context.runtime.delivery.report(ticket, { state: 'progress', summary: '读完了 12 个文件，正在比对', at: '2026-11-07T05:00:00.000Z' })
+      await settle(context.runtime)
+      // Nothing went to the platform.
+      expect(existsSync(join(context.channel, 'out'))).toBe(false)
+      expect(context.runtime.store.effectCounts().send).toBeUndefined()
+      // But the front desk has it, so "how is it going" can be answered from the room instead of reconstructed.
+      const desk = context.host.agents.get('myagent-main')!
+      expect(desk.notices.at(-1)!.text).toContain('读完了 12 个文件，正在比对')
+      // Injected, NOT queued: a progress line is a fact to know, not a question to answer, and queueing it would cost
+      // the front desk a turn per progress report. The stub keeps the two apart (`notices` vs `followups`), so the
+      // distinction is asserted rather than assumed.
+      expect(desk.followups).toEqual([])
+    } finally { await context.runtime.stop() }
+  })
+
+  it('the Watchdog giving up reaches the requester, and wakes the front desk with the means to act', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      context.runtime.delivery.escalated(ticket, 'has not started after 2 attempts to rescue it; it needs a person')
+      await settle(context.runtime)
+      const out = readdirSync(join(context.channel, 'out')).filter(name => name.endsWith('.md'))
+      expect(out).toHaveLength(1)
+      const reply = readFileSync(join(context.channel, 'out', out[0]!), 'utf8')
+      expect(reply).toContain('needs a person')
+      expect(reply).toContain('has not started after 2 attempts to rescue it')
+      expect(reply).not.toContain('myagent_retry_ticket')
+      const told = context.host.agents.get('myagent-main')!.followups.at(-1)!.text
+      expect(told).toContain('the Watchdog has given up')
+      expect(told).toContain('myagent_retry_ticket')
+    } finally { await context.runtime.stop() }
+  })
+})
+
+  /**
+   * The wiring, not the rule. `isFirstEscalation` has its own unit test, and it passed while this did not exist — so
+   * removing the runtime's call to it left all 962 tests green. A mutation that only a freshness check notices is not
+   * guarded: the Watchdog re-escalates on every pass, and without this the requester is messaged every `everyMs`.
+   *
+   * `watchdogHost()` is private, reached through a cast as this suite already does for a Source's optional methods.
+   */
+  it('records every escalation and tells the requester once, because the Watchdog gives up again on every pass', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      const host = (context.runtime as unknown as {
+        watchdogHost(): { escalate(ticketId: string, why: string): void }
+      }).watchdogHost()
+      const why = 'has not started after 2 attempts to rescue it; it needs a person'
+      host.escalate(ticket.id, why)
+      await settle(context.runtime)
+      host.escalate(ticket.id, why)
+      host.escalate(ticket.id, why)
+      await settle(context.runtime)
+
+      // The history keeps all three: that is what answers "how many times did we give up on this".
+      const escalations = context.runtime.store.events.list(ticket.id).filter(event => event.type === 'escalated')
+      expect(escalations).toHaveLength(3)
+      // The requester heard it once. One fact, one push — a repeated alarm trains a person to ignore it.
+      const out = readdirSync(join(context.channel, 'out')).filter(name => name.endsWith('.md'))
+      expect(out).toHaveLength(1)
+      expect(context.runtime.delivery.sends().queued).toBe(1)
+    } finally { await context.runtime.stop() }
+  })
+describe('the front desk writing back to whoever asked (S3a)', () => {
+  /**
+   * Until now the front desk could act on a Ticket — answer its worker, retry it, stop it — but had no way to say
+   * anything to the person who asked. `myagent_answer_ticket` hands text to the WORKER, so a front desk that knew the
+   * answer still had to route it through a worker it did not need. This is the capability "pull beats push" depends on:
+   * the operator asks in a chat room, and the answer has to be able to go back to that room.
+   *
+   * The address is resolved from the Ticket's Trigger and never passed in, so the tool cannot be talked into posting
+   * somewhere else.
+   */
+  const runtime = (context: { runtime: unknown }): { replyToRequester(id: string, text: string): { sent: boolean; address?: string; reason?: string } } =>
+    context.runtime as { replyToRequester(id: string, text: string): { sent: boolean; address?: string; reason?: string } }
+
+  it('puts the words in out/, and records on the Ticket that the requester was told', async () => {
+    const context = await chatDeployment()
+    try {
+      const ticket = await asked(context)
+      const outcome = runtime(context).replyToRequester(ticket.id, '我看过了：三张在跑，一张卡在等人回答。')
+      expect(outcome.sent).toBe(true)
+      expect(outcome.address).toContain('chat/')
+      await settle(context.runtime)
+
+      const out = readdirSync(join(context.channel, 'out')).filter(name => name.endsWith('.md'))
+      expect(out).toHaveLength(1)
+      expect(readFileSync(join(context.channel, 'out', out[0]!), 'utf8')).toContain('三张在跑')
+
+      // The history says a person-facing message went out, and who sent it — without this an operator reading the
+      // Ticket cannot tell whether the requester was ever told anything.
+      const replied = context.runtime.store.events.list(ticket.id).filter(event => event.type === 'replied')
+      expect(replied).toHaveLength(1)
+      expect(replied[0]!.by).toEqual({ kind: 'agent', id: 'front-desk' })
+      expect(replied[0]!.detail).toMatchObject({ chars: '我看过了：三张在跑，一张卡在等人回答。'.length })
+    } finally { await context.runtime.stop() }
+  })
+
+  it('says why it cannot write back for a Ticket with no address, rather than reporting a reply that went nowhere', async () => {
+    const context = await chatDeployment()
+    try {
+      const made = context.runtime.engine.createTicket({ title: '自己开的活', text: '整理一下' })
+      const outcome = runtime(context).replyToRequester(made.ticketId!, '有人吗')
+      expect(outcome.sent).toBe(false)
+      // The reason names the shape, so the front desk tells the operator here instead of inventing another route.
+      expect(outcome.reason).toContain('nowhere to write back to')
+      expect(outcome.reason).toContain('panel, the inbox or a schedule')
+      expect(existsSync(join(context.channel, 'out'))).toBe(false)
+      expect(context.runtime.store.events.list(made.ticketId!).filter(event => event.type === 'replied')).toEqual([])
+    } finally { await context.runtime.stop() }
+  })
+
+  /**
+   * The capability end to end: a Ticket the front desk opens on somebody's behalf reports back to that somebody.
+   *
+   * This is the guard that survives deleting any one of the tests above, because it observes the whole path — address
+   * copied from an existing Trigger, carried on the synthesized one, resolved by `Delivery.send` — rather than one
+   * function's return value.
+   */
+  it('a Ticket the front desk opens with a copied address reports back into the same chat', async () => {
+    const context = await chatDeployment()
+    try {
+      const asked_ = await asked(context)
+      const runtime = context.runtime as unknown as { returnAddressOf(id: string): unknown }
+      const address = runtime.returnAddressOf(asked_.id) as { kind: 'chat'; channel: string; thread?: string }
+      expect(address, '被问的那张任务应当有回程地址').toBeDefined()
+
+      const made = context.runtime.engine.createTicket({ title: '巡视一遍', text: '看看现在有几张在跑', replyTo: address })
+      const survey = context.runtime.store.tickets.get(made.ticketId!)!
+      context.runtime.delivery.report(survey, { state: 'ready', summary: '三张在跑，没有卡住的。', at: '2026-11-07T06:00:00.000Z' })
+      await settle(context.runtime)
+
+      const out = readdirSync(join(context.channel, 'out')).filter(name => name.endsWith('.md'))
+      expect(out.length).toBeGreaterThan(0)
+      const bodies = out.map(name => readFileSync(join(context.channel, 'out', name), 'utf8'))
+      // The survey's answer reached the room the original question came from.
+      expect(bodies.some(body => body.includes('三张在跑，没有卡住的。'))).toBe(true)
+
+      // And the front desk writing back directly is queued too, observed through Delivery's own tally rather than
+      // through the filesystem: a second observation point in a second test, so removing the assertions in the test
+      // above does not leave "replyToRequester claims success without sending" unguarded (0.8 measured exactly that).
+      const before = context.runtime.delivery.sends().queued
+      const outcome = (context.runtime as unknown as {
+        replyToRequester(id: string, text: string): { sent: boolean; address?: string }
+      }).replyToRequester(survey.id, '还有一张在等人回答。')
+      expect(outcome.sent).toBe(true)
+      expect(context.runtime.delivery.sends().queued).toBe(before + 1)
+    } finally { await context.runtime.stop() }
+  })
+
+  it('refuses a Ticket that does not exist, with the id it was given', async () => {
+    const context = await chatDeployment()
+    try {
+      const outcome = runtime(context).replyToRequester('nosuchticket', '有人吗')
+      expect(outcome).toEqual({ sent: false, reason: 'There is no Ticket nosuchticket.' })
+    } finally { await context.runtime.stop() }
+  })
+})
+
 describe('a reply that does not go out', () => {
   it('keeps the effect, counts the failure on its row and names it on the board when the Source refuses', async () => {
     const context = await chatDeployment()
@@ -414,6 +638,34 @@ describe('a Ticket with no way back', () => {
       expect(runtime.delivery.sends()).toEqual({ queued: 0, nowhere: 1 })
       expect(runtime.store.effectCounts()).toEqual({})
       expect(existsSync(join(ticket.execution!.directory, 'RESULT.md'))).toBe(true)
+    } finally { await runtime.stop() }
+  })
+
+  it('a stopped Ticket with nowhere to write still wakes the front desk, and counts the place it could not reach', async () => {
+    // The inbox's shape, as in the test above: a Trigger with no `replyTo`, because a directory cannot receive an
+    // answer. This is the half of the new rule that must NOT change — "no address" means the requester cannot be
+    // told, not that nobody can act, and not that a problem should be written down either.
+    const context = await deployment('auto')
+    const runtime = context.runtime
+    try {
+      await runtime.createMainSession()
+      drop(context.inbox, 'stalled.md', '---\ntitle: 会停下来的活\n---\n创建 hello.md。')
+      await settle(runtime)
+      const ticket = runtime.store.tickets.list()[0]!
+      expect(runtime.store.triggers.get(ticket.origin.triggerId)!.trigger.replyTo).toBeUndefined()
+
+      const before = runtime.delivery.sends()
+      runtime.delivery.report(ticket, {
+        state: 'waiting', summary: 'The worker ended its turn without a report.', at: '2026-11-07T04:00:00.000Z',
+      })
+      await settle(runtime)
+      // Nothing was sent, and the fact that there was nowhere to send it is counted rather than swallowed.
+      expect(runtime.delivery.sends()).toEqual({ queued: before.queued, nowhere: before.nowhere + 1 })
+      expect(runtime.store.effectCounts().send).toBeUndefined()
+      // Still not a problem on the board: a cron or inbox Ticket with nowhere to write is the normal shape here.
+      expect(runtime.health.entry('delivery').snapshot()).toMatchObject({ ok: true })
+      // But the front desk hears it, because it is the one place that can act without an address.
+      expect(context.host.agents.get('myagent-main')!.followups.at(-1)!.text).toContain('myagent_retry_ticket')
     } finally { await runtime.stop() }
   })
 })

@@ -67,7 +67,12 @@ class TicketStore implements TicketRepository {
   readonly records = new Map<string, Ticket>()
   get(id: string): Ticket | undefined { return this.records.get(id) }
   save(ticket: Ticket): void { this.records.set(ticket.id, ticket) }
-  list(): Ticket[] { return [...this.records.values()] }
+  // Tombstones are hidden from every listing — the panel's, `myagent_list_tickets`, the Work's — while `get` still
+  // resolves them, so a note or an artifact that points at a deleted Ticket reads "deleted" instead of failing.
+  // A tombstone nobody can read is not an audit trail, so `deleted()` exists for the view that shows them.
+  list(): Ticket[] { return [...this.records.values()].filter(ticket => ticket.deleted === undefined) }
+  deleted(): Ticket[] { return [...this.records.values()].filter(ticket => ticket.deleted !== undefined) }
+  remove(id: string): void { this.records.delete(id) }
   open(): Ticket[] {
     return this.list().filter(ticket => ticket.ended === undefined).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   }

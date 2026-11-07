@@ -120,6 +120,10 @@ describe('the tool a person drives it with', () => {
       // Mirrors what `Sessions.attempt` answers in production: the attempt a launch recorded. Answering `undefined`
       // here would exercise only the fallback and never the identity a report is supposed to carry.
       attempt: (ticketId: string) => store.tickets.get(ticketId)?.assignments.find(item => item.state === 'running')?.id,
+      // S3a 的两个窄接口：这两个文件不测回话，桩只保证类型完整。**不返回假的 sent:true**——
+      // 那会让任何误用它的测试看起来通过。
+      returnAddressOf: () => undefined,
+      replyToRequester: () => ({ sent: false, reason: 'stubbed: this suite does not exercise replies' }),
       // Faithful where it matters: the authorization is the real Engine's, so a refusal the tool surfaces is a refusal
       // the Engine actually made. Only the IO is stubbed.
       readArtifact: async (source: string, target: string, path: string) => {

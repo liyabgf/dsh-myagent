@@ -5010,7 +5010,10 @@ describe('改名、筛选 chips 与导航徽标（U7）', () => {
     click(button('任务'))
     await settle()
     const chips = all('#filter .chip-btn')
-    expect(chips.map(node => node.textContent)).toEqual(['进行中', '等你回答', '已结束', '全部'])
+    expect(chips.map(node => node.textContent)).toEqual(// 【S4 产品变更】多了「已删除」一档。旧值：['进行中', '等你回答', '已结束', '全部']。
+      // 加它的理由：list 一律隐藏墓碑，所以**只有这个过滤器能列出被删的任务**——
+      // 读不到的墓碑不是审计痕迹，而"我到底删了什么、删掉多少"是事后唯一会被问的问题。
+      ['进行中', '等你回答', '已结束', '全部', '已删除'])
     // 当前档是"看得见"的，不是藏在下拉里的一个 value。
     expect(chips[0]!.getAttribute('aria-pressed')).toBe('true')
     expect(chips.slice(1).every(node => node.getAttribute('aria-pressed') === 'false')).toBe(true)
@@ -5200,6 +5203,147 @@ describe('短码与技术细节折叠（U4）', () => {
     const link = one('#detail .kv button.linklike')
     expect(link.getAttribute('title')).toContain(LONG)
     expect(read(link)).toBe('b356ac64…')
+  })
+})
+
+describe('删除一张任务（S4）', () => {
+  const gone = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    at: LATER, assets: 'delete', directory: '/tmp/work/digest-ticket-1', files: 3, bytes: 1850, ...over,
+  })
+  const files = { directory: '/tmp/work/digest-ticket-1', count: 3, truncated: false, files: [
+    { path: 'digest.md', directory: false, size: 1200, text: true },
+    { path: 'sources', directory: true, size: 0, text: false },
+    { path: 'RESULT.md', directory: false, size: 650, text: true },
+  ] }
+
+  it('两步确认，而后果那句话里的数字是量出来的，不是估的', async () => {
+    const { sent } = await mount(routes({
+      'GET tickets/ticket-1': ticket({ stage: 'done', ended: { at: LATER, by: 'agent', outcome: 'done', reason: '做完了' } }),
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ stage: 'done' })] },
+      'GET tickets/ticket-1/files': files,
+      'POST tickets/ticket-1/delete': { deleted: 'ticket-1' },
+    }))
+    await openListed()
+    // 第一步：只有按钮，没有确认块——一次误点不该直接删掉东西。
+    expect(document.querySelector('#d-delete')).toBeNull()
+    click(button('删除这张任务'))
+    await settle()
+    // 第二步：后果写成带数字的一句话，而且数字来自 files 路由（1200 + 650，目录不算字节）。
+    expect((document.querySelector('#d-delete-consequence')?.textContent ?? '')).toContain('/tmp/work/digest-ticket-1')
+    expect((document.querySelector('#d-delete-consequence')?.textContent ?? '')).toContain('3 个文件')
+    expect((document.querySelector('#d-delete-consequence')?.textContent ?? '')).toContain('1.8 KB')
+    // 默认落在可逆的一端：留着文件 + 留墓碑。
+    expect((document.querySelector('#del-assets-keep') as HTMLInputElement).checked).toBe(true)
+    expect((one('#del-record') as HTMLInputElement).checked).toBe(false)
+    expect(button('确认删除').textContent).toBe('确认删除')
+    click(button('确认删除'))
+    await settle()
+    expect(sent('POST tickets/ticket-1/delete').at(-1)!.body).toEqual({ assets: 'keep', record: 'tombstone' })
+  })
+
+  it('选"连文件一起删"与"记录也不留"，请求体如实反映，按钮文案也跟着变', async () => {
+    const { sent } = await mount(routes({
+      'GET tickets/ticket-1': ticket({ stage: 'done', ended: { at: LATER, by: 'agent', outcome: 'done', reason: '做完了' } }),
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ stage: 'done' })] },
+      'GET tickets/ticket-1/files': files,
+      'POST tickets/ticket-1/delete': { deleted: 'ticket-1' },
+    }))
+    await openListed()
+    click(button('删除这张任务'))
+    await settle()
+    click(document.querySelector('#del-assets-delete')!)
+    click(document.querySelector('#del-record')!)
+    await settle()
+    //  stronger option 的按钮要说清它比默认多做了什么，而不是同一个"确认删除"。
+    expect(button('确认删除（记录也不留）')).toBeDefined()
+    click(button('确认删除（记录也不留）'))
+    await settle()
+    expect(sent('POST tickets/ticket-1/delete').at(-1)!.body).toEqual({ assets: 'delete', record: 'nothing' })
+  })
+
+  it('运行中的任务不给删，并且当场说清为什么——而不是让人点了再看后端拒绝', async () => {
+    await mount(routes({
+      'GET tickets/ticket-1': ticket({ stage: 'running' }),
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ stage: 'running' })] },
+    }))
+    await openListed()
+    const open = button('删除这张任务')
+    expect(open.getAttribute('title')).toContain('先停止它')
+    click(open)
+    await settle()
+    // 确认块不出现：一张还在跑的任务连"测量目录"这一步都不该走到。
+    expect(document.querySelector('#d-delete')).toBeNull()
+    expect(toastText()).toContain('先停止它')
+  })
+
+  it('墓碑把删掉的量念出来，并说明进气记录为什么还在', async () => {
+    await mount(routes({
+      'GET tickets/ticket-1': ticket({ stage: 'done', ended: { at: LATER, by: 'agent', outcome: 'done', reason: '做完了' }, deleted: gone() }),
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ stage: 'done', deleted: gone() })] },
+    }))
+    click(button('已删除'))
+    await settle()
+    // 列表里它读作"已删除"，而不是继续显示被删之前的"已完成"。
+    expect((one('#tickets')?.textContent ?? '')).toContain('已删除')
+    click(one('#tickets li'))
+    await settle()
+    expect(document.querySelector('#d-tombstone')).not.toBeNull()
+    expect((document.querySelector('#d-tombstone')?.textContent ?? '')).toContain('3 个文件')
+    expect((document.querySelector('#d-tombstone')?.textContent ?? '')).toContain('1.8 KB')
+    expect((document.querySelector('#d-tombstone')?.textContent ?? '')).toContain('唯一记录')
+    expect((document.querySelector('#d-tombstone')?.textContent ?? '')).toContain('进气记录')
+    // 已删的任务不再给删除按钮：重复删除是一个没有答案的问题。
+    expect(all('#detail button').map(node => read(node)).some(label => label.includes('删除这张任务'))).toBe(false)
+  })
+
+  it('点「已删除」这一档真的按 state=deleted 去读', async () => {
+    const { sent } = await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 0, tickets: [] },
+    }))
+    click(button('已删除'))
+    await settle()
+    expect(sent('GET tickets').at(-1)!.query.get('state')).toBe('deleted')
+  })
+})
+
+describe('分诊任务在面板上看得出来（S3b）', () => {
+  const triaged = { id: 'ticket-triage', title: '现在有几张在跑', stage: 'done', waitsForPerson: false, triage: true,
+    ended: { at: LATER, by: 'agent', outcome: 'done', reason: '回答了' } }
+  const plain = { id: 'ticket-plain', title: '写一份摘要', stage: 'done', waitsForPerson: false,
+    ended: { at: LATER, by: 'agent', outcome: 'done', reason: '做完了' } }
+
+  it('列表里给它一个「分诊」标记，普通任务没有；详情里说清它是什么、为什么一轮就结束是正常的', async () => {
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 2, tickets: [listed(triaged), listed(plain)] },
+      'GET tickets/ticket-triage': ticket(triaged),
+      'GET tickets/ticket-plain': ticket(plain),
+    }))
+    click(button('任务'))
+    await settle()
+    // one()/byId() 在缺席时会抛，所以"存在"用 one，"不存在"只能用原生查询。
+    expect(one('#triage-chip-ticket-triage')).toBeDefined()
+    expect(one('#triage-chip-ticket-triage').getAttribute('title')).toContain('决定这个请求变成什么')
+    expect(document.querySelector('#triage-chip-ticket-plain')).toBeNull()
+
+    click(all('#tickets li')[0]!)
+    await settle()
+    const detail = document.querySelector('#d-triage')?.textContent ?? ''
+    expect(detail).toContain('分诊任务')
+    expect(detail).toContain('一轮就结束')
+    // 开关在哪：从这里能走到设置，而不是让人去猜这东西为什么存在。
+    expect(detail).toContain('设置')
+  })
+
+  it('普通任务的详情里没有这段说明', async () => {
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed(plain)] },
+      'GET tickets/ticket-plain': ticket(plain),
+    }))
+    click(button('任务'))
+    await settle()
+    click(one('#tickets li'))
+    await settle()
+    expect(document.querySelector('#d-triage')).toBeNull()
   })
 })
 

@@ -77,6 +77,9 @@ const SourcePolicyFields = {
   allowSystemActors: z.boolean().optional(),
 }
 
+/** The Sources whose requests are worth a judge: a person's words, arriving from outside this machine. */
+const TRIAGED_SOURCES: readonly string[] = ['chat', 'inbox', 'cron']
+
 export const SettingsSchema = z.object({
   /**
    * `auto` accepts what the gate admits; `observe` records what it would have accepted without executing it.
@@ -238,6 +241,30 @@ export const SettingsSchema = z.object({
   notify: z.object({
     /** Post a local notification when a Ticket needs a person or finishes. */
     enabled: z.boolean().default(false),
+  }).strict().prefault({}),
+  /**
+   * Whether a request from a Source is triaged before it becomes work (S3b).
+   *
+   * Off by default: it costs one Session turn per request, and an operator who has not decided they want a judge in
+   * front of their inbox should not pay for one. Turning it on or off does NOT move the policy version — routing a
+   * future request differently does not invalidate an authorization already granted, and bumping the version would
+   * notify every open Ticket about a change that bears on none of them.
+   *
+   * `desk` decides WHO triages:
+   * - `dedicated` (default) — each triage Ticket gets its own Session, like a worker's. Intake is unattended and the
+   *   operator's conversation is attended, so the default keeps them apart: a busy group would otherwise be queued
+   *   behind whatever the operator is doing, and would spend their context.
+   * - `main` — the operator's own Session is the desk. It has the context they have been building, and they can steer
+   *   it mid-decision, which no dedicated Session can offer. The cost is the two things above.
+   *
+   * `main` needs one tool `dedicated` does not: the desk has to be able to CLOSE a triage Ticket, and the main Session
+   * has no `myagent_report` (that is a worker's, bound to an attempt). Hence `myagent_close_ticket`, which is why this
+   * knob could not ship before that tool existed — a setting whose other value silently behaves like the first is
+   * worse than no setting at all.
+   */
+  triage: z.object({
+    enabled: z.boolean().default(false),
+    desk: z.enum(['dedicated', 'main']).default('dedicated'),
   }).strict().prefault({}),
 }).strict()
 
@@ -425,6 +452,19 @@ export interface Policy {
   readonly paused: boolean
   readonly acceptMode: Settings['acceptMode']
   gate(trigger: Trigger): GateVerdict
+  /**
+   * Whether this Trigger's Ticket is triaged — decided by a Session that may answer, dispatch, or ask — instead of
+   * going straight to a worker.
+   *
+   * Three conditions, and each one is a decision the operator made:
+   * - the switch is on;
+   * - `depth` is 0, so a Ticket the desk opened is never triaged again (without this, dispatching would recurse until
+   *   the depth guard invented for rule chains had to catch it, and every request would cost two turns forever);
+   * - the Trigger came from a Source that carries a person's words: chat, inbox or cron. A `session` Trigger is the
+   *   operator or the front desk speaking here, and a `rule` Trigger is a decision a rule already made — triaging
+   *   either would spend a turn second-guessing somebody who was already in the room.
+   */
+  triage(trigger: Trigger): boolean
   /** Whether an existing Mandate still holds under these settings, and why not when it does not. */
   revalidate(mandate: Mandate): { readonly holds: boolean; readonly reason?: GateReason; readonly detail?: string }
 }
@@ -436,6 +476,9 @@ export function settingsPolicy(settings: Settings): Policy {
     paused: settings.paused,
     acceptMode: settings.acceptMode,
     gate: trigger => gate(trigger, settings),
+    triage: trigger => settings.triage.enabled
+      && (typeof trigger.meta?.depth === 'number' ? trigger.meta.depth : 0) === 0
+      && TRIAGED_SOURCES.includes(trigger.source),
     revalidate(mandate) {
       // Pausing is deliberately not here: it holds execution rather than withdrawing an authorization, so a paused
       // Ticket keeps its Mandate and resumes under it. That is also why `paused` is not part of the policy version.

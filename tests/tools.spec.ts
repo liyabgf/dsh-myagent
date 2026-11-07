@@ -66,6 +66,10 @@ function harness(acceptMode: 'auto' | 'observe' = 'auto'): Harness {
       // Mirrors what `Sessions.attempt` answers in production: the attempt a launch recorded. Answering `undefined`
       // here would exercise only the fallback and never the identity a report is supposed to carry.
       attempt: (ticketId: string) => store.tickets.get(ticketId)?.assignments.find(item => item.state === 'running')?.id,
+      // S3a 的两个窄接口：这两个文件不测回话，桩只保证类型完整。**不返回假的 sent:true**——
+      // 那会让任何误用它的测试看起来通过。
+      returnAddressOf: () => undefined,
+      replyToRequester: () => ({ sent: false, reason: 'stubbed: this suite does not exercise replies' }),
       // Faithful where it matters: the authorization is the real Engine's, so a refusal the tool surfaces is a refusal
       // the Engine actually made. Only the IO is stubbed.
       readArtifact: async (source: string, target: string, path: string) => {
@@ -125,11 +129,33 @@ describe('the registration shape', () => {
 
   it('names the tools a person gets, and keeps the worker\'s own tool out of that list', () => {
     const names = harness().tools.map(tool => tool.name)
+    // 【S3a 产品变更】前台多了 `myagent_reply`（把话送回请求者）。旧值：
+    //   ['myagent_create_ticket', 'myagent_list_tickets', 'myagent_ticket_status', 'myagent_answer_ticket',
+    //    'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_retry_ticket']
+    // 加它的理由：`myagent_answer_ticket` 是把文本交给 **worker**，前台此前**没有任何工具能把话送回聊天里那个人**——
+    // 于是"前台自己回答请求者"这条路根本不存在，而它正是"拉优先于推"要依赖的能力。
+    // 【B1 产品变更】又多了 `myagent_close_ticket`。上一行的旧值在那次之后是：
+    //   [... 'myagent_reply', 'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_retry_ticket']
+    // 加它的理由：`desk:'main'` 时操作者自己的 Session 就是分诊台，而它**没有 `myagent_report`**
+    // （那是 worker 的、绑在 attempt 上），所以它无法给一张分诊任务收尾——B1 缺的就是这一块。
     expect(names).toEqual([
       'myagent_create_ticket', 'myagent_list_tickets', 'myagent_ticket_status', 'myagent_answer_ticket',
-      'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_retry_ticket',
+      // 顺序照 mainTools 里的声明顺序：close_ticket 在 stop 之后、retry 之前。
+      'myagent_reply', 'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_close_ticket', 'myagent_retry_ticket',
     ])
     expect(names).not.toContain('myagent_report')
+  })
+
+  it('refuses to open a Ticket that would report nowhere, rather than opening it silently', async () => {
+    // `report_to_ticket` copies an address; when the named Ticket has none, the honest answer is an error at call
+    // time. Opening the Ticket anyway would produce one whose reports reach only the panel — and the front desk would
+    // believe it had routed the answer back to the person who asked.
+    const h = harness()
+    const result = await h.registered('myagent_create_ticket', {
+      title: '巡视一遍', request: '看看现在有几张在跑', report_to_ticket: 'ticket-with-no-address',
+    }) as { error?: string }
+    expect(result.error).toContain('has no reply address to copy')
+    expect(result.error).toContain('myagent_reply')
   })
 
   it('refuses arguments the schema does not describe, before the Engine sees them', async () => {

@@ -131,6 +131,7 @@ export interface DeliveryFault {
 
 /** One fake agent, with the surface myagent decorates, prompts and stops. */
 export function fakeAgent(id: string, tools: RegisteredTool[], restrictions: { allow?: readonly string[] }[],
+  sections: { agentId: string; definition: { name?: string; text?: unknown } }[] = [],
   guards: RecordedGuard[], policy: RestrictPolicy,
   log: { seq: number; type: string; data?: Record<string, unknown> }[] = [], fault?: DeliveryFault): AgentRecord {
   const agent: AgentRecord = {
@@ -152,7 +153,12 @@ export function fakeAgent(id: string, tools: RegisteredTool[], restrictions: { a
       log.push({ seq: log.length, type: 'user/message', data: message })
     },
     ctx: {
-      systemPrompt: { section: () => () => {} },
+      systemPrompt: {
+        section: (definition: unknown) => {
+          sections.push({ agentId: id, definition: definition as { name?: string; text?: unknown } })
+          return () => {}
+        },
+      },
       tools: {
         register(definition) { tools.push({ agentId: id, definition }); return () => {} },
         // Faithful to DSH: a name it does not know globally is refused, and the message carries the name.
@@ -234,6 +240,17 @@ export interface StubHost {
    * that distinguishes them.
    */
   toolsOf(agentId: string): string[]
+  /**
+   * The prompt sections each Session was bound to, in order, so a test can tell WHICH role a Session was decorated as.
+   *
+   * `toolsOf` alone cannot: the tool set and the prompt role are chosen in two different files (`runtime.ts` picks the
+   * tools, `sessions.ts` picks the role), so a wrong role with a right tool set passes every tool assertion while the
+   * Session runs under the wrong instructions. Discarding the definition — as this stub did — is what made that
+   * untestable.
+   */
+  readonly sections: { agentId: string; definition: { name?: string; text?: unknown } }[]
+  /** The text of this Session's `myagent` prompt section, or undefined when it has none. */
+  sectionText(agentId: string): string | undefined
   /** Dispatch an event to the plugin's listeners, without containing what they throw. */
   emit(name: string, payload: unknown): void
   /** Run what `apply` registered for disposal, which is how the host stops a plugin. */
@@ -339,6 +356,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
   const agents = new Map<string, AgentRecord>()
   const tools: RegisteredTool[] = []
   const restrictions: { allow?: readonly string[] }[] = []
+  const sections: { agentId: string; definition: { name?: string; text?: unknown } }[] = []
   const guards: RecordedGuard[] = []
   const listeners = new Map<string, ((...args: never[]) => void)[]>()
   const refusals: { session: string; mode: 'notice' | 'relay' }[] = []
@@ -395,7 +413,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
         // cwd is the one fact that makes "one directory per Ticket" a claim about DSH rather than about this stub.
         calls.created.push({ sessionId: request.sessionId, cwd: request.cwd, agentPreset: request.agentPreset })
         const sessionId = options.answersWith?.(request.sessionId) ?? request.sessionId
-        const agent = resolve ? fakeAgent(sessionId, tools, restrictions, guards, policy, logOf(sessionId), fault) : undefined
+        const agent = resolve ? fakeAgent(sessionId, tools, restrictions, sections, guards, policy, logOf(sessionId), fault) : undefined
         // No preset means this is the front desk; a worker is always created under `WORKER_PRESET`.
         if (request.agentPreset === undefined) frontDesk.add(sessionId)
         if (agent !== undefined) presets.set(sessionId, options.permissionCurrent ?? 'workspace-write')
@@ -479,16 +497,16 @@ export function stubHost(options: StubOptions = {}): StubHost {
     },
   }
   const host: StubHost = {
-    ctx: ctx as unknown as Context, calls, agents, restored, tools, restrictions, guards, permissions, refusals,
+    ctx: ctx as unknown as Context, calls, agents, restored, tools, restrictions, sections, guards, permissions, refusals,
     flushes: () => [...agents.values()].reduce((total, agent) => total + agent.flushes, 0), services,
     spawn: (sessionId: string, status: 'idle' | 'running' = 'idle') => {
-      const agent = fakeAgent(sessionId, tools, restrictions, guards, policy, logOf(sessionId), fault)
+      const agent = fakeAgent(sessionId, tools, restrictions, sections, guards, policy, logOf(sessionId), fault)
       agent.status = status
       agents.set(sessionId, agent)
       return agent
     },
     seedRestored: (sessionId: string, permission?: string) => {
-      const agent = fakeAgent(sessionId, tools, restrictions, guards, policy, logOf(sessionId), fault)
+      const agent = fakeAgent(sessionId, tools, restrictions, sections, guards, policy, logOf(sessionId), fault)
       restored.set(sessionId, agent)
       if (permission !== undefined) presets.set(sessionId, permission)
       return agent
@@ -497,6 +515,12 @@ export function stubHost(options: StubOptions = {}): StubHost {
     guardOf: (agentId: string) => guards.filter(item => item.agentId === agentId).at(-1)?.guard,
     toolsOf: (agentId: string) => tools.filter(tool => tool.agentId === agentId).map(tool => tool.definition.name),
     // Dispatch as DSH does: a throwing listener propagates to the caller, which is what makes it fatal.
+    // `text` 可能是字符串，也可能是 thunk（真的 Sessions 传函数，好让提示词改动能重新绑定）。
+    sectionText: (agentId: string) => {
+      const found = sections.filter(item => item.agentId === agentId && item.definition.name === 'myagent').at(-1)
+      const text = found?.definition.text
+      return typeof text === 'function' ? String((text as () => unknown)()) : text === undefined ? undefined : String(text)
+    },
     emit: (name: string, payload: unknown) => {
       const args = (Array.isArray(payload) ? payload : [payload]) as never[]
       for (const listener of listeners.get(name) ?? []) listener(...args)

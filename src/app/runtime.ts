@@ -7,7 +7,8 @@
  * and an Assignment whose worker Session is gone is interrupted rather than left looking alive.
  */
 import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { rm } from 'node:fs/promises'
+import { join, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
@@ -23,11 +24,11 @@ import { frontMatter } from '../sources/inbox.ts'
 import { inboxKind } from '../sources/inbox.ts'
 import { sessionKind } from '../sources/session.ts'
 import type { SourceStatus } from '../sources/kind.ts'
-import type { Artifact, Trigger } from '../core/model.ts'
+import type { Artifact, ReplyTo, Trigger } from '../core/model.ts'
 import { SourceRegistry } from '../sources/registry.ts'
 import type { Cursor, SourceHost } from '../sources/kind.ts'
 import { DshExecutor, type LaunchPayload } from './executor.ts'
-import { OutcomeDelivery, type SendPayload } from './delivery.ts'
+import { isFirstEscalation, OutcomeDelivery, type SendPayload } from './delivery.ts'
 import { Effects } from './effects.ts'
 import { HealthBoard } from './health.ts'
 import { KV, SchemaTooNew, Store } from './store.ts'
@@ -39,7 +40,7 @@ import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
 import { mainTools, workerTools, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
-import { isTextFile, readForPanel, resolveInside } from './files.ts'
+import { listFiles, isTextFile, readForPanel, resolveInside } from './files.ts'
 import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
 
 /** How often the pump runs what is due, in milliseconds. */
@@ -399,8 +400,18 @@ export class Runtime implements HttpHost {
         this.sessionHealth.problem(impostorSubject(sessionId), impostorDetail(sessionId, claimedTicketId))
       },
       environment: (ticket: Ticket): Record<string, string> => this.executor.environment(ticket),
-      tools: (agent: Agent, ticket?: Ticket): Tool[] =>
-        ticket === undefined ? mainTools(this.toolsHost()) : workerTools(this.toolsHost(), ticket),
+      tools: (agent: Agent, ticket?: Ticket): Tool[] => {
+        const host = this.toolsHost()
+        if (ticket === undefined) return mainTools(host)
+        // A triage attempt decides what a request becomes, so it gets the front desk's management tools — it has to be
+        // able to open Tickets — plus the ONE worker tool a decision is expressed with: the report. Taking only that
+        // one avoids registering `myagent_note_ticket` twice (both sets define it), and leaving out
+        // `myagent_read_artifact` says what is true: a desk that starts reading another Ticket's output is doing work.
+        if (ticket.assignments.at(-1)?.role === 'triage') {
+          return [...mainTools(host), ...workerTools(host, ticket).filter(tool => tool.name === 'myagent_report')]
+        }
+        return workerTools(host, ticket)
+      },
       mainState: (): MainState => this.panel,
       closing: () => this.stopped,
     })
@@ -447,6 +458,106 @@ export class Runtime implements HttpHost {
       // the worker, and a worker's Session outlives the attempt its tools were registered for.
       attempt: (ticketId: string) => this.sessions.attempt(ticketId),
       readArtifact: (source, target, path) => this.readArtifact(source, target, path),
+      returnAddressOf: (ticketId: string) => this.returnAddressOf(ticketId),
+      replyToRequester: (ticketId: string, text: string) => this.replyToRequester(ticketId, text),
+    }
+  }
+
+  /**
+   * Where a Ticket's reports go: the address on its Trigger, which is the only place an address is ever written down
+   * (contract §3.3 — never inferred from the actor, because an id says who asked and not where to answer).
+   */
+  private returnAddressOf(ticketId: string): ReplyTo | undefined {
+    const ticket = this.store.tickets.get(ticketId)
+    if (ticket === undefined) return undefined
+    return this.store.triggers.get(ticket.origin.triggerId)?.trigger.replyTo
+  }
+
+  /**
+   * Write back to whoever asked for a Ticket (S3a).
+   *
+   * The address is resolved here and never taken from the caller: the front desk names a Ticket, this looks up where
+   * its request came from. A tool that let it type an address would let a prompt-injected front desk post to any
+   * channel it could name.
+   *
+   * Recorded on the Ticket as well as sent, because "we wrote to them" is a fact about this Ticket's life: without the
+   * event, an operator reading the history cannot tell whether the requester was ever told anything.
+   */
+  private replyToRequester(ticketId: string, text: string): { sent: boolean; address?: string; reason?: string } {
+    const ticket = this.store.tickets.get(ticketId)
+    if (ticket === undefined) return { sent: false, reason: `There is no Ticket ${ticketId}.` }
+    const replyTo = this.returnAddressOf(ticketId)
+    if (replyTo === undefined) {
+      // Said plainly, with the reason: "nowhere to send it" is the shape of every panel, inbox and schedule Ticket,
+      // and a front desk that only learned `false` would try something else or, worse, say it had replied.
+      return {
+        sent: false,
+        reason: `Ticket ${ticketId.slice(0, 8)} has nowhere to write back to — its Trigger carries no reply address, `
+          + 'which is the shape of a request that came from the panel, the inbox or a schedule. Tell the operator here instead.',
+      }
+    }
+    const address = `${replyTo.kind}/${replyTo.channel}${replyTo.thread === undefined ? '' : ` (thread ${replyTo.thread})`}`
+    this.delivery.send(ticket, text)
+    this.engine.replied(ticketId, { address, chars: text.length })
+    return { sent: true, address }
+  }
+
+  /**
+   * Delete a Ticket, and — when asked — the files it produced (S4).
+   *
+   * The order is the point. Validation happens first and has no side effects, so a refusal arrives BEFORE anything is
+   * removed; the Engine then records the tombstone; only then is a byte touched. The opposite order would fail the
+   * worse way: files gone and no record of why. This way the worst outcome is a tombstone that claims a deletion
+   * which did not happen — recoverable, visible, and nothing lost.
+   *
+   * The measurement happens before the removal for the same reason the tombstone carries numbers at all: once the
+   * directory is gone, "17 files, 2.4 MB" exists nowhere else.
+   */
+  async deleteTicket(id: string, options: { assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing' }): Promise<{
+    deleted: string; assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing'
+    directory?: string; files?: number; bytes?: number
+  }> {
+    const ticket = this.engine.assertDeletable(id)
+    const directory = ticket.execution?.directory
+    const removing = options.assets === 'delete' && directory !== undefined
+    let files: number | undefined
+    let bytes: number | undefined
+    if (removing) {
+      // A directory that cannot be listed is not a reason to refuse the deletion of the RECORD, so the numbers are
+      // simply left off and the removal is still attempted.
+      const listing = await listFiles(directory!).catch(() => undefined)
+      if (listing !== undefined) {
+        files = listing.count
+        bytes = listing.files.filter(file => !file.directory).reduce((sum, file) => sum + file.size, 0)
+      }
+    }
+    const result = this.engine.deleteTicket(id, {
+      ...options, ...(files === undefined ? {} : { files }), ...(bytes === undefined ? {} : { bytes }),
+    })
+    if (removing) await this.removeAssets(directory!, id)
+    return { ...result, ...(files === undefined ? {} : { files }), ...(bytes === undefined ? {} : { bytes }) }
+  }
+
+  /**
+   * Remove a Ticket's own directory, and only ever inside the work root.
+   *
+   * `rm -r` unlinks a symlink rather than following it, so a link inside the directory cannot escape; the guard here is
+   * for the other direction — a stored path that is not ours must not be removed on the strength of being stored.
+   * A failure goes to the health board rather than to the Ticket, because with `record: 'nothing'` there is no row
+   * left to carry an event, and "we said we deleted it and could not" must still be visible somewhere.
+   */
+  private async removeAssets(directory: string, ticketId: string): Promise<void> {
+    const root = resolve(this.machine.workRoot)
+    const target = resolve(directory)
+    if (target === root || !target.startsWith(root + sep)) {
+      this.health.entry('panel').problem(`refused to delete Ticket ${ticketId.slice(0, 8)}'s assets: ${directory} is not inside the work root`)
+      return
+    }
+    try {
+      await rm(target, { recursive: true, force: true })
+    } catch (error) {
+      this.health.entry('panel').problem(
+        `could not delete Ticket ${ticketId.slice(0, 8)}'s assets at ${directory}: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -553,7 +664,17 @@ export class Runtime implements HttpHost {
         .filter(event => event.type === 'rescued' || (event.type === 'interrupted' && event.by?.id === 'watchdog')).length,
       // Durable copy of the escalation: the board is the signal, the Ticket's log is the record. Not counted by
       // `actionsTaken` above, because escalating is not an action taken — it is the conclusion that actions failed.
-      escalate: (ticketId, why) => { this.engine.watchdogEscalated(ticketId, why) },
+      escalate: (ticketId, why) => {
+        // Recorded every time, TOLD once. The Watchdog re-escalates on every pass for as long as a Ticket stays past
+        // `maxActions`, so delivering each one would message the requester every `everyMs` — and a repeated alarm
+        // trains a person to ignore it, which is the failure the operator's own push rule names ("one fact, once").
+        // The Ticket's history is the right place for the repeats: it answers "how many times did we give up".
+        const first = isFirstEscalation(this.store.events.list(ticketId))
+        this.engine.watchdogEscalated(ticketId, why)
+        if (!first) return
+        const ticket = this.store.tickets.get(ticketId)
+        if (ticket !== undefined) this.delivery.escalated(ticket, why)
+      },
       health: this.health.entry('watchdog'),
       requestPass: () => this.passes.requestPass(),
     }

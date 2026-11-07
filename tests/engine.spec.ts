@@ -384,6 +384,25 @@ describe('policy changes', () => {
 })
 
 describe('the main Session as a Source', () => {
+  /**
+   * S3a: a Ticket the front desk opens on somebody's behalf has to be able to report back to them.
+   *
+   * The address goes on the synthesized Trigger rather than on the Ticket, because the Trigger is the only place a
+   * reply address has ever lived and `Delivery.send` already resolves it from there — so the entire outbound path is
+   * unchanged, and a Ticket with no address behaves exactly as it did before.
+   */
+  it('carries a return address onto the Trigger it synthesizes, and leaves an addressless one untouched', () => {
+    const { engine, memory } = harness()
+    const replyTo = { kind: 'chat' as const, channel: 'telegram-main', thread: '9' }
+    const made = engine.createTicket({ title: '巡视一遍', text: '看看现在有几张在跑', replyTo })
+    const ticket = memory.tickets.get(made.ticketId!)!
+    expect(memory.triggerOf(ticket.origin.triggerId)?.replyTo).toEqual(replyTo)
+
+    const plain = engine.createTicket({ title: '自己开的活', text: '整理一下' })
+    const plainTicket = memory.tickets.get(plain.ticketId!)!
+    expect(memory.triggerOf(plainTicket.origin.triggerId)?.replyTo).toBeUndefined()
+  })
+
   it('runs a person\'s request through the same gate as any other Trigger', () => {
     const { engine, memory } = harness()
     const result = engine.createTicket({ title: 'Research X', text: 'Find three sources about X and summarize them.' })
@@ -1090,5 +1109,81 @@ describe('archive and delete a Project or a Work (U21)', () => {
     expect(engine.work(work.id)?.name).toBe('周报')
     expect(memory.tickets.get(ticket.id)).toMatchObject({ workId: work.id, workSeq: 1 })
     expect(memory.events.list(ticket.id).filter(event => event.type === 'unclassified')).toEqual([])
+  })
+})
+
+describe('triage routing (S3b)', () => {
+  /**
+   * Which requests get a judge. The Engine has no settings — only the Policy projection — so the switch, the depth
+   * rule and the list of Sources all live in policy.ts, and what is asserted here is the one observable fact: the
+   * first Assignment's role.
+   */
+  it('sends a Source request to the desk, and leaves the operator, a rule and a desk-opened Ticket alone', () => {
+    const { engine, memory } = harness({ triage: { enabled: true } })
+
+    const fromInbox = engine.receive(trigger())
+    expect(memory.tickets.get(fromInbox.ticketId!)!.assignments.at(-1)!.role).toBe('triage')
+
+    // A `session` Trigger is the operator or the front desk speaking HERE. Triaging it would spend a turn
+    // second-guessing somebody who is already in the room — and the panel's "dispatch one task" keeps its direct path.
+    const ownTicket = engine.createTicket({ title: '自己开的活', text: '整理一下' })
+    expect(memory.tickets.get(ownTicket.ticketId!)!.assignments.at(-1)!.role).toBeUndefined()
+
+    // A rule Trigger is a decision a rule already made.
+    const fromRule = engine.receive(trigger({ id: 'trigger-rule', source: 'rule', kind: 'rule' }))
+    expect(memory.tickets.get(fromRule.ticketId!)!.assignments.at(-1)!.role).toBeUndefined()
+
+    // And a Ticket the desk opened must not be triaged again: without the depth rule, dispatching recurses and every
+    // request costs two turns forever. The guard is the same `origin.depth` the rule chain already uses.
+    const deep = engine.receive(trigger({ id: 'trigger-deep', meta: { depth: 1 } }))
+    expect(memory.tickets.get(deep.ticketId!)!.assignments.at(-1)!.role).toBeUndefined()
+  })
+
+  it('changes nothing when the switch is off, which is how it ships', () => {
+    const { engine, memory } = harness()
+    const made = engine.receive(trigger())
+    expect(memory.tickets.get(made.ticketId!)!.assignments.at(-1)!.role).toBeUndefined()
+  })
+})
+
+describe('deleting a Ticket, at the Engine level (S4)', () => {
+  /**
+   * The rules without any IO: the refusal of a live Ticket, the tombstone, and the one thing that survives every
+   * option. Asserted here as well as through the Runtime, because the two are different layers — a mutation of the
+   * Engine's own check has to be caught by something that does not depend on a directory being removed.
+   */
+  it('refuses a live Ticket, accepts an ended one, and never touches the intake record', () => {
+    const { engine, memory } = harness()
+    const made = engine.receive(trigger())
+    const id = made.ticketId!
+    expect(() => engine.assertDeletable(id)).toThrow(/stop it before deleting/)
+    expect(() => engine.deleteTicket(id, { assets: 'delete', record: 'nothing' })).toThrow(/stop it before deleting/)
+    // The refusal is not a partial action: nothing was marked and nothing was removed.
+    expect(memory.tickets.get(id)!.deleted).toBeUndefined()
+
+    engine.report(id, { state: 'ready', summary: '做完了' })
+    expect(engine.assertDeletable(id).id).toBe(id)
+    const triggerId = memory.tickets.get(id)!.origin.triggerId
+
+    expect(engine.deleteTicket(id, { assets: 'keep', record: 'tombstone' }))
+      .toMatchObject({ deleted: id, assets: 'keep', record: 'tombstone' })
+    expect(memory.tickets.get(id)!.deleted).toMatchObject({ assets: 'keep' })
+    expect(memory.tickets.list().some(ticket => ticket.id === id)).toBe(false)
+    expect(memory.tickets.deleted().some(ticket => ticket.id === id)).toBe(true)
+    // The Trigger is the dedupe key: with it gone, the same request arriving again would be new work.
+    expect(memory.triggerOf(triggerId)).toBeDefined()
+  })
+
+  it('takes the row away for record:nothing, and still leaves the Trigger and the Decision', () => {
+    const { engine, memory } = harness()
+    const made = engine.receive(trigger())
+    const id = made.ticketId!
+    const triggerId = memory.tickets.get(id)!.origin.triggerId
+    engine.report(id, { state: 'ready', summary: '做完了' })
+    engine.deleteTicket(id, { assets: 'keep', record: 'nothing' })
+    expect(memory.tickets.get(id)).toBeUndefined()
+    expect(memory.tickets.deleted().some(ticket => ticket.id === id)).toBe(false)
+    expect(memory.triggerOf(triggerId)).toBeDefined()
+    expect(memory.decisions.list().some(row => row.triggerId === triggerId)).toBe(true)
   })
 })

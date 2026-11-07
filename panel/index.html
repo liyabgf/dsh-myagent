@@ -317,6 +317,8 @@
         <button class="chip-btn" data-filter="attention" aria-pressed="false">等你回答</button>
         <button class="chip-btn" data-filter="ended" aria-pressed="false">已结束</button>
         <button class="chip-btn" data-filter="all" aria-pressed="false">全部</button>
+        <!-- 墓碑要读得到才是审计痕迹（S4）：list 一律隐藏已删任务，所以只有这个过滤器能列出它们。 -->
+        <button class="chip-btn" data-filter="deleted" aria-pressed="false">已删除</button>
       </div>
       <button class="btn" id="refresh">刷新</button>
       <span class="muted" id="ticket-hint"></span>
@@ -929,6 +931,11 @@
   const why = (label, ...kids) => el('details', { class: 'why' },
     el('summary', {}, label), el('div', { class: 'why-body' }, ...kids))
 
+  /**
+   * 一行任务的状态词。墓碑单独一个词，而不是继续显示它被删之前的状态：
+   * 在"已删除"这个过滤器下看到"已完成"，读起来像是列表坏了。
+   */
+  const stageLabel = ticket => ticket.deleted !== undefined ? '已删除' : zh(STAGE_ZH, ticket.stage)
   const stageClass = stage => stage === 'running' ? 'running'
     : stage === 'waiting' || stage === 'blocked' ? 'attention'
     : stage === 'done' ? 'done'
@@ -956,7 +963,12 @@
     return el('li', { 'aria-current': selected === ticket.id ? 'true' : 'false', onclick: () => open(ticket.id) },
       el('div', { class: 'row' },
         el('span', { class: 'title' }, ticket.title),
-        el('span', { class: `stage ${stageClass(ticket.stage)}`, title: ticket.stage }, zh(STAGE_ZH, ticket.stage))),
+        // 分诊任务一轮就结束是**正确行为**，而没有标记的话它和"worker 放弃了"长得一模一样。
+        ticket.triage === true ? el('span', {
+          class: 'chip', id: `triage-chip-${ticket.id}`,
+          title: '这是一张分诊任务：它决定这个请求变成什么（直接回答／开 1..N 张任务／问操作者），而不是做那件活。它通常一轮就结束。',
+        }, '分诊') : null,
+        el('span', { class: `stage ${ticket.deleted !== undefined ? 'stopped' : stageClass(ticket.stage)}`, title: ticket.stage }, stageLabel(ticket))),
       el('div', { class: 'meta' },
         el('span', {}, `${ticket.via} · ${ticket.sender}`),
         el('span', { title: when(ticket.updatedAt) }, ended ? `结束于 ${ago(ticket.updatedAt)}` : ago(ticket.updatedAt)),
@@ -1030,6 +1042,9 @@
   let detailTimer = null
   /** A stop needs a reason, and a native prompt() is the one dialog this page does not use. */
   let stopping = false
+  /** S4：删除的两步确认。两个轴各自独立，默认都落在可逆的一端。 */
+  let deleting = false
+  const deleteDraft = { assets: 'keep', record: 'tombstone', preview: null }
   /** Which upstream edge is waiting for a second click, because dropping an edge is not something to do by accident. */
   let confirmDrop = null
   /** How much of the event log has been asked for, and what the last answer's newest fact was. Both outlive a refresh. */
@@ -1234,7 +1249,7 @@
     node.replaceChildren()
     node.append(el('div', { class: 'row' },
       el('h2', { style: 'margin:0' }, ticket.title),
-      el('span', { class: `stage ${stageClass(ticket.stage)}`, title: ticket.stage }, zh(STAGE_ZH, ticket.stage)),
+      el('span', { class: `stage ${ticket.deleted !== undefined ? 'stopped' : stageClass(ticket.stage)}`, title: ticket.stage }, stageLabel(ticket)),
       ))
     const work = ticket.workId ? worksIndex.get(ticket.workId) : undefined
     const rows = [
@@ -1475,11 +1490,127 @@
         el('button', { class: 'btn', onclick: () => void act(`tickets/${encodeURIComponent(ticket.id)}/retry`, {}) }, '重试本轮'),
         el('button', { class: 'btn danger', onclick: () => { stopping = !stopping; renderDetail(ticket) } }, stopping ? '收回停止' : '停止')) : null,
       live ? stopRow : null))
+    if (ticket.triage === true) {
+      node.append(el('div', { class: 'stack', id: 'd-triage', style: 'margin-top:10px' },
+        el('p', { class: 'muted', style: 'font-size:12px' },
+          '这是一张<b>分诊任务</b>：它决定这个请求变成什么，而不是做那件活。它可以自己回答（一轮就结束，这是正常的）、',
+          '开一张或几张任务去做（那些任务的报告会回到问这句话的人那里），或者问你一个问题。'),
+        // 开关在哪，以及为什么默认关：操作者要能从这里走到设置，而不是去猜。
+        el('p', { class: 'muted', style: 'font-size:12px' },
+          '由「设置 → 进气」的分诊开关决定；关掉之后同样的请求会直接变成一张交给 worker 的任务。')))
+    }
+    node.append(deleteBlock(ticket))
     if (stopping) stopRow.classList.remove('hidden')
     if (focus !== null && focus !== 'body' && $(focus) !== null) $(focus).focus()
     if (scroll > 0) window.scrollTo(0, scroll)
     const historyNow = document.querySelector('#d-events .view')
     if (historyNow !== null && historyScroll > 0) historyNow.scrollTop = historyScroll
+  }
+
+  /** 先量再删：后果那句话里的数字必须是测出来的，不是估的（目录一没就再也测不到了）。 */
+  const previewDelete = async id => {
+    deleteDraft.preview = { loading: true }
+    try {
+      const found = await api(`tickets/${encodeURIComponent(id)}/files`)
+      const files = found.files || []
+      deleteDraft.preview = {
+        directory: found.directory,
+        count: found.count ?? files.length,
+        bytes: files.reduce((sum, file) => sum + (file.directory ? 0 : (file.size ?? 0)), 0),
+        truncated: found.truncated === true,
+      }
+    } catch (error) {
+      deleteDraft.preview = { error: error.message }
+    }
+    if (selected !== null) await open(selected)
+  }
+
+  const doDelete = async ticket => {
+    deleting = false
+    try {
+      await post(`tickets/${encodeURIComponent(ticket.id)}/delete`, { assets: deleteDraft.assets, record: deleteDraft.record })
+      // record:'nothing' 之后这张任务已经不存在，再 open 它会拿到一个 ticket_missing——所以删除后回列表，
+      // 而不是照 act() 那样重开详情。
+      toast(deleteDraft.record === 'nothing' ? '已删除：记录也一并去掉了（进气记录仍保留）' : '已删除：留下了一条墓碑')
+      selected = null
+      await load()
+      show('tickets')
+    } catch (error) { toast(error.message) }
+  }
+
+  /** 两步确认的第二步。名字不叫 confirmDelete：那个标识符已经被记录页与依赖页的确认流程占用了。 */
+  const deleteConfirm = ticket => {
+    const preview = deleteDraft.preview
+    const consequence = preview === null || preview.loading === true
+      ? '正在测量目录…'
+      : preview.error !== undefined
+        ? `测不出目录里有什么（${preview.error}）——所以无法告诉你删掉会失去多少。`
+        : `目录 ${preview.directory ?? '（这张任务没有目录）'}：${preview.count} 个文件、${humanSize(preview.bytes ?? 0)}`
+          + `${preview.truncated ? '（列表被截断，实际不少于这个数）' : ''}。`
+    return el('div', { class: 'stack', id: 'd-delete', style: 'margin-top:8px' },
+      el('p', { class: 'muted', style: 'font-size:12px', id: 'd-delete-consequence' }, consequence),
+      el('div', { class: 'stack', style: 'gap:4px' },
+        el('label', { class: 'row', style: 'margin:0' },
+          el('input', {
+            type: 'radio', name: 'del-assets', id: 'del-assets-keep',
+            // `checked` 必须按仓里的既有写法（checked: '' 或省略）。`checked: false` 会被 setAttribute 写成
+            // 字符串 "false"，而布尔属性**存在即为真**——于是"连任务记录也不留"在真浏览器里默认就是勾上的。
+            // 这是 jsdom 测试抓出来的真产品 bug，不是测试的问题。
+            ...(deleteDraft.assets === 'keep' ? { checked: '' } : {}),
+            onchange: () => { deleteDraft.assets = 'keep' },
+          }),
+          el('span', {}, '留着产出的文件（目录原样保留；这是默认，也是唯一可逆的一端）')),
+        el('label', { class: 'row', style: 'margin:0' },
+          el('input', {
+            type: 'radio', name: 'del-assets', id: 'del-assets-delete',
+            ...(deleteDraft.assets === 'delete' ? { checked: '' } : {}),
+            onchange: () => { deleteDraft.assets = 'delete' },
+          }),
+          el('span', {}, '连产出的文件一起删（不可撤销；上面那句话就是它会带走的东西）'))),
+      el('label', { class: 'row', style: 'margin:0' },
+        el('input', {
+          type: 'checkbox', id: 'del-record',
+          ...(deleteDraft.record === 'nothing' ? { checked: '' } : {}),
+          onchange: event => { deleteDraft.record = event.target.checked ? 'nothing' : 'tombstone'; renderDetail(ticket) },
+        }),
+        el('span', { class: 'muted' }, '连任务记录也不留（默认留一条墓碑：标题、授权、删了多少、什么时候删的）')),
+      el('p', { class: 'muted', style: 'font-size:12px' },
+        '两种选择都不会动进气记录（Trigger 与判定）：Trigger id 是这条消息的纯函数，',
+        '它是"同一条消息再进来"唯一的去重依据，删了它等于让同一条请求可以被重新受理一遍。'),
+      el('div', { class: 'row' },
+        el('button', { class: 'btn danger', id: 'd-delete-go', onclick: () => void doDelete(ticket) },
+          deleteDraft.record === 'nothing' ? '确认删除（记录也不留）' : '确认删除'),
+        el('button', { class: 'btn', onclick: () => { deleting = false; renderDetail(ticket) } }, '取消')))
+  }
+
+  const deleteBlock = ticket => {
+    // 已删的任务不再给删除按钮，而是把墓碑念出来：删了多少、目录还在不在、进气记录为什么留着。
+    if (ticket.deleted !== undefined) {
+      const gone = ticket.deleted
+      return el('div', { class: 'stack', style: 'margin-top:12px', id: 'd-tombstone' },
+        el('div', { class: 'row' },
+          el('span', { class: 'stage stopped' }, '已删除'),
+          el('span', { class: 'muted', style: 'font-size:12px' },
+            `${ago(gone.at)} · 产出的文件${gone.assets === 'delete' ? '已一并删除' : '保留着'}`)),
+        el('p', { class: 'muted', style: 'font-size:12px' }, gone.assets === 'delete'
+          ? `删掉了 ${gone.directory ?? '（无目录）'}：${gone.files ?? 0} 个文件、${humanSize(gone.bytes ?? 0)}。这一行是它们存在过的唯一记录。`
+          : `目录还在：${gone.directory ?? '（这张任务没有目录）'}`),
+        el('p', { class: 'muted', style: 'font-size:12px' }, '进气记录（Trigger 与判定）仍然保留。'))
+    }
+    const live = !ticket.ended
+    return el('div', { class: 'stack', style: 'margin-top:12px' },
+      el('div', { class: 'row' },
+        el('button', {
+          class: 'btn small danger', id: 'd-delete-open', style: 'margin-left:auto',
+          title: live ? '运行中的任务不能删：它此刻还持有一份生效的授权，先停止它' : '删除这张任务',
+          onclick: () => {
+            if (live) return toast('运行中的任务不能删：先停止它（它此刻还持有一份生效的授权，删掉记录只会让那个 Session 写进一个没人负责的目录）')
+            deleting = !deleting
+            if (deleting) { deleteDraft.preview = null; void previewDelete(ticket.id) }
+            renderDetail(ticket)
+          },
+        }, deleting ? '收回删除' : '删除这张任务')),
+      deleting ? deleteConfirm(ticket) : null)
   }
 
   const act = async (path, body) => {
@@ -1974,7 +2105,7 @@
       list.append(el('li', { onclick: () => { show('tickets'); void open(ticket.id) } },
         el('div', { class: 'row' },
           el('span', { class: 'title' }, `第 ${ticket.workSeq ?? '—'} 位 · ${ticket.title}`),
-          el('span', { class: `stage ${stageClass(ticket.stage)}`, title: ticket.stage }, zh(STAGE_ZH, ticket.stage))),
+          el('span', { class: `stage ${ticket.deleted !== undefined ? 'stopped' : stageClass(ticket.stage)}`, title: ticket.stage }, stageLabel(ticket))),
         el('div', { class: 'meta' },
           // U4 只缩短了任务详情页的 id，这一处漏了：同一种数据在两个页面两种呈现，就是"不一致"。
           el('span', { title: ticket.id }, ticket.id.length > 8 ? `${ticket.id.slice(0, 8)}…` : ticket.id),

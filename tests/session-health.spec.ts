@@ -76,7 +76,7 @@ const onBoard = (runtime: Runtime): boolean => runtime.health.problems().some(pr
  * same observation.
  */
 function announce(host: StubHost, id: string): AgentRecord {
-  const agent = fakeAgent(id, host.tools, host.restrictions, host.guards, POLICY)
+  const agent = fakeAgent(id, host.tools, host.restrictions, host.sections, host.guards, POLICY)
   host.agents.set(id, agent)
   host.emit('agent/created', { agent })
   return agent

@@ -24,8 +24,37 @@ import type { HealthBoard, HealthEntry } from './health.ts'
 import type { Sessions } from './sessions.ts'
 import type { Store } from './store.ts'
 
-/** The report states someone is told about; `progress` and `waiting` are for the panel alone. */
-const TOLD: readonly ReportState[] = ['ready', 'blocked', 'failed', 'dropped']
+/**
+ * The report states someone is told about. `progress` is for the panel and the front desk alone.
+ *
+ * `waiting` used to sit next to `progress` here, on the reasoning that both are "for the panel alone". That premise
+ * is false for `waiting` whenever the requester is reachable, and the cost was concrete: a worker whose turn ended
+ * without a report leaves a Ticket that will not move until a person pushes it, the panel filed it under "needs you",
+ * and the person who asked in a chat room heard NOTHING — because a chat requester has never seen the panel. Silence
+ * there is not a missing courtesy; the work is stopped and only a person can restart it.
+ *
+ * The test for telling someone is two conditions at once: silence makes it worse, AND nobody else is going to look.
+ * `waiting` meets both wherever there is an address to write to, and `send` below already answers the second half —
+ * a Ticket whose Trigger carries no `replyTo` sends nothing and counts itself in `nowhere`. So adding the state here
+ * reaches exactly the requesters who can be reached, and changes nothing for a panel-opened Ticket.
+ *
+ * `progress` stays out on the same test's first condition: a progress line is not a fact that gets worse unattended,
+ * and sending every one of them to a chat room is how a bot gets muted.
+ */
+const TOLD: readonly ReportState[] = ['ready', 'blocked', 'failed', 'dropped', 'waiting']
+
+/**
+ * The states that reach the front desk and nobody else (S2).
+ *
+ * `progress` is injected into the front desk rather than queued as a question, because the difference between
+ * `notify` and `relay` is exactly the difference between "here is a fact" and "answer this" — and a progress line is
+ * the first. The front desk accumulates it, so when the operator asks "how is it going" the answer is already in the
+ * room instead of having to be reconstructed.
+ *
+ * It is never sent to a requester. A progress line does not get worse if nobody reads it (the first of the two
+ * conditions for telling someone), and one per turn in a chat room is how a bot gets muted.
+ */
+const DESK_ONLY: readonly ReportState[] = ['progress']
 /** The report states that end a Ticket, and so get a `RESULT.md`. */
 const ENDING: readonly ReportState[] = ['ready', 'failed', 'dropped']
 
@@ -129,12 +158,20 @@ export type NotifyPayload =
   | { readonly kind: 'report'; readonly ticketId: string; readonly state: ReportState; readonly summary: string
       readonly question?: string; readonly files?: readonly string[]; readonly at: string }
   | { readonly kind: 'policy'; readonly ticketId: string; readonly at: string; readonly detail: string }
+  /** The Watchdog has given up on a Ticket: it needs a person, and nothing happens again without one. */
+  | { readonly kind: 'escalation'; readonly ticketId: string; readonly at: string; readonly why: string }
 
 const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
 /** The one line a person reads first: what happened to which Ticket. */
 export function headline(ticket: Ticket, state: ReportState): string {
-  const label = state === 'ready' ? 'done' : state === 'blocked' ? 'needs you' : state === 'failed' ? 'failed' : 'dropped'
+  // `waiting` needs its own label: without one it fell through to 'dropped', which is a lie — a dropped Ticket was
+  // judged to need no work, while a waiting one has work that has stopped and is waiting for a person.
+  const label = state === 'ready' ? 'done'
+    : state === 'blocked' ? 'needs you'
+      : state === 'failed' ? 'failed'
+        : state === 'waiting' ? 'stopped, needs a push'
+          : 'dropped'
   return `${ticket.title} — ${label}`
 }
 
@@ -148,6 +185,13 @@ export function relayText(ticket: Ticket, payload: Extract<NotifyPayload, { kind
   if (payload.state === 'blocked' && payload.question !== undefined) {
     lines.push('', `The worker asks: ${payload.question}`, '', 'Answer with `myagent_answer_ticket`.')
   }
+  // A `waiting` Ticket has no question — its turn ended with nothing to show — so what the front desk needs is not
+  // the worker's words but the fact that only a push continues it. Naming the tool is what makes the notice actable;
+  // without it the front desk's only move is to go and read the Ticket itself.
+  if (payload.state === 'waiting') {
+    lines.push('', 'Its turn ended without a report, so nothing is running and nothing will start on its own.',
+      'Push it again with `myagent_retry_ticket`, or stop it with `myagent_stop_ticket` if it should not continue.')
+  }
   if (payload.files !== undefined && payload.files.length > 0) {
     lines.push('', 'Files:', ...payload.files.slice(0, 20).map(file => `- ${file}`))
   }
@@ -156,6 +200,45 @@ export function relayText(ticket: Ticket, payload: Extract<NotifyPayload, { kind
 }
 
 /** What `RESULT.md` says, which is the Ticket's ending in full. */
+/**
+ * What a requester reads when the system has stopped trying on its own. No tool names and no directories: neither is
+ * something a person on a platform can act on, and telling them to use one would be a false instruction (the same
+ * reason `replyText` leaves both out).
+ */
+export function escalationText(ticket: Ticket, why: string): string {
+  return [
+    `${ticket.title} — needs a person`,
+    '',
+    `The system stopped trying on its own: ${why}`,
+    '',
+    'Nothing further will happen on this until someone looks at it.',
+  ].join('\n')
+}
+
+/**
+ * Whether an escalation about to be recorded is this Ticket's first (S2).
+ *
+ * A rule with a name and a test rather than an inline `.some(...)` in the runtime, because the Watchdog re-escalates
+ * on every pass for as long as a Ticket stays past `maxActions`: without this, "tell the requester" would fire every
+ * `everyMs` and the alarm would train the very person it is meant to reach. The history still records every one —
+ * that is what answers "how many times did we give up" — and only the telling is once.
+ */
+export function isFirstEscalation(events: readonly { readonly type: string }[]): boolean {
+  return !events.some(event => event.type === 'escalated')
+}
+
+/** What the front desk reads for the same fact. It CAN act, so it gets the tools and the directory. */
+export function escalationRelayText(ticket: Ticket, why: string): string {
+  return [
+    `Ticket ${ticket.id} (${ticket.title}) — the Watchdog has given up: ${why}`,
+    '',
+    'Nothing will happen until a person acts: push it again with `myagent_retry_ticket`, stop it with',
+    '`myagent_stop_ticket`, or answer it with `myagent_answer_ticket` if it is waiting on a question.',
+    '',
+    `Directory: ${ticket.execution?.directory ?? '(none — it never started)'}`,
+  ].join('\n')
+}
+
 export function resultDocument(ticket: Ticket, payload: Extract<NotifyPayload, { kind: 'report' }>): string {
   const lines = [
     `# ${ticket.title}`,
@@ -270,13 +353,35 @@ export class OutcomeDelivery implements Delivery {
     this.health.record('the last delivery went through')
   }
 
-  /** Queue the telling of one Report; the states nobody is told about are left to the panel. */
+  /**
+   * The Watchdog has given up on a Ticket (S2).
+   *
+   * Until this existed, giving up produced two things: an `escalated` event in the Ticket's history and a line on the
+   * health board. Both are read by the operator at this machine, and neither reaches the person who asked in a chat
+   * room — who is left waiting on work that will never move again. That is the same shape as the `waiting` silence
+   * fixed in S1, and it meets both conditions for telling someone: silence makes it worse (nothing happens again
+   * without a person), and there is no other observer (the requester has never seen the panel).
+   *
+   * Called for the FIRST escalation only; the runtime decides that, because the Watchdog re-escalates on every pass
+   * once it has given up, and one fact is pushed once.
+   */
+  escalated(ticket: Ticket, why: string): void {
+    this.host.effects.enqueue('notify', key('escalation', ticket.id, why), {
+      kind: 'escalation', ticketId: ticket.id, at: new Date().toISOString(), why,
+    })
+    this.send(ticket, escalationText(ticket, why))
+  }
+
+  /** Queue the telling of one Report: to the requester when there is one to tell, and to the front desk. */
   report(ticket: Ticket, report: Report): void {
-    if (!TOLD.includes(report.state)) return
+    const told = TOLD.includes(report.state)
+    if (!told && !DESK_ONLY.includes(report.state)) return
     this.host.effects.enqueue('notify', key('notify', ticket.id, report.at, report.state), {
       kind: 'report', ticketId: ticket.id, state: report.state, summary: report.summary,
       question: report.question, files: report.files, at: report.at,
     })
+    // Only a state somebody is told about goes back to whoever asked. `progress` stops at the front desk.
+    if (!told) return
     // And back to whoever asked, in the same place they asked from. This Delivery already decides where a Report goes
     // — its own file header is "where a Report goes when it is worth telling someone" — and the platform a request
     // came from is one of those places. For every one-way Source this is the counted no-op below, so a deployment
@@ -411,6 +516,19 @@ export class OutcomeDelivery implements Delivery {
       this.summarize()
       return
     }
+    if (payload.kind === 'escalation') {
+      // Wakes the front desk rather than leaving a notice: this is the "nothing moves until a person acts" case, and
+      // the front desk is the one place that can act without the operator.
+      await this.host.sessions.relay(key('escalation-relay', payload.ticketId, payload.at), escalationRelayText(ticket, payload.why))
+      if (settings.notify.enabled) {
+        await this.machineNotification({
+          title: ticket.title, subtitle: 'needs a person', body: payload.why,
+          ...(this.host.panelPath() === '' ? {} : { url: `${this.host.panelPath()}${ticket.id}` }),
+        })
+      }
+      this.summarize()
+      return
+    }
     if (ENDING.includes(payload.state) && ticket.execution !== undefined) {
       try {
         await writeFile(`${ticket.execution.directory}/RESULT.md`, resultDocument(ticket, payload), 'utf8')
@@ -419,7 +537,10 @@ export class OutcomeDelivery implements Delivery {
     const text = relayText(ticket, payload)
     const requestId = key('relay', payload.ticketId, payload.at, payload.state)
     // A Ticket that waits for a person wakes the front desk; an ending only leaves a notice in its history.
-    if (payload.state === 'blocked') await this.host.sessions.relay(requestId, text)
+    // `waiting` wakes it too, and for the same reason as `blocked`: both mean nothing moves until a person acts, and
+    // the front desk is the one place that can act without the operator (retry, stop, or answer). Leaving `waiting`
+    // on the notify path filed it in a history nobody reads while the Ticket sat stalled.
+    if (payload.state === 'blocked' || payload.state === 'waiting') await this.host.sessions.relay(requestId, text)
     else await this.host.sessions.notify(text, requestId)
     if (settings.notify.enabled) {
       await this.machineNotification({

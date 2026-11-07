@@ -166,3 +166,21 @@ describe('scheduleView', () => {
     expect(scheduleView(daily, from)).toMatchObject({ id: 'digest', name: '每日摘要', enabled: true, prompt: '写今天的摘要' })
   })
 })
+
+describe('the triage marker on a summary (S3b)', () => {
+  /**
+   * Derived from the attempt behind the Ticket, not stored as a second opinion about it: a triage Ticket is one whose
+   * latest Assignment says `role: 'triage'`, and that is the same fact the Session's prompt and tool set were chosen
+   * from.
+   */
+  it('says so when the attempt behind it is a triage one, and stays quiet otherwise', () => {
+    expect(ticketSummary(base({ assignments: [assignment({ role: 'triage' })] })).triage).toBe(true)
+    expect(ticketSummary(base()).triage).toBeUndefined()
+    // Still marked once it has closed: a triage Ticket that answered in one turn and ended is the NORMAL case, and
+    // that is exactly when the marker matters — otherwise it is indistinguishable from a worker that gave up.
+    expect(ticketSummary(base({
+      assignments: [assignment({ role: 'triage', state: 'ended', endedReason: 'reported' })],
+      ended: { at: '2026-11-03T02:00:00.000Z', by: 'agent', outcome: 'done', reason: '回答了' },
+    })).triage).toBe(true)
+  })
+})

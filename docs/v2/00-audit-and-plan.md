@@ -6458,3 +6458,606 @@ CA 被加进系统证书包，而信任它靠的是 `~/.zprofile` 里的 `export
 
 **还没做的**：操作者尚未给 bot 发过消息，所以 `identities` 还是空的、`lastAcceptedAt` 还是"还没有"。
 第一条消息到了之后，面板「等映射」会出现他的 Telegram 数字 id，映射成 `operator`（已在 `allowedSenders` 里）即可。
+
+
+# 第五轮：进气与投递架构（S1–S4）
+
+设计经操作者确认，见本轮对话与 `25-ecosystem-nodes-and-task-environment.md`。已定：
+**B2 专职分诊 Session 为默认 + B1 复用操作者主 Session 作开关**；**门禁必须在分诊之前**（分诊台持有能创建
+"以完全权限运行"的任务的管理工具）；**推送判据是两条同时成立而不是一张清单**（①沉默会让事情更糟 ②没有别的观察者），
+且**同一事实只推一次**；**拉优先于推**（操作者可问，前台用已有的 `myagent_list_tickets` 与 `myagent_ticket_status`
+巡视后直接回话）。操作者另加 **S4：任务删除**，两个轴（记录 / 产出的数据资产），资产可选一起删或留着，
+审计痕迹默认留墓碑。
+
+## 4.118 S1：`waiting` 不再是静默的
+
+### 真机事故（这一包的起因）
+
+操作者从电报发来一个表情 `🧐` → 一张任务 → 一个 worker 烧掉 **362,070 cache-read tokens**、13 分钟，
+写了 `README.md`（内含 “## The question”，正确判断出"整个授权就是一个表情"并列了选项）与 `intake-trace.md`，
+**却从未调用 `myagent_report`**（事件历史只有 `created`/`launched`/`turn_ended`，没有 `report`）。
+操作者把它停了 → `engine.ts:584` 合成一份 `state:'waiting'` 的报告 → `delivery.ts:28` 的
+`TOLD = ['ready','blocked','failed','dropped']` 不含 `waiting`（注释写着"progress 与 waiting 只给面板"）→
+**`out/` 目录根本不存在，电报侧一个字都没收到**，而面板把它归进「等我回答」。
+
+### 错的前提
+
+那句注释的前提是"**请求者就是看着面板的操作者**"。对 `inbox`/`cron` 成立；对**聊天来源不成立**——
+聊天里的请求者从没见过面板，对他而言 `waiting` 与"石沉大海"无法区分。
+而同一份代码在 `delivery.ts:112` 自己写着相反的原则：**"'needs you' 与 'failed' 是请求者在等、
+且无法从摘要推断的事实"**。`waiting` 比这两者更强：它意味着**在有人动手之前什么都不会发生**。
+
+> **这条行为原先一条测试都没有**（`tests/delivery.spec.ts:30-33` 钉了 ready/blocked/failed/dropped 四个标签，
+> 唯独没有 waiting）。没有测试的行为，改起来不会红，于是它就那样上线了。
+
+### 改法（判据是两条同时成立）
+
+| 状态 | 送达请求者 | 唤醒前台 | 理由 |
+| --- | --- | --- | --- |
+| `waiting`（有 replyTo） | **改为送达** | **改为唤醒**（原先只 notify） | ①工作已停、只有人能重启 ②聊天里的请求者不看面板 |
+| `waiting`（无 replyTo） | 不发（`send()` 本来就 no-op 并计入 `nowhere`） | **唤醒** | "没有地址"意味着**请求者无法被告知**，不意味着**没人能动手** |
+| `progress` | **保持不发** | notify | 不满足①：一条进度不会因为没人看而变糟；而每轮一条发进聊天室**是 bot 被静音的方式** |
+
+`send()` 早就对"没有 replyTo"做了正确处理（计数 `nowhere` 并 debug 一行），所以"有人可达才发"这半边**不需要新逻辑**——
+把状态加进 `TOLD` 就自然只送达可达的请求者，而面板开的任务一切照旧。
+
+### 两个连带修正（不修就是撒谎）
+
+1. **`headline()` 没有 `waiting` 分支**，会落到 `'dropped'`。**dropped 是"经判断这活不用做"，
+   waiting 是"活停了在等人"**——把后者标成前者，请求者会以为任务被判定为无需处理。改成 `'stopped, needs a push'`。
+2. **`relayText()` 只给 `blocked` 说该怎么办**。`waiting` 没有 question，所以前台需要的不是 worker 的话，
+   而是"只有推一下才会继续"这个事实 + 工具名（`myagent_retry_ticket` / `myagent_stop_ticket`）。
+   **给出工具名才是可执行的通告**，否则前台唯一的动作是自己去把任务读一遍。
+3. **提示词补一句**：`prompts/worker.md` 原本已写"turn 结束前必须上报"，但没写**"写进文件的问题谁也收不到"**——
+   这正是今天的失败模式（它自己的 README 看起来像已经问过了）。补：**系统读的是你的工具调用，不是你的目录。**
+
+### 测试与变异
+
+新增 4 条（`tests/chat-send.spec.ts`，S1 那组）：送达请求者且**不说 dropped**、唤醒前台**并带工具名**、
+**progress 仍然什么都不发**（规则的另一半，不钉住就会退化成噪音）、无 replyTo 时**不发信但仍唤醒前台**
+且 `health.entry('delivery')` 仍是 `ok`（"没地方发"不是问题，写成了问题就会狼来了）。
+
+| | 结果 |
+| --- | --- |
+| M1 把 `waiting` 从 `TOLD` 去掉 | 红 2 条 |
+| M1 强形式（**整条"送达请求者"测试删掉**） | **仍红在"唤醒前台"那条**——两条走的是不同通道（`send` 效果 vs `relay`），所以互为独立守卫 |
+| M2 `headline` 里 `waiting` 落回 `dropped` | 红 2 条 |
+
+**完整闸门退出码 0、956 条**；真浏览器 **87/87**；**产物哈希 `b03c1643e4d0cbaf` → `8584ec33f6c0450a`（356068 字节）**
+——顺带量出一件此前没记过的事：**`prompts/` 是打进 bundle 的**（只改 worker.md 也让哈希变了），
+所以改提示词需要重载插件，与改 `panel/index.html`（按请求从磁盘读）不同。
+
+### 还没做
+
+S2（progress 的路由策略 + 接上已有的 `watchdog.silentMs`，不新造 staleness 检测）、
+S3（分诊进气 + 补三块缺的能力：问题到不了前台、答案回不到聊天、前台开的任务没有回程地址）、
+S4（任务删除，两个轴 + 默认留墓碑）。
+
+
+## 4.119 S2：progress 到前台、watchdog 放弃要告知请求者
+
+### 查清了三件事，其中两件让 S2 的范围变了
+
+1. **`notify` 与 `relay` 的区别就是"给信息"与"要它答"**：两者都 `ensureMaster`，差别在第四个参数——
+   `notify` 传 `{ inject: ... }`，`relay` 传 `'queue'`。测试桩把它们记在不同地方（`notices` vs `followups`），
+   所以这个区别**可以被断言**，不是注释里的一句话。progress 该走 inject：一条进度是"知道一下"，
+   不是"回答我"，queue 会让前台**每条进度都花掉一个 turn**。
+2. **staleness 的显示不用新造**：面板 `index.html:1133` 已经有「最后动静 <相对时间>」（U8 的 `ago()`）。
+3. **找到了 S1 那类 bug 的第二个实例**：watchdog 救不动时（`taken >= maxActions`）只做两件事——
+   `engine.watchdogEscalated` 写进任务历史、`health.problem` 上健康板。**两者都只有本机操作者会看，
+   聊天里的请求者一个字都收不到**，而此时"沉默会让事情更糟"完全成立：watchdog 已经放弃，
+   没有人插手就永远不会再动。engine.ts:1135 的注释还提到 N8 曾把 `escalated` 从"只在健康板"搬进日志——
+   **搬了两次都只搬到本机可见的地方**。
+
+### 改法
+
+| | 请求者 | 前台 |
+| --- | --- | --- |
+| `progress` | **不发**（新增 `DESK_ONLY` 集合） | **inject**（`notices`），**不唤醒**（`followups` 保持空） |
+| watchdog 放弃 | **发**（`escalationText`：无工具名、无目录——两者对平台上的人都不是能照做的指令） | **relay 唤醒**（`escalationRelayText`：带 `myagent_retry_ticket`/`myagent_stop_ticket` 与目录，因为它**能**动手） |
+
+不需要新的 effect 种类：`send`（送请求者）与 `relay`（唤醒前台）**都已存在且各自带执行与失败记录**，
+所以 `escalated()` 只是把两者一起用上。
+
+### "同一事实只推一次"是真的会被违反的
+
+watchdog 的 `taken >= maxActions` 分支**每一轮 pass 都会重新 escalate**（默认 `everyMs` 60 秒）。
+直接接上 `send` 就是**每分钟轰炸请求者一次**——正是操作者定的推送规则要防的事。
+所以判重放在 runtime：**历史每次都被追加**（那才是"我们放弃过几次"的答案），**告知只发生第一次**。
+判断提成了有名字的纯函数 `isFirstEscalation(events)`，规则只存在一处。
+
+### 变异：第八次"唯一守卫"，而且这次差点被一个无关的检查骗过去
+
+| | 结果 |
+| --- | --- |
+| M1 progress 也发给请求者 | 红 |
+| M1 强形式（**一次删掉两条断言**） | **绿**——但这是我制造的假象 |
+| M1 强形式（只删一条，保留 `effectCounts().send`） | **红** ✓ |
+| M2 去掉 runtime 的"只告知一次" | 第一次跑**红了 1 条**，但红的是 `tests/build.spec.ts > is newer than every source file` |
+| M2 **重新构建后**再跑 | **全绿 962 条**——接线根本没有守卫 |
+| M2 补接线层测试后 | 红（`expected 3 to be 1`：请求者被发了 3 次） |
+| M2 补**换层面**守卫后（notify.spec.ts，无 replyTo 的 inbox 形状，从前台侧观察） | 变异时**两个文件各自红在不同的断言上** |
+
+两条必须记住的教训：
+
+> **① 一次删掉两条断言，会 manufactures 出一个"唯一守卫"的假发现。**
+> 0.8 程序要求**一次只删一条**；我上一轮也犯过顺序错，这次是数量错。
+>
+> **② 变异红了要看清是哪条红的。** 这次红的是 **bundle 新鲜度检查**——我改了 `runtime.ts` 却没重新构建，
+> 于是"发布物比源码旧"这条与升级逻辑毫无关系的断言替我挡了一枪。**先 `pnpm build` 再量变异**，
+> 否则一个过期 bundle 会让任何 `src/` 变异都"被抓住"。
+
+还有一条如实记录：**严格意义的 M2 强形式（删掉接线测试后再跑）并没有真的执行**——
+删测试那步的 python 抛了 `ValueError`（我用来定位结尾的下标没匹配上），而变异已经写进去了，
+所以那一轮跑的是普通 M2。我判断"换层面的守卫独立生效"的依据是**两个文件红在两条不同的断言上**
+（chat-send 是 `expected 3 to be 1`，notify 是 `expected [...] to have a length of 1 but got 2`），
+而不是删掉之后的那次运行。
+
+### 另一处我的操作错误
+
+新守卫测试第一版**自己往 inbox 丢文件再 `wait(120)`**，任务根本没建出来（`Cannot read properties of undefined`）——
+扫描要一个 pass。本文件早就有 `started(context)` 与 `settle(runtime)` 两个 helper。
+> 与前面"先找现成的 `PANEL_HEADERS`"是同一条：**写新测试前先读同文件已有测试怎么起前置状态。**
+
+**完整闸门退出码 0、964 条**；真浏览器 **87/87**；产物 **`de29c275d70729d6`（360257 字节）**。
+
+### 还没做
+
+S3（分诊进气 + 三块缺的能力）、S4（任务删除）。S2 里"请求者按策略收进度（里程碑/被问/定时摘要）"
+**只做了"被问"的前置**（前台现在攒着进度，能答"现在怎么样"），真正的"问"要等 S3 让前台能回话到聊天。
+
+
+## 4.120 S3a：前台能把话送回请求者，前台开的任务能带回程地址
+
+S3 太大，拆成两包：**S3a 补两块缺的能力**（本条），**S3b 分诊路由与专职分诊台**（下一条）。
+S3a 自成一体、可独立测，而且**当天就有用**：S1 已经把 `blocked`/`waiting` 送到前台了，
+但前台此前**没有任何工具能把话送回聊天里那个人**——`myagent_answer_ticket` 是把文本交给 **worker**。
+
+### 缺口的确切位置
+
+`Ticket.origin` **只有 `triggerId`，没有 replyTo**（`model.ts:315`）——回程地址一直存在 **Trigger** 上，
+而 `engine.createTicket()` 合成的那个 Trigger（`source:'session'`）**不带 replyTo**，
+于是 `Delivery.send()` 解析不到地址、计入 `nowhere`、什么都不发。**这就是"前台开的任务报告只进面板"的机制。**
+
+### 一个安全决定：地址只能被**复制**，不能被**填写**
+
+`myagent_create_ticket` 新增的参数是 **`report_to_ticket`（一个 ticket id）**，不是 `reply_to`（一个地址）。
+`myagent_reply` 同理，只收 `ticket_id`。地址一律由 runtime 从那张任务的 Trigger 上解析。
+
+> 一个能被调用方**填写**的地址，就是一个被提示注入的前台**可以把报告发到任意频道**的地址。
+> 只能复制，意味着它能到达的地方**不超过已经有人请求过的地方**。
+
+### 改了什么
+
+| 层 | 改动 |
+| --- | --- |
+| `model.ts` | 新事件类型 **`replied`**（前台回话）。**不复用 `delivered`**：那是 worker 的报告到达地址，而这是前台**选择**发给一个人的一句话，操作者读历史时必须能分辨。加类型是安全的——注释早就写明没有东西对这些类型做穷尽 switch |
+| `engine.ts` | `createTicket({..., replyTo?})` 把它放到**合成的 Trigger** 上——于是整条出站路径**一行都不用改**（`Delivery.send` 本来就只从 Trigger 解析）；新增 `replied(ticketId, detail)` |
+| `tools.ts` | `ToolsHost` 加两个**窄接口** `returnAddressOf(id)` 与 `replyToRequester(id, text)`；`mainTools` 加 **`myagent_reply`** |
+| `runtime.ts` | 实现那两个成员；没有地址时**说清为什么**（"这是面板/收件/排期来的请求的形状"），而不是只回一个 false |
+
+**为什么用窄接口而不是把 `triggers` 加进 `ToolsHost.store` 的 Pick**：前台需要的是**一张任务的一个事实**，
+给它整个 trigger 仓库等于把所有 Trigger 的正文与发起者都给它。与 `readArtifact` 同一个理由（IO 在 host，不在工具里）。
+
+**为什么"没有地址"要带理由**：只回 `sent:false` 的前台会去试别的路子，或者**更糟——声称自己已经回复了**。
+
+### 测试分三层，第三层才是守卫
+
+1. **引擎层**：`replyTo` 落在合成的 Trigger 上；不给时**与从前完全一样**（`toBeUndefined`）。
+2. **工具层**：`report_to_ticket` 指到一张没有地址的任务 → **调用时就报错**，而不是开出一张报告只进面板的任务。
+3. **端到端**：从一张聊天任务的 Trigger 复制地址 → 前台开新任务 → **新任务的报告真的出现在那个频道的 `out/` 里**；
+   再走一次 `replyToRequester`，断言 **Delivery 自己的 tally** 涨了。
+
+### 变异：第九次"唯一守卫"
+
+| | 结果 |
+| --- | --- |
+| M1 `replyToRequester` 不真的发（谎报成功） | 红 |
+| M1 强形式（删掉那三条 `out/` 断言） | **绿 → 唯一守卫** |
+| M1 补守卫后（端到端那条里加一次 `replyToRequester` + 断言 **Delivery tally**） | **红**：`expected 1 to be 2` |
+| M2 `returnAddressOf` 永远说没地址 | 红 1 条 |
+| M2 强形式（删掉整条"话说进 out/"测试） | **红在端到端那条**：`被问的那张任务应当有回程地址` |
+
+补的守卫**换了观测点**（内存 tally 而非文件系统）**也换了测试**，所以删掉上面那条的断言不会让它失效。
+
+### 我这一包的操作错误
+
+1. **双逗号**：替换 `scope` 那行时，原文末尾**本来就有逗号**，我又加了一个 → `),,`。
+   （写盘前的 typecheck 抓住了；这类"我以为原文没有分隔符"的错，本仓已犯过多次。）
+2. **锚点不存在**：`it('gives a Ticket a directory` 是我凭印象写的，engine.spec.ts 里没有；
+   真正的形状是 `const { engine, memory } = harness()` + `memory.triggerOf(...)`，不是 `store.triggers`。
+   > 又一次：**先读同文件已有测试的写法，再动手**。这次是第二次犯同一条。
+3. **强形式的删除锚点不唯一**：`expect(out).toHaveLength(1)` 在文件里出现多次，python 的 `count==1` 断言失败，
+   于是"删断言"根本没执行，而我差一点把那一轮当成强形式的结果读。
+   > 教训：**强形式的删除锚点必须包含只属于那条测试的字符串**（例如它独有的中文断言文本），
+   > 并且要确认 python 真的写盘了（打印"已应用"）再跑。
+
+**完整闸门退出码 0、970 条**；真浏览器 **87/87**；**产物 `de29c275d70729d6` → `07f71e64e2e26396`（364375 字节）**。
+**还没做**：S3b（分诊路由 + 专职分诊台 + 排队可见）、S4（任务删除）。
+
+
+## 4.121 S3b：分诊进气（**变异未做，见末尾**）
+
+### 一个让整件事变简单的发现
+
+分诊台**不需要一条共享队列**。每张分诊任务像 worker 一样**各有自己的 Session**，于是：
+没有串行瓶颈、没有上下文互相污染、"排队可见"由**任务本身在面板上可见**来满足，
+而启动失败走的是既有的 launch-failure 机制。**原本要新建的"分诊队列 + 持久化 + 可见性"整块都不必存在。**
+
+另一个简化：**分诊任务就是一张任务**，所以 S3a 的能力**原样可用**——
+`report_to_ticket` 填**这张分诊任务的 id**，它开的任务的报告就会回到请求者那里；
+"直接回答"就是这张分诊任务 `report ready`，摘要由 S1 的投递送回原处；
+"问操作者"就是 `report blocked` + 一个问题。**三个动作全部复用已有机制，一个新工具都没加。**
+
+### 一个架构事实决定了实现位置
+
+**引擎没有 `settings()`，只有 `policyOf()`**——它刻意与设置无关，能看到的只有 Policy 这个投影。
+所以"要不要分诊"必须成为 **Policy 的一个方法**（`policy.triage(trigger)`），与 `gate`/`revalidate` 并列，
+而不是在引擎里读设置。三条规则都写在 policy.ts：开关开着、`depth === 0`、来源是 `chat|inbox|cron`。
+
+> `session` 来源不分诊：那是操作者或前台**就在这儿说话**，再分诊等于花一个 turn 去质疑屋里的人
+> ——这也正好实现了操作者要的例外："面板定向输入一个独立任务"保留直达路径。
+> `rule` 来源不分诊：规则**已经**做过决定了。
+> `depth` 复用规则链那个字段（`rule.ts:71` 的先例），否则**分诊开的任务会被再分诊**，每个请求永远花两个 turn。
+
+**`policyVersion` 不变**：它只哈希 `authorizationShape`（一份显式白名单）。改路由不让任何已有授权失效，
+而把它算进版本会让"打开分诊"给每一张在跑的任务发一次策略变更通知——那是噪音。测试里用
+"改 `allowedSenders` 会动版本"作对照，让这条断言有意义。
+
+### 只加 `enabled`，不加 `desk` 旋钮
+
+**B1（复用操作者主 Session 当分诊台）没有实现，旋钮也就没有加。** 缺的是一件具体的东西：
+前台**没有"替一张任务收尾"的工具**（`myagent_report` 是 worker 的、绑在 attempt 上；
+`myagent_stop_ticket` 是撤销授权，语义不对）。B1 需要先加一个 `myagent_close_ticket`。
+
+> **加一个不能取另一个值的开关，比不加更糟**：它读起来像操作者做过的选择，而实际上两个值行为相同。
+> `.strict()` 会让 `desk` 直接被拒，测试钉住了这一点。
+
+### 改了什么（六个文件 + 一个新提示词）
+
+| | |
+| --- | --- |
+| `policy.ts` | 设置 `triage:{enabled:false}`（`.strict().prefault({})`，旧文档照样解析）；`Policy.triage(trigger)`；`TRIAGED_SOURCES` |
+| `model.ts` | `Assignment.role?: 'triage'`。**放在 Assignment 而不是 Ticket 上**：它是"某一次尝试"的属性——分诊任务崩溃后重试，重试的仍是分诊 |
+| `engine.ts` | 造 assignment 时按 `policy.triage(trigger)` 打角色 |
+| `prompts.ts` | 角色加 `'triage'`、`FILES` 加 `triage.md`、`PromptConfig` 加 `triage?` |
+| `sessions.ts` | 角色选择：`ticket === undefined ? orchestrator : (最后一次 attempt 是 triage ? triage : worker)` |
+| `runtime.ts` | 工具集：分诊 = `mainTools` + **只从 workerTools 取 `myagent_report`** |
+| `prompts/triage.md` | 新提示词：三个动作（直接答 / 开 1..N 张 / 问）、`dropped` 是第四种结局而非失败、**"不要做那件活"**、以及三种做错各自的代价 |
+
+**工具集为什么只取 `myagent_report` 一个**：两个集合**都定义了 `myagent_note_ticket`**，整份合并会注册两次
+（同一个工具两个定义＝两个意见）；而**不给 `myagent_read_artifact`** 是在说一件真事——
+一个开始读别的任务产出的分诊台，就是在干活。
+
+**`workerSection` 直接复用**：它是纯事实（任务 id、目录、scope、环境、上次报告），
+而其中唯一提到的工具是 `myagent_report`——分诊台**有**这个工具，所以复用不会让提示词撒谎。
+（这也是动手前必须读它的原因：如果它写了"你有三个工具"，复用就是在撒谎。）
+
+### 测试桩的一次投入
+
+桩原先把 `systemPrompt.section(definition)` 的定义**丢掉**（`() => () => {}`），
+于是**提示词角色不可观测**。而角色（sessions.ts）与工具（runtime.ts）是**两个文件里的两处独立决定**——
+只测工具的话，"角色错、工具对"能通过所有断言，而 Session 跑在错误的指令下。
+所以给桩加了 `sections` 记录与 `sectionText(agentId)`（`text` 可能是字符串也可能是 thunk，两种都要处理）。
+
+### 三层测试（977 条，+7）
+
+- **engine 层**：inbox → `role:'triage'`；`createTicket`（session）→ 无；`source:'rule'` → 无；`meta.depth:1` → 无；开关关 → 无。
+- **policy 层**：默认 `{enabled:false}`；`.strict()` **拒绝 `desk`**；**开关不动 `policyVersion`**（带对照）。
+- **sessions 层**：分诊 Session 拿到 `myagent_create_ticket`+`myagent_reply`+`myagent_report`、
+  **拿不到 `myagent_read_artifact`**、`myagent_note_ticket` **只注册一次**、
+  提示词含 `first stop` 与 `Do not do the work` 且**不含** worker 那句 `You have three tools, and no others`；
+  开关关时 worker 一切照旧（含那句"三个工具"）。
+
+### 我这一包的操作错误
+
+1. **把实现插进了接口**：`toolsOf(agentId: string): string[]` 这个锚点在**接口声明**里也出现，
+   我照着它插了一段方法实现 → 语法错。**同名形状在声明与实现里各出现一次时，锚点必须带上下文区分。**
+2. **新参数插在中间，默认值救不了**：给 `fakeAgent` 加了带默认值的 `sections` 作为第 4 个参数，
+   但它后面还有 `guards`/`policy`，于是 TS 的最小参数数变成 6，两个 spec 文件的 5 参调用全红。
+   更糟的是**它们运行时没炸**——`host.guards` 被当成 `sections` 传了进去，970 条测试全绿。
+   > 教训：**在既有函数的参数表中间插参数，是一次静默的错位**；要么插在最后，要么改所有调用点。
+   > 而"测试全绿"不能证明参数没错位——这两个调用点恰好只 push、不读。
+3. **一次 python 断言没匹配上就没写盘**，而我在同一条命令里已经报告了"已修"——幸好 typecheck 立刻打脸。
+
+### 未做（下一轮必须补）
+
+- **这一包的变异与 0.8 强形式还没做**。977 条全绿只说明实现自洽，不说明每条断言都在承重。
+  至少要量：`policy.triage` 去掉 depth 条件（分诊套娃）、runtime 把 `read_artifact` 也给分诊台、
+  sessions 的角色选择退回 `worker`（这条只有新加的 `sectionText` 能抓到——正好验证那次桩投入值不值）。
+- 面板上还看不出"这是一张分诊任务"（它混在任务列表里）。
+- B1（`desk: 'main'`）与它需要的 `myagent_close_ticket`。
+
+**完整闸门退出码 0、977 条**；真浏览器 **87/87**；**产物 `07f71e64e2e26396` → `4506d6444434f324`（365946 字节）**。
+
+
+## 4.122 S3b 的变异补做（上一轮欠的）与 S4 后端落地（**S4 尚无测试**）
+
+### S3b 变异：三处全红，三个强形式里两个当场就红
+
+| 变异 | 结果 | 强形式 |
+| --- | --- | --- |
+| M1 `policy.triage` 去掉 depth 条件 | 红（`expected 'triage' to be undefined`） | **第一次绿** → 补守卫后红 |
+| M2 把 `workerTools` 全给分诊台 | 红（`not include 'myagent_read_artifact'`） | **红**：被"`myagent_note_ticket` 只注册一次"接手（`length of 1 but got 2`） |
+| M3 角色选择退回 `worker` | 红（`expected 'You are one Ticket's worker…' to contain 'first stop'`） | **红**：被"不含 worker 那句"接手 |
+
+**M3 是那次测试桩投入的直接回报**：角色（`sessions.ts`）与工具（`runtime.ts`）是两个文件里的两处独立决定，
+桩原先把 `systemPrompt.section()` 的定义丢掉，所以**"角色错、工具对"能通过所有旧断言**。加了 `sectionText()` 之后它当场就红。
+
+**M1 的强形式为什么第一次是绿的——原因比结果有意思**：
+`createTicket` 合成的 Trigger 是 `source:'session'`，规则链的是 `source:'rule'`，**两者都不在 `TRIAGED_SOURCES` 里**。
+所以"`source ∈ {chat,inbox,cron}` 且 `depth > 0`"这个组合**今天的代码根本产生不出来**——
+depth 条件是**纵深防御，当前不可达**。不可达的规则不可能有端到端的第二守卫。
+
+补的是**换层面**的守卫：直接测谓词（`settingsPolicy(...).triage(trigger({meta:{depth:1}}))` 为 false），
+而不是透过引擎测角色。补完 M1 强形式红了（`expected true to be false`）。
+> 教训：**强形式绿了，先问"这条规则今天可达吗"**，再决定是补守卫还是承认它是防御性代码。
+> 不可达 ≠ 该删：等哪天真有来源带 depth，这条守卫已经证明过自己能用。
+
+### S4：两个轴、一个顺序、一条边界
+
+**两个轴**（操作者要的形状）：`assets: keep|delete`（产出的文件）× `record: tombstone|nothing`（任务记录本身）。
+**默认都落在可逆的那一端**（`keep` + `tombstone`），要更狠的得说两次。
+`.strict()` 让拼错的选项被拒而不是被当成默认——**`asset:'delete'` 变成"保留"、`records:'nothing'` 变成"留墓碑"，
+两种都是操作者以为自己删了而其实没删**。
+
+**Trigger 与 Decision 永不删除**，无论选哪个：Trigger id 是消息的纯函数，是"同一条消息再进来"唯一的去重依据；
+而"有过一个请求、它被处理过"是无人值守系统唯一不能丢的事实。删任务不等于删"它曾被要求过"。
+
+**顺序是要点**：`assertDeletable`（无副作用校验）→ 测量（文件数与字节）→ `engine.deleteTicket`（落账）→ 删目录。
+> 反过来会**以更坏的方式失败**：文件没了、记录里没这回事。现在这个顺序最坏只是"墓碑说删了、其实还在"——
+> 可恢复、可见、不丢数据。**测量必须在删除之前**，因为目录一没，"17 个文件、2.4 MB"就再也不存在于任何地方。
+
+**两条边界**：
+1. **引擎不做 IO**（既有纪律：引擎授权与定位，Runtime 解析路径并动手）。所以 `deleteTicket` 的目录删除在 runtime。
+2. **只删工作根里面的东西**：`resolve(target)` 必须在 `resolve(workRoot) + sep` 之下且**不等于**根本身。
+   `rm -r` 本身不跟随符号链接（它 unlink 链接自己），所以目录里的链接逃不出去；这条守卫防的是另一个方向——
+   **一个存下来的路径不因为被存下来就变成我们的**。失败上健康板而不是上任务，因为 `record:'nothing'` 时行已经没了，
+   没有地方挂事件，而"我们说删了却没删成"必须在某处可见。
+
+**墓碑为什么带数字**：`deleted: {at, assets, directory, files, bytes}`。目录删掉之后，
+墓碑是那些文件存在过的**唯一证据**；只写"已删除"的墓碑答不了事后唯一会被问的问题——**扔掉了多少**。
+
+**列表隐藏、id 仍可解析**：`list()`/`byWork()`/`open()`/`page()`/`count()` 都过滤掉墓碑（Sqlite 与 Memory 两处），
+而 `get(id)` 照旧返回——于是同 Work 内别的任务的 note 与 artifact 指向已删任务时读到的是"已删除"，不是报错。
+另加 `deleted()` 供"已删除"视图用：**没人读得到的墓碑不是审计痕迹**。
+
+**HttpHost 只给一个窄端口** `deleteTicket(id, options)`，照 `delivery: { sends() }` 的先例——
+注释里那个理由同样适用：路由表拿着整个 Runtime，就能在路过时顺手停一个 worker 或改设置。
+
+### 已落地 / 未做
+
+已落地（typecheck 0、闸门 0/978）：`model.ts` 的 `Ticket.deleted` 与 `'deleted'` 事件类型、
+`errors.ts` 的 `ticket_not_stopped`、`TicketRepository.remove`（Memory + Sqlite）、
+`engine.assertDeletable` / `engine.deleteTicket`、`runtime.deleteTicket` / `removeAssets`、
+`POST tickets/:id/delete` 与 `BodySchemas.deleteTicket`。
+
+**未做（下一轮必须先做）**：
+1. **S4 一条测试都没有**——978 条全绿只说明它没弄坏别的，**不说明它自己是对的**。至少要钉：
+   运行中不许删（`ticket_not_stopped`）、墓碑带数字、`list()` 隐藏而 `get()` 仍可解析、
+   `record:'nothing'` 真的没了行、`assets:'delete'` 真的删了目录、工作根之外的路径被拒且上健康板、
+   Trigger 与 Decision 在两种选项下都还在（**这条是去重不变量，最该有测试**）。
+2. **S4 的变异与强形式**（后端没测试就没法量）。
+3. **面板**：删除按钮、两步确认、后果写成带数字的一句话（路径 + 文件数 + 总大小）、"已删除"视图。
+4. B1（`desk:'main'`）与它需要的 `myagent_close_ticket`；面板上区分"这是一张分诊任务"。
+
+### 我这一包的操作错误
+
+1. **`python3 -c "..."` 又用了一次**，M1 变异因此**根本没应用**（`assert count==1` 得 0），
+   而我在同一行里已经打印了"已应用"之前的 echo——**差点把一次没发生的变异记成"绿"**。
+   本仓早就写明只用 heredoc，这是第二次犯。
+2. **正则 `[^}]*` 被 `{ record: string }` 截断**：我以为匹配到了整个 `list()` 方法体，其实匹配到一半，
+   于是 `marker` 的 `count==1` 断言失败、store.ts 没写盘——而 typecheck 已经在报"Sqlite 实现缺方法"，
+   看起来像是我的改动写坏了。**改成按行定位才对。**
+3. **中文注释里的引号嵌在 python 双引号串里**导致脚本语法错、静默没写盘（第二次因为同一个原因）。
+4. **替换路由时吞掉了行尾逗号** → `',' expected`。
+
+**完整闸门退出码 0、978 条**；真浏览器 **87/87**；产物 **`4506d6444434f324` → `3e0a658603e257d4`（372726 字节）**。
+
+
+## 4.123 S4 测试与变异：跨层守卫第一次当场证明了自己的价值
+
+### 测试分两层，而这不是重复
+
+`tests/ticket-delete.spec.ts`（6 条，走 Runtime 与 HTTP，有真的文件系统）
++ `tests/engine.spec.ts` 的引擎层（2 条，纯规则，无 IO）。
+
+分两层的理由在变异时立刻兑现了：**M1 的强形式删掉 runtime 层那条整测试之后，引擎层那条接手把它判红**
+（`expected [Function] to throw an error`）。如果只有 runtime 一层，"未结束不许删"就是唯一守卫。
+
+钉住的事实：
+
+| 测试 | 钉住什么 |
+| --- | --- |
+| 未结束的任务 | 拒绝并**说出"先停"**；且拒绝**不是半个动作**（没标记、没删目录） |
+| 墓碑带数字 | `files`/`bytes`/`directory` 都在墓碑上；目录真的没了；`list()` 隐藏而 `get()` 仍可解析；`deleted()` 能查到；历史里有 `deleted` 事件 |
+| `assets:'keep'` | 文件一个不少，且墓碑上**不带** `files`（没测就不写，不编一个 0） |
+| `record:'nothing'` | 行真的没了，**而 Trigger 与 Decision 都还在**（去重不变量） |
+| 工作根之外 | 文件仍在 + 健康板 `ok:false` 且写着 `not inside the work root` |
+| HTTP 路由 | 默认可逆端（`keep`+`tombstone`）；**拼错的选项被 400 拒**而不是当成默认 |
+
+### 两处我的断言写错（都不是产品的问题）
+
+1. **字节数硬编码**：我写 `bytes: 1500`（1200+300），实际 1850——**`RESULT.md` 是 report 写的，它也占字节**。
+   改成"删之前用 `statSync` 独立测一遍再比对"，而不是把 1850 抄进去：
+   > 从一个运行结果里抄来的数字，会**静默依赖那个模板的长度**；模板一改，测试就在量一件没人想量的事。
+2. **标题字面值**：我断言 `title === '写一份摘要'`，实际是 `task-cprzqn`——inbox 文件没有 front matter 标题时
+   **回退成文件名**。改成"与删前一致"。
+   > 同一条纪律的又一次：**断规则，不断数据的具体形状**（本仓已错过四次，这是第五次，而且是我自己新写的测试）。
+
+### 变异
+
+| | 结果 |
+| --- | --- |
+| M1 去掉"未结束不许删" | 红 **2 条**（引擎层 + runtime 层） |
+| M1 强形式（删掉 runtime 层整条测试） | **红在引擎层** ✓ 跨层守卫生效 |
+| M2 去掉工作根边界（`if (false)`） | 红（`expected false to be true`：文件被删了） |
+| M2 强形式（删掉"文件还在"那条断言） | **红在健康板断言**（`expected true to be false`：`ok` 还是 true） |
+
+### 一个漏掉的接口声明
+
+`deleted()` 在 Memory 与 Sqlite 两个实现里都写了，**但 `TicketRepository` 接口没声明**——
+测试用 `memory.tickets.deleted()` 能跑（Memory 是具体类），而 `Store` 赋给 `Repositories` 时类型不符。
+**986 条测试全过、只有 typecheck 抓住它**：这已经是本项目第四次"vitest 不做类型检查、闸门的第一步才拦住"。
+
+### 一个顺带量到的事实
+
+补完接口后**产物哈希没有变**（仍是 `3e0a658603e257d4`，372726 字节）：
+新增的是**接口成员与注释**，TypeScript 编译时被擦掉，产出的 JS 逐字节相同。
+> 所以"改了 src/ 就一定要重载插件"这句话要收窄一句：**只有改了会被编译进 JS 的东西才需要**。
+> 纯类型与注释的改动不需要——而分辨两者的最快办法就是看产物哈希有没有动。
+
+**完整闸门退出码 0、986 条**（S4 新增 8 条）；真浏览器 **87/87**。
+
+### S4 还差的
+
+**面板**：删除按钮、两步确认、**后果写成带数字的一句话**（路径 + 文件数 + 总大小）、"已删除"视图
+（`deleted()` 已经备好了，没人读得到的墓碑不是审计痕迹）。后端与路由已通，面板是最后一块。
+
+
+## 4.124 S4 面板：两步确认、量出来的后果、墓碑与「已删除」一档
+
+### 面板这一层做了什么
+
+- **过滤器多一档「已删除」**：`list()` 一律隐藏墓碑，所以**只有这一档能列出被删的任务**。
+  `store.page()` 支持 `filter:'deleted'`（读 `deleted()`，与 `list()` 分开），路由白名单同步放宽。
+- **两步确认**：第一下只出确认块，**后果写成量出来的一句话**——`目录 X：N 个文件、M`，
+  数字来自 `GET tickets/:id/files`（打开确认块时才去测），截断时说"实际不少于这个数"而不是假装精确。
+- **两个轴各自可选**：留着文件（默认，唯一可逆的一端）／连文件一起删；留墓碑（默认）／连记录也不留。
+  选后者时**按钮文案跟着变**（「确认删除（记录也不留）」）——同一个"确认删除"盖两种后果，
+  就等于让操作者在没读的情况下同意。
+- **确认块里写明"两种选择都不动进气记录"以及为什么**（Trigger id 是消息的纯函数，是去重的唯一依据）。
+- **墓碑详情**把删掉的量念出来（`N 个文件、M`）并注明"这一行是它们存在过的唯一记录"。
+- **列表里墓碑读作「已删除」**，而不是继续显示它被删之前的"已完成"——在「已删除」这一档下看到"已完成"，
+  读起来像列表坏了。为此加了一个 `stageLabel(ticket)` helper，替掉三处重复的 `zh(STAGE_ZH, ticket.stage)`。
+- **运行中的任务不给删，而且当场说清**（`title` 与 toast 都写明"先停止它，它此刻还持有一份生效的授权"），
+  而不是让人点完再看后端拒绝——连"测量目录"这一步都不该走到。
+
+### 测试抓到一个真产品 bug（不是测试的问题）
+
+`el()` 对所有属性走 `setAttribute`，而**布尔属性存在即为真**：`checked: false` 被写成字符串 `"false"`，
+于是「连任务记录也不留」这个复选框**在真浏览器里默认就是勾上的**——正好勾在那个不可逆的选项上。
+仓里既有的写法是 `checked: ''` 或**省略**（`panel/index.html:3378` 就是这么写的），我凭直觉写了布尔值。
+
+> 教训：**给 `el()` 传布尔属性时，必须用"存在即真"的写法**（`...(cond ? { checked: '' } : {})`）。
+> 而这一条能被抓住，是因为测试断言的是 `checked` 的**初始值**，不是"点了之后有没有反应"。
+> 如果我只测交互不测初值，这个默认勾上不可逆选项的 bug 会一路发到操作者面前。
+
+### 三个 helper 的严格程度决定了它能不能用来断言缺席
+
+我先后用了 `$('x')`（面板内部函数，测试里不存在 → `ReferenceError`）、
+`byId('x')`（**缺失即抛**）、`one('#x')`（**也缺失即抛**）去断言"确认块还没出现"。
+三次都错，最后只能用 `document.querySelector('#x')`。
+
+> 教训：**断言"某个东西不存在"时，不能用会在它不存在时抛错的 helper**——
+> 那条断言永远不可能通过，而报错长得像测试写坏了（`the page has nothing at #d-delete`），不像断言失败。
+
+### 变异
+
+| | 结果 |
+| --- | --- |
+| M1 去掉两步确认（点一下直接删） | 红 2 条 |
+| M1 强形式（删掉"第一步没有确认块"那条） | **红**：`expected '' to contain '/tmp/work/digest-ticket-1'`（后果文本整块没了） |
+| M2 墓碑不报数字 | 红 |
+| M2 强形式（删掉"3 个文件"那条） | **红在兄弟断言**：`to contain '1.8 KB'` |
+
+### 浏览器断言按产品变更更新（旧值留档）
+
+`verify-browser.mjs` 有两条硬编码"4 档"的断言（U7 留下的），过滤器变 5 档后连跑两次都红——
+**这次不是偶发崩溃，是真回归，而我是靠"连跑两次结果一致"才敢这么判断的**。
+
+- 第一条：`chips.count === 4` → `=== 5`，旧值写在注释里，并**新增一条**断言「已删除」这一档存在且默认未按下。
+- 第二条：旧断言硬编码了**位置**（`'false,false,false,true'`）。改成"按下的正是 `data-filter=all` 那一档"，
+  于是下次再加一档它不会又红一次——**断的是规则（只有一档按下、且是刚点的那档），不是这一档排第几**。
+
+**完整闸门退出码 0、991 条**（S4 面板 +5）；真浏览器 **87 → 88/88**，连跑三次全过（第 1 次是已知偶发崩溃）；
+**产物 `3e0a658603e257d4` → `c7355af8a9ddb49f`（372908 字节）**。
+
+### S4 到此完整
+
+后端（引擎规则 + runtime 的 IO 与边界 + HTTP 路由）、测试（引擎层 2 条 + runtime/HTTP 层 6 条 + 面板层 5 条）、
+变异（后端 2 组 + 面板 2 组，四个强形式全红）、面板（两步确认 + 带数字的后果 + 墓碑 + 已删除一档）都已落地。
+
+### 整个目标还剩
+
+1. **B1**（`desk:'main'`）与它需要的 `myagent_close_ticket`——已记录不做的具体理由（缺一个前台替任务收尾的工具）。
+2. **面板上区分"这是一张分诊任务"**（现在它混在任务列表里，标题看不出来）。
+3. **发布新版本 + `gh api` 远端核实**，以及写给操作者的真机验收步骤（分诊开关默认关，需要他决定何时打开）。
+
+
+## 4.125 B1：操作者自己的 Session 当分诊台（上一轮记录的欠账已还）
+
+上一轮把 B1 记成"不做，因为缺一个前台替任务收尾的工具"。这一轮把那个工具补上，B1 就成立了。
+
+### 缺的那块，以及它为什么必须窄
+
+`desk:'main'` 时操作者自己的 Session 就是分诊台，而它**没有 `myagent_report`**——那是 worker 的、绑在 attempt 上。
+所以加了 **`myagent_close_ticket`**，并且刻意做得很窄：
+
+| 限制 | 理由 |
+| --- | --- |
+| **只收尾分诊任务**（`latestAssignment(ticket)?.role !== 'triage'` 就拒） | 否则前台就多了一条结束**任意**任务的路——而且是"报告一个结果"而不是"撤销授权"，读起来像**活干完了**，其实是被关掉了。拒绝信息里点名 `myagent_stop_ticket` |
+| **只接受 `ready`/`dropped`/`failed`** | `blocked`/`waiting` 会被 relay 回前台，而在 B1 下前台**就是**主 Session——等于让它被自己刚关掉的任务唤醒（操作者点名要防的"踢皮球"）。而且 B1 下"问操作者"根本不需要工具：**你就是他的 Session，说出来就是问** |
+
+### 启动路径的分叉只有一处
+
+`executor.launch()` 原本：`prepareDirectory` → `sessions.ensure` → `assignmentStarted` → `promptWorker` → `inputsDelivered`。
+B1 分支把 `ensure`+`promptWorker` 换成一次 `relay`，其余不变：
+
+```
+const toMain = assignment.role === 'triage' && settings.triage.desk === 'main'
+```
+
+**为什么用 `relay` 就够了**：它自己会解析或**创建**主 Session，而不是安静地放弃——这正是 S3 那条
+"分诊台必须排队且可见、绝不能静默丢"所依赖的性质（`relay()` 的注释记着那次事故）。
+
+指令随消息走（`TRIAGE_BRIEF`），因为 orchestrator 提示词讲的是操作者自己的请求、不提分诊。
+**点名收尾工具**是这条指令能被执行的关键：不点名的话，前台唯一看得见的动作就是"再开一张任务"，
+而那正好是唯一**不能**结束这一张的动作。
+
+### 我引入的一个真回归，被三条既有测试当场抓住
+
+我把 `assignmentStarted` 挪到了 `sessions.ensure` **之前**（为了让两条分支共用一行），于是
+**一个在创建 Session 时就失败的启动，会把任务标成 `running`**。三条测试立刻红了：
+
+- `executor.spec.ts > leaves the work queued and says so on the board, without pretending the Ticket started`
+- `flow.spec.ts > contains a decoration failure inside the agent/created dispatch`（`expected 'running' to be 'pending'`）
+- `flow.spec.ts > leaves the Ticket unlaunched rather than running a worker with no restriction at all`
+
+改回**两条分支各自在成功之后才标记**。
+
+> 教训：**"启动成功"这个事实必须记在启动成功之后**，而且不能为了少写一行就把两条分支的时序合并。
+> 这三条测试的存在理由是同一个——**不许假装任务启动了**——而我在改一条完全无关的分支时踩中了它。
+> 这也说明那三条断言不是装饰：它们守的是一条我根本没在想的原则。
+
+### 三处测试前置状态错误（都不是产品问题）
+
+1. `host.tool('myagent-main', ...)` 返回 undefined → **工具是注册在 Session 上的**，主 Session 必须先存在。
+   报错长得像"工具没注册"，其实是"没人持有它"。
+2. `state:'blocked'` 用 `.rejects` 断言 → **参数是同步校验的**（`tool()` 包装器先 parse 再调 execute），
+   错误是**抛**出来的，不是 reject；写成 `.rejects` 会让错误直接逃出测试，看起来像测试坏了。
+3. 第二份请求是在**分诊仍开着**时丢进去的，于是它也成了分诊任务，`find(role !== 'triage')` 返回 undefined
+   → 报错指向断言（`reading 'id'`）而真正的问题在前置状态。**要一个"普通任务"就得先关掉分诊。**
+
+### 变异
+
+| | 结果 |
+| --- | --- |
+| M1 `desk` 判断恒假（B1 永不生效） | 红 |
+| M1 强形式（删掉"没有 worker Session"两条断言） | **红**：前台收到请求那条断言接手 |
+| M2 `close_ticket` 对任何任务放行 | 红 |
+| M2 强形式（删掉两条 `refused.error` 断言） | **红**：`expected {at, by,…} to be undefined`——普通任务真的被结束了 |
+
+### 断言更新（产品变更，旧值留档）
+
+- `parseSettings({}).triage`：`{enabled:false}` → `{enabled:false, desk:'dedicated'}`。
+- **原先那条"拒绝 `desk`"的测试整条换掉**：它当时钉的正是"这个旋钮不该存在"，理由写在注释里；
+  现在 B1 真的能用了，换成"两个值都收、第三个值拒"。**原来那条的理由仍然成立，只是被满足了。**
+- 前台工具清单加 `myagent_close_ticket`（顺序照 `mainTools` 的声明顺序：在 `stop` 之后、`retry` 之前——
+  我先按猜测写成最后，红了才去读源码的实际顺序）。
+
+**完整闸门退出码 0、994 条**；真浏览器 **88/88**；**产物 `c7355af8a9ddb49f` → `89ec9af2efee31a8`（376579 字节）**。
+
+### 还剩
+
+面板上区分"这是一张分诊任务"；发布新版本 + `gh api` 远端核实 + 真机验收步骤。

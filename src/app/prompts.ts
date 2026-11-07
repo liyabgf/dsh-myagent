@@ -10,11 +10,11 @@ import { join, resolve } from 'node:path'
 import { KV, type Store } from './store.ts'
 
 /** The roles that have a prompt of their own. */
-export type PromptRole = 'worker' | 'orchestrator'
-export const PROMPT_ROLES: readonly PromptRole[] = ['worker', 'orchestrator']
+export type PromptRole = 'worker' | 'orchestrator' | 'triage'
+export const PROMPT_ROLES: readonly PromptRole[] = ['worker', 'orchestrator', 'triage']
 
 /** One role's file in the package, without its extension. */
-const FILES: Record<PromptRole, string> = { worker: 'worker.md', orchestrator: 'orchestrator.md' }
+const FILES: Record<PromptRole, string> = { worker: 'worker.md', orchestrator: 'orchestrator.md', triage: 'triage.md' }
 /** The largest override the operator may store, in characters, per role. */
 export const PROMPT_MAX_CHARS = 100_000
 
@@ -43,6 +43,7 @@ export function promptFile(role: PromptRole): string {
 export interface PromptConfig {
   worker?: string
   orchestrator?: string
+  triage?: string
 }
 
 /** Thrown when an override cannot be stored, with the reason the panel shows. */

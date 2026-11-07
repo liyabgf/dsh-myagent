@@ -12,6 +12,9 @@ export const USER_ERRORS = {
   input_missing: 'No such input on this Ticket',
   project_missing: 'No Project has this id',
   work_missing: 'No Work has this id',
+  // Not "the Ticket is busy" but "an authorization is still in force": a running attempt has a Session mid-turn and a
+  // directory it owns, so deleting the record under it would leave that Session writing where nobody is accountable.
+  ticket_not_stopped: 'That Ticket has not ended; stop it before deleting it',
   empty_name: 'A name cannot be empty',
   collaboration_refused: 'Only Tickets in the same Work can hand something to each other',
   empty_text: 'There is nothing to hand over: the text is empty',
