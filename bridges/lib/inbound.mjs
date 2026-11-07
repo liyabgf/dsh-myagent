@@ -16,6 +16,32 @@ import { join } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { stringify } from './frontmatter.mjs'
 
+/**
+ * Compose a human-readable task title from the sender and the first meaningful line of the request body:
+ * `<sender>：<snippet>`.
+ *
+ * A group name (`回收站`, `周报群`) says where the message was posted, not who asked or what they want done — and the
+ * Ticket's own directory (`executor.ts:109`) is named after `slug(ticket.title, 48)`, so a group name made every
+ * Ticket in the group share a useless directory prefix. Leading markdown headings (`# ...`) and blank lines are
+ * skipped when picking the snippet so a structured prompt's first real line wins.
+ *
+ * @param {string | undefined} sender
+ * @param {string | undefined} body
+ * @param {number} [maxChars]
+ * @returns {string}
+ */
+export function taskTitle(sender, body, maxChars = 48) {
+  const who = String(sender ?? '').replace(/\s+/g, ' ').trim()
+  const lines = String(body ?? '')
+    .split(/\r?\n/)
+    .map(line => line.replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim())
+    .filter(line => line !== '')
+  const first = lines[0] ?? ''
+  const snippet = first.length > maxChars ? `${first.slice(0, maxChars)}…` : first
+  if (who !== '' && snippet !== '') return `${who}：${snippet}`
+  return who || snippet || 'unnamed'
+}
+
 /** A file name that is safe on every filesystem, never starts with a dot, and always ends in `.md`. */
 export function messageFileName(id) {
   const slug = String(id ?? '').replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '').slice(0, 120)

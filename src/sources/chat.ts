@@ -151,6 +151,22 @@ function parseMessage(text: string, fileName: string): Message {
   }
 }
 
+/**
+ * Fallback title when a message file omits `title:`: `<actor>：<first line of body>`.
+ *
+ * Matches the bridge's `taskTitle` shape so a hand-dropped or legacy bridge file without a title field still names
+ * who asked and what they asked for, instead of the raw `msg-<chatId>-<msgId>` file name.
+ */
+function defaultChatTitle(actor: string, body: string, fileName: string): string {
+  const first = body
+    .split(/\r?\n/)
+    .map(line => line.replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim())
+    .find(line => line !== '') ?? ''
+  const snippet = first.length > 48 ? `${first.slice(0, 48)}…` : first
+  if (snippet !== '') return `${actor}：${snippet}`
+  return fileName.replace(/\.md$/i, '')
+}
+
 const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
 export class ChatSource implements TwoWaySource {
@@ -444,7 +460,8 @@ export class ChatSource implements TwoWaySource {
         // id looks like a bot, so `system`" is exactly the judgement contract §2.1 forbids — the map decides who.
         actor: { id: mapped.actor, kind: 'person' },
         text: message.body,
-        title: (message.title ?? entry.name.replace(/\.md$/i, '')).slice(0, 200),
+        // 桥写了 title 就用桥的；没写时用「发起者 + 任务内容简要」兜底，而不是退化成 `msg--100200300-73` 这种文件名。
+        title: (message.title ?? defaultChatTitle(mapped.actor, message.body, entry.name)).slice(0, 200),
         meta: {
           channel: channel.id, file: entry.name, from: message.from,
           ...(message.thread === undefined ? {} : { thread: message.thread }),

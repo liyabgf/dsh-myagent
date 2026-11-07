@@ -19,7 +19,7 @@ import { parse, scalar, stringify } from '../bridges/lib/frontmatter.mjs'
 // @ts-expect-error -- see above
 import { messageFileName, writeMessage } from '../bridges/lib/inbound.mjs'
 // @ts-expect-error -- see above
-import { drainOut } from '../bridges/lib/outbound.mjs'
+import { chunkText, drainOut } from '../bridges/lib/outbound.mjs'
 // @ts-expect-error -- see above
 import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform.mjs'
 // @ts-expect-error -- see above
@@ -174,6 +174,114 @@ describe('consuming the replies myagent owes back', () => {
   })
 })
 
+describe('a reply too long for the door it was sent through', () => {
+  /**
+   * Telegram refuses anything over 4096 UTF-16 code units. Because a reply file is archived only AFTER the platform
+   * accepts it, a reply that can never be accepted is retried forever — and myagent's own `send` effect already
+   * succeeded when it wrote the file, so the panel says "delivered" while the room says nothing. That is the third
+   * shape of the silence this system exists to prevent, and a research report is exactly the answer that hits it.
+   */
+  /** The pieces with their markers taken off, as an array: how they are rejoined depends on how they were cut. */
+  const bodies = (pieces: string[]): string[] => pieces.map(piece => piece.replace(/^【\d+\/\d+】 /, ''))
+  /** Split on line boundaries, so the newlines that were separators come back as separators. */
+  const strip = (pieces: string[]): string => bodies(pieces).join('\n')
+
+  it('leaves a reply that fits completely alone — no marker, no split, byte-identical', () => {
+    expect(chunkText('已经查完了。', 4096)).toEqual(['已经查完了。'])
+    expect(chunkText('x'.repeat(4096), 4096)).toHaveLength(1)
+    // And a platform that passes no limit keeps today's behaviour, which is the right default for one whose limit
+    // has not been verified: guessing would split replies for no reason.
+    expect(chunkText('x'.repeat(9000), 0)).toHaveLength(1)
+  })
+
+  it('splits on line boundaries, stays inside the limit, and gives the payload back losslessly', () => {
+    const text = Array.from({ length: 400 }, (_, i) => `第 ${i} 行：中国 AI 产业资本网络的一条事实。`).join('\n')
+    const pieces = chunkText(text, 200)
+    expect(pieces.length).toBeGreaterThan(1)
+    for (const piece of pieces) expect(piece.length).toBeLessThanOrEqual(200)
+    // Every piece says where it sits, so five messages arriving in a row read as one answer rather than noise.
+    expect(pieces[0]!.startsWith('【1/')).toBe(true)
+    expect(pieces.at(-1)!.startsWith(`【${pieces.length}/${pieces.length}】 `)).toBe(true)
+    // The property that matters: nothing was lost, reordered or paraphrased on the way through.
+    expect(strip(pieces)).toBe(text)
+  })
+
+  it('hard-cuts one over-long line, and never through a surrogate pair', () => {
+    const text = `${'研'.repeat(500)}\n${'😀'.repeat(300)}`
+    const pieces = chunkText(text, 120)
+    for (const piece of pieces) {
+      expect(piece.length).toBeLessThanOrEqual(120)
+      // A piece that starts or ends on half a pair would render as a replacement character: the emoji was written
+      // whole, so it must arrive whole.
+      const body = piece.replace(/^【\d+\/\d+】 /, '')
+      expect(body.charCodeAt(0) >= 0xdc00 && body.charCodeAt(0) <= 0xdfff, '一片不能以低代理项开头').toBe(false)
+      const last = body.charCodeAt(body.length - 1)
+      expect(last >= 0xd800 && last <= 0xdbff, '一片不能以高代理项结尾').toBe(false)
+    }
+    // A WEAKER invariant than the line-packed case above, and the difference is worth stating rather than hiding:
+    // packing on line boundaries is lossless (`join('\n')` puts the text back exactly), but a hard cut has to place a
+    // message boundary in the middle of a line, and there is no way to tell the reader "these two messages were one
+    // line". So what is guaranteed here is that no character was lost, added or reordered — not that the newlines are
+    // where they were.
+    expect(bodies(pieces).join('').replace(/\n/g, '')).toBe(text.replace(/\n/g, ''))
+  })
+
+  it('sends the pieces in order and archives only after the last one was accepted', async () => {
+    const dir = await directory()
+    await mkdir(join(dir, 'out'), { recursive: true })
+    const text = Array.from({ length: 60 }, (_, i) => `行 ${i}：一条需要送回去的事实。`).join('\n')
+    await writeFile(join(dir, 'out', 'reply-long.md'), `---\nthread: 9\n---\n${text}`, 'utf8')
+    const sent: string[] = []
+    const tally = await drainOut({
+      directory: dir, limit: 120,
+      send: async (reply: { text: string }) => { sent.push(reply.text) },
+    })
+    expect(tally).toMatchObject({ sent: 1, failed: 0 })
+    expect(sent.length).toBeGreaterThan(1)
+    expect(strip(sent)).toBe(text)
+    expect(await readdir(join(dir, 'out'))).toEqual(['sent'])
+    expect(await readdir(join(dir, 'out', 'sent'))).toEqual(['reply-long.md'])
+  })
+
+  /**
+   * The reason a resume marker exists: without it, a failure on piece three of five re-posts pieces one and two to the
+   * room on the next drain — the operator's colleagues would read the same half-answer twice, and the second copy
+   * looks like a correction rather than a retry.
+   */
+  it('resumes from the piece that failed instead of posting the first half of an answer twice', async () => {
+    const dir = await directory()
+    await mkdir(join(dir, 'out'), { recursive: true })
+    const text = Array.from({ length: 60 }, (_, i) => `行 ${i}：一条需要送回去的事实。`).join('\n')
+    await writeFile(join(dir, 'out', 'reply-part.md'), text, 'utf8')
+
+    const seen: string[] = []
+    let attempts = 0
+    const first = await drainOut({
+      directory: dir, limit: 120,
+      send: async (reply: { text: string }) => {
+        attempts += 1
+        seen.push(reply.text)
+        if (attempts === 2) throw new Error('message is too long')
+      },
+    })
+    expect(first).toMatchObject({ sent: 0, failed: 1 })
+    expect(await readdir(join(dir, 'out'))).toContain('reply-part.md')
+    const pieces = chunkText(text, 120)
+    expect(seen).toHaveLength(2)
+    // Where it got to is recorded, and it is not a reply file (dot-prefixed, so the drain never reads it as one).
+    expect(await readFile(join(dir, 'out', '.reply-part.md.progress'), 'utf8')).toBe('1')
+
+    const second: string[] = []
+    const retry = await drainOut({ directory: dir, limit: 120, send: async (reply: { text: string }) => { second.push(reply.text) } })
+    expect(retry).toMatchObject({ sent: 1, failed: 0 })
+    // Resumed at piece 2 — piece 1 was NOT sent again.
+    expect(second).toEqual(pieces.slice(1))
+    expect([...seen, ...second]).toHaveLength(pieces.length + 1)
+    // The marker is cleaned up once the whole answer is out.
+    expect(await readdir(join(dir, 'out'))).toEqual(['sent'])
+  })
+})
+
 describe('the Telegram mapping', () => {
   const groupMessage = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
     message_id: 12, from: { id: 555, first_name: '李', last_name: '杨' },
@@ -227,10 +335,22 @@ describe('the Telegram mapping', () => {
     expect(mapped.message.thread).toBe('9')
   })
 
-  it('titles a group message with the group and a DM with the person, because that is what an operator reads', () => {
-    expect(mapUpdate({ message: groupMessage() }, ME, { mode: 'all' }).message.title).toBe('周报群')
+  it('titles a message with the sender and a summary of the request, never the group name', () => {
+    // 【产品变更】旧断言：
+    //   expect(mapUpdate({ message: groupMessage() }, ME, { mode: 'all' }).message.title).toBe('周报群')
+    //   expect(dm.message.title).toBe('李 杨')
+    // 改动理由：操作者明确要求「任务名不应该是群名，而是发起者+任务内容的简要」。
+    // 用群名当标题会让同一个群里的所有任务都叫「回收站」/「周报群」，不仅任务列表里分不清是谁要做什么，
+    // 还会让 executor 按 slug(title) 建出来的工作目录全都叫 `回收站-<id>`。
+    expect(mapUpdate({ message: groupMessage() }, ME, { mode: 'all' }).message.title).toBe('李 杨：整理周报')
     const dm = mapUpdate({ message: groupMessage({ chat: { id: 555, type: 'private' } }) }, ME)  // 私聊不受 mentions 限制
-    expect(dm.message.title).toBe('李 杨')
+    expect(dm.message.title).toBe('李 杨：整理周报')
+    // 多行且带 Markdown 标题的请求，跳过空行与 `#` 前缀取第一行有效内容，超长截断加省略号。
+    const longBody = `# 标题行\n\n${'做一次完整的自主研究任务'.repeat(6)}`
+    const longMapped = mapUpdate({ message: groupMessage({ text: longBody }) }, ME, { mode: 'all' })
+    expect(longMapped.message.title.startsWith('李 杨：标题行')).toBe(true)
+    const overline = mapUpdate({ message: groupMessage({ text: '研'.repeat(80) }) }, ME, { mode: 'all' })
+    expect(overline.message.title).toBe(`李 杨：${'研'.repeat(48)}…`)
   })
 
   it('honours a chat allow list and skips the bot’s own messages', () => {

@@ -1,3 +1,5 @@
+import { taskTitle } from '../lib/inbound.mjs'
+
 /**
  * The pure half of the Lark/Feishu bridge: an `im.message.receive_v1` event in, a channel message (or a reason to
  * skip) out.
@@ -97,12 +99,13 @@ export function mapEvent(event, { botOpenId, mode = 'mentions', chatAllowList = 
   const text = stripMentions(contentText(message.message_type, message.content))
   if (text === '') return { skip: `no-text:${String(message.message_type ?? 'unknown')}` }
   const thread = message.root_id ?? message.thread_id
+  const derivedTitle = title ?? taskTitle(String(senderId), text)
   return {
     message: {
       from: String(senderId),
       id: String(message.message_id),
       ...(thread === undefined || thread === '' ? {} : { thread: String(thread) }),
-      ...(title === undefined ? {} : { title }),
+      title: derivedTitle,
       body: text,
       chatId,
       isDirect,

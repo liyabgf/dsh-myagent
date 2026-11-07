@@ -7168,3 +7168,34 @@ M2 的强形式为什么补不出第二层，如实记：能观测"面板画没�
 **远端 `lib/index.js` 的 blob 与本地公开副本逐字节一致**（`ac3bcbc5805481e3…`）。
 
 **完整闸门退出码 0、997 条**；真浏览器 **88/88**；产物 **`a72c2f7954750b79`（376653 字节）**。
+
+
+## 4.128 任务标题改为「发起者 + 内容简要」与 dsh-im 经验对标（0.8.4）
+
+### 1. 真机任务 `81637106` 暴露的三个问题
+
+操作者从 Telegram 群（「回收站」）派发了一次长研究任务（「中国 AI 产业资本网络与生态拓扑分析（2026）」）：
+
+1. **任务名被设成了群名「回收站」**：`bridges/telegram/transform.mjs` 对群聊取 `message.chat.title`，`bridges/lark/bridge.mjs` 也查群名当 `title`。结果不仅面板任务列表里分不清是谁要做什么，`executor.ts:109` 按 `slug(ticket.title, 48)` 建出的工作目录也变成了 `回收站-81637106`。
+2. **Worker 误以为没有 Telegram 工具就无法汇报**：Worker 在 `logs/execution_log.md` 写下「本会话无 Telegram 工具，无法通过 Telegram 汇报；改为写入本日志」。它不知道 `myagent_report` 本身就是自动送回聊天请求者的唯一通道。
+3. **长报告出站分片与 429 退避缺失**：Telegram 单条上限 4096 UTF-16 码元，且同一 chat 连续发多片会触发平台 429（`parameters.retry_after`）。
+
+### 2. 对标 `xmanrui/dsh-im` 的可迁移经验（不照抄架构，取其边界治理）
+
+研究了 `https://github.com/xmanrui/dsh-im`（9 渠道接入 DSH 的成熟实现，3300+ stars）：
+
+| `dsh-im` 模块 | 他们解决的问题与做法 | 在 `myagent` 中的落地/取舍 || --- | --- | --- |
+| `src/channels/shared/speaker-label.mjs` | 群聊多成员共用会话时，纯文本看不出是谁说的，用 `prependSpeakerLabel` 把发起者名字前缀到提示词 | 我们是按消息建 Ticket，最需要发起者标识的地方是 **Ticket 标题与工作目录名**。在 `bridges/lib/inbound.mjs` 新增 `taskTitle(sender, body, maxChars=48)`，跳过空行与 `#` 标题前缀取首行有效内容，生成 `发起者：内容简要`；Telegram/飞书桥与 `ChatSource.defaultChatTitle` 兜底统一采用 |
+| `src/channels/telegram/telegram-rich-message.mjs` + `scripts/probe-telegram-limits.mjs` | 实测并钉死单条文本 ≤ 4096 字符，优先在换行/空格处切分 | 在 `bridges/lib/outbound.mjs` 实现 `chunkText(text, limit)`（按行贪心打包、`【i/N】` 标记、超长单行硬切不拆 UTF-16 代理对）+ `.progress` 断点续传文件；Telegram 桥传入 `limit: 4096` |
+| `src/channels/telegram/telegram-api.mjs` (`#sendMessageCall` / `rateLimitRetryAfter`) | 区分「建新消息（计入配额，遇 429 读 `retry_after` 等待重试，上限 4 次 / 60s）」与「编辑/反应（不重试）」 | 在 `bridges/telegram/bridge.mjs` 的 `call()` 中加入 `sendMessage` 专属 429 `parameters.retry_after` 等待重试（最多 4 次、累计 ≤ 60s），避免长报告分片连发时第 3、4 片被限流打断 |
+| `docs/agent-mail-reply-loop-defect.md` | 出站回信未记入 `seenMessageIds` 导致回流自激（20 分钟连发 7 封） | 核对了我们的两处防自激：① 桥层 `String(message.from.id) === String(me.id)` 跳过 `own-message` + `out/sent/` 已发集合去重；② 引擎层 `myagent_close_ticket` 拒绝 `blocked/waiting`（防主 Session 关单又把自己唤醒）、`policy.triage` 限制 `depth === 0` 且排除 `session/rule` 来源 |
+| `docs/deferred-delivery.md` (`deferred-delivery.mjs`) | 前台等待超时不代表后台回合结束，用持久化状态跟踪并在 `turn/end` 或重启后补发终态 | 在 `myagent` 中，这一职责天然由 SQLite 持久化的 `effects` 队列（`send`/`notify`）+ `out/` 文件契约承担，无需在桥进程另建一套会话历史轮询 |
+
+### 3. 测试与变异验证
+
+- `tests/bridges.spec.ts`：分片 + 断点续传 + 不拆代理对（5 条）；任务标题「发起者：内容简要」及超长截断（更新 1 条产品变更断言，旧值留档）。
+- `tests/chat.spec.ts`：无 `title` 字段时 `ChatSource` 用映射后的 `actor：内容简要` 兜底而非文件名（1 条）。
+- **变异**：
+  - M1（`taskTitle` 丢掉内容简要只返回发起者）：红；强形式（删第一条断言）仍被第二条断言判红。
+  - M2（`defaultChatTitle` 退回文件名）：红；强形式（删 `toBe('alice：项目启动')`）仍被 `not.toContain('msg--100200300-73')` 判红。
+  - 还原后 SHA-256 哈希全部核对一致。

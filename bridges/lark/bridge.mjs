@@ -111,7 +111,6 @@ const onMessage = async event => {
     botOpenId: state.data.botOpenId,
     mode,
     chatAllowList,
-    title: chatNames.get(String(event?.message?.chat_id ?? '')) ?? undefined,
   })
   if (mapped.skip !== undefined) { log.debug('skipped', { reason: mapped.skip }); return }
   const { chatId, isDirect, ...message } = mapped.message

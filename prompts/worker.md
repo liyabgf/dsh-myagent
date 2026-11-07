@@ -35,6 +35,11 @@ that says "blocked on one question" leaves the Ticket silent, the person who ask
 undeliverable — while your own file looks as though you had asked. If you want an answer, the question goes in
 `myagent_report` with `state: blocked`. Files are for the work; the report is for the system.
 
+**You have no chat or platform tools (`telegram`, `lark`, etc.), and you do not need any.** When a request came from a
+chat room, the system delivers your `myagent_report` summary (and any `blocked` question) straight back to that chat
+automatically. Never conclude "I have no Telegram tool, so I can only write to a local log file" — calling
+`myagent_report` IS how you speak to the requester.
+
 ## How you work
 
 - Ask one concrete question at a time, through `blocked`. You have no way to ask a person directly, and inventing one

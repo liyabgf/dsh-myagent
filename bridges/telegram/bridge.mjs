@@ -37,6 +37,16 @@ import { mapUpdate } from './transform.mjs'
 
 const API = 'https://api.telegram.org'
 
+/**
+ * Telegram's per-message limit, in UTF-16 code units — which is exactly what a JS string's `.length` counts, so no
+ * conversion is needed and none is attempted.
+ *
+ * Passed to `drainOut` rather than handled here: the splitting has to happen where the reply is read, so that a
+ * too-long answer is delivered in pieces instead of being refused forever (and myagent's panel saying "delivered"
+ * while the room says nothing).
+ */
+const MESSAGE_LIMIT = 4096
+
 const token = process.env.TELEGRAM_BOT_TOKEN
 const directory = process.env.MYAGENT_CHANNEL_DIR
 if (!token) fail('TELEGRAM_BOT_TOKEN is required — create a bot with @BotFather and paste its token here')
@@ -61,19 +71,38 @@ function fail(message) {
   process.exit(2)
 }
 
+/**
+ * Retry a `sendMessage` 429 inside the drain pass when Telegram tells us how long to wait (`parameters.retry_after`),
+ * up to 60s total (borrowed from dsh-im's `telegram-api.mjs` #sendMessageCall). A long chunked report otherwise hits
+ * Telegram's per-chat burst limit on piece 3 or 4 and has to wait for the next poll cycle.
+ */
+const MAX_SEND_ATTEMPTS = 4
+const MAX_RATE_LIMIT_WAIT_MS = 60_000
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 const call = async (method, params = {}) => {
-  const response = await fetch(`${API}/bot${token}/${method}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(params),
-  })
-  const body = await response.json().catch(() => ({}))
-  // `ok:false` is the API's way of saying no; the description is the only explanation there is, so it goes in the log
-  // verbatim rather than being paraphrased into something less useful.
-  if (!response.ok || body.ok !== true) {
+  let waitedMs = 0
+  for (let attempt = 1; ; attempt += 1) {
+    const response = await fetch(`${API}/bot${token}/${method}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+    const body = await response.json().catch(() => ({}))
+    // `ok:false` is the API's way of saying no; the description is the only explanation there is, so it goes in the log
+    // verbatim rather than being paraphrased into something less useful.
+    if (response.ok && body.ok === true) return body.result
+    const retryAfter = Number(body?.parameters?.retry_after)
+    const delayMs = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter * 1000) : null
+    if (method === 'sendMessage' && (response.status === 429 || body?.error_code === 429)
+      && delayMs !== null && attempt < MAX_SEND_ATTEMPTS && waitedMs + delayMs <= MAX_RATE_LIMIT_WAIT_MS) {
+      waitedMs += delayMs
+      log.warn('rate-limited-wait', { method, attempt, delayMs, retryAfter })
+      await sleep(delayMs)
+      continue
+    }
     throw new Error(`${method} failed: HTTP ${response.status} ${body.description ?? ''} ${JSON.stringify(body.parameters ?? {})}`.trim())
   }
-  return body.result
 }
 
 let me = null
@@ -135,7 +164,7 @@ const poll = async () => {
     if (result?.written !== undefined) written += result.written
     else if (result?.skipped !== undefined) log.debug('skipped', result)
   }
-  const replies = await drainOut({ directory, send: outbound, log, keepDays })
+  const replies = await drainOut({ directory, send: outbound, log, keepDays, limit: MESSAGE_LIMIT })
   return { updates: (updates ?? []).length, written, replies }
 }
 

@@ -1,3 +1,5 @@
+import { taskTitle } from '../lib/inbound.mjs'
+
 /**
  * The pure half of the Telegram bridge: a platform update in, a channel message (or a reason to skip) out.
  *
@@ -66,12 +68,14 @@ export function mapUpdate(update, me, { mode = 'mentions', chatAllowList = [] } 
   if (body === '') return { skip: 'no-text' }
   const thread = message.message_thread_id === undefined ? undefined : String(message.message_thread_id)
   const senderName = [message.from.first_name, message.from.last_name].filter(Boolean).join(' ')
+  const senderLabel = senderName || message.from.username || `user-${message.from.id}`
   return {
     message: {
       from: String(message.from.id),
       id: `${chatId}-${message.message_id}`,
       ...(thread === undefined ? {} : { thread }),
-      title: isDirect ? (senderName || message.from.username || `user-${message.from.id}`) : (message.chat?.title ?? chatId),
+      // 标题是「发起者 + 任务内容简要」，不再用群名（群名只说明在哪说的，不说明谁要做什么，还会让目录名叫「回收站-81637106」）。
+      title: taskTitle(senderLabel, body),
       body,
       chatId,
       isDirect,

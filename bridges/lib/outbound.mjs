@@ -12,13 +12,72 @@
  * Files are never deleted on success, only moved: what the operator's colleagues received is worth keeping, and
  * `keepDays` prunes it on an age the operator chooses.
  */
-import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises'
+import { mkdir, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parse } from './frontmatter.mjs'
 import { describeError } from './log.mjs'
 
 const OUT = 'out'
 const SENT = 'sent'
+
+/**
+ * Reserved for the `【i/N】 ` marker, so a marked piece still fits the platform's limit.
+ *
+ * Three digits on both sides is 10 characters; 12 leaves room for the space and for a platform that counts slightly
+ * differently than JS does.
+ */
+const MARKER_RESERVE = 12
+
+/**
+ * Split a reply into pieces a platform will actually accept.
+ *
+ * Why this exists: a long report is not a long message. Telegram refuses anything over 4096 UTF-16 code units with
+ * `message is too long`, and because the file is only archived AFTER the platform accepts it, a reply that can never
+ * be accepted is retried forever — myagent's own `send` effect already succeeded (it wrote the file), so the panel
+ * says "delivered" while the room says nothing. That is the third shape of the silence this whole system exists to
+ * prevent: not a missing address, not a missing report, but an answer too big for the door it was sent through.
+ *
+ * Split on line boundaries and pack greedily, so paragraph structure survives (a blank line is just an empty line in
+ * the split, and joining with `\n` puts it back). A single line longer than one whole message is hard-cut — and never
+ * through a surrogate pair, because half an emoji is a different character than the one that was written.
+ *
+ * The payload is lossless: strip the `【i/N】 ` markers, join with `\n`, and you get the original text back.
+ *
+ * @param {string} text
+ * @param {number} limit 0 or less means "no limit", which is what a platform with an unverified limit should pass.
+ * @returns {string[]} one piece when nothing needs splitting, so short replies are byte-identical to before
+ */
+export function chunkText(text, limit) {
+  if (!(limit > 0) || text.length <= limit) return [text]
+  const budget = Math.max(1, limit - MARKER_RESERVE)
+  const pieces = []
+  let current = ''
+  for (const line of text.split('\n')) {
+    const candidate = current === '' ? line : `${current}\n${line}`
+    if (candidate.length <= budget) { current = candidate; continue }
+    if (current !== '') { pieces.push(current); current = '' }
+    if (line.length <= budget) { current = line; continue }
+    for (const slice of hardCut(line, budget)) pieces.push(slice)
+  }
+  if (current !== '') pieces.push(current)
+  const total = pieces.length
+  return pieces.map((piece, index) => `【${index + 1}/${total}】 ${piece}`)
+}
+
+/** Cut one over-long line into budget-sized slices, backing off a surrogate pair rather than splitting it. */
+function hardCut(line, budget) {
+  const pieces = []
+  let rest = line
+  while (rest.length > budget) {
+    let at = budget
+    const code = rest.charCodeAt(at)
+    if (code >= 0xdc00 && code <= 0xdfff) at -= 1   // `at` sits on the second half of a pair: take one less
+    pieces.push(rest.slice(0, at))
+    rest = rest.slice(at)
+  }
+  if (rest !== '') pieces.push(rest)
+  return pieces
+}
 
 async function readText(path) {
   const { readFile } = await import('node:fs/promises')
@@ -31,9 +90,12 @@ async function readText(path) {
  * @param {(reply: { thread: string | undefined, text: string, name: string }) => Promise<void>} options.send
  * @param {{ info?: Function, warn?: Function, error?: Function }} [options.log]
  * @param {number} [options.keepDays] how long delivered replies are kept in `out/sent/` (0 keeps them forever)
+ * @param {number} [options.limit] the platform's per-message character limit; 0 or omitted sends the reply as one
+ *   piece, which is right for a platform whose limit has not been verified rather than a guess that splits replies
+ *   for no reason.
  * @returns {Promise<{ sent: number, failed: number, skipped: number }>}
  */
-export async function drainOut({ directory, send, log = {}, keepDays = 7 }) {
+export async function drainOut({ directory, send, log = {}, keepDays = 7, limit = 0 }) {
   const out = join(directory, OUT)
   const sent = join(out, SENT)
   const tally = { sent: 0, failed: 0, skipped: 0 }
@@ -63,18 +125,50 @@ export async function drainOut({ directory, send, log = {}, keepDays = 7 }) {
       continue
     }
     const { fields, body } = parse(text)
-    try {
-      await send({ thread: fields.thread === '' || fields.thread === undefined ? undefined : fields.thread, text: body, name: entry.name })
-    } catch (error) {
-      // Leave it where it is: the next drain tries again, and myagent's own retry may rewrite the same bytes.
-      log.error?.('reply-send-failed', { name: entry.name, ...describeError(error) })
-      tally.failed += 1
-      continue
+    const thread = fields.thread === '' || fields.thread === undefined ? undefined : fields.thread
+    const pieces = chunkText(body, limit)
+    // Where a multi-part reply got to before it failed, so the retry does not post the first half of an answer to the
+    // room a second time. Dot-prefixed, so this loop's own "never a dotfile" rule keeps it from being read as a reply.
+    const progress = join(out, `.${entry.name}.progress`)
+    let from = 0
+    if (pieces.length > 1) {
+      try {
+        const recorded = Number.parseInt(await readText(progress), 10)
+        // A number that cannot describe THIS body is stale (myagent rewrote the file with different text under the
+        // same name is impossible — the name is a hash of the text — but a hand-edited file is not), so start over
+        // rather than skipping pieces of a different message.
+        if (Number.isInteger(recorded) && recorded > 0 && recorded < pieces.length) from = recorded
+      } catch { /* no progress recorded: this is the first attempt */ }
     }
+    let broke = false
+    for (let index = from; index < pieces.length; index += 1) {
+      try {
+        // `part`/`parts` only when the reply really was split: a single-piece reply has to be byte-identical to what
+        // a bridge saw before chunking existed, so an unchanged platform keeps an unchanged contract.
+        await send({
+          thread, text: pieces[index], name: entry.name,
+          ...(pieces.length > 1 ? { part: index + 1, parts: pieces.length } : {}),
+        })
+      } catch (error) {
+        // Leave it where it is: the next drain tries again from the piece that failed, and myagent's own retry may
+        // rewrite the same bytes.
+        log.error?.('reply-send-failed', { name: entry.name, part: index + 1, parts: pieces.length, ...describeError(error) })
+        // `index` IS the count of pieces the platform already accepted (0..index-1), which is exactly where a retry
+        // has to resume. Only worth recording once something has actually gone out.
+        if (pieces.length > 1 && index > from) await writeFile(progress, String(index), 'utf8').catch(() => {})
+        broke = true
+        break
+      }
+    }
+    if (broke) { tally.failed += 1; continue }
+    if (pieces.length > 1) await rm(progress, { force: true }).catch(() => {})
     await mkdir(sent, { recursive: true })
     await rename(path, join(sent, entry.name))
     tally.sent += 1
-    log.info?.('reply-sent', { name: entry.name, thread: fields.thread ?? null, chars: body.length })
+    log.info?.('reply-sent', {
+      name: entry.name, thread: fields.thread ?? null, chars: body.length,
+      ...(pieces.length > 1 ? { parts: pieces.length } : {}),
+    })
   }
   if (keepDays > 0) await prune(sent, keepDays, log)
   return tally

@@ -142,6 +142,20 @@ describe('a message from a mapped identity', () => {
       expect(source.status().counts).toMatchObject({ accepted: 1, waiting: 0 })
     } finally { await source.stop() }
   })
+
+  it('titles a message without a title field after the mapped actor and the request summary, not the raw file name', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      drop(ops, 'msg--100200300-73.md', message({ from: 'U01ABCDEF', id: '-100200300-73' }, '# 项目启动\n请完成拓扑分析。'))
+      await source.poll()
+      const trigger = context.triggers()[0]!.trigger
+      expect(trigger.title).toBe('alice：项目启动')
+      expect(trigger.title).not.toContain('msg--100200300-73')
+    } finally { await source.stop() }
+  })
 })
 
 describe('a message from an unmapped identity', () => {
