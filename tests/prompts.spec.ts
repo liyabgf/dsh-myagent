@@ -77,3 +77,36 @@ describe('prompt overrides', () => {
     expect(prompts.overrideIsBase('orchestrator')).toBe(false)
   })
 })
+
+describe('saved team skills in PromptConfig (E2)', () => {
+  it('saves, toggles, counts uses, and removes a promoted skill while rejecting built-in collisions', () => {
+    const store = fakeStore()
+    const prompts = new Prompts(store)
+    const saved = prompts.saveSkill({
+      name: 'entity-dedup-merger',
+      title: '多源实体归一化去重器',
+      description: '归一化全半角括号与工商全称并消除重复融资记录',
+      content: '# 多源实体归一化去重器\n\n```python\nprint("ok")\n```',
+      fromTicketId: 'ticket-origin-1',
+    })
+    expect(saved.name).toBe('myagent-entity-dedup-merger')
+    expect(saved.enabled).toBe(true)
+    expect(saved.useCount).toBe(0)
+    expect(prompts.skills()).toHaveLength(1)
+
+    // Increment use count
+    expect(prompts.recordSkillUse('myagent-entity-dedup-merger')?.useCount).toBe(1)
+    // Toggle off and back on
+    expect(prompts.setSkillEnabled('myagent-entity-dedup-merger', false).enabled).toBe(false)
+    expect(prompts.setSkillEnabled('myagent-entity-dedup-merger', true).enabled).toBe(true)
+
+    // Built-in skill names are protected
+    expect(() => prompts.saveSkill({
+      name: 'html-to-text', title: 'x', description: 'y', content: 'z',
+    })).toThrow(/reserved for a built-in/)
+
+    // Remove
+    prompts.removeSkill('myagent-entity-dedup-merger')
+    expect(prompts.skills()).toEqual([])
+  })
+})

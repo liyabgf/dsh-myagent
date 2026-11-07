@@ -67,7 +67,7 @@ export interface ToolsHost {
    * On the host rather than in the tool because it does IO and the Engine does not: the Engine authorizes and locates,
    * the Runtime resolves the path with the traversal guard the panel already uses and reads the file.
    */
-  readArtifact(sourceTicketId: string, targetTicketId: string, path: string): Promise<ArtifactRead>
+  readArtifact(sourceTicketId: string, targetTicketId?: string, path?: string, materialize?: boolean): Promise<ArtifactRead>
   /**
    * Where a Ticket's reports go, or `undefined` when no address was ever written down (S3a).
    *
@@ -81,6 +81,12 @@ export interface ToolsHost {
    * On the host for the same reason as `readArtifact`: it does IO, and the Engine does not.
    */
   replyToRequester(ticketId: string, text: string): { readonly sent: boolean; readonly address?: string; readonly reason?: string }
+  /**
+   * Validate and promote a reusable script produced in `ticketId`'s workspace into a shared virtual DSH skill (E2).
+   */
+  promoteSkill(ticketId: string, input: {
+    name: string; title: string; description: string; script_path: string; usage?: string
+  }): Promise<{ readonly ok: boolean; readonly skill_name?: string; readonly error?: string }>
 }
 
 /**
@@ -113,8 +119,18 @@ function refusal(error: unknown): { error: string; code?: string; next?: string 
 }
 
 /** What a worker gets back when it asks to read another Ticket's artifact: the content, or the refusal. */
+export interface ArtifactCatalogEntry {
+  readonly ticket_id: string
+  readonly title: string
+  readonly stage: string
+  readonly work_id?: string
+  readonly summary?: string
+  readonly artifacts: readonly { readonly path: string; readonly at: string; readonly note?: string }[]
+}
+
 export type ArtifactRead =
-  | { ok: true; content: string; size: number; at: string; note?: string }
+  | { ok: true; content?: string; materialized_to?: string; size: number; at: string; note?: string }
+  | { ok: true; catalog: readonly ArtifactCatalogEntry[] }
   | { ok: false; error: string; code?: string }
 
 // ------------------------------------------------------------------ Worker
@@ -134,13 +150,28 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
       summary: z.string().trim().min(1).max(20000).describe('What you did and what came of it, in plain sentences. Name the files that matter.'),
       question: z.string().trim().max(2000).optional().describe('One concrete question for a person, with the options you see and the one you would pick. Required for blocked.'),
       files: z.array(z.string().trim().max(500)).max(200).optional().describe('Files you produced, relative to your directory. For ready.'),
+      promote_skill: z.object({
+        name: z.string().trim().min(1).max(64).describe('Kebab-case identifier for the reusable tool/craft (e.g. `entity-dedup-merger`).'),
+        title: z.string().trim().min(1).max(80).describe('Plain-language title for non-engineer users on the panel (e.g. `多源实体归一化去重器`).'),
+        description: z.string().trim().min(1).max(300).describe('One-sentence plain-language summary of what problem this craft solves.'),
+        script_path: z.string().trim().min(1).max(500).describe('Relative path to the battle-tested script inside your workspace (must have no hardcoded workspace paths).'),
+        usage: z.string().trim().max(1000).optional().describe('Command-line usage example for future workers (e.g. `python3 script.py IN.json OUT.json`).'),
+      }).strict().optional().describe('Optional: promote a general, battle-tested script you wrote during this Ticket into a shared DSH skill for future Tickets.'),
     }).strict(),
     execute: async args => {
+      let skillPromotion: { ok: boolean; skill_name?: string; error?: string } | undefined
+      if (args.promote_skill !== undefined) {
+        skillPromotion = await host.promoteSkill(ticketId, args.promote_skill)
+        if (!skillPromotion.ok) {
+          return { error: `Skill promotion refused: ${skillPromotion.error}` }
+        }
+      }
       const updated = host.engine.report(ticketId, {
         state: args.state, summary: args.summary, question: args.question, files: args.files,
       }, host.attempt(ticketId))
       return {
         ticket_id: ticketId, state: args.state, stage: ticketStage(updated),
+        ...(skillPromotion?.skill_name === undefined ? {} : { promoted_skill: skillPromotion.skill_name }),
         ended: updated.ended !== undefined,
         // DSH refuses a tool result whose JSON is not lossless, and `{ outcome: undefined }` is exactly that: every
         // non-terminal report came back to the worker as a tool error while the report itself had landed, so the
@@ -154,19 +185,23 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
     },
   }), tool({
     name: 'myagent_read_artifact',
-    description: 'Read a file another Ticket produced, when both of you belong to the same Work. '
-      + 'Only files that Ticket registered as artifacts are readable — not whatever else happens to be in its directory, '
-      + 'because the registry is what a report claimed and what a person can audit. '
-      + 'Ask for the path as it was registered, relative to that Ticket\'s directory. Text only.',
+    description: 'Discover or use registered artifacts produced by other Tickets. '
+      + 'Call with NO arguments (or omit `path`) to browse the catalog of Tickets and their registered artifacts so you can judge which data is useful. '
+      + 'Call with `ticket_id` and `path` to read a specific artifact; set `materialize: true` to copy the file into your own workspace under `inputs/<ticket_id>/<path>` (works for large CSV/JSON/binary files and inside a VM sandbox) while recording bidirectional lineage.',
     schema: z.object({
-      ticket_id: z.string().trim().min(1).describe('The other Ticket, by its full id.'),
-      path: z.string().trim().min(1).max(500).describe('The artifact path, relative to that Ticket\'s directory.'),
+      ticket_id: z.string().trim().min(1).optional().describe('The other Ticket id. Omit to list all accessible Tickets that have registered artifacts.'),
+      path: z.string().trim().min(1).max(500).optional().describe('The artifact path relative to that Ticket\'s directory. Omit to list that Ticket\'s registered artifacts.'),
+      materialize: z.boolean().optional().describe('When true, materializes a safe local copy at `inputs/<ticket_id_short>/<path>` inside your workspace so scripts can process large or binary files directly.'),
     }).strict(),
     execute: async args => {
-      const read = await host.readArtifact(ticketId, args.ticket_id, args.path)
-      return read.ok
-        ? { ticket_id: args.ticket_id, path: args.path, size: read.size, at: read.at, content: read.content }
-        : { error: read.error, ...(read.code === undefined ? {} : { code: read.code }) }
+      const read = await host.readArtifact(ticketId, args.ticket_id, args.path, args.materialize)
+      if (!read.ok) return { error: read.error, ...(read.code === undefined ? {} : { code: read.code }) }
+      if ('catalog' in read) return { count: read.catalog.length, tickets: read.catalog }
+      return {
+        ticket_id: args.ticket_id, path: args.path, size: read.size, at: read.at,
+        ...(read.materialized_to === undefined ? {} : { materialized_to: read.materialized_to }),
+        ...(read.content === undefined ? {} : { content: read.content }),
+      }
     },
   }), tool({
     name: 'myagent_note_ticket',
@@ -206,6 +241,9 @@ export function mainTools(host: ToolsHost): Tool[] {
         report_to_ticket: z.string().trim().optional().describe(
           'Send this Ticket\'s reports to the same place as this other Ticket\'s — the id of the request you are acting on. '
           + 'Omit it and the reports go to the panel only, which is right for work the operator asked for here and wrong for work somebody asked for in a chat room.'),
+        work_id: z.string().trim().min(1).max(64).optional().describe('Attach this Ticket to an existing Work by id.'),
+        work_name: z.string().trim().min(1).max(120).optional().describe('Attach this Ticket to a Work by name (creates the Work automatically if it does not exist yet). Use this to group multi-stage Tickets.'),
+        depends_on: z.array(z.string().trim().min(1).max(64)).max(20).optional().describe('Upstream Ticket ids that must finish (`done`) before this Ticket launches.'),
         sender: z.string().trim().max(120).optional().describe('Who asks, when it is not the operator. Must be on the allowed list.'),
         attachments: z.array(z.string().trim().min(1).max(4000)).max(20).optional()
           .describe('Absolute paths of files this work needs — a document, a spreadsheet, an image the operator attached or named. '
@@ -227,11 +265,16 @@ export function mainTools(host: ToolsHost): Tool[] {
           const result = host.engine.createTicket({
             title: args.title, text: args.request, scope: args.scope, sender: args.sender, attachments: args.attachments,
             ...(replyTo === undefined ? {} : { replyTo }),
+            ...(args.work_id === undefined ? {} : { workId: args.work_id }),
+            ...(args.work_name === undefined ? {} : { workName: args.work_name }),
+            ...(args.depends_on === undefined ? {} : { dependsOn: args.depends_on }),
           })
           const decision = result.disposition.state === 'accepted' || result.disposition.state === 'ignored' || result.disposition.state === 'observed'
             ? host.engine.decisionOf(result.disposition.decisionId) : undefined
           return {
             stored: result.stored, disposition: result.disposition.state, ticket_id: result.ticketId,
+            ...(result.workId === undefined ? {} : { work_id: result.workId }),
+            ...(result.dependsOn === undefined ? {} : { depends_on: result.dependsOn }),
             accept_mode: host.acceptMode(),
             ...(decision === undefined ? {} : { reason: decision.reason, detail: decision.detail }),
             ...(result.disposition.state === 'observed'

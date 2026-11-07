@@ -266,8 +266,42 @@ export const SKILLS = [
  * assert what was registered — otherwise the only way to observe it is to mount the whole bundle, and an assertion
  * nobody can write is an assertion nobody writes.
  */
-export function registerSkills(skills: SkillsPort): () => void {
-  const release = SKILLS.map(skill => skills.register({ ...skill, source: 'runtime' }))
-  // Release in reverse, so a failure partway through leaves the earlier ones registered rather than half-removed.
-  return () => { for (const off of [...release].reverse()) off() }
+export interface DynamicSkillsSource {
+  skills(): readonly { name: string; title: string; description: string; content: string; enabled: boolean }[]
+  onChange(listener: () => void): () => void
+}
+
+export function registerSkills(skills: SkillsPort, dynamic?: DynamicSkillsSource): () => void {
+  const builtInRelease = SKILLS.map(skill => skills.register({ ...skill, source: 'runtime' }))
+  let dynamicRelease: (() => void)[] = []
+  const syncDynamic = (): void => {
+    for (const off of [...dynamicRelease].reverse()) {
+      try { off() } catch { /* ignore */ }
+    }
+    dynamicRelease = []
+    if (dynamic === undefined) return
+    for (const item of dynamic.skills()) {
+      if (!item.enabled) continue
+      try {
+        dynamicRelease.push(skills.register({
+          name: item.name,
+          description: `${item.title} — ${item.description}`,
+          whenToUse: item.description,
+          source: 'runtime',
+          content: item.content,
+        }))
+      } catch {
+        // If a skill name is already registered or invalid, skip without breaking built-in skills.
+      }
+    }
+  }
+  syncDynamic()
+  const unsub = dynamic?.onChange(syncDynamic)
+  return () => {
+    unsub?.()
+    for (const off of [...dynamicRelease].reverse()) {
+      try { off() } catch { /* ignore */ }
+    }
+    for (const off of [...builtInRelease].reverse()) off()
+  }
 }

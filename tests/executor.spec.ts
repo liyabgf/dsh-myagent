@@ -5,7 +5,7 @@
  * A launch is queued rather than run, so every case here is about a queue that outlives the moment it was made in: a
  * slot that is full, a deployment that is paused, an Assignment a retry replaced, a Ticket a person stopped.
  */
-import { mkdirSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { canRetry, key } from '../src/core/index.ts'
@@ -584,6 +584,48 @@ describe('a worker reading another Ticket’s artifact', () => {
       const stranger = runtime.engine.createTicket({ title: '别的工作流里的一张', text: '做点事' })
       expect(await runtime.readArtifact(stranger.ticketId!, first, 'report.md'))
         .toMatchObject({ ok: false, code: 'collaboration_refused' })
+    } finally { await runtime.stop() }
+  })
+})
+
+describe('artifact catalog discovery and workspace materialization for VM compatibility (E1)', () => {
+  it('lists accessible Tickets and their registered artifacts when path is omitted, and materializes a safe local copy under inputs/', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      await one(context, 'producer.md', '产出数据表')
+      await one(context, 'consumer.md', '使用数据表')
+      const sorted = [...runtime.store.tickets.list()].sort((x, y) => x.createdAt.localeCompare(y.createdAt))
+      const producer = sorted[0]!.id
+      const consumer = sorted[1]!.id
+      const prodDir = runtime.store.tickets.get(producer)!.execution!.directory
+      const consDir = runtime.store.tickets.get(consumer)!.execution!.directory
+      mkdirSync(join(prodDir, 'data'), { recursive: true })
+      writeFileSync(join(prodDir, 'data', 'companies.csv'), 'name,round\nDeepSeek,A\n', 'utf8')
+      runtime.engine.report(producer, { state: 'ready', summary: '产出公司表', files: ['data/companies.csv'] })
+
+      // 1. Catalog discovery (no target or no path)
+      const catalog = await runtime.readArtifact(consumer)
+      expect(catalog).toMatchObject({
+        ok: true,
+        catalog: [expect.objectContaining({
+          ticket_id: producer,
+          artifacts: [expect.objectContaining({ path: 'data/companies.csv' })],
+        })],
+      })
+
+      // 2. Materialize into consumer's own `inputs/<shortId>/data/companies.csv`
+      const mat = await runtime.readArtifact(consumer, producer, 'data/companies.csv', true)
+      expect(mat).toMatchObject({
+        ok: true,
+        materialized_to: join('inputs', producer.slice(0, 8), 'data', 'companies.csv'),
+      })
+      const localCopy = join(consDir, 'inputs', producer.slice(0, 8), 'data', 'companies.csv')
+      expect(existsSync(localCopy)).toBe(true)
+      expect(readFileSync(localCopy, 'utf8')).toBe('name,round\nDeepSeek,A\n')
+      // Both sides recorded lineage
+      expect(runtime.engine.citationsOf(producer).citedBy).toContain(consumer)
+      expect(runtime.engine.citationsOf(consumer).cites).toContain(producer)
     } finally { await runtime.stop() }
   })
 })

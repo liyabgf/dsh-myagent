@@ -50,6 +50,8 @@ export interface MainState {
 export interface SessionsHost {
   readonly context: Context
   readonly prompts: Pick<Prompts, 'version' | 'revision'>
+  /** Record when a worker loads a promoted skill (E2). */
+  skillLoaded?(ticketId: string, skillName: string): void
   readonly lifetime: AbortSignal
   /** The id of the operator's front-desk Session. */
   /**
@@ -472,6 +474,12 @@ export class Sessions {
           return `Ticket ${ticket.id} has ended, so this Session's authorization ended with it. New work needs a new Ticket: `
             + 'dispatch it from the panel\'s 派活 tab, ask in the main Session (myagent-main), '
             + 'or drop a request file in the inbox directory.'
+        }
+        if (execution?.name === 'skill' && execution.arguments !== null && typeof execution.arguments === 'object') {
+          const skillName = (execution.arguments as { name?: unknown }).name
+          if (typeof skillName === 'string' && skillName.trim() !== '') {
+            this.host.skillLoaded?.(ticket.id, skillName.trim())
+          }
         }
         return guardWorkerCall(ticket, this.host.masterDir(), execution)
       }))

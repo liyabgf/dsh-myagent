@@ -7230,3 +7230,31 @@ M2 的强形式为什么补不出第二层，如实记：能观测"面板画没�
 
 - 包 1（M1 `resolveRealInside` 软链绕过、M2 `guardWorkerCall` 跨目录绕过）、包 2（M1 `parseRoute` 退回 `defaultChat`、M2 关闭续接仲裁）、包 3（M1 `stopTicket` 退回 `runningAssignment`、M2 `answer` 不推进 `waiting` 状态）：共 6 组变异及 0.8 强形式全部判红，还原哈希核对一致。
 - 完整四步闸门退出码 0（**1014 条测试**），真浏览器验证全绿。
+
+
+## 4.130 面向虚拟机（VM）的受控产物物化、工具资产动态晋升（Skills）、对话追问自动建 Work 与面板双向血缘（0.9.0）
+
+### 1. 对标 `deepseek-ai/dsh-superagent-prototype` 后的拓扑收敛
+
+遍历对比 `dsh-superagent-prototype` 全库（`docs/000-philosophy.md`、`src/app/resources.ts`、`src/app/prompts.ts`、`src/core/model.ts`）与 `myagent`（含 `docs/v2/20-capability-and-asset-analysis.md`）后，确立了**零新领域概念**的双层复利拓扑：
+
+1. **为未来虚拟机（VM）执行环境预留物理边界（E1）**：
+   - 在 `src/app/executor.ts` 抽象 `ExecutionSandbox` 接口（`prepareWorkspace`、`materializeInput`）并提供 `LocalHostSandbox` 默认实现，`src/core/policy.ts` 的 `settings.executor` 新增 `sandbox: 'local' | 'vm'`。
+   - 升级 `myagent_read_artifact`（`src/app/tools.ts` & `src/app/runtime.ts`）：① 当省略 `path` 时返回可访问 Ticket 的《正式产物全景目录（catalog）》，让 LLM 自主挑出有用数据；② 放宽未归类 Ticket（`workId === undefined`）之间的只读产物访问，同时保持不同 `Work` 之间的显式隔离；③ 新增 `materialize: true`，将源产物安全拷贝（绝不用软链）到当前 Ticket 工作区内的 `inputs/<sourceId-8位>/<path>`，既突破 256KB 上下文限制供脚本直接处理，又保证未来切入 VM 沙箱时无需跨出工作区一步。
+   - **引擎层强制双向留痕**：`authorizeArtifactRead` 在事务内向读取方和被读方同步写入 `artifact_read` 事件（同轮去重），`engine.citationsOf(ticketId)` 聚合双向血缘（`citedBy` 与 `cites`）。
+2. **工具资产（手艺）与 `Prompts` 合一存储及动态热注册（E2）**：
+   - 借鉴 `dsh-superagent-prototype/src/app/prompts.ts` 的 `PromptConfig.skills` 设计，在 `src/app/prompts.ts` 中落地 `SavedSkill`（`saveSkill`、`setSkillEnabled`、`removeSkill`、`recordSkillUse`），并通过 `onChange` 与 `src/app/skills.ts` 的 `registerSkills` 联动，实现 DSH 虚拟 Skill 的运行时热注册与热停用。
+   - Worker 在 `myagent_report` 中通过 `promote_skill` 申报实战跑通的通用脚本时，`runtime.promoteSkill` 执行硬性质检（`resolveRealInside` + `lstat` 禁软链、≤ 64KB、**严禁硬编码当前 Ticket 的私有目录名**），通过后封装为虚拟 Skill 并在原 Ticket 记录 `skill_promoted` 事件。
+   - 当其他 Ticket 的 Worker 调用 `skill` 工具加载该手艺时，`sessions.ts` 的观察钩子自动递增 `useCount` 并调用 `engine.skillUsed` 在双方记录 `skill_used` 双向血缘。
+3. **对话 APP 追问已完成任务自动建 `Work` 续接与多阶段 `depends_on` 编排（E3）**：
+   - `engine.createTicket` 与 `myagent_create_ticket` 新增 `workId`、`workName`（不存在则自动创建同名 `Work`）和 `dependsOn`（同一事务内调用 `dependOn` 建边并自动继承上游 `workId`）。
+   - `ChatSource` 收到带 `reply-to-ticket` 的追问且目标 Ticket 已完成（`done`）时，调用 `engine.ensureFollowupWork` 自动为原 Ticket 与新追问绑定同一个 `Work` 簇，并在 `executor.taskText` 中自动注入同 `Work` 伙伴及其产物清单。
+4. **面板易用性改造并 100% 保留蓝白清爽 UI 风格（E4）**：
+   - 任务详情页 `#d-mentions`（`.mentions-box` 蓝底横幅）合并引擎级 `citedBy` 与文本引用，并新增反向的 `借力来源（cites）` 行，双向均可一键点击跳转。
+   - 「提示词」页顶部新增 `#skills-card`（「已掌握的手艺（Skills）」），展示内置常驻手艺与任务沉淀的动态手艺（含来源任务跳转、复用次数胶囊、暂停/启用与两步确认忘掉）。
+   - 修正 `scripts/verify-browser.mjs` 中 U20/U21 对线上 `0 条工作` 时的空态 `<li>` 判断（断规则不断数据形状，第六次同类校准）。
+
+### 2. 变异检验与闸门结果（E5）
+
+- **8 组变异 + 0.8 强形式全部判红**（E1-M1/M2、E2-M1/M2、E3-M1/M2、E4-M1/M2），还原后 SHA-256 哈希全部核对一致。
+- 完整四步闸门退出码 `0`（**1022 条测试全部通过**），真浏览器 `verify-browser.mjs` **84/84 全绿**（0 页面异常、0 控制台错误、0 失败请求）。

@@ -76,10 +76,10 @@ This bundle contributes skills of its own, and they are named `myagent-*` so you
   timeouts that two real runs survived with, and the curl line that produced them. Load it **before** writing a
   fetching loop — the numbers in it were measured, and guessing them is how a run gets blocked at page forty.
 
-So: check first, and write only what is genuinely specific to this Ticket. When you do write something
-generic — extracting text from a format, fetching politely under a rate limit, building a registry of where
-each fact came from — say so in your report, because the next Ticket cannot see your directory and the only
-way it ever benefits is if a person promotes your script into a skill.
+So: check first, and write only what is genuinely specific to this Ticket.
+
+- **Discovering and reusing data from other Tickets:** Call `myagent_read_artifact` with no arguments to browse the catalog of Tickets and their registered artifacts. When an artifact is useful (especially large CSV/JSON tables), call `myagent_read_artifact` with `materialize: true` to copy it into `inputs/<ticket_id>/<path>` inside your workspace. The system automatically records bidirectional lineage on both Tickets.
+- **Promoting a reusable craft (skill) you built:** When you write a general, self-contained script (with CLI arguments rather than hardcoded workspace paths) and verify it in this run, pass `promote_skill` in your `myagent_report(state: 'ready')` call so the system registers it as a virtual DSH skill for future Tickets.
 
 ## If you delegate
 

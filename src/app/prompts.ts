@@ -40,10 +40,34 @@ export function promptFile(role: PromptRole): string {
 }
 
 /** The operator's stored overrides, keyed by role. */
+export const SKILL_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/**
+ * A reusable tool/skill asset distilled from a Ticket's work and stored alongside the prompt configuration (E2,
+ * modelled after `dsh-superagent-prototype`'s `PromptConfig.skills`).
+ */
+export interface SavedSkill {
+  /** Kebab-case identifier, registered in DSH as `myagent-skill-<name>` (or `<name>` when already prefixed). */
+  readonly name: string
+  /** Plain-language title shown to non-engineer users on the panel. */
+  readonly title: string
+  /** One-sentence plain-language summary of what this craft does. */
+  readonly description: string
+  /** Full Markdown body (usage + self-contained script) registered as a virtual DSH skill. */
+  readonly content: string
+  /** The Ticket that created or last updated this skill, for provenance and backlinks. */
+  readonly fromTicketId?: string
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly enabled: boolean
+  readonly useCount: number
+}
+
 export interface PromptConfig {
   worker?: string
   orchestrator?: string
   triage?: string
+  skills?: Record<string, SavedSkill>
 }
 
 /** Thrown when an override cannot be stored, with the reason the panel shows. */
@@ -90,8 +114,108 @@ export class Prompts {
    * An empty string removes an override, so the role returns to its built-in text.
    * @throws PromptConflict when an override is not a string or is too long.
    */
+  private readonly listeners = new Set<() => void>()
+
+  /** Subscribe to skill/prompt changes so runtime DSH virtual skills re-sync immediately. */
+  onChange(listener: () => void): () => void {
+    this.listeners.add(listener)
+    return () => { this.listeners.delete(listener) }
+  }
+
+  private notifyChange(): void {
+    for (const listener of [...this.listeners]) {
+      try { listener() } catch { /* listener errors must not break persistence */ }
+    }
+  }
+
+  /** All saved team skills, newest first. */
+  skills(): SavedSkill[] {
+    const map = this.config().skills ?? {}
+    return Object.values(map).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }
+
+  /** Save or update a promoted skill in `PromptConfig.skills` and bump revision. */
+  saveSkill(input: {
+    name: string; title: string; description: string; content: string; fromTicketId?: string; enabled?: boolean
+  }): SavedSkill {
+    const rawName = input.name.trim().toLowerCase().replace(/^myagent-/, '')
+    if (!SKILL_SLUG.test(rawName)) {
+      throw new PromptConflict(`Skill name "${input.name}" must be lower-case kebab-case (letters, digits, hyphens)`)
+    }
+    const fullName = `myagent-${rawName}`
+    if (['myagent-html-to-text', 'myagent-source-registry', 'myagent-polite-fetch'].includes(fullName)) {
+      throw new PromptConflict(`Skill name "${fullName}" is reserved for a built-in myagent skill`)
+    }
+    const title = input.title.trim()
+    const description = input.description.trim()
+    const content = input.content.trim()
+    if (!title || !description || !content) {
+      throw new PromptConflict('Skill title, description and content are required')
+    }
+    if (content.length > PROMPT_MAX_CHARS) {
+      throw new PromptConflict(`Skill content is longer than ${PROMPT_MAX_CHARS} characters`)
+    }
+    const now = new Date().toISOString()
+    const current = this.config()
+    const existing = current.skills?.[fullName]
+    const saved: SavedSkill = {
+      name: fullName,
+      title,
+      description,
+      content,
+      ...(input.fromTicketId !== undefined ? { fromTicketId: input.fromTicketId } : existing?.fromTicketId !== undefined ? { fromTicketId: existing.fromTicketId } : {}),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      enabled: input.enabled ?? existing?.enabled ?? true,
+      useCount: existing?.useCount ?? 0,
+    }
+    const nextSkills = { ...(current.skills ?? {}), [fullName]: saved }
+    const next: PromptConfig = { ...current, skills: nextSkills }
+    this.store.set(KV.promptsConfig, next)
+    this.store.set(KV.promptsRevision, this.revision() + 1)
+    this.notifyChange()
+    return saved
+  }
+
+  /** Enable or pause a saved skill from the panel. */
+  setSkillEnabled(name: string, enabled: boolean): SavedSkill {
+    const current = this.config()
+    const existing = current.skills?.[name]
+    if (existing === undefined) throw new PromptConflict(`No saved skill named ${name}`)
+    const updated: SavedSkill = { ...existing, enabled, updatedAt: new Date().toISOString() }
+    this.store.set(KV.promptsConfig, { ...current, skills: { ...current.skills, [name]: updated } })
+    this.store.set(KV.promptsRevision, this.revision() + 1)
+    this.notifyChange()
+    return updated
+  }
+
+  /** Remove a saved skill from the library. */
+  removeSkill(name: string): void {
+    const current = this.config()
+    if (current.skills?.[name] === undefined) throw new PromptConflict(`No saved skill named ${name}`)
+    const nextSkills = { ...current.skills }
+    delete nextSkills[name]
+    const next: PromptConfig = { ...current }
+    if (Object.keys(nextSkills).length === 0) delete next.skills
+    else next.skills = nextSkills
+    this.store.set(KV.promptsConfig, next)
+    this.store.set(KV.promptsRevision, this.revision() + 1)
+    this.notifyChange()
+  }
+
+  /** Increment the use counter of a saved skill and return its record when it is a saved skill. */
+  recordSkillUse(name: string): SavedSkill | undefined {
+    const current = this.config()
+    const existing = current.skills?.[name]
+    if (existing === undefined) return undefined
+    const updated: SavedSkill = { ...existing, useCount: existing.useCount + 1 }
+    this.store.set(KV.promptsConfig, { ...current, skills: { ...current.skills, [name]: updated } })
+    return updated
+  }
+
   save(config: PromptConfig): number {
     for (const [role, text] of Object.entries(config)) {
+      if (role === 'skills') continue
       if (!PROMPT_ROLES.includes(role as PromptRole)) throw new PromptConflict(`${role} is not a prompt role`)
       if (text !== undefined && typeof text !== 'string') throw new PromptConflict(`${role} must be a string`)
       if (typeof text === 'string' && text.length > PROMPT_MAX_CHARS) {
@@ -100,12 +224,14 @@ export class Prompts {
     }
     const next: PromptConfig = { ...this.config() }
     for (const [role, text] of Object.entries(config)) {
-      if (text === undefined || text.trim() === '') delete next[role as PromptRole]
-      else next[role as PromptRole] = text
+      if (role === 'skills') continue
+      if (text === undefined || (typeof text === 'string' && text.trim() === '')) delete next[role as PromptRole]
+      else next[role as PromptRole] = text as string
     }
     const revision = this.revision() + 1
     this.store.set(KV.promptsConfig, next)
     this.store.set(KV.promptsRevision, revision)
+    this.notifyChange()
     return revision
   }
 

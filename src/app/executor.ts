@@ -7,7 +7,7 @@
  * retried — a half-made directory would look prepared to the next attempt.
  */
 import { copyFile, lstat, mkdir, realpath } from 'node:fs/promises'
-import { basename, dirname, join, resolve, sep } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
@@ -88,7 +88,42 @@ export type InputPayload = LaunchPayload
 
 const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
+/**
+ * Execution environment boundary (E1): abstracts workspace preparation, cross-Ticket input materialization, and
+ * command execution so the domain and tools stay identical when switching from the local host directory
+ * (`LocalHostSandbox`) to an isolated virtual machine (`VmSandbox`).
+ */
+export interface ExecutionSandbox {
+  readonly kind: 'local' | 'vm'
+  prepareWorkspace(directory: string): Promise<void>
+  /**
+   * Materialize a verified source file into a Ticket's own workspace at `inputs/<sourceTicketShortId>/<relativeDest>`.
+   * Copies bytes rather than symlinking so the workspace is self-contained inside a VM mount and immune to S4 deletion
+   * of either Ticket.
+   */
+  materializeInput(workspaceDir: string, sourceFile: string, sourceTicketId: string, relativeDest: string): Promise<string>
+}
+
+export class LocalHostSandbox implements ExecutionSandbox {
+  readonly kind = 'local' as const
+  async prepareWorkspace(directory: string): Promise<void> {
+    await mkdir(directory, { recursive: true })
+  }
+  async materializeInput(workspaceDir: string, sourceFile: string, sourceTicketId: string, relativeDest: string): Promise<string> {
+    const cleanRel = relativeDest.trim().replace(/^\.+\//, '').replace(/^\/+/, '')
+    const inputsRoot = resolve(workspaceDir, 'inputs', sourceTicketId.slice(0, 8))
+    const target = resolve(inputsRoot, cleanRel)
+    if (target !== inputsRoot && !target.startsWith(inputsRoot + sep)) {
+      throw new Error(`Refused to materialize outside inputs/: ${relativeDest}`)
+    }
+    await mkdir(dirname(target), { recursive: true })
+    await copyFile(sourceFile, target)
+    return relative(resolve(workspaceDir), target)
+  }
+}
+
 export class DshExecutor implements Executor {
+  readonly sandbox: ExecutionSandbox = new LocalHostSandbox()
   private healthEntry?: HealthEntry
   private get health(): HealthEntry { return this.healthEntry ??= this.host.health.entry('executor') }
 
@@ -315,7 +350,7 @@ export class DshExecutor implements Executor {
   private async prepareDirectory(ticket: Ticket, settings: Settings, runPrepare: boolean): Promise<Ticket> {
     const execution = ticket.execution
     if (execution === undefined) throw new PrepareFailed(`Ticket ${ticket.id} has no directory`)
-    await mkdir(execution.directory, { recursive: true })
+    await this.sandbox.prepareWorkspace(execution.directory)
     await this.copyAttachments(ticket, execution.directory)
     const command = settings.executor.prepare.trim()
     if (runPrepare && command !== '') {
@@ -425,6 +460,16 @@ export class DshExecutor implements Executor {
         if (work.scope !== undefined) {
           lines.push(`How this Work usually stays inside its bounds: ${work.scope}`,
             'This is context, not authorization. Your authorization is the scope above, and it does not widen because this Work says something broader.')
+        }
+        const peers = this.host.engine.ticketsOfWork(work.id).filter(item => item.id !== ticket.id && item.deleted === undefined)
+        if (peers.length > 0) {
+          lines.push('', '### Other Tickets in this Work (use `myagent_read_artifact` with `materialize: true` to import their registered artifacts)')
+          for (const peer of peers) {
+            const arts = this.host.store.artifacts.list(peer.id).map(a => a.path)
+            const artText = arts.length > 0 ? ` — artifacts: ${arts.join(', ')}` : ''
+            const sumText = peer.result?.summary ? ` — summary: ${peer.result.summary.slice(0, 160).replace(/\s+/g, ' ')}` : ''
+            lines.push(`- Ticket ${peer.id} 「${peer.title}」${artText}${sumText}`)
+          }
         }
       }
     }

@@ -5347,6 +5347,86 @@ describe('分诊任务在面板上看得出来（S3b）', () => {
   })
 })
 
+describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）', () => {
+  it('即使后续任务的摘要没有提原任务名字，只要引擎记录了 citedBy / cites，#d-mentions 蓝框就双向渲染并可点开', async () => {
+    const t1 = 'b356ac649bc46a144c38f9b4b6619175'
+    const t2 = '19dd5c9ca7bce11fb2c9f7a2b04728b0'
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 2, tickets: [
+        listed({ id: t1, title: '搜集信息', stage: 'done', summary: '没有任何提及' }),
+        listed({ id: t2, title: '信息比对', stage: 'done', summary: '同样没有任何提及' }),
+      ] },
+      [`GET tickets/${t1}`]: ticket({ id: t1, title: '搜集信息', stage: 'done', citedBy: [t2], cites: [] }),
+      [`GET tickets/${t2}`]: ticket({ id: t2, title: '信息比对', stage: 'done', citedBy: [], cites: [t1] }),
+    }))
+    click(button('任务'))
+    await settle()
+    click(all('#tickets li')[0]!)
+    await settle()
+    const citedByRow = document.querySelector('#d-mentions-cited-by')
+    expect(citedByRow).not.toBeNull()
+    expect(citedByRow?.textContent).toContain('关联引用')
+    expect(citedByRow?.textContent).toContain('信息比对（19dd5c9c） · 打开')
+
+    // 点按钮跳转到引用方 t2，看到反向的「借力来源」
+    click(button('信息比对（19dd5c9c） · 打开', one('#d-mentions')))
+    await settle()
+    const citesRow = document.querySelector('#d-mentions-cites')
+    expect(citesRow).not.toBeNull()
+    expect(citesRow?.textContent).toContain('借力来源')
+    expect(citesRow?.textContent).toContain('搜集信息（b356ac64） · 打开')
+  })
+
+  it('在「提示词」页展示内置与任务沉淀的手艺（Skills），支持暂停与两步确认忘掉', async () => {
+    let skillEnabled = true
+    let deleted = false
+    const { sent } = await mount(routes({
+      'GET prompts': () => ({
+        revision: 2, maxChars: 20_000,
+        roles: [
+          { role: 'worker', current: '自定义的 worker 文本', base: '内置的 worker 文本', override: '自定义的 worker 文本', pinsBase: false },
+          { role: 'orchestrator', current: '内置的 orchestrator 文本', base: '内置的 orchestrator 文本', override: undefined, pinsBase: false },
+        ],
+        skills: deleted ? [] : [{
+          name: 'myagent-dedup-merger',
+          title: '多源实体归一化去重器',
+          description: '消除多源融资记录的全半角与别名重复',
+          fromTicketId: '68172c094da50125a6fbbc642e56006b',
+          enabled: skillEnabled,
+          useCount: 3,
+        }],
+      }),
+      'POST prompts/skills/myagent-dedup-merger/toggle': (call: { body?: { enabled?: boolean } }) => {
+        skillEnabled = Boolean(call.body?.enabled)
+        return { revision: 4 }
+      },
+      'POST prompts/skills/myagent-dedup-merger/delete': () => {
+        deleted = true
+        return { revision: 5, deleted: 'myagent-dedup-merger' }
+      },
+    }))
+    click(button('提示词'))
+    await settle()
+    const listText = one('#skills-list').textContent ?? ''
+    expect(listText).toContain('网页转干净正文')
+    expect(listText).toContain('多源实体归一化去重器')
+    expect(listText).toContain('已复用 3 次')
+
+    click(one('#skill-toggle-myagent-dedup-merger'))
+    await settle()
+    expect(sent('POST prompts/skills/myagent-dedup-merger/toggle').at(-1)?.body).toEqual({ enabled: false })
+    expect(one('#skill-card-myagent-dedup-merger').textContent).toContain('已暂停')
+
+    click(one('#skill-del-myagent-dedup-merger'))
+    await settle()
+    expect(one('#skill-card-myagent-dedup-merger').textContent).toContain('确定忘掉这项手艺？')
+    click(one('#skill-del-confirm-myagent-dedup-merger'))
+    await settle()
+    expect(sent('POST prompts/skills/myagent-dedup-merger/delete')).toHaveLength(1)
+    expect(document.querySelector('#skill-card-myagent-dedup-merger')).toBeNull()
+  })
+})
+
 describe('bounded box-model CSS, cross-Ticket citation backlinks (F6), deep links, and quick settings', () => {
   it('declares an icon, so the browser does not probe /favicon.ico and 404 on every page load', () => {
     // Asserted at the source level because jsdom makes no favicon request at all — the 404 only exists in a real

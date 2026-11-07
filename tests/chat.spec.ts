@@ -192,6 +192,32 @@ describe('a message from a mapped identity', () => {
       ])
     } finally { await source.stop() }
   })
+
+  it('automatically groups a reply to a completed (done) Ticket into a shared Work cluster (E3)', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      drop(ops, 'done-1.md', message({ from: 'U01ABCDEF', id: 'm-10', thread: 'group:-100200', title: '李杨：AI 资本第一期' }, '完成第一期调研。'))
+      await source.poll()
+      const first = context.tickets()[0]!
+      context.host.engine.report(first.id, { state: 'ready', summary: '第一期已完成', files: ['report1.md'] })
+      expect(context.host.engine.ticket(first.id)!.ended?.outcome).toBe('done')
+
+      // Follow-up replying to the completed Ticket
+      drop(ops, 'done-2.md', message({
+        from: 'U01ABCDEF', id: 'm-11', thread: 'group:-100200', 'reply-to-ticket': first.id,
+      }, '在第一期基础上深入分析算力折股。'))
+      await source.poll()
+      expect(context.tickets()).toHaveLength(2)
+      const t1 = context.host.engine.ticket(first.id)!
+      const t2 = context.tickets().find(t => t.id !== first.id)!
+      expect(t1.workId).toBeDefined()
+      expect(t2.workId).toBe(t1.workId)
+      expect(t2.workSeq).toBe(2)
+    } finally { await source.stop() }
+  })
 })
 
 describe('a message from an unmapped identity', () => {

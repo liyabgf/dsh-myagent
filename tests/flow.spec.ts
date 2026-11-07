@@ -5,7 +5,7 @@
  *
  * Nothing here touches a live host. A bundle earns an installation by passing this, not by being installed.
  */
-import { existsSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs'
+import { mkdirSync, existsSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Config } from '../src/deployment.ts'
@@ -544,6 +544,46 @@ describe('cross-Ticket workspace isolation guard (Pkg 1)', () => {
       expect(guard({ name: 'glob', arguments: { path: '..' } })).toContain('outside this Ticket\'s own directory')
       expect(guard({ name: 'bash', arguments: { command: 'ln -s ../group-68172c09/raw raw' } })).toContain('symbolic links')
       expect(guard({ name: 'bash', arguments: { command: 'ls -la ..' } })).toContain('outside this Ticket\'s directory')
+    } finally { await runtime.stop() }
+  })
+})
+
+describe('tool asset promotion and skill reuse lineage (E2)', () => {
+  it('validates a worker script (refusing hardcoded private paths), promotes it to a virtual skill, and records bidirectional lineage when another Ticket loads it', async () => {
+    const { host, runtime, inbox } = await deployment()
+    try {
+      drop(inbox, 'builder.md', '写一个通用去重脚本。')
+      drop(inbox, 'user.md', '复用去重脚本。')
+      await settle(runtime)
+      const sorted = [...runtime.store.tickets.list()].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      const builder = sorted[0]!
+      const consumer = sorted[1]!
+      const dir = builder.execution!.directory
+      mkdirSync(dir, { recursive: true })
+
+      // 1. Hardcoded private directory path is refused by the quality gate
+      writeFileSync(join(dir, 'bad.py'), `open('${dir}/raw.json')\n`, 'utf8')
+      const badRes = await runtime.promoteSkill(builder.id, {
+        name: 'dedup-merger', title: '实体去重器', description: '去重多源JSON', script_path: 'bad.py',
+      })
+      expect(badRes.ok).toBe(false)
+      expect(badRes.error).toContain('hardcodes this Ticket')
+
+      // 2. Clean parameterized script passes and is saved in Prompts
+      writeFileSync(join(dir, 'dedup.py'), 'import sys\nprint(sys.argv[1:])\n', 'utf8')
+      const goodRes = await runtime.promoteSkill(builder.id, {
+        name: 'dedup-merger', title: '实体去重器', description: '去重多源JSON', script_path: 'dedup.py', usage: 'python3 dedup.py in.json out.json',
+      })
+      expect(goodRes).toEqual({ ok: true, skill_name: 'myagent-dedup-merger' })
+      expect(runtime.prompts.skills().map(s => s.name)).toContain('myagent-dedup-merger')
+      expect(runtime.store.events.list(builder.id).some(e => e.type === 'skill_promoted')).toBe(true)
+
+      // 3. Consumer worker invokes the `skill` tool -> useCount increments & bidirectional lineage is recorded
+      const guard = host.guardOf(workerId(consumer.id))!
+      expect(guard({ name: 'skill', arguments: { name: 'myagent-dedup-merger' } })).toBeUndefined()
+      expect(runtime.prompts.skills().find(s => s.name === 'myagent-dedup-merger')!.useCount).toBe(1)
+      expect(runtime.engine.citationsOf(builder.id).citedBy).toContain(consumer.id)
+      expect(runtime.engine.citationsOf(consumer.id).cites).toContain(builder.id)
     } finally { await runtime.stop() }
   })
 })

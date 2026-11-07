@@ -607,6 +607,11 @@
   </div>
 
   <div id="tab-prompts" class="hidden">
+    <section class="card" id="skills-card" style="margin-bottom:14px">
+      <h2>已掌握的手艺（Skills）</h2>
+      <p class="muted">智能体在实战任务中沉淀并验证通过的通用本事。新任务启动时会自动装配启用中的手艺，无需手动配置路径。</p>
+      <div id="skills-list" class="stack"></div>
+    </section>
     <section class="card">
       <h2>提示词</h2>
       <p class="muted">留空即用内置文本。保存后，下一轮就绑定到在跑的 Session，不需要重启。</p>
@@ -1340,21 +1345,38 @@
         }, '归入')))
     }
 
-    // F6: Cross-Ticket citation & late-correction backlink. Scans ticketIndex for other Tickets whose summary or title
-    // mentions this Ticket's short id (8 chars) or full id, or whose title pairs with this Ticket's title.
+    // F6 + E1/E4: Cross-Ticket citation & bidirectional engine lineage (`artifact_read`, `skill_used`, `input`).
+    // Merges engine-recorded `ticket.citedBy` with text-matched citations, and also renders `ticket.cites` (upstream
+    // Tickets whose artifacts or skills this Ticket used) inside the same `.mentions-box` banner.
     const shortId = ticket.id.slice(0, 8)
-    const citedBy = [...ticketIndex.values()].filter(other => {
+    const textCitedBy = [...ticketIndex.values()].filter(other => {
       if (other.id === ticket.id) return false
       const hay = `${other.title || ''} ${other.summary || ''}`
       return hay.includes(shortId) || (ticket.title && ticket.title.length >= 3 && hay.includes(`（${ticket.title}`)) || (ticket.title && hay.includes(`${ticket.title} / ${shortId}`))
     })
-    if (citedBy.length > 0) {
-      node.append(el('div', { id: 'd-mentions', class: 'mentions-box' },
-        el('div', { class: 'row' },
-          el('b', {}, `关联引用（${citedBy.length} 张后续 Ticket 在摘要或产物备注中引用了本 Ticket）：`),
-          ...citedBy.map(other => el('button', {
+    const citedByIds = new Set([...(ticket.citedBy || []), ...textCitedBy.map(item => item.id)])
+    citedByIds.delete(ticket.id)
+    const citedByList = [...citedByIds].map(id => ticketIndex.get(id) || { id, title: `任务 ${id.slice(0, 8)}` })
+    const citesIds = new Set(ticket.cites || [])
+    citesIds.delete(ticket.id)
+    const citesList = [...citesIds].map(id => ticketIndex.get(id) || { id, title: `任务 ${id.slice(0, 8)}` })
+    if (citedByList.length > 0 || citesList.length > 0) {
+      const mentionRows = []
+      if (citedByList.length > 0) {
+        mentionRows.push(el('div', { class: 'row', id: 'd-mentions-cited-by' },
+          el('b', {}, `关联引用（${citedByList.length} 张后续 Ticket 在摘要或产物备注中引用了本 Ticket）：`),
+          ...citedByList.map(other => el('button', {
             class: 'btn small', onclick: () => { show('tickets'); void open(other.id) },
-          }, `${other.title}（${other.id.slice(0, 8)}） · 打开`)))))
+          }, `${other.title}（${other.id.slice(0, 8)}） · 打开`))))
+      }
+      if (citesList.length > 0) {
+        mentionRows.push(el('div', { class: 'row', id: 'd-mentions-cites', style: citedByList.length > 0 ? 'margin-top:6px' : undefined },
+          el('b', {}, `借力来源（本任务复用了 ${citesList.length} 张前序任务的成果或手艺）：`),
+          ...citesList.map(other => el('button', {
+            class: 'btn small', onclick: () => { show('tickets'); void open(other.id) },
+          }, `${other.title}（${other.id.slice(0, 8)}） · 打开`))))
+      }
+      node.append(el('div', { id: 'd-mentions', class: 'mentions-box' }, ...mentionRows))
     }
     node.append(el('details', { class: 'tech' },
       el('summary', {}, '技术细节（授权、来源 Trigger、范围）'),
@@ -3461,7 +3483,82 @@ WantedBy=default.target
         + (pinned.length > 0 ? ` · 注意：${pinned.join('/')} 的覆盖与内置文本相同，会把该角色钉在当前版本上` : '')
       $('prompt-error').textContent = ''
       renderPromptMeta()
+      renderSkillsList(body.skills || [])
     } catch (error) { $('prompt-error').textContent = error.message }
+  }
+
+  const BUILTIN_SKILLS_VIEW = [
+    { name: 'myagent-html-to-text', title: '网页转干净正文', description: '把抓取的 HTML 网页转为保留表格结构的纯文本（零第三方依赖）', builtIn: true },
+    { name: 'myagent-source-registry', title: '可审计信源登记表', description: '边抓取边登记最终 URL、状态码与本地存档，自动生成一二级信源核查表', builtIn: true },
+    { name: 'myagent-polite-fetch', title: '礼貌批量抓取器', description: '带限速、重试与双层超时的批量网页抓取方法，防止被站点封禁或中途丢记录', builtIn: true },
+  ]
+
+  let confirmDeleteSkill = null
+  const renderSkillsList = savedSkills => {
+    const box = $('skills-list')
+    if (box === null) return
+    box.replaceChildren()
+    const items = [
+      ...BUILTIN_SKILLS_VIEW.map(item => ({ ...item, enabled: true, useCount: undefined })),
+      ...(savedSkills || []).map(item => ({ ...item, builtIn: false })),
+    ]
+    for (const skill of items) {
+      const originEntry = skill.fromTicketId ? ticketIndex.get(skill.fromTicketId) : undefined
+      const rowActions = []
+      if (skill.fromTicketId) {
+        rowActions.push(el('button', {
+          class: 'btn small',
+          onclick: () => { show('tickets'); void open(skill.fromTicketId) },
+        }, `来自：${originEntry ? originEntry.title : skill.fromTicketId.slice(0, 8)} · 打开`))
+      }
+      if (!skill.builtIn) {
+        rowActions.push(el('button', {
+          class: 'btn small',
+          id: `skill-toggle-${skill.name}`,
+          onclick: async () => {
+            try {
+              await post(`prompts/skills/${encodeURIComponent(skill.name)}/toggle`, { enabled: !skill.enabled })
+              toast(skill.enabled ? `已暂停手艺「${skill.title}」` : `已启用手艺「${skill.title}」`)
+              await loadPrompts()
+            } catch (error) { toast(error.message) }
+          },
+        }, skill.enabled ? '暂停使用' : '启用'))
+        if (confirmDeleteSkill === skill.name) {
+          rowActions.push(
+            el('span', { class: 'muted', style: 'font-size:12px' }, '确定忘掉这项手艺？'),
+            el('button', {
+              class: 'btn small danger',
+              id: `skill-del-confirm-${skill.name}`,
+              onclick: async () => {
+                confirmDeleteSkill = null
+                try {
+                  await post(`prompts/skills/${encodeURIComponent(skill.name)}/delete`, {})
+                  toast(`已忘掉手艺「${skill.title}」`)
+                  await loadPrompts()
+                } catch (error) { toast(error.message) }
+              },
+            }, '确认删除'),
+            el('button', {
+              class: 'btn small',
+              onclick: () => { confirmDeleteSkill = null; renderSkillsList(savedSkills) },
+            }, '取消'),
+          )
+        } else {
+          rowActions.push(el('button', {
+            class: 'btn small danger',
+            id: `skill-del-${skill.name}`,
+            onclick: () => { confirmDeleteSkill = skill.name; renderSkillsList(savedSkills) },
+          }, '忘掉'))
+        }
+      }
+      box.append(el('div', { class: 'prompt-card', id: `skill-card-${skill.name}` },
+        el('div', { class: 'row' },
+          el('b', {}, skill.title),
+          el('span', { class: `stage ${skill.enabled ? 'done' : 'stopped'}` }, skill.builtIn ? '内置常驻' : skill.enabled ? '已启用' : '已暂停'),
+          skill.useCount !== undefined ? el('span', { class: 'chip' }, `已复用 ${skill.useCount} 次`) : null,
+          el('span', { style: 'margin-left:auto;display:flex;gap:6px;align-items:center' }, ...rowActions)),
+        el('p', { class: 'muted', style: 'font-size:12px;margin:4px 0 0' }, skill.description)))
+    }
   }
 
   /**

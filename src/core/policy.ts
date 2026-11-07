@@ -96,6 +96,8 @@ export const SettingsSchema = z.object({
     prepare: z.string().max(4000).default(''),
     /** Model for worker Sessions as `provider/model`; empty uses the profile's default. */
     model: z.string().max(200).default(''),
+    /** Execution environment boundary (`local` host workspace or isolated `vm` sandbox). */
+    sandbox: z.enum(['local', 'vm']).default('local'),
   }).strict().prefault({}),
   sources: z.object({
     cron: z.object({

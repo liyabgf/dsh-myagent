@@ -365,6 +365,7 @@ function table(host: HttpHost): readonly Route[] {
         // What the worker claimed it produced, one entry per normalized path, with the report that claimed it. The
         // `files` route answers "what is on disk right now"; this answers "what did this Ticket say it made".
         artifacts: host.artifacts(params.id!),
+        ...host.engine.citationsOf(params.id!),
         /**
          * Where this Ticket's answer goes back to, read from the Trigger that asked — the only place an address was
          * ever written down (contract §3.3). Resolved here rather than in `ticketView` because a view computes what one
@@ -629,7 +630,17 @@ function table(host: HttpHost): readonly Route[] {
         // An override that only repeats the shipped text pins the role to it, which the panel marks.
         pinsBase: host.prompts.overrideIsBase(role),
       })),
+      skills: host.prompts.skills(),
     })),
+    route('POST', 'prompts/skills/:name/toggle', async ({ params, body }) => {
+      const parsed = z.object({ enabled: z.boolean() }).strict().parse(await body())
+      const skill = host.prompts.setSkillEnabled(params.name!, parsed.enabled)
+      return { revision: host.prompts.revision(), skill }
+    }),
+    route('POST', 'prompts/skills/:name/delete', ({ params }) => {
+      host.prompts.removeSkill(params.name!)
+      return { revision: host.prompts.revision(), deleted: params.name! }
+    }),
     route('PUT', 'prompts', async ({ body }) => {
       const request = BodySchemas.prompts.parse(await body(512 * 1024))
       const revision = host.prompts.save(request)
@@ -671,7 +682,7 @@ const BodySchemas = {
   }).strict(),
   text: z.object({ text: z.string().trim().min(1).max(20_000) }).strict(),
   reason: z.object({ reason: z.string().trim().max(500).optional() }).strict(),
-  prompts: z.object({ worker: z.string().max(1_000_000).optional(), orchestrator: z.string().max(1_000_000).optional() }).strict(),
+  prompts: z.object({ worker: z.string().max(1_000_000).optional(), orchestrator: z.string().max(1_000_000).optional(), triage: z.string().max(1_000_000).optional() }).strict(),
   project: z.object({ name: z.string().trim().min(1).max(120), note: z.string().trim().max(2_000).optional() }).strict(),
   work: z.object({
     name: z.string().trim().min(1).max(120),

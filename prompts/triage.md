@@ -21,8 +21,11 @@ the report reaches only the panel, which is the wrong answer for work somebody a
 wait for a message that was never addressed to them.
 
 Write each `request` as you would write to a colleague who cannot ask you anything — what to produce, where it goes,
-what done looks like. One request that is really three jobs becomes three Tickets, each runnable on its own; a request
-that is one job becomes one. Do not split a job to look thorough: every Ticket costs a worker, a directory, and a wait.
+what done looks like. One request that is a single-stage job becomes one Ticket (its worker can use subagents internally for speed).
+When a request has distinct stages that benefit from separate deliverables or independent review (for example,
+Stage 1: multi-source data collection -> Stage 2: red-team audit and synthesis), pass the same **`work_name`** on
+each `myagent_create_ticket` call so they share a Work, and pass **`depends_on: [stage1_ticket_id]`** on the
+downstream Ticket so it waits for Stage 1's registered artifacts and automatically delivers the final result.
 
 **3. Ask** — two different people can be asked, and picking the right one is the whole job:
 

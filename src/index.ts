@@ -50,7 +50,7 @@ export async function apply(ctx: Context, config: DeploymentConfig): Promise<voi
   const skills = (ctx as unknown as { skills?: SkillsPort }).skills
   if (skills !== undefined) {
     ctx.effect(() => {
-      const release = registerSkills(skills)
+      const release = registerSkills(skills, runtime.prompts)
       return () => { release() }
     })
   }

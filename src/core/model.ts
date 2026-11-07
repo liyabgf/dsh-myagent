@@ -155,6 +155,16 @@ export type TicketEventType =
    */
   | 'deleted'
   /**
+   * One Ticket read or materialized a registered artifact of another Ticket (E1).
+   * Recorded on BOTH Tickets in the same transaction: `{ fromTicketId, path }` on the reader, and `{ byTicketId, path }`
+   * on the producer, so cross-Ticket data lineage is an engine fact rather than prose in a report summary.
+   */
+  | 'artifact_read'
+  /** A reusable tool/script produced by this Ticket was promoted into the shared skill library (E2). */
+  | 'skill_promoted'
+  /** This Ticket used a shared skill promoted from another Ticket, or another Ticket used one promoted from this Ticket (E2). */
+  | 'skill_used'
+  /**
    * A Ticket's Work assignment was taken away (U21: the Work was deleted). Its own type rather than a `classified`
    * event with a null in it, because the event log is the operator's audit trail and "classified: nothing" reads like
    * a bug. Nothing switches exhaustively over these types, so adding one cannot strand a case.

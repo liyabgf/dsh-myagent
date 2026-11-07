@@ -181,6 +181,16 @@ type TicketEventType = 'created' | 'launched' | 'delivered' | 'delivery_failed' 
  */
 'deleted' |
 /**
+ * One Ticket read or materialized a registered artifact of another Ticket (E1).
+ * Recorded on BOTH Tickets in the same transaction: `{ fromTicketId, path }` on the reader, and `{ byTicketId, path }`
+ * on the producer, so cross-Ticket data lineage is an engine fact rather than prose in a report summary.
+ */
+'artifact_read' |
+/** A reusable tool/script produced by this Ticket was promoted into the shared skill library (E2). */
+'skill_promoted' |
+/** This Ticket used a shared skill promoted from another Ticket, or another Ticket used one promoted from this Ticket (E2). */
+'skill_used' |
+/**
  * A Ticket's Work assignment was taken away (U21: the Work was deleted). Its own type rather than a `classified`
  * event with a null in it, because the event log is the operator's audit trail and "classified: nothing" reads like
  * a bug. Nothing switches exhaustively over these types, so adding one cannot strand a case.
@@ -560,6 +570,10 @@ declare const SettingsSchema: z.ZodObject<{
     maxWorkers: z.ZodDefault<z.ZodNumber>;
     prepare: z.ZodDefault<z.ZodString>;
     model: z.ZodDefault<z.ZodString>;
+    sandbox: z.ZodDefault<z.ZodEnum<{
+      local: "local";
+      vm: "vm";
+    }>>;
   }, z.core.$strict>>;
   sources: z.ZodPrefault<z.ZodObject<{
     cron: z.ZodPrefault<z.ZodObject<{
@@ -1012,18 +1026,24 @@ declare class Engine {
     sender?: string;
     scope?: string;
     attachments?: readonly string[];
-    /**
-     * Where this Ticket's reports go, when the front desk opened it on somebody's behalf (S3a).
-     *
-     * Carried on the synthesized Trigger rather than on the Ticket, because that is the only place a reply address has
-     * ever lived and `Delivery.send` already resolves it from there — so the whole outbound path is unchanged. A
-     * front-desk Ticket without one reports to the panel and nowhere else, which is the gap this closes.
-     *
-     * Copied from another Ticket's Trigger, never typed by the caller: an address the front desk could invent is an
-     * address a prompt-injected front desk could post to.
-     */
     replyTo?: ReplyTo;
-  }): ReceiveResult;
+    /** Explicit Work id or human Work name to group multi-stage Tickets together (E3). */
+    workId?: string;
+    workName?: string;
+    /** Upstream Ticket ids this new Ticket waits for (`done`) before launching (E3). */
+    dependsOn?: readonly string[];
+  }): ReceiveResult & {
+    workId?: string;
+    dependsOn?: string[];
+  };
+  /**
+   * Ensure an ended Ticket has a Work (creating one named after its title if needed) and return `{ workId, priorTicket }`
+   * so a chat follow-up to a finished Ticket automatically joins the same Work cluster (E3).
+   */
+  ensureFollowupWork(priorTicketId: string): {
+    workId: string;
+    prior: Ticket;
+  } | undefined;
   /** Record that the front desk wrote back to whoever asked for this Ticket. */
   replied(ticketId: string, detail: Record<string, unknown>): void;
   /**
@@ -1283,6 +1303,23 @@ declare class Engine {
     directory: string;
     artifact: Artifact;
   };
+  /**
+   * Bidirectional cross-Ticket lineage derived from the Engine's event log (`artifact_read` and worker `input` hand-offs).
+   * - `citedBy`: other Tickets that read this Ticket's artifacts or received a note from it.
+   * - `cites`: other Tickets whose artifacts this Ticket read or that handed a note to it.
+   */
+  citationsOf(ticketId: string): {
+    citedBy: string[];
+    cites: string[];
+  };
+  /** Record that a worker promoted a verified reusable script into the shared skill library (E2). */
+  skillPromoted(ticketId: string, detail: {
+    name: string;
+    title: string;
+    scriptPath: string;
+  }): void;
+  /** Record bidirectional lineage when a Ticket uses a skill that originated from another Ticket (E2). */
+  skillUsed(consumerTicketId: string, originTicketId: string, skillName: string): void;
   /**
    * Record that the Watchdog gave up on a Ticket and handed it to a person.
    *

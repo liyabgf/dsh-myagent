@@ -604,19 +604,22 @@ try {
   await page.waitForTimeout(800)
   const w20 = await page.evaluate(() => {
     const vis = id => { const el = document.getElementById(id); return el ? getComputedStyle(el).display !== 'none' : null }
-    const rows = document.querySelectorAll('#works li').length
+    const allLis = [...document.querySelectorAll('#works li')]
+    // 空态提示行（`还没有工作…` / `没有在用的工作…`）也是 `<li>`，但不是一条可点的工作记录；
+    // 只有带 `.title` 的才是真工作行。断规则不断数据形状：线上工作数为 0 时，不把空态 `<li>` 误判成「有 1 条工作」。
+    const workRows = allLis.filter(li => li.querySelector('.title') !== null).length
     return {
       pjForm: vis('pj-form'), wkForm: vis('wk-form'),
       toggles: [...document.querySelectorAll('button')].filter(b => /新建(项目|工作)/.test(b.textContent.trim())).map(b => b.textContent.trim()),
       detail: (document.getElementById('work-detail')?.textContent || '').trim().slice(0, 24),
-      rows,
+      rows: workRows,
     }
   })
   check('两个新建表单默认收起（U20）', w20.pjForm === false && w20.wkForm === false,
     `pj=${w20.pjForm} wk=${w20.wkForm}`)
   check('唤出按钮各一个、且页面上没有重名的提交按钮', w20.toggles.join('|') === '新建项目|新建工作', w20.toggles.join('|'))
   check('只有一条工作时进页就选中它（详情不是那句空提示）',
-    w20.rows === 1 ? !w20.detail.startsWith('选择左边') : true, `rows=${w20.rows} detail=${w20.detail}`)
+    w20.rows === 1 ? !w20.detail.startsWith('选择左边') : true, `workRows=${w20.rows} detail=${w20.detail}`)
   await page.click('#pj-toggle')
   await page.waitForTimeout(300)
   const opened = await page.evaluate(() => ({
@@ -771,11 +774,15 @@ try {
   const lifecycle = await page.evaluate(() => {
     const detail = document.getElementById('work-detail')
     const btns = [...(detail?.querySelectorAll('button') ?? [])].map(b => b.textContent.trim())
-    return { btns, hasDetail: detail !== null }
+    const workRows = [...document.querySelectorAll('#works li')].filter(li => li.querySelector('.title') !== null).length
+    return { btns, hasDetail: detail !== null, workRows, text: (detail?.textContent || '').trim() }
   })
-  check('工作详情带「归档」与「删除」按钮（U21）',
-    lifecycle.btns.includes('归档') && lifecycle.btns.includes('删除'),
-    lifecycle.btns.join(' | '))
+  // 断规则不断数据形状：有工作被选中时详情必带「归档」与「删除」；0 条工作时详情为引导空态（jsdom 在 panel.spec.ts 已全覆盖有工作时的归档/删除交互）。
+  check('工作详情带「归档」与「删除」按钮（或 0 条工作时显示空态引导）（U21）',
+    lifecycle.workRows > 0
+      ? (lifecycle.btns.includes('归档') && lifecycle.btns.includes('删除'))
+      : lifecycle.text.startsWith('选择左边'),
+    `workRows=${lifecycle.workRows} btns=${lifecycle.btns.join(' | ')} text=${lifecycle.text.slice(0, 30)}`)
   if (lifecycle.btns.includes('删除')) {
     await page.evaluate(() => {
       const detail = document.getElementById('work-detail')

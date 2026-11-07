@@ -359,34 +359,80 @@ export class Engine {
    */
   createTicket(request: {
     title: string; text: string; sender?: string; scope?: string; attachments?: readonly string[]
-    /**
-     * Where this Ticket's reports go, when the front desk opened it on somebody's behalf (S3a).
-     *
-     * Carried on the synthesized Trigger rather than on the Ticket, because that is the only place a reply address has
-     * ever lived and `Delivery.send` already resolves it from there — so the whole outbound path is unchanged. A
-     * front-desk Ticket without one reports to the panel and nowhere else, which is the gap this closes.
-     *
-     * Copied from another Ticket's Trigger, never typed by the caller: an address the front desk could invent is an
-     * address a prompt-injected front desk could post to.
-     */
     replyTo?: ReplyTo
-  }): ReceiveResult {
-    const at = this.now()
-    const attachments = (request.attachments ?? []).filter(path => path.trim() !== '')
-    const trigger: Trigger = {
-      // The attachments are part of what is being asked for, so two requests that differ only in their files are
-      // different requests and must not collapse into one Ticket.
-      id: key('session', request.text, request.title, at, request.sender ?? 'operator', attachments),
-      source: 'session', kind: 'session', at,
-      actor: { id: request.sender ?? 'operator', kind: 'person' },
-      text: request.text, title: request.title,
-      ...(request.replyTo === undefined ? {} : { replyTo: request.replyTo }),
-      meta: {
-        ...(request.scope === undefined ? {} : { scope: request.scope }),
-        ...(attachments.length === 0 ? {} : { attachments }),
-      },
-    }
-    return this.receive(trigger)
+    /** Explicit Work id or human Work name to group multi-stage Tickets together (E3). */
+    workId?: string
+    workName?: string
+    /** Upstream Ticket ids this new Ticket waits for (`done`) before launching (E3). */
+    dependsOn?: readonly string[]
+  }): ReceiveResult & { workId?: string; dependsOn?: string[] } {
+    return this.tx.atomic(() => {
+      const at = this.now()
+      const attachments = (request.attachments ?? []).filter(path => path.trim() !== '')
+      const upstreams = [...new Set((request.dependsOn ?? []).map(id => id.trim()).filter(Boolean))]
+      for (const upId of upstreams) {
+        this.require(upId)
+      }
+      let resolvedWorkId = request.workId?.trim() || undefined
+      if (resolvedWorkId !== undefined) {
+        this.requireWork(resolvedWorkId)
+      } else if (request.workName !== undefined && request.workName.trim() !== '') {
+        const wantedName = request.workName.trim()
+        const existing = this.repos.works.list().find(w => w.archivedAt === undefined && w.name === wantedName)
+        resolvedWorkId = existing !== undefined ? existing.id : this.createWork({ name: wantedName }).id
+      } else if (upstreams.length > 0) {
+        const firstUp = this.repos.tickets.get(upstreams[0]!)
+        if (firstUp !== undefined) {
+          if (firstUp.workId !== undefined) {
+            resolvedWorkId = firstUp.workId
+          } else {
+            const autoWork = this.createWork({ name: firstUp.title.slice(0, 120) })
+            this.attachWork(firstUp.id, autoWork.id)
+            resolvedWorkId = autoWork.id
+          }
+        }
+      }
+      const trigger: Trigger = {
+        id: key('session', request.text, request.title, at, request.sender ?? 'operator', attachments),
+        source: 'session', kind: 'session', at,
+        actor: { id: request.sender ?? 'operator', kind: 'person' },
+        text: request.text, title: request.title,
+        ...(request.replyTo === undefined ? {} : { replyTo: request.replyTo }),
+        meta: {
+          ...(request.scope === undefined ? {} : { scope: request.scope }),
+          ...(attachments.length === 0 ? {} : { attachments }),
+          ...(resolvedWorkId === undefined ? {} : { work: resolvedWorkId }),
+        },
+      }
+      const result = this.receive(trigger)
+      if (result.ticketId !== undefined && upstreams.length > 0) {
+        for (const upId of upstreams) {
+          this.dependOn(result.ticketId, upId, 'done')
+        }
+      }
+      return {
+        ...result,
+        ...(resolvedWorkId === undefined ? {} : { workId: resolvedWorkId }),
+        ...(upstreams.length === 0 ? {} : { dependsOn: upstreams }),
+      }
+    })
+  }
+
+  /**
+   * Ensure an ended Ticket has a Work (creating one named after its title if needed) and return `{ workId, priorTicket }`
+   * so a chat follow-up to a finished Ticket automatically joins the same Work cluster (E3).
+   */
+  ensureFollowupWork(priorTicketId: string): { workId: string; prior: Ticket } | undefined {
+    return this.tx.atomic(() => {
+      const prior = this.repos.tickets.get(priorTicketId)
+      if (prior === undefined || prior.deleted !== undefined) return undefined
+      if (prior.workId !== undefined && this.repos.works.get(prior.workId) !== undefined) {
+        return { workId: prior.workId, prior }
+      }
+      const work = this.createWork({ name: prior.title.slice(0, 120) })
+      const updated = this.attachWork(prior.id, work.id)
+      return { workId: work.id, prior: updated }
+    })
   }
 
   /** Record that the front desk wrote back to whoever asked for this Ticket. */
@@ -1213,16 +1259,89 @@ export class Engine {
    * directory with the same traversal guard the panel uses and does the reading itself.
    */
   authorizeArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): { directory: string; artifact: Artifact } {
-    const source = this.require(sourceTicketId)
-    const target = this.require(targetTicketId)
-    if (sourceTicketId === targetTicketId) throw new UserError('artifact_missing')
-    if (source.workId === undefined || source.workId !== target.workId) throw new UserError('collaboration_refused')
-    const wanted = path.trim().replace(/^\.\//, '')
-    const artifact = this.repos.artifacts.list(targetTicketId).find(item => item.path === wanted)
-    if (artifact === undefined) throw new UserError('artifact_missing')
-    const directory = target.execution?.directory
-    if (directory === undefined) throw new UserError('artifact_unreachable')
-    return { directory, artifact }
+    return this.tx.atomic(() => {
+      const source = this.require(sourceTicketId)
+      const target = this.require(targetTicketId)
+      if (sourceTicketId === targetTicketId) throw new UserError('artifact_missing')
+      if (target.deleted !== undefined) throw new UserError('artifact_missing')
+      // Explicit Work boundary: if a Ticket is assigned to a specific Work, only Tickets in that same Work may read
+      // its artifacts. When BOTH Tickets are unclassified (`workId === undefined`, the default for ad-hoc chat/panel
+      // tasks), reading registered artifacts through this audited door is allowed and recorded on both sides.
+      if ((source.workId !== undefined || target.workId !== undefined) && source.workId !== target.workId) {
+        throw new UserError('collaboration_refused')
+      }
+      const wanted = path.trim().replace(/^\.\//, '')
+      const artifact = this.repos.artifacts.list(targetTicketId).find(item => item.path === wanted)
+      if (artifact === undefined) throw new UserError('artifact_missing')
+      const directory = target.execution?.directory
+      if (directory === undefined) throw new UserError('artifact_unreachable')
+      // Record bidirectional lineage once per (sourceTicketId, targetTicketId, path) so the panel and audit log
+      // always show who used whose output, even when the worker forgets to mention the Ticket id in its summary.
+      const already = this.repos.events.list(sourceTicketId).some(event =>
+        event.type === 'artifact_read'
+        && (event.detail as { fromTicketId?: string; path?: string } | undefined)?.fromTicketId === targetTicketId
+        && (event.detail as { fromTicketId?: string; path?: string } | undefined)?.path === artifact.path)
+      if (!already) {
+        this.record(sourceTicketId, 'artifact_read', { kind: 'agent', id: sourceTicketId }, {
+          fromTicketId: targetTicketId, path: artifact.path,
+        })
+        this.record(targetTicketId, 'artifact_read', { kind: 'agent', id: sourceTicketId }, {
+          byTicketId: sourceTicketId, path: artifact.path,
+        })
+      }
+      return { directory, artifact }
+    })
+  }
+
+  /**
+   * Bidirectional cross-Ticket lineage derived from the Engine's event log (`artifact_read` and worker `input` hand-offs).
+   * - `citedBy`: other Tickets that read this Ticket's artifacts or received a note from it.
+   * - `cites`: other Tickets whose artifacts this Ticket read or that handed a note to it.
+   */
+  citationsOf(ticketId: string): { citedBy: string[]; cites: string[] } {
+    const citedBy = new Set<string>()
+    const cites = new Set<string>()
+    for (const event of this.repos.events.list(ticketId)) {
+      const detail = event.detail as Record<string, unknown> | undefined
+      if (event.type === 'artifact_read' || event.type === 'skill_used') {
+        if (typeof detail?.byTicketId === 'string' && detail.byTicketId !== ticketId) citedBy.add(detail.byTicketId)
+        if (typeof detail?.fromTicketId === 'string' && detail.fromTicketId !== ticketId) cites.add(detail.fromTicketId)
+      } else if (event.type === 'input') {
+        if (typeof detail?.handed_to === 'string' && detail.handed_to !== ticketId) citedBy.add(detail.handed_to)
+        if (event.by?.kind === 'agent' && typeof event.by.id === 'string' && event.by.id !== ticketId) cites.add(event.by.id)
+      }
+    }
+    return { citedBy: [...citedBy], cites: [...cites] }
+  }
+
+  /** Record that a worker promoted a verified reusable script into the shared skill library (E2). */
+  skillPromoted(ticketId: string, detail: { name: string; title: string; scriptPath: string }): void {
+    this.tx.atomic(() => {
+      this.require(ticketId)
+      this.record(ticketId, 'skill_promoted', { kind: 'agent', id: ticketId }, detail)
+    })
+  }
+
+  /** Record bidirectional lineage when a Ticket uses a skill that originated from another Ticket (E2). */
+  skillUsed(consumerTicketId: string, originTicketId: string, skillName: string): void {
+    if (consumerTicketId === originTicketId) return
+    this.tx.atomic(() => {
+      const consumer = this.repos.tickets.get(consumerTicketId)
+      if (consumer === undefined) return
+      const already = this.repos.events.list(consumerTicketId).some(event =>
+        event.type === 'skill_used'
+        && (event.detail as { fromTicketId?: string; skill?: string } | undefined)?.fromTicketId === originTicketId
+        && (event.detail as { fromTicketId?: string; skill?: string } | undefined)?.skill === skillName)
+      if (already) return
+      this.record(consumerTicketId, 'skill_used', { kind: 'agent', id: consumerTicketId }, {
+        fromTicketId: originTicketId, skill: skillName,
+      })
+      if (this.repos.tickets.get(originTicketId) !== undefined) {
+        this.record(originTicketId, 'skill_used', { kind: 'agent', id: consumerTicketId }, {
+          byTicketId: consumerTicketId, skill: skillName,
+        })
+      }
+    })
   }
 
   /**

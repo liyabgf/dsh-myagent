@@ -41,6 +41,7 @@ import { packageFile, Prompts, type PromptRole } from './prompts.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
 import { mainTools, workerTools, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
 import { listFiles, isTextFile, readForPanel, resolveInside, resolveRealInside } from './files.ts'
+import { ticketSummary } from './views.ts'
 import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
 
 /** How often the pump runs what is due, in milliseconds. */
@@ -396,6 +397,12 @@ export class Runtime implements HttpHost {
       // Ticket's, because there is no Ticket, and not `MAIN_SESSION`'s, because the front desk's own problem and its
       // recovery are another subject's business — so neither an unrelated Ticket's ending nor a successful
       // `createMainSession` can erase it, and two impostors cannot erase each other. Retired below, by `agent/disposed`.
+      skillLoaded: (ticketId: string, skillName: string): void => {
+        const used = this.prompts.recordSkillUse(skillName)
+        if (used?.fromTicketId !== undefined && used.fromTicketId !== ticketId) {
+          this.engine.skillUsed(ticketId, used.fromTicketId, skillName)
+        }
+      },
       impostorRefused: (sessionId: string, claimedTicketId: string): void => {
         this.sessionHealth.problem(impostorSubject(sessionId), impostorDetail(sessionId, claimedTicketId))
       },
@@ -457,9 +464,10 @@ export class Runtime implements HttpHost {
       // Answered by the Sessions, which is the only place that knows: the attempt is recorded when a launch prompts
       // the worker, and a worker's Session outlives the attempt its tools were registered for.
       attempt: (ticketId: string) => this.sessions.attempt(ticketId),
-      readArtifact: (source, target, path) => this.readArtifact(source, target, path),
+      readArtifact: (source, target, path, materialize) => this.readArtifact(source, target, path, materialize),
       returnAddressOf: (ticketId: string) => this.returnAddressOf(ticketId),
       replyToRequester: (ticketId: string, text: string) => this.replyToRequester(ticketId, text),
+      promoteSkill: (ticketId, input) => this.promoteSkill(ticketId, input),
     }
   }
 
@@ -597,8 +605,92 @@ export class Runtime implements HttpHost {
    */
   watchdogArmedInterval(): number { return this.watchdog.armedInterval() }
 
-  /** Read one registered artifact of another Ticket for a worker, or answer why it may not. */
-  async readArtifact(sourceTicketId: string, targetTicketId: string, path: string): Promise<ArtifactRead> {
+  /**
+   * Validate and promote a worker's battle-tested script into a virtual DSH skill stored in `Prompts` (E2).
+   * Hard quality gates:
+   * 1. Must resolve inside the Ticket's own directory via `resolveRealInside` (no symlinks, no `..`).
+   * 2. Must be a non-empty text file <= 64 KB.
+   * 3. Must NOT hardcode the Ticket's private directory path or `workRoot` path.
+   */
+  async promoteSkill(ticketId: string, input: {
+    name: string; title: string; description: string; script_path: string; usage?: string
+  }): Promise<{ ok: boolean; skill_name?: string; error?: string }> {
+    const ticket = this.store.tickets.get(ticketId)
+    const ownDir = ticket?.execution?.directory
+    if (ticket === undefined || ownDir === undefined) {
+      return { ok: false, error: `Ticket ${ticketId} has no workspace directory.` }
+    }
+    const absolute = await resolveRealInside(ownDir, input.script_path)
+    if (absolute === undefined) {
+      return { ok: false, error: `Script path ${input.script_path} is outside this Ticket's directory or is a symbolic link.` }
+    }
+    try {
+      const read = await readForPanel(absolute)
+      if (read.size === 0) return { ok: false, error: `Script ${input.script_path} is empty.` }
+      if (read.size > 64 * 1024) return { ok: false, error: `Script ${input.script_path} exceeds the 64 KB skill size limit.` }
+      const code = Buffer.from(read.base64, 'base64').toString('utf8')
+      const dirName = ticket.execution!.name
+      if (code.includes(ownDir) || (dirName.length >= 6 && code.includes(dirName))) {
+        return {
+          ok: false,
+          error: `Script ${input.script_path} hardcodes this Ticket's private directory (${dirName}); parameterize input/output paths via CLI arguments before promoting.`,
+        }
+      }
+      const ext = input.script_path.split('.').pop()?.toLowerCase() ?? 'py'
+      const lang = ext === 'py' ? 'python' : ext === 'mjs' || ext === 'js' ? 'javascript' : ext === 'sh' ? 'bash' : ''
+      const usageBlock = input.usage?.trim() ? `\n## Usage\n\n\`\`\`bash\n${input.usage.trim()}\n\`\`\`\n` : ''
+      const content = `# ${input.title.trim()}\n\n${input.description.trim()}\n${usageBlock}\n## Program (${input.script_path})\n\n\`\`\`${lang}\n${code.trim()}\n\`\`\`\n`
+      const saved = this.prompts.saveSkill({
+        name: input.name,
+        title: input.title,
+        description: input.description,
+        content,
+        fromTicketId: ticketId,
+      })
+      this.engine.skillPromoted(ticketId, { name: saved.name, title: saved.title, scriptPath: input.script_path })
+      return { ok: true, skill_name: saved.name }
+    } catch (error) {
+      return { ok: false, error: reason(error) }
+    }
+  }
+
+  /**
+   * Browse the accessible artifact catalog, or read/materialize one registered artifact of another Ticket (E1).
+   * When `path` is omitted, returns the catalog of accessible Tickets and their registered artifacts so the worker LLM
+   * can judge which data assets are relevant without rummaging through `workRoot`.
+   */
+  async readArtifact(sourceTicketId: string, targetTicketId?: string, path?: string, materialize?: boolean): Promise<ArtifactRead> {
+    let source: Ticket
+    try {
+      source = this.engine.require(sourceTicketId)
+    } catch (error) {
+      return error instanceof UserError
+        ? { ok: false, error: error.message, code: error.code }
+        : { ok: false, error: reason(error) }
+    }
+    if (targetTicketId === undefined || targetTicketId.trim() === '' || path === undefined || path.trim() === '') {
+      const wantedTarget = targetTicketId?.trim()
+      const candidates = this.store.tickets.list().filter(item => {
+        if (item.id === sourceTicketId) return false
+        if (wantedTarget !== undefined && wantedTarget !== '' && item.id !== wantedTarget) return false
+        if ((source.workId !== undefined || item.workId !== undefined) && source.workId !== item.workId) return false
+        return true
+      })
+      const catalog = candidates.flatMap(item => {
+        const artifacts = this.store.artifacts.list(item.id).map(a => ({
+          path: a.path, at: a.at, ...(a.note === undefined ? {} : { note: a.note }),
+        }))
+        if (wantedTarget === undefined && artifacts.length === 0) return []
+        const summary = ticketSummary(item)
+        return [{
+          ticket_id: item.id, title: item.title, stage: summary.stage,
+          ...(item.workId === undefined ? {} : { work_id: item.workId }),
+          ...(summary.summary === undefined ? {} : { summary: summary.summary }),
+          artifacts,
+        }]
+      })
+      return { ok: true, catalog }
+    }
     let authorized: { directory: string; artifact: Artifact }
     try {
       authorized = this.engine.authorizeArtifactRead(sourceTicketId, targetTicketId, path)
@@ -607,21 +699,31 @@ export class Runtime implements HttpHost {
         ? { ok: false, error: error.message, code: error.code }
         : { ok: false, error: reason(error) }
     }
-    // The same traversal guard the panel's file routes use: a registered path is data, and data does not get to decide
-    // where on disk it points.
     const absolute = await resolveRealInside(authorized.directory, authorized.artifact.path)
     if (absolute === undefined) return { ok: false, error: 'That artifact is not a path inside its Ticket directory (or is a symbolic link).', code: 'artifact_missing' }
     try {
+      if (materialize === true) {
+        const ownDir = source.execution?.directory
+        if (ownDir === undefined) return { ok: false, error: 'This Ticket has no workspace directory to materialize into.' }
+        const rel = await this.executor.sandbox.materializeInput(ownDir, absolute, targetTicketId, authorized.artifact.path)
+        const read = await readForPanel(absolute)
+        const includeInline = isTextFile(authorized.artifact.path, read.size) && read.size <= WORKER_ARTIFACT_BYTES
+        return {
+          ok: true, size: read.size, at: authorized.artifact.at,
+          materialized_to: rel,
+          ...(authorized.artifact.note === undefined ? {} : { note: authorized.artifact.note }),
+          ...(includeInline ? { content: Buffer.from(read.base64, 'base64').toString('utf8') } : {}),
+        }
+      }
       const read = await readForPanel(absolute)
       if (!isTextFile(authorized.artifact.path, read.size)) {
-        return { ok: false, error: `That artifact is not a text file, so it cannot go into a worker's context: ${authorized.artifact.path}` }
+        return { ok: false, error: `That artifact is not a text file, so it cannot go into a worker's context: ${authorized.artifact.path} (pass materialize: true to copy it into inputs/)` }
       }
-      // A worker's context is not a download: the panel's 16MB ceiling is far past anything a model should be handed.
       if (read.size > WORKER_ARTIFACT_BYTES) {
         return {
           ok: false,
-          error: `That artifact is ${read.size} bytes, over the ${WORKER_ARTIFACT_BYTES} a worker may be handed. `
-            + 'Ask the other Ticket for the part you need, or read it yourself if it is in your own directory.',
+          error: `That artifact is ${read.size} bytes, over the ${WORKER_ARTIFACT_BYTES} a worker may be handed inline. `
+            + 'Pass `materialize: true` to copy it into `inputs/` in your workspace and process it with a script.',
         }
       }
       return {

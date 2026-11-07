@@ -1219,3 +1219,56 @@ describe('stopping queued Tickets and advancing waiting state on answer (Pkg 3)'
     expect(stopped.assignments[0]!.endedReason).toBe('stopped')
   })
 })
+
+describe('bidirectional artifact lineage and unclassified collaboration (E1)', () => {
+  it('records artifact_read on both Tickets, exposes citationsOf, and allows two unclassified Tickets to share registered artifacts while still isolating distinct Works', () => {
+    const { engine } = harness()
+    const a = engine.createTicket({ title: '采集基础数据', text: '抓取数据' }).ticketId!
+    const b = engine.createTicket({ title: '交叉比对分析', text: '比对数据' }).ticketId!
+    engine.assignmentStarted(a, engine.require(a).assignments[0]!.id)
+    engine.report(a, { state: 'ready', summary: '采集完毕', files: ['data/table.csv'] })
+
+    // Both unclassified (`workId === undefined`): allowed through the audited door
+    const auth = engine.authorizeArtifactRead(b, a, 'data/table.csv')
+    expect(auth.artifact.path).toBe('data/table.csv')
+    // Repeat call in the same attempt is deduplicated in the event log
+    engine.authorizeArtifactRead(b, a, 'data/table.csv')
+
+    expect(engine.citationsOf(a)).toEqual({ citedBy: [b], cites: [] })
+    expect(engine.citationsOf(b)).toEqual({ citedBy: [], cites: [a] })
+    expect(engine.history(a).filter(e => e.type === 'artifact_read')).toHaveLength(1)
+    expect(engine.history(b).filter(e => e.type === 'artifact_read')).toHaveLength(1)
+
+    // Putting `a` into a Work isolates it from Tickets outside that Work
+    const work = engine.createWork({ name: '专属课题' })
+    engine.attachWork(a, work.id)
+    expect(() => engine.authorizeArtifactRead(b, a, 'data/table.csv')).toThrow(/same Work/)
+  })
+})
+
+describe('multi-stage Work and dependency orchestration in createTicket (E3)', () => {
+  it('creates or reuses a Work by workName, inherits workId across dependsOn, and wires dependency edges', () => {
+    const { engine } = harness()
+    const stage1 = engine.createTicket({
+      title: '第一阶段：多源数据抓取',
+      text: '抓取72笔融资记录',
+      workName: '中国 AI 产业资本拓扑分析（2026）',
+    })
+    expect(stage1.workId).toBeDefined()
+    expect(engine.work(stage1.workId!)?.name).toBe('中国 AI 产业资本拓扑分析（2026）')
+
+    const stage2 = engine.createTicket({
+      title: '第二阶段：独立红队审计与建模',
+      text: '对第一阶段数据进行冲突消解并画图',
+      dependsOn: [stage1.ticketId!],
+    })
+    // Inherited the same Work from upstream automatically
+    expect(stage2.workId).toBe(stage1.workId)
+    expect(stage2.dependsOn).toEqual([stage1.ticketId!])
+    expect(engine.require(stage2.ticketId!).workId).toBe(stage1.workId)
+    expect(engine.require(stage2.ticketId!).workSeq).toBe(2)
+    expect(engine.dependantsOf(stage1.ticketId!).map(d => d.downstream)).toEqual([stage2.ticketId!])
+    expect(engine.require(stage2.ticketId!).workSeq).toBe(2)
+    expect(engine.dependantsOf(stage1.ticketId!).length).toBe(1)
+  })
+})
