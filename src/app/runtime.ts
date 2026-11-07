@@ -16,6 +16,7 @@ import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import {
   Engine, latestAssignment, lostTriggerOf, parseSettings, payloadText, policyVersion, runningAssignment, settingsPolicy,
   UserError, waitsForPerson, type DomainEvent, type Settings, type Ticket,
+  canCollaborate,
 } from '../core/index.ts'
 import { machineOf, type DeploymentConfig, type Machine } from '../deployment.ts'
 import { chatKind } from '../sources/chat.ts'
@@ -671,10 +672,8 @@ export class Runtime implements HttpHost {
     if (targetTicketId === undefined || targetTicketId.trim() === '' || path === undefined || path.trim() === '') {
       const wantedTarget = targetTicketId?.trim()
       const candidates = this.store.tickets.list().filter(item => {
-        if (item.id === sourceTicketId) return false
         if (wantedTarget !== undefined && wantedTarget !== '' && item.id !== wantedTarget) return false
-        if ((source.workId !== undefined || item.workId !== undefined) && source.workId !== item.workId) return false
-        return true
+        return canCollaborate(source, item)
       })
       const catalog = candidates.flatMap(item => {
         const artifacts = this.store.artifacts.list(item.id).map(a => ({

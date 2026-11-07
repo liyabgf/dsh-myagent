@@ -849,19 +849,27 @@ describe('one worker handing a fact to another Ticket', () => {
     expect(engine.history(first).at(-1)!.detail).toMatchObject({ handed_to: second })
   })
 
-  it('refuses across Works, and refuses Tickets that belong to no Work at all', () => {
+  it('refuses across distinct Works and self-notes, while allowing two unclassified Tickets to collaborate symmetrically (F2)', () => {
     const { engine } = harness()
     const { first } = twoInOneWork(engine)
     const other = engine.createWork({ name: '另一条工作流' })
     const stranger = engine.createTicket({ title: '别的工作流里的一张', text: '做点事' })
     engine.attachWork(stranger.ticketId!, other.id)
     const loner = engine.createTicket({ title: '不属于任何工作流', text: '做点事' })
+    const loner2 = engine.createTicket({ title: '第二张未归类任务', text: '做点事' })
     expect(() => engine.noteFromWorker(first, stranger.ticketId!, '给你个数字')).toThrow(/same Work/)
     expect(() => engine.noteFromWorker(first, loner.ticketId!, '给你个数字')).toThrow(/same Work/)
     expect(() => engine.noteFromWorker(loner.ticketId!, loner.ticketId!, '给自己')).toThrow(/same Work/)
     // Nothing was written by any of the refusals.
     expect(engine.require(stranger.ticketId!).inputs).toEqual([])
     expect(engine.require(loner.ticketId!).inputs).toEqual([])
+
+    // Symmetric with authorizeArtifactRead (D3 / F2): two unclassified Tickets (`workId === undefined`) may hand facts
+    // to each other through the audited Engine door, recording bidirectional lineage.
+    const handed = engine.noteFromWorker(loner.ticketId!, loner2.ticketId!, '未归组任务之间共享的事实')
+    expect(handed.inputs.at(-1)?.text).toBe('未归组任务之间共享的事实')
+    expect(engine.citationsOf(loner.ticketId!).citedBy).toContain(loner2.ticketId!)
+    expect(engine.citationsOf(loner2.ticketId!).cites).toContain(loner.ticketId!)
   })
 
   it('refuses a Ticket that has ended, because there is nobody left to read it', () => {

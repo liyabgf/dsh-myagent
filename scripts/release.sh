@@ -127,6 +127,8 @@ SPECIFIC = {
     # 而没有"这个人是谁"。0.7.0 就把 bot 用户名发出去了，0.8.1 又把 id 发出去了，两次都没被扫描拦住。
     '<telegram-user-id>': '<telegram-user-id>',
     '<bot-username>': '<bot-username>',
+    '<bot-id>': '<bot-id>',
+    '-100200300': '-100200300',
     '<操作者当时那个会话的任务标题>': '<操作者当时那个会话的任务标题>',
 }
 n = 0
@@ -157,7 +159,7 @@ bad=0
 # 而不是"任何提到这个前缀的地方"。
 # 另一件自指的事：脱敏会把本脚本里的 'alice' 换成 'alice'，所以**公开副本里的 release.sh 与真源不是同一份**。
 # 这不要紧（发布用的是真源里的那份），但它意味着**不能拿副本里的脚本去发布**——那样它扫的就是 'alice' 了。
-for pat in '/Users/[A-Za-z]' 'Mac\.lan' 'alice' '<telegram-user-id>' '<bot-username>' \
+for pat in '/Users/[A-Za-z]' 'Mac\.lan' 'alice' '<telegram-user-id>' '<bot-username>' '<bot-id>' '-100200300' \
   '[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}' \
            '?token=[A-Za-z0-9_-]\{16,\}' '_authToken=[A-Za-z0-9]' '-----BEGIN [A-Z]'; do
   # 后两个模式收紧成"真实泄漏的形状"而不是"提到这个词"：本脚本自己的模式列表里就含有字面量

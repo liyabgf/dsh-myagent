@@ -994,6 +994,18 @@ interface ReceiveResult {
   readonly disposition: Disposition;
   readonly ticketId?: string;
 }
+/** Replace the last Assignment of `ticket`, or append when it has none. */
+/**
+ * Symmetric cross-Ticket collaboration predicate (D3 / F2), shared by `noteFromWorker`, `authorizeArtifactRead`, and
+ * the runtime's artifact catalog.
+ *
+ * Rules:
+ * 1. A Ticket never collaborates with itself (`source.id !== target.id`).
+ * 2. A deleted tombstone (`target.deleted !== undefined`) is not an active collaboration partner.
+ * 3. When either Ticket belongs to an explicit `Work`, both must belong to that SAME `Work` (`source.workId === target.workId`).
+ *    When both are unclassified (`workId === undefined`), audited collaboration across them is allowed.
+ */
+declare function canCollaborate(source: Ticket, target: Ticket): boolean;
 /**
  * The domain's entry point. Sources call `receive`; the main Session calls `createTicket`, `answer`, `note` and
  * `stopTicket`; people call `stopTicket` and `retryTicket`; the Executor reports facts in the past tense.
@@ -1988,4 +2000,4 @@ declare const inject: string[];
  * on demand instead, from the panel or from the first Ticket somebody opens in it.
  */
 declare function apply(ctx: Context, config: DeploymentConfig): Promise<void>;
-export { Actor, Artifact, ArtifactRepository, Assignment, AssignmentState, Attachment, Attention, Config, CronSpec, Cursor, Decision, DecisionOutcome, DecisionRecord, DecisionRepository, DeliverOptions, Delivery, Dependency, DependencyRepository, type DeploymentConfig, Disposition, DomainEvent, Engine, EngineOptions, EventRepository, Execution, Executor, GATE_REASONS, GateReason, GateVerdict, InputBy, LostTrigger, type Machine, Mandate, MandateVia, Memory, Policy, PolicyEffect, Project, ProjectRepository, ReceiveResult, ReplyTo, Report, ReportState, Repositories, Schedule, ScheduleSchema, Settings, SettingsSchema, Source, SourceHost, SourceKind, SourceKindName, SourceStatus, Strength, Ticket, TicketEnded, TicketEvent, TicketEventType, TicketInput, TicketNote, TicketOutcome, TicketRepository, TicketResult, TicketStage, Timing, Transaction, Trigger, TriggerRecord, TriggerRepository, TwoWaySource, USER_ERRORS, UserError, UserErrorCode, Work, WorkRepository, ZoneParts, apply, artifactPath, attachmentsOf, canRetry, describeTiming, gate, inject, key, knownTimeZone, latestAssignment, latestReport, liveTicket, localToUtc, localZone, lostTriggerOf, name, nextCron, nextRun, packageFile, parseCron, parseSettings, parseTime, payloadText, policyEffects, policyVersion, promptFile, released, runningAssignment, settingsPolicy, slug, sourcePolicy, ticketIdOf, ticketStage, undelivered, waitsForPerson, zoneParts };
+export { Actor, Artifact, ArtifactRepository, Assignment, AssignmentState, Attachment, Attention, Config, CronSpec, Cursor, Decision, DecisionOutcome, DecisionRecord, DecisionRepository, DeliverOptions, Delivery, Dependency, DependencyRepository, type DeploymentConfig, Disposition, DomainEvent, Engine, EngineOptions, EventRepository, Execution, Executor, GATE_REASONS, GateReason, GateVerdict, InputBy, LostTrigger, type Machine, Mandate, MandateVia, Memory, Policy, PolicyEffect, Project, ProjectRepository, ReceiveResult, ReplyTo, Report, ReportState, Repositories, Schedule, ScheduleSchema, Settings, SettingsSchema, Source, SourceHost, SourceKind, SourceKindName, SourceStatus, Strength, Ticket, TicketEnded, TicketEvent, TicketEventType, TicketInput, TicketNote, TicketOutcome, TicketRepository, TicketResult, TicketStage, Timing, Transaction, Trigger, TriggerRecord, TriggerRepository, TwoWaySource, USER_ERRORS, UserError, UserErrorCode, Work, WorkRepository, ZoneParts, apply, artifactPath, attachmentsOf, canCollaborate, canRetry, describeTiming, gate, inject, key, knownTimeZone, latestAssignment, latestReport, liveTicket, localToUtc, localZone, lostTriggerOf, name, nextCron, nextRun, packageFile, parseCron, parseSettings, parseTime, payloadText, policyEffects, policyVersion, promptFile, released, runningAssignment, settingsPolicy, slug, sourcePolicy, ticketIdOf, ticketStage, undelivered, waitsForPerson, zoneParts };

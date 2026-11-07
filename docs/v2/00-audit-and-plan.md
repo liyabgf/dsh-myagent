@@ -7258,3 +7258,15 @@ M2 的强形式为什么补不出第二层，如实记：能观测"面板画没�
 
 - **8 组变异 + 0.8 强形式全部判红**（E1-M1/M2、E2-M1/M2、E3-M1/M2、E4-M1/M2），还原后 SHA-256 哈希全部核对一致。
 - 完整四步闸门退出码 `0`（**1022 条测试全部通过**），真浏览器 `verify-browser.mjs` **84/84 全绿**（0 页面异常、0 控制台错误、0 失败请求）。
+
+
+## 4.131 五维严格审查纪律落地与 0.9.1 闭环修复（含 GitHub 全历史脱敏清洗）
+
+### 1. 五维审查发现的 4 项问题及闭环修复
+
+| 审查维度 | 发现的漏洞 | 落地的根治措施 |
+| --- | --- | --- |
+| **D1 清单闭环纪律** | `package.json` 的 `"files"` 数组漏掉了 `"bridges"`，导致 `gate.sh --shipped-only` 只监控 11 个文件（漏掉 15 个桥文件）。 | 在 `package.json` 的 `"files"` 数组中补齐 `"bridges"`，`gate.sh --shipped-only` 完整覆盖全部 **26 个**随包发布非 bundle 文件。 |
+| **D2 双态隐私脱敏纪律** | 公开仓工作树 `00-audit-and-plan.md` 残留 1 处测试 Bot 数字 ID `<bot-id>`；且早期 Git 历史提交含 `<telegram-user-id>`、`<bot-username>`、`<bot-id>`、`-100200300`。 | `scripts/release.sh` 的 `SPECIFIC` 脱敏表与第 4 步暂存扫描补齐 `<bot-id>` 与 `-100200300`；真源测试夹具统一替换为 `-100200300`；并对 `myagent-public` 执行全历史脱敏重写与强推，使工作树与 `git log -S` 全历史命中双归零。 |
+| **D3 成对门禁对称纪律** | E1 放宽了未归组任务调 `authorizeArtifactRead`，但 `noteFromWorker` 仍写着旧判断，两处不对称。 | 在 `src/core/engine.ts` 提炼共享纯函数 `canCollaborate(source, target)`，统一驱动 `noteFromWorker`、`authorizeArtifactRead` 与 `runtime.readArtifact` 目录过滤。 |
+| **D4/D5 变异与远端实证** | 验证 `canCollaborate` 跨入口守卫与远端 353 个文件闭合。 | F2-M1/M2 变异及 0.8 强形式（删 `noteFromWorker` 断言由 `authorizeArtifactRead` 跨入口接手判红）全部通过；四步闸门退出码 0（1022 条测试），真浏览器 84/84 全绿。 |

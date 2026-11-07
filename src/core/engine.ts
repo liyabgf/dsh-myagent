@@ -218,6 +218,25 @@ export interface ReceiveResult {
 }
 
 /** Replace the last Assignment of `ticket`, or append when it has none. */
+/**
+ * Symmetric cross-Ticket collaboration predicate (D3 / F2), shared by `noteFromWorker`, `authorizeArtifactRead`, and
+ * the runtime's artifact catalog.
+ *
+ * Rules:
+ * 1. A Ticket never collaborates with itself (`source.id !== target.id`).
+ * 2. A deleted tombstone (`target.deleted !== undefined`) is not an active collaboration partner.
+ * 3. When either Ticket belongs to an explicit `Work`, both must belong to that SAME `Work` (`source.workId === target.workId`).
+ *    When both are unclassified (`workId === undefined`), audited collaboration across them is allowed.
+ */
+export function canCollaborate(source: Ticket, target: Ticket): boolean {
+  if (source.id === target.id) return false
+  if (source.deleted !== undefined || target.deleted !== undefined) return false
+  if (source.workId !== undefined || target.workId !== undefined) {
+    return source.workId === target.workId
+  }
+  return true
+}
+
 function withAssignment(ticket: Ticket, assignment: Assignment): Ticket {
   const assignments = ticket.assignments.slice()
   const index = assignments.findIndex(item => item.id === assignment.id)
@@ -499,8 +518,7 @@ export class Engine {
     return this.tx.atomic(() => {
       const source = this.require(sourceTicketId)
       const target = this.require(targetTicketId)
-      if (sourceTicketId === targetTicketId) throw new UserError('collaboration_refused')
-      if (source.workId === undefined || source.workId !== target.workId) throw new UserError('collaboration_refused')
+      if (!canCollaborate(source, target)) throw new UserError('collaboration_refused')
       if (!liveTicket(source)) throw new UserError('ticket_ended')
       const body = text.trim()
       if (body === '') throw new UserError('empty_text')
@@ -1262,14 +1280,8 @@ export class Engine {
     return this.tx.atomic(() => {
       const source = this.require(sourceTicketId)
       const target = this.require(targetTicketId)
-      if (sourceTicketId === targetTicketId) throw new UserError('artifact_missing')
-      if (target.deleted !== undefined) throw new UserError('artifact_missing')
-      // Explicit Work boundary: if a Ticket is assigned to a specific Work, only Tickets in that same Work may read
-      // its artifacts. When BOTH Tickets are unclassified (`workId === undefined`, the default for ad-hoc chat/panel
-      // tasks), reading registered artifacts through this audited door is allowed and recorded on both sides.
-      if ((source.workId !== undefined || target.workId !== undefined) && source.workId !== target.workId) {
-        throw new UserError('collaboration_refused')
-      }
+      if (sourceTicketId === targetTicketId || target.deleted !== undefined) throw new UserError('artifact_missing')
+      if (!canCollaborate(source, target)) throw new UserError('collaboration_refused')
       const wanted = path.trim().replace(/^\.\//, '')
       const artifact = this.repos.artifacts.list(targetTicketId).find(item => item.path === wanted)
       if (artifact === undefined) throw new UserError('artifact_missing')
