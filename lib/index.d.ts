@@ -541,6 +541,10 @@ declare const ScheduleSchema: z.ZodObject<{
   enabled: z.ZodDefault<z.ZodBoolean>;
   prompt: z.ZodString;
   scope: z.ZodDefault<z.ZodString>;
+  deliverTo: z.ZodOptional<z.ZodObject<{
+    channel: z.ZodString;
+    thread: z.ZodOptional<z.ZodString>;
+  }, z.core.$strip>>;
   timing: z.ZodDiscriminatedUnion<[z.ZodObject<{
     kind: z.ZodLiteral<"every">;
     seconds: z.ZodNumber;
@@ -583,6 +587,10 @@ declare const SettingsSchema: z.ZodObject<{
         enabled: z.ZodDefault<z.ZodBoolean>;
         prompt: z.ZodString;
         scope: z.ZodDefault<z.ZodString>;
+        deliverTo: z.ZodOptional<z.ZodObject<{
+          channel: z.ZodString;
+          thread: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
         timing: z.ZodDiscriminatedUnion<[z.ZodObject<{
           kind: z.ZodLiteral<"every">;
           seconds: z.ZodNumber;

@@ -1374,3 +1374,65 @@ describe('automatic grouping stays tidy and honest about who did it', () => {
       .toThrow(/No Ticket has this id/)
   })
 })
+
+describe('a schedule’s firings share one Work (S-3)', () => {
+  /** One accepted Trigger that says it came from a schedule, the way `cron` writes it. */
+  const scheduled = (engine: Engine, at: string, title = '每日技术演进侦察'): string => {
+    const trigger: Trigger = {
+      id: `cron-scout-${at}`, source: 'cron', kind: 'cron', at,
+      actor: { id: 'operator', kind: 'person' }, text: '去侦察。', title,
+      meta: { schedule: 'evolution-scout-daily', scheduledAt: at },
+    }
+    const result = engine.receive(trigger)
+    if (result.disposition.state !== 'accepted') throw new Error(`gate refused: ${result.disposition.state}`)
+    return result.disposition.ticketId
+  }
+
+  it('groups every firing of one schedule into one Work named after the schedule, and says the system did it', () => {
+    const memory = new Memory()
+    const engine = new Engine({
+      repos: memory, tx: memory, policy: () => settingsPolicy(parseSettings({ acceptMode: 'auto', allowedSenders: ['operator'] })),
+      executor: { prepare: (ticket: Ticket) => ticket, start: () => {} } as never,
+      delivery: { report: () => {} } as never,
+      emit: () => {},
+    })
+    const first = scheduled(engine, '2026-11-09T01:00:00.000Z')
+    const second = scheduled(engine, '2026-11-10T01:00:00.000Z')
+
+    const works = memory.works.list()
+    // One Work, not one per day: the point of grouping is that yesterday's run is reachable from today's.
+    expect(works).toHaveLength(1)
+    expect(works[0]!.name).toBe('每日技术演进侦察')
+    const firstTicket = memory.tickets.get(first)!
+    const secondTicket = memory.tickets.get(second)!
+    expect(firstTicket.workId).toBe(works[0]!.id)
+    expect(secondTicket.workId).toBe(works[0]!.id)
+    // Two Tickets in one Work, numbered in the order they arrived.
+    expect(firstTicket.workSeq).toBe(1)
+    expect(secondTicket.workSeq).toBe(2)
+    // Attributed to the system, not to the operator: nobody classified these by hand.
+    const classified = memory.events.list(second).filter(event => event.type === 'classified')
+    expect(classified).toHaveLength(1)
+    expect(classified[0]!.by).toEqual({ kind: 'system' })
+  })
+
+  it('leaves an explicit Work alone rather than also making one for the schedule', () => {
+    const memory = new Memory()
+    const engine = new Engine({
+      repos: memory, tx: memory, policy: () => settingsPolicy(parseSettings({ acceptMode: 'auto', allowedSenders: ['operator'] })),
+      executor: { prepare: (ticket: Ticket) => ticket, start: () => {} } as never,
+      delivery: { report: () => {} } as never,
+      emit: () => {},
+    })
+    const chosen = engine.createWork({ name: '我指定的工作' })
+    const trigger: Trigger = {
+      id: 'cron-scout-explicit', source: 'cron', kind: 'cron', at: '2026-11-09T01:00:00.000Z',
+      actor: { id: 'operator', kind: 'person' }, text: '去侦察。', title: '每日技术演进侦察',
+      meta: { schedule: 'evolution-scout-daily', work: chosen.id },
+    }
+    const result = engine.receive(trigger)
+    expect(result.disposition.state).toBe('accepted')
+    // One Work only: the named one. A second Work created "just in case" is exactly the junk-drawer failure S-3 avoids.
+    expect(memory.works.list().map(work => work.name)).toEqual(['我指定的工作'])
+  })
+})

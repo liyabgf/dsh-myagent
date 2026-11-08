@@ -233,7 +233,10 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
   "sources": {
     "cron": { "enabled": true, "schedules": [
       { "id": "digest", "name": "每日摘要", "prompt": "写今天的摘要", "scope": "",
-        "timing": { "kind": "daily", "time": "09:00", "timeZone": "Asia/Shanghai" } }
+        "timing": { "kind": "daily", "time": "09:00", "timeZone": "Asia/Shanghai" },
+        // 报告送到哪个聊天频道（省略 = 只落 RESULT.md 与主会话通知，不进聊天室）。
+        // thread 可省：省了就用桥记住的默认会话。同一排期的历次运行会自动归进一个以排期名命名的「工作」。
+        "deliverTo": { "channel": "telegram" } }
     ]},
     "inbox": { "enabled": true, "directory": "", "pollMs": 5000 },
     "session": { "enabled": true },

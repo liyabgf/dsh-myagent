@@ -377,6 +377,53 @@ describe('cron source', () => {
     } finally { source.stop(); vi.useRealTimers() }
   })
 
+  it('gives a schedule that names one a chat return address, so its reports reach the room the operator reads', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(NOW))
+    const { host, triggers, tickets } = harness({
+      sources: {
+        cron: {
+          enabled: true,
+          schedules: [{
+            id: 'scout', name: '每日侦察', prompt: 'Go look.',
+            deliverTo: { channel: 'ops', thread: 't-9' },
+            timing: { kind: 'cron', expression: '* * * * *' },
+          }],
+        },
+      },
+    })
+    cursorsSeed(host, 'scout', Date.parse('2026-11-03T09:59:00Z'))
+    const source = new CronSource(host)
+    try {
+      source.start(); await vi.advanceTimersByTimeAsync(60)
+      const trigger = triggers()[0]!.trigger
+      // The address is on the Trigger, which is where Delivery reads it from — a Ticket whose Trigger carries none
+      // delivers nowhere, and before this every scheduled Ticket carried none.
+      expect(trigger.replyTo).toEqual({ kind: 'chat', channel: 'ops', thread: 't-9' })
+      expect(tickets()[0]!.origin.triggerId).toBe(trigger.id)
+    } finally { source.stop(); vi.useRealTimers() }
+  })
+
+  it('leaves the return address absent when the schedule names none, and refuses an address with no channel', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(NOW))
+    const { host, triggers } = harness({
+      sources: { cron: { enabled: true, schedules: [{ id: 'plain', name: 'Plain', prompt: 'Do it.', timing: { kind: 'cron', expression: '* * * * *' } }] } },
+    })
+    cursorsSeed(host, 'plain', Date.parse('2026-11-03T09:59:00Z'))
+    const source = new CronSource(host)
+    try {
+      source.start(); await vi.advanceTimersByTimeAsync(60)
+      expect(triggers()[0]!.trigger.replyTo).toBeUndefined()
+    } finally { source.stop(); vi.useRealTimers() }
+    // An address that names no channel would be a reply routed to nothing; the settings save refuses it up front,
+    // which is where every other settings mistake in this file is caught too.
+    expect(() => parseSettings({
+      acceptMode: 'auto', allowedSenders: ['operator'],
+      sources: { cron: { enabled: true, schedules: [{ id: 'bad', prompt: 'x', deliverTo: { channel: '   ' }, timing: { kind: 'cron', expression: '* * * * *' } }] } },
+    })).toThrow()
+  })
+
   it('does nothing while the source is switched off', () => {
     const { host, triggers } = harness({ ...everyMinute, sources: { cron: { enabled: false, schedules: [] } } })
     const source = new CronSource(host)

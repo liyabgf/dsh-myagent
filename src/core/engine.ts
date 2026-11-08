@@ -339,8 +339,17 @@ export class Engine {
       const followupId = typeof trigger.meta?.followupTicket === 'string' && trigger.meta.followupTicket !== ''
         ? trigger.meta.followupTicket : undefined
       const followupWorkId = followupId === undefined ? undefined : this.ensureFollowupWork(followupId)?.workId
-      const wantedWork = (typeof trigger.meta?.work === 'string' && trigger.meta.work !== '' ? trigger.meta.work : undefined)
-        ?? followupWorkId
+      // A schedule's every firing belongs to one Work, named after the schedule. Without this a daily job produced one
+      // unclassified Ticket a day and nothing connected them: "yesterday's run" was findable only by scanning the
+      // artifact catalog, and the 工作 page never showed a recurring job as the recurring thing it is. Same primitive
+      // as the other two automatic paths (`workNamedOrCreate` dedupes by exact name), resolved here for the same
+      // reason — after the verdict, inside this transaction, so a refusal leaves no Work behind.
+      const explicitWork = typeof trigger.meta?.work === 'string' && trigger.meta.work !== '' ? trigger.meta.work : undefined
+      // `??` short-circuits, so a Trigger that already names a Work does not also create one for its schedule.
+      const wantedWork = explicitWork ?? followupWorkId
+        ?? (typeof trigger.meta?.schedule === 'string' && trigger.meta.schedule !== ''
+          ? this.workNamedOrCreate(trigger.title.slice(0, 120) || `schedule:${trigger.meta.schedule}`)
+          : undefined)
       const workMissing = wantedWork !== undefined && this.repos.works.get(wantedWork) === undefined
       const classification = wantedWork === undefined || workMissing
         ? {}

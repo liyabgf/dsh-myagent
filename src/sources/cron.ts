@@ -205,6 +205,13 @@ export class CronSource implements Source {
         actor: { id: 'operator', kind: 'person' },
         text: schedule.prompt,
         title: schedule.name === '' ? schedule.prompt.slice(0, 80) : schedule.name,
+        // The schedule's own return address. A Trigger with none delivers nowhere, so before this a scheduled
+        // Ticket's report could only reach the file system and the main Session — never the chat room the operator
+        // actually reads. Written here rather than guessed from `actor`: an Actor id says who asked, not where to answer.
+        ...(schedule.deliverTo === undefined
+          ? {}
+          : { replyTo: { kind: 'chat' as const, channel: schedule.deliverTo.channel,
+            ...(schedule.deliverTo.thread === undefined ? {} : { thread: schedule.deliverTo.thread }) } }),
         meta: {
           schedule: schedule.id, scheduledAt: at,
           ...(missed > 0 ? { missed } : {}),

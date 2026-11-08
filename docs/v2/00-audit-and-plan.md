@@ -7693,3 +7693,46 @@ DSH 自带接口：bundle 的 `package.json` 加 `dsh.client` 段与 `./client` 
 - 面板 `node --check` 通过，`renderDecisions`/`ov-decisions`/`operator-queue` 符号各就位。
 
 > 真浏览器（0.11.1）：**88 通过 / 0 失败 / 4 跳过**，登记总数 92 条；两条新目标行钉住「需要你决断的事」卡片与它的空态文案。
+
+## 4.137 侦察任务基础建设第一批（0.11.2）：S-5 提示词、S-2 送达地址、S-3 同排期归组
+
+按 `docs/v2/27 §六` 的顺序推进（先零代码，再送达，再记忆）。
+
+### S-2 排期可以有自己的回程地址（代码）
+
+`ScheduleSchema` 新增可选 `deliverTo: { channel, thread? }`，`cron` 造 Trigger 时把它写成 `replyTo`
+（`kind: 'chat'`）。此前**每一张排期任务都没有回程地址**，报告只能落 `RESULT.md` 与主会话通知——
+一个每天 09:00 跑的无人值守任务，它的产出对一个聊天优先的操作者来说是隐形的。这不是推测：
+活体 `GET /api/triggers` 里 5 条 chat 之外的触发全无 `replyTo`，而 `Delivery` 的分派恰恰按 `replyTo.kind` 路由。
+
+地址写在 Trigger 上而不是从 `actor` 猜：`model.ts` 早就写明了理由——**Actor id 说的是谁问的，不是往哪儿答**。
+`kind` 固定为 `chat`，因为那是唯一按频道 id 路由的 Source 种类；"想送到别处"是另一个功能，不在这一批里假装。
+
+### S-3 同一排期的历次运行归进一个 Work（代码）
+
+`receive` 的 accepted 分支里，Work 的解析链现在是 `meta.work ?? followup ?? schedule`（`??` 短路，
+显式给了 Work 就不会再白建一个）。排期路径复用 `workNamedOrCreate`（按名精确去重）+ 既有的 `classified`
+事件（`by: {kind:'system'}`）。效果：每天 09:00 的那张任务不再是一张孤立未归组的票，
+而是一个名叫「每日技术演进侦察」的工作下第 N 次运行——**昨天的运行从今天这张票可达**，
+产物目录与血缘因此才有意义（跨任务读取要求同 Work 或双方未归组）。
+
+与另外两条自动归组路径同族、同事务、同一条纪律：**在门禁判定之后才解析**，所以 `observe` 模式或被拒的请求
+不会留下一个 Work。
+
+### S-5 提示词一行（活体设置，零代码）
+
+侦察排期的提示词加了第六节「把当日结论登记成产物」：写 `proposal-<日期>.md`、在 `myagent_report` 的 `files` 里登记、
+开工先读上一次的 proposal。**没有值得提案的一天也要写**——"当日未发现符合条件的提案 + 已排查哪些方向"同样是资产，
+它让明天不必重查同一片地。这一条要等 0.11.2 重载后才能落盘：`PUT settings` 对着 0.11.1 的后端会被
+`.strict()` 的旧 schema 拒掉（实测 400 `sources.cron.schedules.0`），因为 `deliverTo` 那时还不存在。
+**顺序是硬的：先发能认这个字段的版本，再写字段。**
+
+### 量具与取证
+
+- 我一度把 `GET /api/settings` 的 `{"error":"No route for GET /myagent/api/settings"}` 当成设置读回来了，
+  于是得出"watchdog 未生效"的错判。设置从 `GET state` 读、用 `PUT settings` 写。
+  > 教训：**读到 error 对象就当数据用，是这一轮最便宜也最容易犯的错误。** 之后每次读活体都先看顶层键。
+- `parseRoute('')` 回落到桥状态里的 `defaultChat`（`bridges/lib/route.mjs:42-47`），所以**不带 thread 的
+  deliverTo 是可投递的**——这一点是查了桥的代码与 `.bridge-state.json` 才敢写的，不是假设。
+- 变异 2 组、强形式全红；S-2 的测试因此加了"第二把锁"（`Object.keys(trigger)` 含 `replyTo`），
+  删掉 `toEqual` 那条仍有东西接手。还原 SHA-256 核对一致，`MUTATION` 残留 0。

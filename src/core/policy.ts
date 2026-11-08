@@ -32,6 +32,18 @@ export const ScheduleSchema = z.object({
   prompt: z.string().trim().min(1, 'a schedule must say what work it asks for').max(20000),
   /** How far this work may go; empty means the default scope of the accept mode. */
   scope: z.string().max(2000).default(''),
+  /**
+   * Where this schedule's reports go, as a chat address: `{ channel, thread? }` of a configured chat channel.
+   *
+   * Without it a scheduled Ticket has no return address at all — its report lands in `RESULT.md` and in the main
+   * Session, neither of which is where a chat-first operator looks. That made an unattended daily job invisible by
+   * design: the work happened and nobody was told in the room they read. `kind` is fixed to `chat` because that is the
+   * only Source kind that routes by channel id; a schedule that wants its answer somewhere else is a different feature.
+   */
+  deliverTo: z.object({
+    channel: z.string().trim().min(1, 'a delivery address needs the channel it delivers to'),
+    thread: z.string().trim().min(1).optional(),
+  }).optional(),
   timing: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('every'), seconds: z.number().int().min(60).max(30 * 86400) }),
     z.object({ kind: z.literal('daily'), time: z.string(), timeZone: z.string().optional() }),
