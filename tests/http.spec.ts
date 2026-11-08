@@ -437,6 +437,59 @@ describe('the artifacts a Ticket registered', () => {
       expect(JSON.stringify(response.json.notes)).toContain('../elsewhere')
     })
   })
+
+  /**
+   * The lineage the panel renders as 关联引用 / 借力来源 arrives on THIS route, and nothing else owned the comparison:
+   * the engine side had tests for `citationsOf` and the panel side had tests against a stub, so dropping
+   * `...host.engine.citationsOf(id)` from the route left both suites green while the box went blank in production —
+   * and renaming the field on either side was equally invisible. One fact in two files needs one test that owns it.
+   */
+  it('comes back on the detail route in both directions, after a read that actually happened', async () => {
+    await withDeployment(async context => {
+      const producer = await createTicket(context, '产出数据表')
+      const consumer = await createTicket(context, '交叉比对')
+      await context.runtime.nudge()
+      await untilPass(() => context.runtime.engine.require(producer).assignments.at(-1)!.state === 'running', 'the launch')
+      await untilPass(() => context.runtime.engine.require(consumer).assignments.at(-1)!.state === 'running', 'the launch')
+
+      // A registered artifact has to exist on disk for the read to succeed, and only a SUCCESS records lineage.
+      const producerDir = context.runtime.engine.require(producer).execution!.directory
+      mkdirSync(join(producerDir, 'data'), { recursive: true })
+      writeFileSync(join(producerDir, 'data', 'table.csv'), 'a,b\n1,2\n', 'utf8')
+      context.runtime.engine.report(producer, { state: 'ready', summary: '抓完了', files: ['data/table.csv'] })
+
+      const read = await context.runtime.readArtifact(consumer, producer, 'data/table.csv')
+      expect(read.ok).toBe(true)
+
+      const forward = await context.host.request(api(`tickets/${producer}`), { headers: PANEL_HEADERS })
+      expect(forward.json.citedBy).toEqual([consumer])
+      expect(forward.json.cites).toEqual([])
+      const backward = await context.host.request(api(`tickets/${consumer}`), { headers: PANEL_HEADERS })
+      expect(backward.json.cites).toEqual([producer])
+      expect(backward.json.citedBy).toEqual([])
+    })
+  })
+
+  it('records nothing on the detail route for a read that was refused, because the refusal is not a use', async () => {
+    await withDeployment(async context => {
+      const producer = await createTicket(context, '产出二进制')
+      const consumer = await createTicket(context, '想读它的')
+      await context.runtime.nudge()
+      await untilPass(() => context.runtime.engine.require(producer).assignments.at(-1)!.state === 'running', 'the launch')
+      await untilPass(() => context.runtime.engine.require(consumer).assignments.at(-1)!.state === 'running', 'the launch')
+
+      const producerDir = context.runtime.engine.require(producer).execution!.directory
+      writeFileSync(join(producerDir, 'blob.bin'), 'not text at all', 'utf8')
+      context.runtime.engine.report(producer, { state: 'ready', summary: '产出了个二进制', files: ['blob.bin'] })
+
+      const read = await context.runtime.readArtifact(consumer, producer, 'blob.bin')
+      expect(read.ok).toBe(false)
+      const forward = await context.host.request(api(`tickets/${producer}`), { headers: PANEL_HEADERS })
+      expect(forward.json.citedBy).toEqual([])
+      const backward = await context.host.request(api(`tickets/${consumer}`), { headers: PANEL_HEADERS })
+      expect(backward.json.cites).toEqual([])
+    })
+  })
 })
 
 describe('a report with nowhere to go', () => {
