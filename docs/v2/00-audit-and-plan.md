@@ -7691,3 +7691,5 @@ DSH 自带接口：bundle 的 `package.json` 加 `dsh.client` 段与 `./client` 
 - 全量 **1079 条通过**（+8），闸门退出码 0。
 - 变异 2 组、强形式全红；还原 SHA-256 核对一致；全仓 `MUTATION` 残留 0。
 - 面板 `node --check` 通过，`renderDecisions`/`ov-decisions`/`operator-queue` 符号各就位。
+
+> 真浏览器（0.11.1）：**88 通过 / 0 失败 / 4 跳过**，登记总数 92 条；两条新目标行钉住「需要你决断的事」卡片与它的空态文案。

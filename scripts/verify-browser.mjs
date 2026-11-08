@@ -140,6 +140,10 @@ try {
       attentionText: (document.getElementById('ov-attention')?.textContent || '').trim().slice(0, 40),
       firstTabSelected: document.querySelector('#tabs button')?.getAttribute('aria-selected'),
       firstTabLabel: document.querySelector('#tabs button')?.textContent.trim(),
+      // 0.11.0：决断队列卡片。空队列要说人话，不能停在永远的"读取中…"；读不到时要明说不可信。
+      decisionsHeading: [...document.querySelectorAll('#tab-overview section.card h2')]
+        .some(n => (n.textContent || '').includes('需要你决断的事')),
+      decisionsText: (document.getElementById('ov-decisions')?.textContent || '').trim().slice(0, 48),
     }
   })
   check('落地即总览（tab-overview 可见、tab-tickets 隐藏）', ov.overviewVisible === true && ov.ticketsHidden === true,
@@ -148,6 +152,10 @@ try {
   check('KPI 一排 6 张卡，且不含机器路径', ov.kpis === 6 && !ov.kpiLabels.some(l => l.includes('/Users')), ov.kpiLabels.join('|'))
   check('「需要你处理」有内容或明确说"系统安静"（不是空白/[object]）',
     ov.attentionText.length > 0 && !ov.attentionText.includes('[object'), ov.attentionText)
+  check('决断队列卡片在总览（0.11.0）', ov.decisionsHeading === true)
+  check('决断队列的三种状态之一都可读（不是永远的"读取中…"）',
+    ov.decisionsText.includes('没有停着的决断') || ov.decisionsText.includes('读不到决断队列')
+      || ov.decisionsText.includes('来源：'), ov.decisionsText)
 
   console.log('── 1c. 健康抽屉与打通（U2 / U3）')
   // 状态胶囊可点 → 抽屉打开（计算样式，不是 classList：§4.49 的教训）
