@@ -1,6 +1,6 @@
 {
   "name": "myagent",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "type": "module",
   "license": "MIT",
   "description": "A personal proactive agent as a DSH (DeepSeek Harness) bundle: cron schedules and a local inbox directory become Triggers, a deterministic gate turns them into authorized Tickets, and each Ticket runs in its own DSH Session and directory, reporting back through a panel and the file system.",
@@ -12,10 +12,12 @@
       "default": "./lib/index.js"
     },
     "./package.json": "./package.json",
-    "./locale/*.json": "./locale/*.json"
+    "./locale/*.json": "./locale/*.json",
+    "./client": "./client.js"
   },
   "files": [
     "lib",
+    "client.js",
     "cordis.patch.yml",
     "locale/*.json",
     "examples",
@@ -28,7 +30,14 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
-    "manifestVersion": 1
+    "manifestVersion": 1,
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
   },
   "scripts": {
     "build": "tsdown",
