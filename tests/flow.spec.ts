@@ -751,3 +751,71 @@ describe('the token counts a worker’s progress reports', () => {
 //
 // `toolsOf` stays in the harness: it is correct, it is used by step 2 above, and W1 in
 // `docs/v2/21-engineering-plan.md` is still open. Recorded in `docs/v2/06-security-risk-register.md` §2.2.
+
+describe('the operator is told where the panel is, by the system itself', () => {
+  /**
+   * A harness with an instrumented logger. The local `deployment()` builds its own stub host internally, so a test
+   * that needs to observe what the system LOGS has to build the runtime itself with a host it instrumented first —
+   * passing `host` as an extra argument to `deployment()` does nothing (the first version of this test did exactly
+   * that and asserted against a logger nothing ever called).
+   */
+  const instrumented = async (): Promise<{ runtime: Runtime; lines: string[] }> => {
+    const host = stubHost()
+    const lines: string[] = []
+    const logger = host.ctx.logger as unknown as { info(...args: unknown[]): void }
+    logger.info = (...args: unknown[]): void => {
+      // The stub logger does not do printf substitution the way the real one does, so the test does it: otherwise
+      // the recorded line carries the `%s` placeholder and the assertion measures the template, not the sentence.
+      const [format, ...rest] = args as [string, ...unknown[]]
+      let index = 0
+      lines.push(String(format).replace(/%[sd]/g, () => String(rest[index++])))
+    }
+    const stateDir = tempDir('myagent-flow-')
+    const inbox = join(stateDir, 'inbox')
+    const work = join(stateDir, 'work')
+    const runtime = createRuntime(host.ctx, Config({ stateDir, inboxDir: inbox, workRoot: work }) as never)
+    runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], sources: { inbox: { directory: inbox, pollMs: 1000 } } })
+    await runtime.start()
+    return { runtime, lines }
+  }
+
+  it('prints the real panel address at startup, read from the host rather than guessed', async () => {
+    const { runtime, lines } = await instrumented()
+    try {
+      const panel = lines.find(line => line.includes('myagent panel:'))
+      expect(panel, '启动日志里应当有一行告诉操作者面板在哪').toBeDefined()
+      // The stub host serves on 3080, and `panelPath()` reads that port from the host — so the line carries the
+      // address the panel is actually reachable at, not a hardcoded example.
+      expect(panel).toContain('http://127.0.0.1:3080/myagent/')
+      expect(panel).toContain('DSH Web GUI address plus /myagent/')
+      // And the address stands on its own line, not buried among four paths.
+      expect(panel!.startsWith('myagent panel: http://127.0.0.1:3080/myagent/')).toBe(true)
+    } finally { await runtime.stop() }
+  })
+
+  it('says there is no panel when the profile has no web server, instead of printing an empty address', async () => {
+    const host = stubHost()
+    // Drop the PORT, not the web server: `start()` registers its routes through `webServer.register`, so deleting the
+    // whole object would make startup fail for a reason that has nothing to do with the panel. A profile without a
+    // web server is exactly this shape from `panelPath()`'s point of view: no port, therefore no address.
+    ;(host.ctx as unknown as { webServer: { port?: number } }).webServer.port = undefined
+    const lines: string[] = []
+    const logger = host.ctx.logger as unknown as { info(...args: unknown[]): void }
+    logger.info = (...args: unknown[]): void => {
+      // The stub logger does not do printf substitution the way the real one does, so the test does it: otherwise
+      // the recorded line carries the `%s` placeholder and the assertion measures the template, not the sentence.
+      const [format, ...rest] = args as [string, ...unknown[]]
+      let index = 0
+      lines.push(String(format).replace(/%[sd]/g, () => String(rest[index++])))
+    }
+    const stateDir = tempDir('myagent-flow-')
+    const runtime = createRuntime(host.ctx, Config({ stateDir, inboxDir: join(stateDir, 'inbox'), workRoot: join(stateDir, 'work') }) as never)
+    try {
+      await runtime.start()
+      const panel = lines.find(line => line.includes('myagent panel:'))
+      expect(panel).toContain('no web server, so there is no panel')
+      expect(panel).not.toContain('http://127.0.0.1:undefined')
+    } finally { await runtime.stop() }
+  })
+})
+  

@@ -1043,6 +1043,19 @@ export class Runtime implements HttpHost {
     this.announceSandbox()
     this.context.logger.info('myagent runs: state %s, work %s, inbox %s, accept mode %s',
       this.machine.stateDir, this.machine.workRoot, this.machine.inboxDir, this.settings().acceptMode)
+    // The one line that answers "where do I look at this thing". The panel is a subpath of the DSH Web GUI, whose
+    // port only the host knows; `panelPath()` reads it from the host, so what is printed here is the real address
+    // and not a guess. Before this line existed the address lived only in the middle of the README, and an operator
+    // who had just installed the bundle could not learn it from the system itself — the most prominent place a
+    // running system has is its own startup log.
+    const panel = this.panelPath()
+    if (panel === '') {
+      this.context.logger.info('myagent panel: this profile has no web server, so there is no panel; '
+        + 'the chat room and each Ticket directory\'s RESULT.md are your only windows')
+    } else {
+      this.context.logger.info('myagent panel: %s — open it in a browser on this machine '
+        + '(it is the DSH Web GUI address plus /myagent/)', panel.replace(/#ticket=$/, ''))
+    }
   }
 
   /**
