@@ -70,6 +70,7 @@ function harness(acceptMode: 'auto' | 'observe' = 'auto'): Harness {
       // 那会让任何误用它的测试看起来通过。
       returnAddressOf: () => undefined,
       replyToRequester: () => ({ sent: false, reason: 'stubbed: this suite does not exercise replies' }),
+    raiseDecision: () => 'decision-1',
       promoteSkill: async () => ({ ok: false, error: 'stubbed' }),
       // Faithful where it matters: the authorization is the real Engine's, so a refusal the tool surfaces is a refusal
       // the Engine actually made. Only the IO is stubbed.
@@ -139,10 +140,16 @@ describe('the registration shape', () => {
     //   [... 'myagent_reply', 'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_retry_ticket']
     // 加它的理由：`desk:'main'` 时操作者自己的 Session 就是分诊台，而它**没有 `myagent_report`**
     // （那是 worker 的、绑在 attempt 上），所以它无法给一张分诊任务收尾——B1 缺的就是这一块。
+    // 【0.11.0 产品变更】前台多了 `myagent_raise_decision`（把决断停到面板的「需要你决断的事」队列）。上一行的旧值是：
+    //   ['myagent_create_ticket', 'myagent_list_tickets', 'myagent_ticket_status', 'myagent_answer_ticket',
+    //    'myagent_reply', 'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_close_ticket', 'myagent_retry_ticket']
+    // 加它的理由：操作者要求"中间不需要我决断的机制"——值得他决断的事必须有一个**不打断任何事**的落点，
+    // 否则 worker 遇到"该扩展但不该我自决"的事时，只有停下手等人这一种诚实做法。
     expect(names).toEqual([
       'myagent_create_ticket', 'myagent_list_tickets', 'myagent_ticket_status', 'myagent_answer_ticket',
-      // 顺序照 mainTools 里的声明顺序：close_ticket 在 stop 之后、retry 之前。
-      'myagent_reply', 'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_close_ticket', 'myagent_retry_ticket',
+      // 顺序照 mainTools 里的声明顺序：raise_decision 在 note 之前，close_ticket 在 stop 之后、retry 之前。
+      'myagent_reply', 'myagent_raise_decision', 'myagent_note_ticket', 'myagent_stop_ticket',
+      'myagent_close_ticket', 'myagent_retry_ticket',
     ])
     expect(names).not.toContain('myagent_report')
   })

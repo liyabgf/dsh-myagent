@@ -691,6 +691,8 @@ declare const SettingsSchema: z.ZodObject<{
     everyMs: z.ZodDefault<z.ZodNumber>;
     launchStuckMs: z.ZodDefault<z.ZodNumber>;
     silentMs: z.ZodDefault<z.ZodNumber>;
+    autoRetry: z.ZodDefault<z.ZodBoolean>;
+    autoRetryMax: z.ZodDefault<z.ZodNumber>;
     maxActions: z.ZodDefault<z.ZodNumber>;
   }, z.core.$strict>>;
   notify: z.ZodPrefault<z.ZodObject<{
@@ -1252,7 +1254,7 @@ declare class Engine {
    * An Assignment was running when the host stopped. It ends as interrupted, and a fresh pending Assignment takes the
    * Ticket over with a recovery note, so a restart continues the work instead of losing it.
    */
-  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string): void;
+  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string, noteText?: string): void;
   /**
    * Tell each live Ticket the change bears on how, under the new Policy. A change is delivered, never enforced by
    * cancellation: cancelling would leave half-finished work with no one to explain it.

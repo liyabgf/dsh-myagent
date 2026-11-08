@@ -237,6 +237,14 @@ export const SettingsSchema = z.object({
      * is worse than one that is off.
      */
     silentMs: z.number().int().min(0).max(604_800_000).default(0),
+    /**
+     * How many times a Ticket whose turn died in an upstream error is relaunched automatically before it goes to a
+     * person. 0 means no cap: the operator's standing instruction is that work keeps moving until it is done, and a
+     * flaky upstream is not a reason to stop — the failed turn's own duration is the backoff. The escape hatch exists
+     * because an upstream that is down for a day would otherwise burn a day of retries.
+     */
+    autoRetry: z.boolean().default(true),
+    autoRetryMax: z.number().int().min(0).max(1000).default(0),
     /** How many rescues one Ticket gets before the Watchdog stops and tells a person instead. */
     maxActions: z.number().int().min(1).max(10).default(2),
   }).strict().prefault({}),

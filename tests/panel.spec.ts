@@ -237,6 +237,9 @@ const routes = (over: Routes = {}): Routes => ({
   // the answer that tells the page its host is older than it is.
   'GET projects': { projects: [] },
   'GET effects': { counts: {} },
+  // 0.11.0 的决断队列：总览落地就会读它，所以基础夹具里给一个空队列——
+  // 否则每条无关测试都会红在一个与本包行为无关的 404 上（U14 给 decisions 的同一条理由）。
+  'GET operator-queue': { items: [] },
   ...over,
 })
 
@@ -2538,6 +2541,8 @@ describe('the contract with the API', () => {
     'POST works/:id/archive', 'POST works/:id/unarchive', 'POST works/:id/delete',
     'POST tickets/:id/work', 'GET tickets/:id/events', 'GET tickets/:id/dependencies',
     'POST tickets/:id/dependencies', 'POST tickets/:id/dependencies/drop',
+    // 【0.11.0 产品变更】决断队列：总览读 GET，遍历里点一次「知道了」问 POST。
+    'GET operator-queue', 'POST operator-queue/:id/dismiss',
   ]
   /** One call as a route of that table, with the record ids it carried turned back into parameters. */
   const routeOf = (call: Call): string => `${call.method} ${call.path
@@ -2551,6 +2556,12 @@ describe('the contract with the API', () => {
     let projectArchived = false
     let workArchived = false
     const { calls } = await mount(scheduleRoutes({
+      // 【0.11.0】给遍历一个真的要决断的条目，否则「知道了」永远不会被点到，
+      // 而"表里有路由没人问"正是这条测试存在的一半理由。
+      // id 用生产形状（decision-request-…）：遍历测试会把路径里的 id 归一化成 :id 再对照路由表，
+      // 一个不像真 id 的 id 会以字面量进对照表，红在归一化而不是行为上。
+      'GET operator-queue': { items: [{ id: 'decision-request-1', title: '要不要加心跳？', detail: '桥死时聊天侧沉默。', source: 'auto-retry', raisedAt: '2026-11-09T01:00:00.000Z' }] },
+      'POST operator-queue/decision-request-1/dismiss': {},
       // With the lost view present, so the walkthrough reaches `GET lost`: a route in the table that the page never
       // asks for is the "quietly lost a feature" half of this test's own guarantee. The page gates that request on
       // `counts.lost` being there, which is also exactly how it degrades against a bundle that has neither.
@@ -2599,6 +2610,9 @@ describe('the contract with the API', () => {
       'POST tickets/ticket-1/dependencies': dep(),
       'POST tickets/ticket-1/dependencies/drop': { dropped: 'ticket-2', waitsFor: [] },
     }))
+    // 【0.11.0】落地页先把队列里那条决断点掉：它属于"只有操作者能推进的事"这一族。
+    click(button('知道了', byId('ov-decisions')))
+    await settle()
     // Every page, and the writes on them: the routes a person can reach by clicking around.
     for (const tab of ['工作', '派活', '记录', '聊天', '设置', '提示词']) {  // 【U7】门禁记录→记录；【U13】排期并入派活；【U14】来源→聊天
       click(button(tab))
@@ -3546,6 +3560,25 @@ describe('总览：落地页回答"有什么需要我"（U1）', () => {
       'GET tickets': { offset: 0, limit: 80, count: 0, tickets: [] },
     }))
     expect(text('ov-attention')).toContain('系统安静，没有需要你处理的事')
+  })
+
+  it('把停着的决断放在总览，并且「知道了」只走那一条 dismiss 路由', async () => {
+    const { sent } = await mount(routes({
+      'GET operator-queue': { items: [{ id: 'd-1', title: '要不要给桥加心跳？', detail: '桥死掉时聊天侧完全沉默。', source: 'ticket:abc123', raisedAt: '2026-11-09T01:00:00.000Z' }] },
+      'POST operator-queue/d-1/dismiss': {},
+    }))
+    // 标题、来由与来源都在卡片上：一个只有标题的队列条目等于让操作者自己再去查一遍上下文。
+    expect(text('ov-decisions')).toContain('要不要给桥加心跳？')
+    expect(text('ov-decisions')).toContain('桥死掉时聊天侧完全沉默。')
+    expect(text('ov-decisions')).toContain('ticket:abc123')
+    click(button('知道了', byId('ov-decisions')))
+    await settle()
+    expect(sent('POST operator-queue/d-1/dismiss')).toHaveLength(1)
+  })
+
+  it('队列读不到时明说不可信，而不是留成永远的"读取中"', async () => {
+    await mount(routes({ 'GET operator-queue': refuse(500, 'boom') }))
+    expect(text('ov-decisions')).toContain('读不到决断队列')
   })
 
   it('KPI 一排把"只有你能推进的事"放在视线落点，而机器路径不在其中', async () => {

@@ -14,8 +14,8 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import {
-  Engine, latestAssignment, lostTriggerOf, parseSettings, payloadText, policyVersion, runningAssignment, settingsPolicy,
-  UserError, waitsForPerson, type DomainEvent, type Settings, type Ticket,
+  Engine, key, latestAssignment, lostTriggerOf, parseSettings, payloadText, policyVersion, runningAssignment,
+  settingsPolicy, UserError, waitsForPerson, type DomainEvent, type Settings, type Ticket,
   canCollaborate,
 } from '../core/index.ts'
 import { machineOf, type DeploymentConfig, type Machine } from '../deployment.ts'
@@ -488,6 +488,7 @@ export class Runtime implements HttpHost {
       returnAddressOf: (ticketId: string) => this.returnAddressOf(ticketId),
       replyToRequester: (ticketId: string, text: string) => this.replyToRequester(ticketId, text),
       promoteSkill: (ticketId, input) => this.promoteSkill(ticketId, input),
+      raiseDecision: (title, detail, source) => this.raiseDecision(title, detail, source),
     }
   }
 
@@ -911,6 +912,55 @@ export class Runtime implements HttpHost {
   }
 
   /**
+   * Relaunch a Ticket whose turn died in an upstream error, unbounded unless `watchdog.autoRetryMax` says otherwise.
+   *
+   * The count lives in `kv` rather than on the Ticket: it is bookkeeping about the host's behaviour, not part of the
+   * work's history, and the history already carries one `interrupted` event per relaunch with its own cause.
+   */
+  private autoRetry(ticketId: string, assignmentId: string, cause: { reason?: string; error?: string } | undefined): void {
+    const watchdog = this.settings().watchdog
+    if (!watchdog.autoRetry) return
+    const max = watchdog.autoRetryMax
+    const retryKey = KV.autoRetry(ticketId)
+    const count = this.store.get<number>(retryKey) ?? 0
+    const causeText = [cause?.reason, cause?.error].filter(part => part !== undefined).join(': ') || 'unknown upstream error'
+    if (max > 0 && count >= max) {
+      try {
+        this.engine.report(ticketId, { state: 'failed', summary: `自动重试 ${count} 次后仍失败：${causeText}` })
+      } catch (error) {
+        this.context.logger.warn('myagent could not record the exhausted auto-retry of %s: %s', ticketId, reason(error))
+      }
+      this.raiseDecision(`任务 ${ticketId.slice(0, 8)} 自动重试 ${count} 次后仍失败，需要人处理`, causeText, 'auto-retry')
+      return
+    }
+    this.engine.assignmentInterrupted(ticketId, assignmentId, 'auto-retry: the turn ended in an upstream error',
+      '你的上一轮因为上游 API 错误而中断（通常是超时重试耗尽），不是你的错。读一遍目录里的当前状态，从停下的地方继续；不要重复已完成的工作。')
+    this.store.set(retryKey, count + 1)
+    const detail = `Ticket ${ticketId}: its turn ended in an error (${causeText}); auto-relaunched, attempt ${count + 1}${max > 0 ? ` of ${max}` : ' (uncapped)'}`
+    this.sessionHealth.problem(ticketId, detail)
+    this.context.logger.warn('myagent — %s', detail)
+  }
+
+  /**
+   * Park something in front of the operator without stopping anything: the queue the panel shows as
+   * 「需要你决断的事」. Raised by the system when it reaches a decision that is a person's (an exhausted retry), and by
+   * workers through `myagent_raise_decision` when they meet something worth expanding but not theirs to decide.
+   */
+  raiseDecision(title: string, detail: string, source: string): string {
+    const at = new Date().toISOString()
+    const id = key('decision-request', source, title, at)
+    const items = this.store.get<DecisionRequest[]>(KV.operatorQueue) ?? []
+    this.store.set(KV.operatorQueue, [...items, { id, title, detail, source, raisedAt: at }])
+    return id
+  }
+
+  decisions(): readonly DecisionRequest[] { return this.store.get<DecisionRequest[]>(KV.operatorQueue) ?? [] }
+
+  dismissDecision(id: string): void {
+    this.store.set(KV.operatorQueue, (this.store.get<DecisionRequest[]>(KV.operatorQueue) ?? []).filter(item => item.id !== id))
+  }
+
+  /**
    * The panel's URL prefix, with a Ticket id appendable after the `#ticket=`.
    * Empty when this profile has no web server, which makes a notification fall back to its text alone.
    */
@@ -1238,6 +1288,15 @@ export class Runtime implements HttpHost {
       // cancelling rather than a Session working, and no `turn/end` at all is no evidence either way — both leave the
       // problem live, and a Ticket that ends clears it whatever happened to its Session.
       if (ended !== undefined && ended.kind !== 'error' && ended.kind !== 'aborted') this.sessionHealth.clear(ticketId)
+      // A turn that ended in error while the Ticket still says running is a dead turn: DSH exhausted its own model
+      // retries (five API timeouts is the usual shape) and, left alone, nothing would ever move this Ticket again —
+      // the operator's standing instruction is that work keeps moving until it is done. Relaunch it from here; the
+      // failed turn's own duration is the backoff, so this needs no timer of its own.
+      if (ended?.kind === 'error') {
+        const still = this.store.tickets.get(ticketId)
+        const running = still === undefined ? undefined : runningAssignment(still)
+        if (running !== undefined) this.autoRetry(ticketId, running.id, this.causeOf(agent.id, ended))
+      }
       this.passes.requestPass()
     })))
     this.disposers.push(this.context.on('agent/disposed', contained('agent/disposed', ({ agent }) => {
@@ -1376,6 +1435,15 @@ export function createRuntime(context: Context, config: DeploymentConfig): Runti
     if (error instanceof LockHeld) context.logger.error('myagent did not start: %s', error.message)
     throw error
   }
+}
+
+/** One item in the operator's decision queue: parked, visible on the panel, dismissed by a person. */
+export interface DecisionRequest {
+  readonly id: string
+  readonly title: string
+  readonly detail: string
+  readonly source: string
+  readonly raisedAt: string
 }
 
 export type { PromptRole }

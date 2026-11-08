@@ -38,6 +38,9 @@ export const REQUEST_HEADER = 'x-myagent-request'
 export interface HttpHost {
   readonly context: Context
   readonly engine: Engine
+  /** The operator's decision queue, and the dismissal of one entry; the Runtime owns the kv it lives in. */
+  decisions(): readonly { id: string; title: string; detail: string; source: string; raisedAt: string }[]
+  dismissDecision(id: string): void
   readonly store: Store
   readonly health: HealthBoard
   readonly prompts: Prompts
@@ -637,6 +640,11 @@ function table(host: HttpHost): readonly Route[] {
       // crafts, and a second copy is what drifts when a fourth built-in is added. Same list, one owner.
       builtInSkills: builtInSkillsView(),
     })),
+    route('GET', 'operator-queue', async () => ({ items: host.decisions() })),
+    route('POST', 'operator-queue/:id/dismiss', async ({ params }) => {
+      host.dismissDecision(params.id!)
+      return {}
+    }),
     route('POST', 'prompts/skills/:name/toggle', async ({ params, body }) => {
       const parsed = z.object({ enabled: z.boolean() }).strict().parse(await body())
       const skill = host.prompts.setSkillEnabled(params.name!, parsed.enabled)

@@ -69,6 +69,11 @@ export interface ToolsHost {
    */
   readArtifact(sourceTicketId: string, targetTicketId?: string, path?: string, materialize?: boolean): Promise<ArtifactRead>
   /**
+   * Park a decision in front of the operator without stopping anything: the panel shows it as 「需要你决断的事」.
+   * On the host because the queue lives in the Runtime's kv, and a tool reaching for kv would be a second writer.
+   */
+  raiseDecision(title: string, detail: string, source: string): string
+  /**
    * Where a Ticket's reports go, or `undefined` when no address was ever written down (S3a).
    *
    * A method rather than widening `store` to include `triggers`: the front desk needs one fact about one Ticket, and
@@ -228,6 +233,21 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
       }
     },
   }), tool({
+    name: 'myagent_raise_decision',
+    description: 'Park a decision in front of the operator without stopping your work: use it when you meet something '
+      + 'worth expanding or changing that is NOT yours to decide — a new capability, an architecture question, a cost '
+      + 'trade-off. It appears on the panel as 「需要你决断的事」 and waits there; it does not interrupt anyone and it '
+      + 'does not end your turn. Do NOT use it for facts another Ticket needs (that is myagent_note_ticket) or for '
+      + 'answers the requester is waiting for (that is myagent_report).',
+    schema: z.object({
+      title: z.string().trim().min(1).max(120).describe('One sentence: the decision, phrased as a question or a choice.'),
+      detail: z.string().trim().min(1).max(8000).describe('What you found, why it matters, and what you would do. Evidence over adjectives.'),
+    }).strict(),
+    execute: async args => {
+      const id = host.raiseDecision(args.title, args.detail, `ticket:${ticketId}`)
+      return { raised: id, where: 'the panel\'s 「需要你决断的事」 list' }
+    },
+  }), tool({
     name: 'myagent_note_ticket',
     description: 'Hand a fact to another Ticket in the same Work: a number, a path, something your side decided that its '
       + 'side needs. It arrives there as an Input written by you, through the Engine, so both Tickets keep a record of '
@@ -359,6 +379,12 @@ export function mainTools(host: ToolsHost): Tool[] {
         if (!outcome.sent) return { error: outcome.reason ?? 'There is nowhere to send this.' }
         return { ticket_id: args.ticket_id, sent_to: outcome.address }
       },
+    }),
+    tool({
+      name: 'myagent_raise_decision',
+      description: 'Park a decision in front of the operator: it appears on the panel as 「需要你决断的事」 and waits there. Nothing stops, nobody is interrupted.',
+      schema: z.object({ title: z.string().trim().min(1).max(120), detail: z.string().trim().min(1).max(8000) }).strict(),
+      execute: async args => ({ raised: host.raiseDecision(args.title, args.detail, 'front-desk') }),
     }),
     tool({
       name: 'myagent_note_ticket',

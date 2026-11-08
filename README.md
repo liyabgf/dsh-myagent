@@ -222,6 +222,8 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
     "enabled": true, "everyMs": 60000,
     "launchStuckMs": 600000,        // 启动卡多久算卡住
     "silentMs": 0,                  // 0 = 关；非 0 时静默超过它就打断并换一轮重做
+    "autoRetry": true,              // 一轮因上游错误（如 API 超时重试耗尽）而死时自动重启；false = 老行为：停在原地等人
+    "autoRetryMax": 0,              // 0 = 不限次（默认）；>0 到上限就把任务判 failed，并在面板「需要你决断的事」停一条等你
     "maxActions": 2                 // 救几次；到上限就 escalate（写事件 + 上健康板 + 告诉请求者需要人）
   },
   "triage": {                       // 进气分诊：请求先经一个判断，再决定开不开任务

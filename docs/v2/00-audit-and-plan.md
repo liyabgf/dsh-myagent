@@ -7641,3 +7641,53 @@ DSH 自带接口：bundle 的 `package.json` 加 `dsh.client` 段与 `./client` 
 扫描里最值得先说的一条是 G-1：方向说"聊天优先、每加一个功能先问能不能在聊天里完成"，
 而前台 9 个工具全是"管进行中的任务"——关于**过去**的工作（产物、血缘、召回、工作归属），
 聊天侧一个都问不了，操作者只能被赶去面板。这与 G-2（桥死了没信号）合起来是同一句方向的两处没接线。
+
+## 4.136 无限制推进的机制（0.11.0）：死轮自动重启 + 操作者决断队列
+
+操作者的指令是"做成无限制任务，一直推进，直到全部完成……中间除非我自己来插手，不需要我决断"，并点名了一个历史事实：
+**DSH 在 API 超时 5 次后直接让任务失败**。这句话在系统里对应的是一个真洞：`agent/error` + `turn/end(kind:'error')`
+之后，Ticket 的 attempt 仍写着 running，但那一轮已经死了——没有任何东西会再推动它。旧测试甚至把这个形状钉成了
+契约（"错误轮之后 attempt 上留一份 waiting 报告，任务可见为停滞"），也就是说**停滞是被设计成终点的**。
+
+### 1. 死轮自动重启（`watchdog.autoRetry` / `autoRetryMax`）
+
+`agent/status` 的错误轮分支现在多做一步：若该 Ticket 仍有 running attempt，调 `Engine.assignmentInterrupted`
+（崩溃恢复用的同一个原语：死 attempt 记 interrupted、开一个新的 pending、提交后启动），并把原因写成给 worker 看的
+一句话——"你的上一轮因为上游 API 错误而中断，不是你的错；读一遍目录当前状态，从停下的地方继续"。
+次数记在 `kv`（`auto-retry:<ticketId>`）而不进领域历史，因为它是关于宿主行为的簿记；历史里每一次重启本来就有一条
+带原因的 `interrupted`。**默认不限次**（`autoRetryMax: 0`）：失败那一轮自身要花几分钟，那就是天然退避；
+到上限（若设）才把任务判 `failed` 交给人，并同时往决断队列停一条。`autoRetry: false` 恢复 0.11.0 之前的形状。
+
+### 2. 操作者决断队列（面板「需要你决断的事」）
+
+"不需要我决断"不等于"永远没人决断"——值得人拍板的事得有个**不打断任何事**的落点，否则 worker 遇到
+"该扩展但不该我自决"的东西时，唯一诚实的做法就是停手等人。于是有了这个队列：
+`Runtime.raiseDecision/listDecisions/dismissDecision`（kv 单一所有者）、`GET operator-queue` 与
+`POST operator-queue/:id/dismiss`、工具 `myagent_raise_decision`（worker 与前台都有）、总览新增一张卡
+（标题+来由+来源+时间，唯一动作是「知道了」）。它与「需要你处理」的区别写在卡片的"为什么"里：
+那一族是**停下来的活**，这一族是**没停任何事、但只有你能拍板的事**。自动重试到上限走的就是这条路。
+
+### 3. 这一轮的量具与真缺陷
+
+- **测试桩抓到一个真 bug**：面板 dismiss 我写成 `api(path, { method:'POST', body: {} })`——`fetch` 的 body 必须是字符串，
+  真浏览器会把它串成 `"[object Object]"` 发出去。桩比浏览器严（它 `JSON.parse(init.body)` 直接抛），于是红在
+  "POST 一次都没问到"上，而不是红在一条看起来合理的断言上。改用页面自己的 `post()`。**桩比运行时严格，是桩的价值。**
+- **夹具 id 要用生产形状**：遍历测试把路径里的 id 归一化成 `:id` 再对照路由表，我用 `d-1` 当队列项 id，
+  于是它以字面量进对照表、红在归一化上。改成 `decision-request-1`。
+- **`saveSettings` 是整份替换**：我只想关掉一个开关，写成 `saveSettings({watchdog:{autoRetry:false}})`，
+  结果把 `acceptMode` 冲回默认 `observe`，任务根本没受理，三条测试红成"expected [] to have a length of 1"。
+  改为读当前设置再合并。**设置写入是替换语义，不是 patch 语义。**
+- **`toolsOf()` 返回的是名字字符串数组**，我对它 `.map(tool => tool.name)` 得到一排 undefined 还以为是注册没发生。
+- **`registerHttp(this)`**：Runtime 自己就是 HttpHost，所以新方法只需在接口上声明，不需要再拼一个对象。
+
+### 4. 既有测试的处置（产品变更，未删任何断言）
+
+`fault-injection.spec.ts` 三条（原因上票 / resumed 语义 / retry 不算 resumed）现在**显式关闭 autoRetry**，
+以钉住它们本来的主题；每条都留了 `【产品变更】` 注释说明为什么关。`tools.spec.ts` 的前台工具清单加了
+`myagent_raise_decision`（带旧值与理由）。`panel.spec.ts` 的路由表加两条，并按该表自己的纪律让遍历真的点一次「知道了」。
+
+### 5. 证据
+
+- 全量 **1079 条通过**（+8），闸门退出码 0。
+- 变异 2 组、强形式全红；还原 SHA-256 核对一致；全仓 `MUTATION` 残留 0。
+- 面板 `node --check` 通过，`renderDecisions`/`ov-decisions`/`operator-queue` 符号各就位。

@@ -111,6 +111,10 @@ export const KV = {
   mainSession: 'main-session:id' as const,
   /** The settings revision counter. */
   settingsRevision: 'settings:revision' as const,
+  /** How many times this Ticket has been relaunched after a turn that died in an upstream error. */
+  autoRetry: (ticketId: string) => `auto-retry:${ticketId}` as const,
+  /** The operator's decision queue: items parked there wait for a person, and the panel shows them. */
+  operatorQueue: 'operator:queue' as const,
   /** The team's prompt overrides: `prompts:config`. */
   promptsConfig: 'prompts:config' as const,
   /** The prompt revision counter. */

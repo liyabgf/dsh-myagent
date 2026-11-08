@@ -1101,7 +1101,7 @@ export class Engine {
    * An Assignment was running when the host stopped. It ends as interrupted, and a fresh pending Assignment takes the
    * Ticket over with a recovery note, so a restart continues the work instead of losing it.
    */
-  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string): void {
+  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string, noteText?: string): void {
     this.mutate(ticketId, ticket => {
       const assignment = ticket.assignments.find(item => item.id === assignmentId)
       if (assignment === undefined || assignment.state !== 'running') return ticket
@@ -1113,7 +1113,7 @@ export class Engine {
         why === undefined ? { assignmentId } : { assignmentId, why })
       const note: TicketInput = {
         id: key('input', ticketId, 'interrupted', assignmentId), kind: 'note', at,
-        text: 'myagent restarted while you were working. Read the current state of your directory, then continue the assignment from where it stopped; do not repeat completed work.',
+        text: noteText ?? 'myagent restarted while you were working. Read the current state of your directory, then continue the assignment from where it stopped; do not repeat completed work.',
       }
       const fresh: Assignment = { id: key('assignment', ticketId, ticket.assignments.length + 1), state: 'pending', createdAt: at }
       const withEnded = withAssignment(ticket, { ...assignment, state: 'ended', endedAt: at, endedReason: 'interrupted' })

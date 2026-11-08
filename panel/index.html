@@ -292,6 +292,14 @@
       <div id="ov-attention"><span class="muted">读取中…</span></div>
     </section>
     <section class="card">
+      <h2>需要你决断的事</h2>
+      <details class="why"><summary>这和上面「需要你处理」有什么区别</summary><div class="why-body"><p class="muted">
+        「需要你处理」是停下来的活：等你回答、等你映射身份、队列放弃的请求。<br>
+        这一张是<b>没有停任何事、但只有你能拍板的事</b>：worker 遇到值得扩展却不该它自决的东西、
+        或系统自动重试到上限之后，会把决断停在这里等你。它不催你，也不阻塞任何任务。</p></div></details>
+      <div id="ov-decisions"><span class="muted">读取中…</span></div>
+    </section>
+    <section class="card">
       <h2>活从哪来</h2>
       <details class="why"><summary>这张表怎么读</summary><div class="why-body"><p class="muted">
         每个来源现在是在跑还是停了、下次什么时候看、最近一次产出是什么时候。</p></div></details>
@@ -1829,6 +1837,47 @@
     renderAttention(attention, waiting)
     renderUpcoming(upcoming, schedBody.schedules || [])
     renderRecent(recent, decisionsBody.decisions || [])
+    // 决断队列单独一条读：它不在 state 里（state 是"系统现在怎么样"，队列是"系统在等你拍板什么"），
+    // 也不该因为读失败而拖累整页——catch 成空列表并明说读不到，而不是把卡片留成"读取中…" forever。
+    const decisionsNode = $('ov-decisions')
+    if (decisionsNode !== null) {
+      const queue = await api('operator-queue').catch(() => null)
+      renderDecisions(decisionsNode, queue === null ? null : (queue.items || []))
+    }
+  }
+
+  /**
+   * 「需要你决断的事」：停在这里的每一项都不阻塞任何任务，所以它的文案不催；
+   * 「知道了」是唯一的动作——决断本身发生在你的脑子里，面板只负责把它从视线里拿走并留下记录已被读过的痕迹。
+   */
+  const renderDecisions = (node, items) => {
+    node.textContent = ''
+    if (items === null) {
+      node.append(el('p', { class: 'muted' }, '读不到决断队列（接口报错）。它不影响任何任务，但这一张现在不可信。'))
+      return
+    }
+    if (items.length === 0) {
+      node.append(el('p', { class: 'muted' }, '没有停着的决断。worker 遇到不该它自决的事、或自动重试到上限时，会出现在这里。'))
+      return
+    }
+    for (const item of items) {
+      const dismiss = el('button', {
+        class: 'btn small',
+        onclick: async () => {
+          dismiss.disabled = true
+          // post() 而不是 api(..., {body:{}})：fetch 的 body 必须是字符串，一个对象会被真浏览器串成
+          // "[object Object]" 发出去（测试桩更严，直接抛）——第一版就是这么红的，红得对。
+          await post(`operator-queue/${encodeURIComponent(item.id)}/dismiss`, {}).catch(() => {})
+          await loadOverview()
+        },
+      }, '知道了')
+      node.append(el('div', { class: 'row' },
+        el('div', { class: 'grow' },
+          el('div', { class: 'strong' }, item.title || '(无标题)'),
+          el('div', { class: 'muted' }, item.detail || ''),
+          el('div', { class: 'muted small' }, `来源：${item.source || '?'} · ${item.raisedAt || '?'}`)),
+        dismiss))
+    }
   }
 
   const renderKpis = () => {

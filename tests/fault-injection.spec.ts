@@ -568,6 +568,9 @@ describe('a worker that fails on an upstream error', () => {
 
   it('puts the cause on the Ticket, which is what a health line answering "now" cannot be', async () => {
     const context = await deployment()
+    // 【产品变更】0.11.0 起错误轮默认自动重启（watchdog.autoRetry 默认 true），本测试钉的是"原因上票"这件事，
+    // 与重试策略无关；关掉自动重试后旧断言（最后一轮 assignment 上留 waiting 报告）原样成立。
+    context.runtime.saveSettings({ ...context.runtime.settings(), watchdog: { ...context.runtime.settings().watchdog, autoRetry: false } })
     const { runtime, host } = context
     try {
       const id = await startAnother(context, '信息比对')
@@ -681,6 +684,8 @@ describe('a worker that fails on an upstream error', () => {
 
   it('records that work resumed after an interruption, so a rescued run cannot be read as a smooth one', async () => {
     const context = await deployment()
+    // 【产品变更】同上：resumed 事件的语义属于"同一尝试在死轮之后收到报告"，自动重启会先换尝试，故此处关闭。
+    context.runtime.saveSettings({ ...context.runtime.settings(), watchdog: { ...context.runtime.settings().watchdog, autoRetry: false } })
     const { runtime, host } = context
     try {
       const id = await startAnother(context, '信息比对')
@@ -709,6 +714,8 @@ describe('a worker that fails on an upstream error', () => {
 
   it('calls neither an ordinary report nor a retry a resumption, so the event stays worth reading', async () => {
     const context = await deployment()
+    // 【产品变更】同上：本测试对照的是"人工 retry"与"resumed"的区别，自动重启会先插入 interrupted/launched。
+    context.runtime.saveSettings({ ...context.runtime.settings(), watchdog: { ...context.runtime.settings().watchdog, autoRetry: false } })
     const { runtime, host } = context
     try {
       const ordinary = await startAnother(context, '写一份摘要')
