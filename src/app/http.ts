@@ -15,6 +15,7 @@ import { UserError } from '../core/errors.ts'
 import { policyVersion, ScheduleSchema, sourcePolicy, type Settings } from '../core/policy.ts'
 import { describeTiming, localZone, nextRun } from '../core/timing.ts'
 import { PROMPT_ROLES, PromptConflict } from './prompts.ts'
+import { builtInSkillsView } from './skills.ts'
 import { scheduleView } from './views.ts'
 import { isTextFile, listFiles, MAX_FILE_BYTES, readForPanel, resolveInside, resolveRealInside } from './files.ts'
 import type { Recipe, WorkerProgress } from './runtime.ts'
@@ -631,6 +632,10 @@ function table(host: HttpHost): readonly Route[] {
         pinsBase: host.prompts.overrideIsBase(role),
       })),
       skills: host.prompts.skills(),
+      // The three built-ins come from the server as well, so the page is not the second owner of a fact this bundle
+      // holds: `panel/index.html` kept its own `BUILTIN_SKILLS_VIEW` because this route answered with only the promoted
+      // crafts, and a second copy is what drifts when a fourth built-in is added. Same list, one owner.
+      builtInSkills: builtInSkillsView(),
     })),
     route('POST', 'prompts/skills/:name/toggle', async ({ params, body }) => {
       const parsed = z.object({ enabled: z.boolean() }).strict().parse(await body())

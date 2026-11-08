@@ -2,3 +2,9 @@ node_modules/
 /lib/
 *.tsbuildinfo
 .DS_Store
+# The project-specific redaction dictionary and the staged-byte scan patterns (release.sh steps 3 and 4).
+# Anchored, because an unanchored pattern matches at any depth — the same mistake that made `lib` swallow
+# `bridges/lib` in 0.6.0. This file must never reach the public repo: a copy of release.sh that travels with
+# its own blocklist redacts the blocklist too, so the published script searches for the placeholder `<bot-id>`
+# instead of the real value and reports a clean scan while publishing it.
+/scripts/.private-blocklist

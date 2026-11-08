@@ -34,7 +34,7 @@ class FakeDelivery implements Delivery {
 
 const settings = (value: unknown = {}) => parseSettings({ acceptMode: 'auto', allowedSenders: ['operator'], ...value as object })
 
-function harness(value: unknown = {}) {
+function harness(value: unknown = {}, now: () => string = () => '2026-11-02T12:00:00.000Z') {
   const memory = new Memory()
   const executor = new FakeExecutor()
   const delivery = new FakeDelivery()
@@ -42,7 +42,7 @@ function harness(value: unknown = {}) {
   let current = settings(value)
   const engine = new Engine({
     repos: memory, tx: memory, policy: () => settingsPolicy(current), executor, delivery,
-    now: () => '2026-11-02T12:00:00.000Z', emit: event => events.push(event.type),
+    now, emit: event => events.push(event.type),
   })
   // The real Executor marks the Assignment running when a launch succeeds (executor.ts:156); a fake
   // that does not leaves every test reporting into a state production never reports from.
@@ -1237,10 +1237,25 @@ describe('bidirectional artifact lineage and unclassified collaboration (E1)', (
     engine.report(a, { state: 'ready', summary: '采集完毕', files: ['data/table.csv'] })
 
     // Both unclassified (`workId === undefined`): allowed through the audited door
+    // 【产品变更】旧断言：授权即产生血缘 ——
+    //   const auth = engine.authorizeArtifactRead(b, a, 'data/table.csv')
+    //   engine.authorizeArtifactRead(b, a, 'data/table.csv')   // 同轮去重
+    //   expect(engine.citationsOf(a)).toEqual({ citedBy: [b], cites: [] })
+    //   expect(engine.history(a).filter(e => e.type === 'artifact_read')).toHaveLength(1)
+    // 理由：授权发生在读取**之前**，而读取有三处会被拒（软链或越界、非文本、超内联预算）。在授权时写血缘，
+    // 就等于给从未发生的读取留下记录：面板的「关联引用」与审计日志声称"谁用了谁的成果"，实际记的是
+    // "谁要过谁的成果"，一个反复试探且每次被拒的 worker 看起来像重度数据消费者。
+    // 现在授权是**纯的**（可自由预检），血缘由 recordArtifactRead 在成功读取后写。下面把两个不变量都钉住：
+    // 授权不写、记录才写，且记录按 (source,target,path) 去重。断言没有放宽——事件条数与 citationsOf 仍被钉死。
     const auth = engine.authorizeArtifactRead(b, a, 'data/table.csv')
     expect(auth.artifact.path).toBe('data/table.csv')
-    // Repeat call in the same attempt is deduplicated in the event log
-    engine.authorizeArtifactRead(b, a, 'data/table.csv')
+    expect(engine.history(a).filter(e => e.type === 'artifact_read')).toHaveLength(0)
+    expect(engine.history(b).filter(e => e.type === 'artifact_read')).toHaveLength(0)
+    expect(engine.citationsOf(a)).toEqual({ citedBy: [], cites: [] })
+
+    engine.recordArtifactRead(b, a, 'data/table.csv')
+    // Re-recording the same read is deduplicated, so a retry that re-reads does not bury the log
+    engine.recordArtifactRead(b, a, 'data/table.csv')
 
     expect(engine.citationsOf(a)).toEqual({ citedBy: [b], cites: [] })
     expect(engine.citationsOf(b)).toEqual({ citedBy: [], cites: [a] })
@@ -1278,5 +1293,84 @@ describe('multi-stage Work and dependency orchestration in createTicket (E3)', (
     expect(engine.dependantsOf(stage1.ticketId!).map(d => d.downstream)).toEqual([stage2.ticketId!])
     expect(engine.require(stage2.ticketId!).workSeq).toBe(2)
     expect(engine.dependantsOf(stage1.ticketId!).length).toBe(1)
+  })
+})
+
+describe('automatic grouping stays tidy and honest about who did it', () => {
+  // The text has to differ per call even when the title repeats: a Trigger's id is a pure function of
+  // (text, title, at, sender, attachments), so two identical requests in the same instant are ONE Trigger and the
+  // second call hands back the first Ticket — which is exactly the dedupe the intake contract promises.
+  const ended = (engine: Engine, title: string, state: 'ready' | 'dropped' = 'ready', tag = title): string => {
+    const id = engine.createTicket({ title, text: `做点事 · ${tag}` }).ticketId!
+    engine.assignmentStarted(id, engine.require(id).assignments[0]!.id)
+    engine.report(id, { state, summary: state === 'ready' ? '做完了' : '这个请求不需要做事' })
+    return id
+  }
+
+  it('reuses one Work by name across all three automatic paths instead of minting one per event', () => {
+    // The clock has to ADVANCE for this test to mean anything. `createWork` derives its id from
+    // key('work', name, projectId, at), so under the harness's frozen clock two same-named Works collide into one row
+    // and a missing dedupe is invisible — the first version of this test passed with the dedupe deleted. Real
+    // follow-ups arrive seconds apart, which is exactly the case that used to mint one Work per event.
+    let tick = 0
+    const { engine } = harness({}, () => new Date(Date.UTC(2026, 10, 2, 12, 0, tick++)).toISOString())
+    const first = ended(engine, '同一个课题')
+    // Path 1: grouping a follow-up with the Ticket it follows
+    const grouped = engine.ensureFollowupWork(first)
+    expect(grouped?.workId).toBeDefined()
+    // Path 2: a second follow-up on a DIFFERENT Ticket with the same title joins the same Work rather than making a twin
+    const twin = ended(engine, '同一个课题', 'ready', '第二次追问')
+    expect(engine.ensureFollowupWork(twin)?.workId).toBe(grouped!.workId)
+    // Path 3: an explicit workName from the front desk
+    expect(engine.createTicket({ title: '第三阶段', text: '继续', workName: '同一个课题' }).workId).toBe(grouped!.workId)
+    // Path 4: inheriting from an upstream that already has the Work
+    expect(engine.createTicket({ title: '第四阶段', text: '继续', dependsOn: [twin] }).workId).toBe(grouped!.workId)
+    // One Work, not four: a chat-first deployment asks follow-up questions constantly, and without the lookup the 工作
+    // page fills with single-Ticket Works named after old titles that the operator then has to clean up by hand.
+    expect(engine.works()).toHaveLength(1)
+    expect(engine.works()[0]!.name).toBe('同一个课题')
+  })
+
+  it('attributes automatic grouping to the system, so the audit log does not name an operator who never clicked', () => {
+    const { engine } = harness()
+    const id = ended(engine, '一个被追问的任务')
+    engine.ensureFollowupWork(id)
+    const classified = engine.history(id).filter(event => event.type === 'classified')
+    expect(classified).toHaveLength(1)
+    expect(classified[0]!.by).toEqual({ kind: 'system', id: 'followup' })
+    // A person filing a Ticket by hand is still recorded as a person.
+    const manual = engine.createTicket({ title: '手工归类的', text: '做点事' }).ticketId!
+    const work = engine.createWork({ name: '手工建的工作' })
+    engine.attachWork(manual, work.id)
+    expect(engine.history(manual).find(event => event.type === 'classified')!.by).toEqual({ kind: 'person' })
+  })
+
+  it('groups only an ENDED Ticket, so a running one never has its collaboration reach changed behind its back', () => {
+    const { engine } = harness()
+    const running = engine.createTicket({ title: '还在跑', text: '做点事' }).ticketId!
+    expect(engine.ensureFollowupWork(running)).toBeUndefined()
+    expect(engine.works()).toEqual([])
+    expect(engine.require(running).workId).toBeUndefined()
+  })
+
+  it('refuses a dependency edge that could never be released, and accepts one on an upstream that succeeded', () => {
+    const { engine } = harness()
+    const done = ended(engine, '已经完成的上游')
+    expect(engine.createTicket({ title: '下游', text: '接着做', dependsOn: [done] }).dependsOn).toEqual([done])
+
+    // `dropped`, not `failed`: a `failed` report does NOT end a Ticket (it raises an attention and waits for a
+    // person — engine.ts:1032), so it is a legitimate upstream that may still be answered. `dropped` ends it with an
+    // outcome that is not `done`, and a `done` edge on that can never release: the dependant would defer every few
+    // seconds forever and never fail, which is the one outcome nobody can see from the panel.
+    const dropped = ended(engine, '判定无需工作的上游', 'dropped')
+    expect(engine.require(dropped).ended?.outcome).toBe('dropped')
+    expect(() => engine.createTicket({ title: '下游2', text: '接着做', dependsOn: [dropped] }))
+      .toThrow(/ended without succeeding/)
+
+    const tombstoned = ended(engine, '被删掉的上游')
+    engine.deleteTicket(tombstoned, { assets: 'keep', record: 'tombstone' })
+    // `require` resolves tombstones, so this has to be checked explicitly: the upstream's artifacts may already be gone.
+    expect(() => engine.createTicket({ title: '下游3', text: '接着做', dependsOn: [tombstoned] }))
+      .toThrow(/No Ticket has this id/)
   })
 })

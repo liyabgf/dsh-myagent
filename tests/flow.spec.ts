@@ -10,7 +10,6 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Config } from '../src/deployment.ts'
 import { createRuntime, usageOf, type Runtime } from '../src/app/runtime.ts'
-import { UserError } from '../src/core/index.ts'
 import { KNOWN_GLOBAL_TOOLS, stubHost, wait, type StubHost } from './helpers/host.ts'
 import { tempDir } from './helpers/temp.ts'
 
@@ -110,8 +109,14 @@ describe('a request from the inbox to a finished Ticket', () => {
       expect(main.notices.at(-1)!.text).toContain(directory)
       // The queue drained, and a second report is refused because the authorization ended.
       expect(runtime.store.effectCounts()).toEqual({})
-      await expect(report.definition.execute({ state: 'ready', summary: 'again' }, { signal: signal() }))
-        .rejects.toSatisfy((error: unknown) => error instanceof UserError)
+      // 【产品变更】旧断言：await expect(report.definition.execute({ state: 'ready', summary: 'again' }, { signal: signal() }))
+      //   .rejects.toSatisfy((error: unknown) => error instanceof UserError)
+      // 理由：`myagent_report` 现在把 Engine 的拒绝包成 refusal 返回（与同文件 `myagent_note_ticket` 的既有写法一致）。
+      // 异常逃给宿主会变成 worker 读不懂的 tool error，而 `NEXT_STEP` 表里早就为 `ticket_ended` 写好了"下一步该做什么"
+      // 的文案却送不到它眼前。断言没有放宽：`code` 仍然被钉住，另外新增 `next` 必须真的送到。
+      const refused = await report.definition.execute({ state: 'ready', summary: 'again' }, { signal: signal() }) as Record<string, unknown>
+      expect(refused).toMatchObject({ code: 'ticket_ended' })
+      expect(String(refused.next)).toContain('needs a Ticket of its own')
     } finally { await runtime.stop() }
   })
 
@@ -193,9 +198,14 @@ describe('a request from the inbox to a finished Ticket', () => {
       expect(stopped.ended).toMatchObject({ outcome: 'stopped' })
       expect(host.agents.get(workerId(ticket.id))!.cancelled).toBe(1)
       // A stopped Ticket takes no report either.
-      await expect(host.tool(workerId(ticket.id), 'myagent_report')!.definition
-        .execute({ state: 'ready', summary: 'too late' }, { signal: signal() }))
-        .rejects.toSatisfy((error: unknown) => error instanceof UserError)
+      // 【产品变更】旧断言：await expect(host.tool(workerId(ticket.id), 'myagent_report')!.definition
+      //   .execute({ state: 'ready', summary: 'too late' }, { signal: signal() }))
+      //   .rejects.toSatisfy((error: unknown) => error instanceof UserError)
+      // 理由同上一处：`myagent_report` 改为 resolve 成 { error, code, next }。`code` 照旧钉住，另加 `next` 必须送到。
+      const late = await host.tool(workerId(ticket.id), 'myagent_report')!.definition
+        .execute({ state: 'ready', summary: 'too late' }, { signal: signal() }) as Record<string, unknown>
+      expect(late).toMatchObject({ code: 'ticket_ended' })
+      expect(String(late.next)).toContain('needs a Ticket of its own')
     } finally { await runtime.stop() }
   })
 
@@ -581,9 +591,37 @@ describe('tool asset promotion and skill reuse lineage (E2)', () => {
       // 3. Consumer worker invokes the `skill` tool -> useCount increments & bidirectional lineage is recorded
       const guard = host.guardOf(workerId(consumer.id))!
       expect(guard({ name: 'skill', arguments: { name: 'myagent-dedup-merger' } })).toBeUndefined()
-      expect(runtime.prompts.skills().find(s => s.name === 'myagent-dedup-merger')!.useCount).toBe(1)
+      // 【产品变更】旧断言：紧跟在上面那句 guard 调用之后的是
+      //   expect(runtime.prompts.skills().find(s => s.name === 'myagent-dedup-merger')!.useCount).toBe(1)
+      // 理由：guard 是 `tools/pre-execute` 的最后一道，宿主随后才 `dispatchToolBody`
+      // （packages/core/tools/src/pipeline.ts），所以工具体还没跑、甚至随后抛错，计数就已经 +1；worker 反复调用
+      // 就能把数字刷高，而面板把它读作"这门手艺有用"。计数改到 `tools/result`——宿主在工具体跑完之后带着最终
+      // 结果发这个事件。断言没有放宽：下面钉住了 guard 调用后仍然是 0（这一条单独就能让旧写法判红），
+      // 并且失败的加载不计、同一张任务重复加载只计一次、没保存过的名字不计。
+      const craft = (): number => runtime.prompts.skills().find(s => s.name === 'myagent-dedup-merger')!.useCount
+      expect(craft()).toBe(0)
+      const consumerAgent = host.agents.get(workerId(consumer.id))!
+      /** The host's own announcement that a `skill` call finished, with the outcome it finished with. */
+      const finished = (name: string, isError: boolean): void => {
+        host.emit('tools/result', [{ name: 'skill', arguments: { name }, agent: consumerAgent }, { isError }])
+      }
+      // A load that failed is not a reuse of anything.
+      finished('myagent-dedup-merger', true)
+      expect(craft()).toBe(0)
+      // A load that succeeded is, and it writes both directions of the lineage.
+      finished('myagent-dedup-merger', false)
+      expect(craft()).toBe(1)
       expect(runtime.engine.citationsOf(builder.id).citedBy).toContain(consumer.id)
       expect(runtime.engine.citationsOf(consumer.id).cites).toContain(builder.id)
+      // One Ticket counts one craft once, however often its worker loads it — the vector this closes is a worker
+      // raising its own craft's score by calling in a loop.
+      finished('myagent-dedup-merger', false)
+      finished('myagent-dedup-merger', false)
+      expect(craft()).toBe(1)
+      // A name nobody saved is not a reuse: it must not create a record either.
+      finished('myagent-no-such-craft', false)
+      expect(craft()).toBe(1)
+      expect(runtime.prompts.skills().map(s => s.name)).not.toContain('myagent-no-such-craft')
     } finally { await runtime.stop() }
   })
 })

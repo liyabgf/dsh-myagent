@@ -193,6 +193,59 @@ describe('a message from a mapped identity', () => {
     } finally { await source.stop() }
   })
 
+  /**
+   * The invariant the whole intake design rests on: the gate is a pure function of the Trigger and the settings, so a
+   * request it refuses leaves NOTHING behind. Grouping a follow-up is a write (it can create a Work and reclassify a
+   * historical Ticket), which is why it happens inside `receive`'s accepted branch rather than in this Source.
+   *
+   * `observe` is the case that matters most: it is the factory default, and its whole promise is "recorded, executed
+   * nothing" — while the grouping used to run before the verdict, so a brand-new deployment rewrote history on every
+   * reply to a finished task and still reported that it had executed nothing.
+   */
+  it('writes nothing at all when the gate refuses a follow-up: no Work, and the replied-to Ticket keeps its classification', async () => {
+    const ops = directory()
+    const base = doc({ channels: [channel('ops', ops)] }) as Record<string, unknown>
+    const context = harness(base)
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      drop(ops, 'f-1.md', message({ from: 'U01ABCDEF', id: 'm-30', thread: 'group:-100200', title: '李杨：第一期' }, '完成第一期。'))
+      await source.poll()
+      const first = context.tickets()[0]!
+      context.host.engine.report(first.id, { state: 'ready', summary: '第一期已完成' })
+      expect(context.host.engine.works()).toEqual([])
+      const ticketsBefore = context.tickets().length
+
+      // 1. observe mode: recorded, and nothing else — no Work, no reclassification, no new Ticket.
+      context.save({ ...base, acceptMode: 'observe' })
+      drop(ops, 'f-2.md', message({ from: 'U01ABCDEF', id: 'm-31', thread: 'group:-100200', 'reply-to-ticket': first.id }, '继续深挖算力折股。'))
+      await source.poll()
+      const decisionOf = (messageId: string) => context.decisions()
+        .find(decision => decision.triggerId === key('chat', 'ops', messageId))
+      expect(decisionOf('m-31')?.outcome).toBe('observe')
+      expect(context.host.engine.works()).toEqual([])
+      expect(context.host.engine.ticket(first.id)!.workId).toBeUndefined()
+      expect(context.host.engine.history(first.id).filter(event => event.type === 'classified')).toEqual([])
+      expect(context.tickets()).toHaveLength(ticketsBefore)
+
+      // 2. A sender nobody authorized: same answer, and the refusal reason is the sender rather than the mode.
+      context.save({ ...base, allowedSenders: ['somebody-else'] })
+      drop(ops, 'f-3.md', message({ from: 'U01ABCDEF', id: 'm-32', thread: 'group:-100200', 'reply-to-ticket': first.id }, '换个身份再问一次。'))
+      await source.poll()
+      expect(decisionOf('m-32')?.reason).toBe('sender_not_allowed')
+      expect(context.host.engine.works()).toEqual([])
+      expect(context.host.engine.ticket(first.id)!.workId).toBeUndefined()
+      expect(context.tickets()).toHaveLength(ticketsBefore)
+
+      // 3. And once the gate does accept, the grouping happens — so the two cases above are refusals, not a dead feature.
+      context.save(base)
+      drop(ops, 'f-4.md', message({ from: 'U01ABCDEF', id: 'm-33', thread: 'group:-100200', 'reply-to-ticket': first.id }, '这次放行。'))
+      await source.poll()
+      expect(context.host.engine.works()).toHaveLength(1)
+      expect(context.host.engine.ticket(first.id)!.workId).toBe(context.host.engine.works()[0]!.id)
+    } finally { await source.stop() }
+  })
+
   it('automatically groups a reply to a completed (done) Ticket into a shared Work cluster (E3)', async () => {
     const ops = directory()
     const context = harness(doc({ channels: [channel('ops', ops)] }))

@@ -126,11 +126,19 @@ export interface ArtifactCatalogEntry {
   readonly work_id?: string
   readonly summary?: string
   readonly artifacts: readonly { readonly path: string; readonly at: string; readonly note?: string }[]
+  /** This Ticket exists but registered no files, so there is nothing to ask for. Only sent for a named `ticket_id`. */
+  readonly no_artifacts?: boolean
+  /** Present when `artifacts` was cut to the per-Ticket cap, so a short list does not read as a complete one. */
+  readonly artifacts_total?: number
 }
 
 export type ArtifactRead =
   | { ok: true; content?: string; materialized_to?: string; size: number; at: string; note?: string }
-  | { ok: true; catalog: readonly ArtifactCatalogEntry[] }
+  | {
+    ok: true; catalog: readonly ArtifactCatalogEntry[]
+    /** Every accessible Ticket, so `catalog.length < total` says "there is more" instead of looking complete. */
+    total: number; truncated: boolean
+  }
   | { ok: false; error: string; code?: string }
 
 // ------------------------------------------------------------------ Worker
@@ -159,19 +167,28 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
       }).strict().optional().describe('Optional: promote a general, battle-tested script you wrote during this Ticket into a shared DSH skill for future Tickets.'),
     }).strict(),
     execute: async args => {
-      let skillPromotion: { ok: boolean; skill_name?: string; error?: string } | undefined
-      if (args.promote_skill !== undefined) {
-        skillPromotion = await host.promoteSkill(ticketId, args.promote_skill)
-        if (!skillPromotion.ok) {
-          return { error: `Skill promotion refused: ${skillPromotion.error}` }
-        }
+      // The report goes FIRST. Promotion writes to the shared skill library and cannot be undone by a later failure,
+      // while a report that lands on an ended Ticket is refused cleanly — so the reversible step must not come after
+      // the irreversible one. `report` is wrapped like `myagent_note_ticket` already is: an uncaught throw here escapes
+      // to the host as a tool error the worker cannot read as "your Ticket ended".
+      let updated: Ticket
+      try {
+        updated = host.engine.report(ticketId, {
+          state: args.state, summary: args.summary, question: args.question, files: args.files,
+        }, host.attempt(ticketId))
+      } catch (error) {
+        return refusal(error)
       }
-      const updated = host.engine.report(ticketId, {
-        state: args.state, summary: args.summary, question: args.question, files: args.files,
-      }, host.attempt(ticketId))
+      // Reported on the result rather than as the whole result: the report DID land, and answering with only an error
+      // would send the worker to report the same work again.
+      const skillPromotion = args.promote_skill === undefined
+        ? undefined
+        : await host.promoteSkill(ticketId, args.promote_skill)
       return {
         ticket_id: ticketId, state: args.state, stage: ticketStage(updated),
-        ...(skillPromotion?.skill_name === undefined ? {} : { promoted_skill: skillPromotion.skill_name }),
+        ...(skillPromotion === undefined ? {}
+          : skillPromotion.ok ? { promoted_skill: skillPromotion.skill_name }
+            : { skill_promotion_error: skillPromotion.error }),
         ended: updated.ended !== undefined,
         // DSH refuses a tool result whose JSON is not lossless, and `{ outcome: undefined }` is exactly that: every
         // non-terminal report came back to the worker as a tool error while the report itself had landed, so the
@@ -196,7 +213,14 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
     execute: async args => {
       const read = await host.readArtifact(ticketId, args.ticket_id, args.path, args.materialize)
       if (!read.ok) return { error: read.error, ...(read.code === undefined ? {} : { code: read.code }) }
-      if ('catalog' in read) return { count: read.catalog.length, tickets: read.catalog }
+      if ('catalog' in read) {
+        return {
+          count: read.catalog.length, total: read.total, truncated: read.truncated, tickets: read.catalog,
+          ...(read.truncated
+            ? { hint: 'The catalog was cut to fit your context. Ask for one `ticket_id` at a time to see more.' }
+            : {}),
+        }
+      }
       return {
         ticket_id: args.ticket_id, path: args.path, size: read.size, at: read.at,
         ...(read.materialized_to === undefined ? {} : { materialized_to: read.materialized_to }),

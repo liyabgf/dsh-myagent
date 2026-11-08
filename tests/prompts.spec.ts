@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { PROMPT_MAX_CHARS, PromptConflict, Prompts, packageFile, promptFile } from '../src/app/prompts.ts'
+import { BUILTIN_SKILL_NAMES } from '../src/app/skills.ts'
 
 /** The key-value half of the Store, which is all `Prompts` uses. */
 function fakeStore() {
@@ -108,5 +109,34 @@ describe('saved team skills in PromptConfig (E2)', () => {
     // Remove
     prompts.removeSkill('myagent-entity-dedup-merger')
     expect(prompts.skills()).toEqual([])
+  })
+
+  /**
+   * The reserved list is derived, not spelled out.
+   *
+   * `prompts.ts` used to carry its own literal `['myagent-html-to-text', 'myagent-source-registry',
+   * 'myagent-polite-fetch']`, which was a third copy of a fact `skills.ts` owns (the panel kept a second). A copy is
+   * what drifts: add a fourth built-in and the refusal stays behind, so a worker can promote a craft under a built-in's
+   * name — and the host resolves a duplicate name in one layer by IGNORING the second registration and handing back a
+   * disposer that does nothing, so the craft would look saved on the panel and be unreachable in every worker.
+   */
+  it('refuses exactly the names SKILLS contributes, so the two lists cannot drift', () => {
+    const prompts = new Prompts(fakeStore())
+    expect(BUILTIN_SKILL_NAMES.length).toBeGreaterThan(0)
+    for (const name of BUILTIN_SKILL_NAMES) {
+      expect(() => prompts.saveSkill({
+        name: name.replace(/^myagent-/, ''), title: 'x', description: 'y', content: 'z',
+      })).toThrow(/reserved for a built-in/)
+    }
+    // And the derivation is not vacuous: a name outside the list is still accepted.
+    expect(prompts.saveSkill({ name: 'not-a-built-in', title: 'x', description: 'y', content: 'z' }).name)
+      .toBe('myagent-not-a-built-in')
+  })
+
+  it('keeps a promoted craft live with nobody approving it, which is the whole product promise', () => {
+    // Containment is done by WHERE a craft is registered (one worker's own scope layer), never by making the operator
+    // a gate: a craft waiting for a click is a craft the next Ticket re-derives.
+    const prompts = new Prompts(fakeStore())
+    expect(prompts.saveSkill({ name: 'auto', title: 'x', description: 'y', content: 'z' }).enabled).toBe(true)
   })
 })

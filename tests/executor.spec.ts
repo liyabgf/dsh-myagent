@@ -5,10 +5,12 @@
  * A launch is queued rather than run, so every case here is about a queue that outlives the moment it was made in: a
  * slot that is full, a deployment that is paused, an Assignment a retry replaced, a Ticket a person stopped.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, truncateSync, utimesSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { canRetry, key } from '../src/core/index.ts'
+import { LocalHostSandbox } from '../src/app/executor.ts'
+import { tempDir } from './helpers/temp.ts'
 import { api, deployment, type Deployment } from './helpers/deployment.ts'
 import { wait } from './helpers/host.ts'
 
@@ -626,6 +628,161 @@ describe('artifact catalog discovery and workspace materialization for VM compat
       // Both sides recorded lineage
       expect(runtime.engine.citationsOf(producer).citedBy).toContain(consumer)
       expect(runtime.engine.citationsOf(consumer).cites).toContain(producer)
+    } finally { await runtime.stop() }
+  })
+})
+
+describe('the artifact catalog a worker browses is bounded and newest-first', () => {
+  /** Register `files` on a fresh Ticket and end it, so its artifacts are readable through the audited door. */
+  const published = (runtime: Deployment['runtime'], title: string, files: string[], summary = '产出了这些'): string => {
+    const id = runtime.engine.createTicket({ title, text: `请产出 ${title}` }).ticketId!
+    runtime.engine.assignmentStarted(id, runtime.engine.require(id).assignments[0]!.id)
+    runtime.engine.report(id, { state: 'ready', summary, files })
+    return id
+  }
+
+  it('answers newest first, cuts at the ticket cap, and says that it cut', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      // More Tickets than the cap, each with one registered artifact so the browse case keeps them.
+      for (let index = 0; index < 55; index++) published(runtime, `资料 ${index}`, [`data/f${index}.csv`])
+      const viewer = runtime.engine.createTicket({ title: '要浏览目录的', text: '看看有什么可用' }).ticketId!
+      const read = await runtime.readArtifact(viewer)
+      if (!('catalog' in read)) throw new Error(`expected a catalog, got ${JSON.stringify(read).slice(0, 120)}`)
+      expect(read.ok).toBe(true)
+      expect(read.total).toBe(55)
+      expect(read.truncated).toBe(true)
+      expect(read.catalog).toHaveLength(50)
+      // `store.tickets.list()` is ORDER BY createdAt, i.e. OLDEST first — the least useful end of a long-lived
+      // deployment. Whatever is cut has to be the old end, not the new one.
+      // `list()` includes the viewer itself, which the catalog excludes, so the expected newest is the last of the
+      // OTHERS. (Asserting against `list().at(-1)` compares the catalog to the viewer and can never pass.)
+      const oldestFirst = runtime.store.tickets.list().map(item => item.id).filter(id => id !== viewer)
+      expect(oldestFirst).toHaveLength(55)
+      expect(read.catalog[0]!.ticket_id).toBe(oldestFirst.at(-1)!)
+      expect(read.catalog[0]!.ticket_id).not.toBe(oldestFirst[0]!)
+      expect(read.catalog.every(entry => entry.ticket_id !== viewer)).toBe(true)
+    } finally { await runtime.stop() }
+  })
+
+  it('caps each entry at 20 artifacts and a 160-character summary, and answers a named Ticket that registered nothing', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      const files = Array.from({ length: 25 }, (_, index) => `data/part-${index}.csv`)
+      const producer = published(runtime, '产出很多的一份', files, 'x'.repeat(5000))
+      const viewer = runtime.engine.createTicket({ title: '要浏览目录的', text: '看看有什么可用' }).ticketId!
+      const read = await runtime.readArtifact(viewer, producer)
+      if (!('catalog' in read)) throw new Error('expected a catalog')
+      const entry = read.catalog[0]!
+      expect(entry.ticket_id).toBe(producer)
+      expect(entry.artifacts).toHaveLength(20)
+      // A short list must not read as a complete one.
+      expect(entry.artifacts_total).toBe(25)
+      expect(entry.summary!.length).toBeLessThanOrEqual(160)
+      expect(read.truncated).toBe(false)
+
+      // A NAMED target that registered nothing still answers, so a worker can tell "that Ticket claimed no files"
+      // from "I got the id wrong"; in the browse case the same entry would be pure noise, so it is dropped.
+      const empty = runtime.engine.createTicket({ title: '什么都没产出', text: '空跑一趟' }).ticketId!
+      const named = await runtime.readArtifact(viewer, empty)
+      if (!('catalog' in named)) throw new Error('expected a catalog')
+      expect(named.catalog[0]).toMatchObject({ ticket_id: empty, no_artifacts: true, artifacts: [] })
+      const browse = await runtime.readArtifact(viewer)
+      if (!('catalog' in browse)) throw new Error('expected a catalog')
+      expect(browse.catalog.some(item => item.ticket_id === empty)).toBe(false)
+    } finally { await runtime.stop() }
+  })
+
+  it('refuses an artifact over the materialize cap, and refuses it BEFORE copying a byte', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      const viewer = runtime.engine.createTicket({ title: '要物化的', text: '把大文件搬进来' }).ticketId!
+      const producer = runtime.engine.createTicket({ title: '产出大文件的', text: '产出一个大文件' }).ticketId!
+      const producerDir = runtime.engine.require(producer).execution!.directory
+      mkdirSync(join(producerDir, 'data'), { recursive: true })
+      // Sparse, so this costs no disk: only the SIZE is being tested, and the size is what the guard reads.
+      // `truncateSync` extends an existing file and does not create one, so the empty file comes first.
+      const huge = join(producerDir, 'data', 'huge.csv')
+      writeFileSync(huge, '', 'utf8')
+      truncateSync(huge, 65 * 1024 * 1024)
+      runtime.engine.assignmentStarted(producer, runtime.engine.require(producer).assignments[0]!.id)
+      runtime.engine.report(producer, { state: 'ready', summary: '产出了一个大文件', files: ['data/huge.csv'] })
+
+      const read = await runtime.readArtifact(viewer, producer, 'data/huge.csv', true)
+      expect(read.ok).toBe(false)
+      if (read.ok) throw new Error('expected a refusal')
+      expect(read.error).toContain('over the')
+      // The point of measuring first: the old order copied the file and then discovered its size, so a refusal left a
+      // 65 MB orphan in the workspace — and the worker, told only that the read failed, would likely try again.
+      const target = join(runtime.engine.require(viewer).execution!.directory, 'inputs', producer.slice(0, 8), 'data', 'huge.csv')
+      expect(existsSync(target)).toBe(false)
+      // A refused read also leaves no lineage: see `Engine.recordArtifactRead`.
+      expect(runtime.engine.citationsOf(producer).citedBy).not.toContain(viewer)
+    } finally { await runtime.stop() }
+  })
+})
+
+describe('LocalHostSandbox.materializeInput refuses what it cannot do safely', () => {
+  it('rejects a traversal instead of rewriting it, rejects a symlinked destination, never clobbers a different file, and is idempotent for the same one', async () => {
+    const root = tempDir('myagent-sandbox-')
+    const workspace = join(root, 'ws')
+    const sourceDir = join(root, 'src')
+    const outside = join(root, 'outside')
+    for (const directory of [workspace, sourceDir, outside]) mkdirSync(directory, { recursive: true })
+    const source = join(sourceDir, 'table.csv')
+    writeFileSync(source, 'a,b\n1,2\n', 'utf8')
+    const sandbox = new LocalHostSandbox()
+
+    // 1. Rejected, not rewritten. Stripping a leading `../` or `/` before the containment check turned the two most
+    //    common escapes into legal paths inside inputs/, leaving the guard to catch only a mid-path `data/../../x`.
+    for (const escape of ['../escape.csv', '/abs/escape.csv', 'data/../../escape.csv', '']) {
+      await expect(sandbox.materializeInput(workspace, source, 'bbbb1111cccc', escape)).rejects.toThrow(/inputs\/|empty destination/)
+    }
+    expect(existsSync(join(workspace, 'escape.csv'))).toBe(false)
+    expect(existsSync(join(root, 'abs'))).toBe(false)
+
+    // 2. A symlink planted in the DESTINATION is refused, so the host never writes outside the workspace on a
+    //    worker's behalf. `mkdir(recursive)` is a no-op on an existing segment and `copyFile` follows links.
+    const planted = join(workspace, 'inputs', 'bbbb1111')
+    mkdirSync(planted, { recursive: true })
+    symlinkSync(outside, join(planted, 'data'))
+    await expect(sandbox.materializeInput(workspace, source, 'bbbb1111cccc', 'data/table.csv')).rejects.toThrow(/symbolic link/)
+    expect(readdirSync(outside)).toEqual([])
+
+    // 3. The normal path still works, and returns a workspace-relative path.
+    const relative = await sandbox.materializeInput(workspace, source, 'dddd2222eeee', 'data/table.csv')
+    expect(relative).toBe(join('inputs', 'dddd2222', 'data', 'table.csv'))
+    expect(readFileSync(join(workspace, relative), 'utf8')).toBe('a,b\n1,2\n')
+
+    // 4. Re-materializing the same artifact is idempotent: a retried Ticket must not fail on its own earlier copy.
+    await expect(sandbox.materializeInput(workspace, source, 'dddd2222eeee', 'data/table.csv')).resolves.toBe(relative)
+
+    // 5. A DIFFERENT file at that path is the worker's own and is left alone, with an error that says so — the old
+    //    behaviour replaced it and returned ok, indistinguishable from a fresh copy.
+    const mine = join(workspace, 'inputs', 'eeee3333', 'mine.csv')
+    mkdirSync(dirname(mine), { recursive: true })
+    writeFileSync(mine, '我自己的东西', 'utf8')
+    await expect(sandbox.materializeInput(workspace, source, 'eeee3333ffff', 'mine.csv')).rejects.toThrow(/different file is already/)
+    expect(readFileSync(mine, 'utf8')).toBe('我自己的东西')
+  })
+})
+
+describe('a sandbox this build cannot provide says so instead of pretending', () => {
+  it('announces executor.sandbox "vm" on the health board and clears the announcement when it goes back', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      expect(runtime.health.problems().map(item => item.name)).not.toContain('executor')
+      runtime.saveSettings({ acceptMode: 'auto', executor: { sandbox: 'vm' } })
+      const problem = runtime.health.problems().find(item => item.name === 'executor')
+      expect(problem?.detail).toContain('no VM sandbox')
+      expect(problem?.detail).toContain('Set it back to "local"')
+      // And it is cleared rather than left to go stale, so the board means what it says.
+      runtime.saveSettings({ acceptMode: 'auto', executor: { sandbox: 'local' } })
+      expect(runtime.health.problems().map(item => item.name)).not.toContain('executor')
     } finally { await runtime.stop() }
   })
 })

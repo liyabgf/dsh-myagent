@@ -7,7 +7,7 @@
  * and an Assignment whose worker Session is gone is interrupted rather than left looking alive.
  */
 import { readdirSync, readFileSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
+import { lstat, readFile, rm } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -40,7 +40,7 @@ import { Watchdog, type WatchdogHost } from './watchdog.ts'
 import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
-import { mainTools, workerTools, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
+import { mainTools, workerTools, type ArtifactCatalogEntry, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
 import { listFiles, isTextFile, readForPanel, resolveInside, resolveRealInside } from './files.ts'
 import { ticketSummary } from './views.ts'
 import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
@@ -53,6 +53,25 @@ import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
  * a worker a huge file it did not ask for is a way to lose the rest of its context.
  */
 const WORKER_ARTIFACT_BYTES = 256 * 1024
+/**
+ * What one `materialize: true` may copy into a workspace, and what one catalog answer may contain.
+ *
+ * Both exist because the alternative is a number nobody chose: a registered artifact is any file a report named, and
+ * nothing measures it at registration time (`engine.artifactPath` normalizes the path and says so), so without a cap one
+ * worker can fill the disk through another worker's output — and the copy used to land BEFORE the size was known, which
+ * meant a 400 MB artifact produced a 400 MB file and then an error saying the read failed. The catalog caps are for the
+ * same reason in the other direction: its answer goes straight into a model's context, so an unbounded one is either a
+ * wall of noise the worker picks wrongly from (and the operator pays for as a worse report and a re-ask) or a truncation
+ * nobody can see. Newest first, because `store.tickets.list()` is `ORDER BY createdAt` and the least useful slice of a
+ * long-lived deployment is its oldest Tickets.
+ */
+const WORKER_MATERIALIZE_BYTES = 64 * 1024 * 1024
+const CATALOG_TICKETS = 50
+const CATALOG_ARTIFACTS = 20
+const CATALOG_SUMMARY_CHARS = 160
+const CATALOG_BYTES = 32 * 1024
+/** A promoted script's ceiling: a skill is a reusable craft, not an archive of one run's data. */
+const SKILL_SCRIPT_BYTES = 64 * 1024
 
 const PASS_INTERVAL_MS = 2_000
 /** The panel page, as this installation ships it. */
@@ -626,10 +645,14 @@ export class Runtime implements HttpHost {
       return { ok: false, error: `Script path ${input.script_path} is outside this Ticket's directory or is a symbolic link.` }
     }
     try {
-      const read = await readForPanel(absolute)
-      if (read.size === 0) return { ok: false, error: `Script ${input.script_path} is empty.` }
-      if (read.size > 64 * 1024) return { ok: false, error: `Script ${input.script_path} exceeds the 64 KB skill size limit.` }
-      const code = Buffer.from(read.base64, 'base64').toString('utf8')
+      // Measured before reading: a worker can point `script_path` at anything in its own directory, including the
+      // gigabyte of HTML a polite batch fetch just produced, and reading it to discover it is too big would spend that
+      // memory in the host process every other Ticket lives in.
+      const info = await lstat(absolute)
+      if (info.isDirectory()) return { ok: false, error: `Script ${input.script_path} is a directory, not a file.` }
+      if (info.size === 0) return { ok: false, error: `Script ${input.script_path} is empty.` }
+      if (info.size > SKILL_SCRIPT_BYTES) return { ok: false, error: `Script ${input.script_path} is ${info.size} bytes, over the ${SKILL_SCRIPT_BYTES} skill limit.` }
+      const code = await readFile(absolute, 'utf8')
       const dirName = ticket.execution!.name
       if (code.includes(ownDir) || (dirName.length >= 6 && code.includes(dirName))) {
         return {
@@ -648,7 +671,16 @@ export class Runtime implements HttpHost {
         content,
         fromTicketId: ticketId,
       })
-      this.engine.skillPromoted(ticketId, { name: saved.name, title: saved.title, scriptPath: input.script_path })
+      // The two writes live in different stores (the prompt/skill KV and the Engine's event log), so they cannot share a
+      // transaction. The event is the audit record of a skill that is already live, so a failure to write it is undone
+      // by taking the skill back: "promoted but nobody recorded who promoted it" is the one outcome an auditor cannot
+      // reason about, and a compensating removal is cheaper than that.
+      try {
+        this.engine.skillPromoted(ticketId, { name: saved.name, title: saved.title, scriptPath: input.script_path })
+      } catch (error) {
+        try { this.prompts.removeSkill(saved.name) } catch { /* already gone; the refusal below is what matters */ }
+        throw error
+      }
       return { ok: true, skill_name: saved.name }
     } catch (error) {
       return { ok: false, error: reason(error) }
@@ -671,24 +703,39 @@ export class Runtime implements HttpHost {
     }
     if (targetTicketId === undefined || targetTicketId.trim() === '' || path === undefined || path.trim() === '') {
       const wantedTarget = targetTicketId?.trim()
-      const candidates = this.store.tickets.list().filter(item => {
+      // Newest first: see `CATALOG_*` above for why the order is part of the answer's usefulness.
+      const candidates = this.store.tickets.list().reverse().filter(item => {
         if (wantedTarget !== undefined && wantedTarget !== '' && item.id !== wantedTarget) return false
         return canCollaborate(source, item)
       })
-      const catalog = candidates.flatMap(item => {
-        const artifacts = this.store.artifacts.list(item.id).map(a => ({
-          path: a.path, at: a.at, ...(a.note === undefined ? {} : { note: a.note }),
-        }))
-        if (wantedTarget === undefined && artifacts.length === 0) return []
+      const entries: ArtifactCatalogEntry[] = []
+      let bytes = 0
+      let truncated = false
+      for (const item of candidates) {
+        if (entries.length >= CATALOG_TICKETS) { truncated = true; break }
+        const all = this.store.artifacts.list(item.id)
+        // A named target that registered nothing is still an answer ("that Ticket exists and claimed no files"), which
+        // is what tells a worker its id was right; in the browse case an empty entry is pure noise, so it is dropped.
+        if (all.length === 0 && (wantedTarget === undefined || wantedTarget === '')) continue
         const summary = ticketSummary(item)
-        return [{
+        const entry: ArtifactCatalogEntry = {
           ticket_id: item.id, title: item.title, stage: summary.stage,
           ...(item.workId === undefined ? {} : { work_id: item.workId }),
-          ...(summary.summary === undefined ? {} : { summary: summary.summary }),
-          artifacts,
-        }]
-      })
-      return { ok: true, catalog }
+          ...(summary.summary === undefined
+            ? {}
+            : { summary: summary.summary.slice(0, CATALOG_SUMMARY_CHARS).replace(/\s+/g, ' ') }),
+          artifacts: all.slice(0, CATALOG_ARTIFACTS).map(a => ({
+            path: a.path, at: a.at, ...(a.note === undefined ? {} : { note: a.note }),
+          })),
+          ...(all.length === 0 ? { no_artifacts: true } : {}),
+          ...(all.length > CATALOG_ARTIFACTS ? { artifacts_total: all.length } : {}),
+        }
+        const size = JSON.stringify(entry).length
+        if (bytes + size > CATALOG_BYTES) { truncated = true; break }
+        bytes += size
+        entries.push(entry)
+      }
+      return { ok: true, catalog: entries, total: candidates.length, truncated }
     }
     let authorized: { directory: string; artifact: Artifact }
     try {
@@ -701,34 +748,51 @@ export class Runtime implements HttpHost {
     const absolute = await resolveRealInside(authorized.directory, authorized.artifact.path)
     if (absolute === undefined) return { ok: false, error: 'That artifact is not a path inside its Ticket directory (or is a symbolic link).', code: 'artifact_missing' }
     try {
+      // Measured BEFORE anything is copied or read into memory. `readForPanel` reads the whole file and base64-encodes
+      // it, so on a large artifact the old order produced a copy on disk (or a several-hundred-megabyte string in this
+      // process, which is the host every other Ticket and the operator's own Session live in) and only then discovered
+      // the size. The panel's own file route has always done it in this order.
+      const info = await lstat(absolute)
+      if (info.isDirectory()) {
+        return { ok: false, error: `That artifact is a directory, not a file: ${authorized.artifact.path}` }
+      }
       if (materialize === true) {
         const ownDir = source.execution?.directory
         if (ownDir === undefined) return { ok: false, error: 'This Ticket has no workspace directory to materialize into.' }
+        if (info.size > WORKER_MATERIALIZE_BYTES) {
+          return {
+            ok: false,
+            error: `That artifact is ${info.size} bytes, over the ${WORKER_MATERIALIZE_BYTES} a worker may copy into inputs/. `
+              + 'Ask the other Ticket for the part you need, or have it publish a smaller extract.',
+          }
+        }
         const rel = await this.executor.sandbox.materializeInput(ownDir, absolute, targetTicketId, authorized.artifact.path)
-        const read = await readForPanel(absolute)
-        const includeInline = isTextFile(authorized.artifact.path, read.size) && read.size <= WORKER_ARTIFACT_BYTES
+        // Recorded on the SUCCESS path only — see `Engine.recordArtifactRead` for why authorization time was wrong.
+        this.engine.recordArtifactRead(sourceTicketId, targetTicketId, authorized.artifact.path)
+        const includeInline = isTextFile(authorized.artifact.path, info.size) && info.size <= WORKER_ARTIFACT_BYTES
         return {
-          ok: true, size: read.size, at: authorized.artifact.at,
+          ok: true, size: info.size, at: authorized.artifact.at,
           materialized_to: rel,
           ...(authorized.artifact.note === undefined ? {} : { note: authorized.artifact.note }),
-          ...(includeInline ? { content: Buffer.from(read.base64, 'base64').toString('utf8') } : {}),
+          ...(includeInline ? { content: await readFile(absolute, 'utf8') } : {}),
         }
       }
-      const read = await readForPanel(absolute)
-      if (!isTextFile(authorized.artifact.path, read.size)) {
+      if (!isTextFile(authorized.artifact.path, info.size)) {
         return { ok: false, error: `That artifact is not a text file, so it cannot go into a worker's context: ${authorized.artifact.path} (pass materialize: true to copy it into inputs/)` }
       }
-      if (read.size > WORKER_ARTIFACT_BYTES) {
+      if (info.size > WORKER_ARTIFACT_BYTES) {
         return {
           ok: false,
-          error: `That artifact is ${read.size} bytes, over the ${WORKER_ARTIFACT_BYTES} a worker may be handed inline. `
+          error: `That artifact is ${info.size} bytes, over the ${WORKER_ARTIFACT_BYTES} a worker may be handed inline. `
             + 'Pass `materialize: true` to copy it into `inputs/` in your workspace and process it with a script.',
         }
       }
+      const content = await readFile(absolute, 'utf8')
+      this.engine.recordArtifactRead(sourceTicketId, targetTicketId, authorized.artifact.path)
       return {
-        ok: true, size: read.size, at: authorized.artifact.at,
+        ok: true, size: info.size, at: authorized.artifact.at,
         ...(authorized.artifact.note === undefined ? {} : { note: authorized.artifact.note }),
-        content: Buffer.from(read.base64, 'base64').toString('utf8'),
+        content,
       }
     } catch (error) {
       return { ok: false, error: reason(error) }
@@ -838,6 +902,7 @@ export class Runtime implements HttpHost {
     // exists for. The result was that a new `everyMs` took effect only at the next tick of the OLD grid: 34.7s of
     // detection latency against a 15s threshold, with the rescue landing on mountedAt + 7×60s to within 23ms.
     this.watchdog.settingsChanged()
+    this.announceSandbox()
     const effects = this.engine.policyChanged(before, next)
     this.context.logger.info('myagent settings saved (version %s, %d live Ticket(s) affected)', policyVersion(next), effects.length)
     void this.sources.sync().catch((error: unknown) => { this.health.entry('sources').problem(reason(error)) })
@@ -975,8 +1040,31 @@ export class Runtime implements HttpHost {
     this.passes.start()
     this.watchdog.start()
     this.health.entry('runtime').record(this.machine.stateDir)
+    this.announceSandbox()
     this.context.logger.info('myagent runs: state %s, work %s, inbox %s, accept mode %s',
       this.machine.stateDir, this.machine.workRoot, this.machine.inboxDir, this.settings().acceptMode)
+  }
+
+  /**
+   * Say out loud when the executor is configured for a boundary this build cannot provide.
+   *
+   * `settings.executor.sandbox` has no consumer but this one: `DshExecutor` always constructs a `LocalHostSandbox`,
+   * because the rest of the boundary is still direct host IO (attachment delivery, `RESULT.md`,
+   * `REPLY-UNDELIVERED.md`, workspace removal, listing, and the `prepare` command). A knob that silently does nothing
+   * is worse than no knob — an operator who sets `vm` believes their Tickets are isolated, and finds out otherwise
+   * only from whatever the isolation was supposed to prevent. So the unsupported value is announced on the health
+   * board, and the announcement is cleared by `record()` when it goes back, rather than being left to go stale.
+   */
+  private announceSandbox(): void {
+    if (this.settings().executor.sandbox === 'vm') {
+      this.health.entry('executor').problem('executor.sandbox is "vm", but this build has no VM sandbox: every Ticket '
+        + 'still runs in a directory on this host. Set it back to "local" until a VmSandbox exists.')
+      return
+    }
+    // Cleared only when an entry already exists. `entry()` creates on demand, so calling `record()` unconditionally
+    // would add a healthy `executor` row to a board whose exact shape an existing assertion pins — and "no row" and
+    // "a row saying ok" are the same fact, so the row would be noise.
+    if ('executor' in this.health.snapshot()) this.health.entry('executor').record()
   }
 
   /** Record a problem the panel shows in its header, without stopping anything. */

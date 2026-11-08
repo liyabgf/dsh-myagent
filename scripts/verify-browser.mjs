@@ -35,6 +35,36 @@ function check(name, cond, detail = '') {
   }
 }
 
+/**
+ * 被数据形状挡住的检查必须**登记**，不许静默不执行。
+ *
+ * 这条机制来自一次真实的事故：线上部署变成「0 个工作、0 个项目」之后，U21 的
+ * `工作详情带「归档」与「删除」按钮` 被写成 `workRows > 0 ? (含归档且含删除) : text.startsWith('选择左边')`，
+ * 而它后面**整块**删除两步确认包在 `if (lifecycle.btns.includes('删除'))` 里——0 个工作时那个 if 恒假，
+ * 于是"删除必须两步确认、后果必须带数字、必须写明不可撤销"这条检查凭空消失，
+ * 结论行照样打印「通过 84 条，失败 0 条」。同一轮里 U20 那条更安静：判定式是
+ * `rows === 1 ? !空提示 : true`，0 条时**恒真**，等于把检查关掉还给它记了一次通过。
+ * 更早的表现是：同一个脚本在不同数据下跑出过 88/88 与 84/84，两个"全绿"根本不可比。
+ *
+ * 当时只要做到这一步就能避免：**守卫不成立时调用 skip(name, reason)**，让被跳过的检查
+ * 计数、并在结论行逐条列出名字与原因。一条检查要么行使、要么显式登记为跳过——
+ * 于是 `通过 + 失败 + 跳过` 这个总数与数据形状无关，跨运行可比。
+ *
+ * 纪律：skip 的粒度是**一条检查**，不是一块代码。一个守卫里包着两条 check，就要 skip 两次，
+ * 否则总数照样随数据形状漂移（那正是 88/84 的成因）。
+ *
+ * 只读前提：本脚本按设计不改线上数据，所以**不许**为了凑出某个数据形状去创建/删除
+ * Work、Project、Ticket。凑不出来的形状就 skip，并在 reason 里写明谁能覆盖它
+ * （通常是 jsdom 套件 tests/panel.spec.ts 的夹具测试）。
+ */
+let skipped = 0
+const skips = []
+function skip(name, reason) {
+  skipped++
+  skips.push({ name, reason })
+  console.log(`  – ${name}：跳过 —— ${reason}`)
+}
+
 const LAUNCH = {
   executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   headless: true,
@@ -162,7 +192,8 @@ try {
   if (filedId === null) {
     // 如实记为跳过，不算通过也不算失败：这个部署里没有归入工作的任务，本条无法在真浏览器上行使。
     // 机制本身由 tests/panel.spec.ts 的夹具测试保证（那条是能失败的，且经变异检验）。
-    console.log('  – 归属行可点（U3 缺口 1）：跳过 —— 本部署没有任何任务归入工作，无可断言对象')
+    skip('归属行是可点按钮而非死文本（U3 缺口 1）',
+      '本部署没有任何任务归入工作（API 里 200 条内查不到 workId），无可断言对象；机制由 tests/panel.spec.ts 的夹具测试覆盖')
   } else {
     await page.goto(`${BASE}#ticket=${filedId}`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(800)
@@ -330,7 +361,11 @@ try {
     const afterTwo = await page.evaluate(() => (document.getElementById('d-fileview')?.textContent || '').trim().length)
     check('再按一次 Esc 才收起文件查看器', afterTwo === 0, `字数=${afterTwo}`)
   } else {
-    console.log('  – Esc 分层（U10）：跳过 —— 该任务目录里没有可点的文件')
+    // 一个守卫里包着**两条** check，所以要 skip 两次：漏一次，总数就又随数据形状漂了（见 skip 的注释）。
+    skip('Esc 一次只关一层：抽屉关了，文件查看器还在（U10）',
+      '该任务目录里没有可点的文件，打不开文件查看器；分层关闭由 tests/panel.spec.ts 覆盖')
+    skip('再按一次 Esc 才收起文件查看器',
+      '同上：没有可点的文件，文件查看器无法打开')
   }
 
   // U11：设置分区表单 + 脏状态 + JSON 折叠
@@ -388,7 +423,8 @@ try {
       ch.header.includes('操作') && ch.rowButtons.length >= 2,
       `header=${ch.header.join('|')} rowBtns=${ch.rowButtons.join('/')}`)
   } else {
-    console.log('  – 频道表操作列（U12）：跳过 —— 本部署没有配置任何频道，表未渲染（表单那一条已断言）')
+    skip('频道表有「操作」列且每行至少两个按钮（启停/删除）',
+      '本部署没有配置任何频道，表压根不渲染（无表头、无行），没有可断言对象；表单那一条已独立断言，频道行的启停/删除由 tests/panel.spec.ts 覆盖')
   }
   await page.click('#tabs button[data-tab="overview"]')
   await page.waitForTimeout(300)
@@ -473,7 +509,8 @@ try {
       filtered.onDecisions && filtered.hash === `#trigger=${trigId}` && filtered.hasClear,
       `hash=${filtered.hash} 说明=${filtered.text.slice(0, 34)}`)
   } else {
-    console.log('  – 来源 Trigger 深链（U15）：跳过 —— 该任务没有来源 Trigger')
+    skip('「来源 Trigger」点一下落到过滤后的记录页（U15）',
+      '当前这张任务没有来源 Trigger（技术细节里没有那一格），深链无从行使；#trigger= 过滤本身由 tests/panel.spec.ts 覆盖')
   }
 
   // U16：事件日志里的 Session id 可复制（有事件才断言；没有就如实跳过）
@@ -487,7 +524,8 @@ try {
   if (ev !== null && ev.hasId) {
     check('事件日志里的 id 是可点复制的按钮（U16）', ev.buttons > 0, `buttons=${ev.buttons}`)
   } else {
-    console.log('  – 事件日志 id 复制（U16）：跳过 —— 该任务没有含 id 的事件')
+    skip('事件日志里的 id 是可点复制的按钮（U16）',
+      ev === null ? '页面上没有 #d-events（当前没有打开任何任务）' : '这张任务的事件里没有 id 形态的字符串，没有可复制的对象')
   }
 
   // U17：线上界面上不该再出现英文枚举词（这是操作者说"不明确"的直接来源）
@@ -608,18 +646,41 @@ try {
     // 空态提示行（`还没有工作…` / `没有在用的工作…`）也是 `<li>`，但不是一条可点的工作记录；
     // 只有带 `.title` 的才是真工作行。断规则不断数据形状：线上工作数为 0 时，不把空态 `<li>` 误判成「有 1 条工作」。
     const workRows = allLis.filter(li => li.querySelector('.title') !== null).length
+    const detailText = (document.getElementById('work-detail')?.textContent || '').trim()
     return {
       pjForm: vis('pj-form'), wkForm: vis('wk-form'),
       toggles: [...document.querySelectorAll('button')].filter(b => /新建(项目|工作)/.test(b.textContent.trim())).map(b => b.textContent.trim()),
-      detail: (document.getElementById('work-detail')?.textContent || '').trim().slice(0, 24),
+      detail: detailText.slice(0, 24),
+      // 断言用**全文**，只在失败信息里截断：详情末尾才是归档/删除按钮那一段，
+      // 拿 slice(0,24) 去断言"有没有按钮"量到的是开头那 24 字——U21 的确认行踩过同一个坑。
+      detailFull: detailText,
       rows: workRows,
+      // 「显示已归档（N）」开关上的数字：面板的自动选判定用的是**含已归档**的原始列表，
+      // 只数渲染出来的行会漏掉藏着的那些（1 条在用 + 1 条已归档 = 总数 2，不自动选）。
+      archivedToggle: [...document.querySelectorAll('#works button')].map(b => b.textContent.trim())
+        .find(t => /已归档/.test(t)) ?? '',
+      selected: document.querySelectorAll('#works li[aria-current="true"]').length
+        + document.querySelectorAll('#projects li[aria-current="true"]').length,
     }
   })
   check('两个新建表单默认收起（U20）', w20.pjForm === false && w20.wkForm === false,
     `pj=${w20.pjForm} wk=${w20.wkForm}`)
   check('唤出按钮各一个、且页面上没有重名的提交按钮', w20.toggles.join('|') === '新建项目|新建工作', w20.toggles.join('|'))
-  check('只有一条工作时进页就选中它（详情不是那句空提示）',
-    w20.rows === 1 ? !w20.detail.startsWith('选择左边') : true, `workRows=${w20.rows} detail=${w20.detail}`)
+  // 与数据无关的规则，三种形状都断到东西。
+  // 旧写法是 `w20.rows === 1 ? !w20.detail.startsWith('选择左边') : true`：线上正好 0 条工作时**恒真**，
+  // 这条检查被数据形状关掉，却仍在结论里记成一次"通过"。当时把 else 分支写成一条真断言就能避免。
+  // 面板自己的规则（panel/index.html：`worksAutoSelect` 只在 `list.length === 1` 时生效，
+  // 且**每次进页重新武装**）翻成断言就是：
+  //   总数 0 条 → 详情必须是引导空态；
+  //   总数 1 条 → 进页即选中：详情不得是那句空提示，且那一行必须带 aria-current（选中态是靠它上色的）；
+  //   总数 ≥2 条 → 不自动选（自动选会把"再点一次取消选中"这个动作立刻撤销掉），详情必须仍是空态。
+  const w20Archived = Number((w20.archivedToggle.match(/显示已归档（(\d+)）/) || [])[1] ?? 0)
+  const w20Total = w20.rows + w20Archived
+  check('工作页详情与工作总数一致：1 条时进页即选中，0 条或 ≥2 条时是引导空态（U20）',
+    w20Total === 1
+      ? (!w20.detailFull.startsWith('选择左边') && w20.selected === 1)
+      : (w20.detailFull.startsWith('选择左边') && !/归档|删除/.test(w20.detailFull)),
+    `总数=${w20Total}（渲染 ${w20.rows} + 已归档 ${w20Archived}）选中行=${w20.selected} detail=${w20.detail}`)
   await page.click('#pj-toggle')
   await page.waitForTimeout(300)
   const opened = await page.evaluate(() => ({
@@ -664,7 +725,8 @@ try {
     check('带结局原因的行，整句原文都在 title 上（截断也不丢）', g.reasonTitled === g.reasonRows,
       `有原因=${g.reasonRows} 其中 title 齐备=${g.reasonTitled}`)
   } else {
-    console.log('  – 结局原因 title（U22）：跳过 —— 本部署这批已结束的任务都没有 endedReason')
+    skip('带结局原因的行，整句原文都在 title 上（截断也不丢）',
+      '本部署这批任务没有一个带 endedReason（有原因的行 = 0），没有可断言对象；title 不截断这条由 tests/panel.spec.ts 的夹具覆盖')
   }
   check('分段标题不是一条任务（没有 aria-current，点它不该打开详情）', g.headsClickable === true, `=${g.headsClickable}`)
   // 摘要截断：**只读**断言。
@@ -686,7 +748,8 @@ try {
     check('长摘要被截断成一句（≤60 字）并给了「展开」（U22）', trunc.max <= 61,
       `${trunc.rows} 行有展开按钮，可见摘要 ${trunc.min}–${trunc.max} 字`)
   } else {
-    console.log('  – 摘要截断（U22）：跳过 —— 这批任务的摘要都不够长，没有「展开」按钮')
+    skip('长摘要被截断成一句（≤60 字）并给了「展开」（U22）',
+      '这批任务的摘要都不够长，一行都没有「展开」按钮，没有可断言对象；截断规则由 tests/panel.spec.ts 覆盖')
   }
 
   // U23：记录页分区 + 判定筛选 + 徽标不再重复 id（全部只读）
@@ -727,7 +790,8 @@ try {
     check('「我看过了」按钮带后果说明（title 非空）',
       rec.dismissTitles.every(len => len > 10), `${rec.dismissTitles.length} 个按钮，title 长度 ${rec.dismissTitles.join(',')}`)
   } else {
-    console.log('  – 「我看过了」title（U23）：跳过 —— 这批判定里没有需要收起的拒绝')
+    skip('「我看过了」按钮带后果说明（title 非空）',
+      '这批判定里没有需要收起的拒绝（按钮数 = 0），没有可断言对象；按钮 title 由 tests/panel.spec.ts 覆盖')
   }
   await page.click('#tabs button[data-tab="overview"]')
   await page.waitForTimeout(300)
@@ -775,14 +839,27 @@ try {
     const detail = document.getElementById('work-detail')
     const btns = [...(detail?.querySelectorAll('button') ?? [])].map(b => b.textContent.trim())
     const workRows = [...document.querySelectorAll('#works li')].filter(li => li.querySelector('.title') !== null).length
-    return { btns, hasDetail: detail !== null, workRows, text: (detail?.textContent || '').trim() }
+    const selected = document.querySelectorAll('#works li[aria-current="true"]').length
+      + document.querySelectorAll('#projects li[aria-current="true"]').length
+    return { btns, hasDetail: detail !== null, workRows, selected, text: (detail?.textContent || '').trim() }
   })
-  // 断规则不断数据形状：有工作被选中时详情必带「归档」与「删除」；0 条工作时详情为引导空态（jsdom 在 panel.spec.ts 已全覆盖有工作时的归档/删除交互）。
-  check('工作详情带「归档」与「删除」按钮（或 0 条工作时显示空态引导）（U21）',
-    lifecycle.workRows > 0
-      ? (lifecycle.btns.includes('归档') && lifecycle.btns.includes('删除'))
-      : lifecycle.text.startsWith('选择左边'),
-    `workRows=${lifecycle.workRows} btns=${lifecycle.btns.join(' | ')} text=${lifecycle.text.slice(0, 30)}`)
+  // 断规则不断数据形状，而且**两个分支都要断到东西**。
+  // 旧写法按"列表里有没有工作"分支：`workRows > 0 ? (含归档且含删除) : text.startsWith('选择左边')`。
+  // 两个毛病：(a) 线上 0 个工作时它只断言了一句空态文案，"归档/删除按钮必须存在"这条规则整个没被行使，
+  //     而结论行仍报"通过 N 条"；(b) 更糟的是它在 ≥2 条工作时**必红**——那时详情同样是空态
+  //     （面板只在恰好 1 条时自动选），按钮当然不在，可判定式要求它们在。
+  // 正确的判据不是"列表里有没有行"，而是"**详情里有没有一条被选中的记录**"：
+  // 选中态在 DOM 上是 `aria-current="true"`（那也正是给它上色的选择器），所以两个分支都能如实断言：
+  //   有选中 → 详情必带生命周期按钮（已归档的记录是「取消归档」，未归档是「归档」）与「删除」；
+  //   无选中 → 详情必须是引导空态，而且**一个生命周期按钮都不许有**（对"没有东西"提供删除是危险的）。
+  // 只读前提：本脚本不许为了凑出"有工作被选中"去线上创建 Work/Project，所以无选中时下面那块
+  // 删除两步确认只能显式 skip（有选中时的归档/删除交互，jsdom 侧 tests/panel.spec.ts 已全覆盖）。
+  const lifecycleSelected = lifecycle.selected > 0
+  check('工作详情与选中态一致：选中一条记录时必带「归档/取消归档」与「删除」，未选中时是空态且不给生命周期按钮（U21）',
+    lifecycleSelected
+      ? (lifecycle.btns.some(b => b === '归档' || b === '取消归档') && lifecycle.btns.includes('删除'))
+      : (lifecycle.text.startsWith('选择左边') && lifecycle.btns.length === 0),
+    `选中行=${lifecycle.selected} workRows=${lifecycle.workRows} btns=${lifecycle.btns.join(' | ') || '（无）'} text=${lifecycle.text.slice(0, 30)}`)
   if (lifecycle.btns.includes('删除')) {
     await page.evaluate(() => {
       const detail = document.getElementById('work-detail')
@@ -813,6 +890,13 @@ try {
       if (btn) btn.click()
     })
     await page.waitForTimeout(600)
+  } else {
+    // 这一块原先**没有 else**：守卫不成立时整块不执行，既不计失败也不打印跳过，
+    // 结论行只说"通过 84 条，失败 0 条"——一条关于不可撤销操作的检查凭空消失而看不出来。
+    // 那比它变红危险得多：红会被人查，消失不会。
+    skip('删除是两步确认，且后果带数字并说明不可撤销',
+      '详情里没有「删除」按钮（本部署 0 个工作、0 个项目，没有记录被选中）；只读前提不许在线上创建 Work/Project 来凑这个形状，'
+      + '有记录被选中时的两步确认与后果文案由 tests/panel.spec.ts 的夹具覆盖')
   }
   await page.click('#tabs button[data-tab="overview"]')
   await page.waitForTimeout(300)
@@ -851,7 +935,8 @@ try {
       ['积压', '待取回信', '最近进气'].every(col => onboarding.head.includes(col)),
       onboarding.head.join('|'))
   } else {
-    console.log('  – 健康列（N5）：跳过 —— 本部署没有配置任何频道，表未渲染')
+    skip('频道表带三个健康列（积压/待取回信/最近进气）',
+      '本部署没有配置任何频道，表未渲染（表头为空），没有可断言对象；三个健康列由 tests/panel.spec.ts 覆盖')
   }
   if (onboarding.firstRow.length > 0) {
     // 每一列要么是数字/相对时间，要么是"—"；空字符串意味着渲染漏了一格。
@@ -859,7 +944,8 @@ try {
       onboarding.firstRow.slice(3, 6).every(cell => cell.length > 0),
       onboarding.firstRow.slice(3, 6).join('|'))
   } else {
-    console.log('  – 健康列取值（N5）：跳过 —— 这个部署还没有配置任何频道')
+    skip('健康列不留空格子（缺席画"—"，不画成空白）',
+      '这个部署还没有配置任何频道，没有第一行可量；缺席画"—"由 tests/panel.spec.ts 覆盖')
   }
   // 凭据不许出现在页面上：生成的单元只引用 env 文件。
   await page.evaluate(() => {
@@ -913,33 +999,53 @@ try {
   await page.click('#tabs button[data-tab="tickets"]')
   await page.click('#filter button[data-filter="all"]')  // 【U7】下拉改 chips
   await page.waitForTimeout(500)
-  const clicked19 = await page.evaluate(() => {
+  // 靶子必须是**那一张**重型任务。原先写的是 `find(…'信息比对') || items[0]`：一旦线上那张被删掉，
+  // 回退会悄悄把靶子换成列表第一行，三条高度断言于是量的是一个轻量任务、照样报 ✓——
+  // 16947px / 13510px / 37112px 那个回归就此无人看守，而结论行全绿。
+  // 这比检查变红更坏：红会被人查，"量错了对象还全绿"不会。所以回退不再算通过：
+  // 找不到硬编码的那张就**显式 skip 四条**（见 skip 的纪律：一个守卫里几条 check 就 skip 几次）。
+  // 后续项：靶子应当按"文件数/产物数最多的那张"动态选（API 里能查），而不是硬编码 19dd5c9c 的标题。
+  const heavy = await page.evaluate(() => {
     const items = [...document.querySelectorAll('#tickets li:not(.group-head)')]  // 【U22】排除分段标题
-    const target = items.find(li => li.textContent.includes('信息比对')) || items[0]
-    if (target) { target.click(); return true }
-    return false
+    const target = items.find(li => li.textContent.includes('信息比对'))
+    if (!target) return { intended: false, rows: items.length }
+    target.click()
+    return { intended: true, title: (target.querySelector('.title')?.textContent || '').trim().slice(0, 40) }
   })
-  await page.waitForTimeout(700)
-  const boxMetrics = await page.evaluate(() => {
-    const h = sel => {
-      const el = document.querySelector(sel)
-      return el ? Math.round(el.getBoundingClientRect().height) : -1
-    }
-    return {
-      docHeight: document.documentElement.scrollHeight,
-      detailHeight: h('#detail'),
-      filesListHeight: h('#d-files .filelist'),
-      artifactsHeight: h('#d-artifacts'),
-    }
-  })
-  check('已打开重型 Ticket 详情', clicked19)
-  check('#d-files .filelist 高度受控 (<= 400px，修复前 16947px)', boxMetrics.filesListHeight > 0 && boxMetrics.filesListHeight <= 400, `${boxMetrics.filesListHeight}px`)
-  check('#d-artifacts 高度受控 (<= 400px，修复前 13510px)', boxMetrics.artifactsHeight > 0 && boxMetrics.artifactsHeight <= 400, `${boxMetrics.artifactsHeight}px`)
-  check('整页 scrollHeight 受控 (<= 3600px，修复前 37112px)', boxMetrics.docHeight <= 3600, `${boxMetrics.docHeight}px`)
-  // 这张原先是 fullPage。盒模型断言在它之前就跑完了，它只是给人看的留档；
-  // 而 3385px 高的整页位图正是把 headless Chrome 顶崩的那一步（实测偶发 `Target … has been closed`）。
-  // 降为视口截图：断言一条没少，脚本不再随机死在半路。
-  await page.screenshot({ path: `${SHOT_DIR}/panel-after-tickets-all.png` })
+  if (heavy.intended) {
+    await page.waitForTimeout(700)
+    const boxMetrics = await page.evaluate(() => {
+      const h = sel => {
+        const el = document.querySelector(sel)
+        return el ? Math.round(el.getBoundingClientRect().height) : -1
+      }
+      return {
+        docHeight: document.documentElement.scrollHeight,
+        detailHeight: h('#detail'),
+        filesListHeight: h('#d-files .filelist'),
+        artifactsHeight: h('#d-artifacts'),
+        // 这条断言的对象是"点开之后详情真的有内容"。写成常量 true 就等于没有断言
+        // ——而"没有断言却记一次通过"正是本轮要清掉的那类账（U20 的 `: true` 分支）。
+        detailChars: (document.querySelector('#detail')?.textContent || '').trim().length,
+      }
+    })
+    check('已打开重型 Ticket 详情', boxMetrics.detailChars > 0, `${heavy.title} 详情 ${boxMetrics.detailChars} 字`)
+    check('#d-files .filelist 高度受控 (<= 400px，修复前 16947px)', boxMetrics.filesListHeight > 0 && boxMetrics.filesListHeight <= 400, `${boxMetrics.filesListHeight}px @ ${heavy.title}`)
+    check('#d-artifacts 高度受控 (<= 400px，修复前 13510px)', boxMetrics.artifactsHeight > 0 && boxMetrics.artifactsHeight <= 400, `${boxMetrics.artifactsHeight}px @ ${heavy.title}`)
+    check('整页 scrollHeight 受控 (<= 3600px，修复前 37112px)', boxMetrics.docHeight <= 3600, `${boxMetrics.docHeight}px @ ${heavy.title}`)
+    // 这张原先是 fullPage。盒模型断言在它之前就跑完了，它只是给人看的留档；
+    // 而 3385px 高的整页位图正是把 headless Chrome 顶崩的那一步（实测偶发 `Target … has been closed`）。
+    // 降为视口截图：断言一条没少，脚本不再随机死在半路。
+    await page.screenshot({ path: `${SHOT_DIR}/panel-after-tickets-all.png` })
+  } else {
+    const why = `线上没有标题含「信息比对」的那张重型任务（列表 ${heavy.rows} 行），硬编码靶子失效；`
+      + '不按文件数动态选靶就量不到 16947px 那个回归，宁可跳过也不换一张轻量任务假装量过。'
+      + '盒模型有界性由 tests/panel.spec.ts 覆盖'
+    skip('已打开重型 Ticket 详情', why)
+    skip('#d-files .filelist 高度受控 (<= 400px，修复前 16947px)', why)
+    skip('#d-artifacts 高度受控 (<= 400px，修复前 13510px)', why)
+    skip('整页 scrollHeight 受控 (<= 3600px，修复前 37112px)', why)
+  }
 
   await relaunch()
   console.log('── 5. 跨 Ticket 引用回溯 (F6) 与深链路由 (#ticket= / #work=)')
@@ -975,6 +1081,11 @@ try {
     check(`深链 #work=${workId.slice(0, 8)} 自动切换到「工作」页并加载详情`,
       workTabState.worksDisplay !== 'none' && workTabState.detailText.includes(workId),
       `display=${workTabState.worksDisplay}`)
+  } else {
+    // 原先这个 if 也**没有 else**：0 个工作的部署上，深链路由这条检查静默不执行，结论行看不出少了一条。
+    skip('深链 #work=<id> 自动切换到「工作」页并加载详情',
+      'API /api/works 返回 0 条工作，拿不到可用的 id；只读前提不许在线上创建一条来凑。'
+      + '#work= 路由由 tests/panel.spec.ts 覆盖，而 #ticket= 那一半在本节上面已经行使过')
   }
 
   check('全程 0 页面未捕获异常 (pageerror)', pageErrors.length === 0, `errors=${pageErrors.length}`)
@@ -984,5 +1095,15 @@ try {
   await browser.close()
 }
 
-console.log(`\n── 结论：通过 ${passed} 条，失败 ${failed} 条`)
+// 结论行必须把跳过说出来。原先它只有"通过 N 条，失败 M 条"，于是一条被数据形状挡掉的检查
+// 与一条从来没写过的检查在结论里长得一模一样——U21 的删除两步确认就是这么消失的。
+console.log(`\n── 结论：通过 ${passed} 条，失败 ${failed} 条，跳过 ${skipped} 条`)
+if (skips.length > 0) {
+  console.log('── 跳过明细（这些是**没有行使**的检查，不是通过；每条都写明原因与谁在覆盖它）：')
+  for (const s of skips) console.log(`   – ${s.name}\n     原因：${s.reason}`)
+}
+// 这个总数才是跨运行可比的那个数：历史上同一脚本跑出过 88/88 与 84/84，两个"全绿"其实不可比，
+// 因为分母随数据形状变。加了 skip 登记之后，分母固定为"通过+失败+跳过"。
+console.log(`── 登记的检查总数：${passed + failed + skipped} 条（通过 ${passed} + 失败 ${failed} + 跳过 ${skipped}）。`
+  + '这个和与数据形状无关：每条检查要么被行使、要么被显式登记为跳过，绝不静默消失，所以跨运行的结论可以互相比较。')
 process.exit(failed === 0 ? 0 : 1)

@@ -154,6 +154,28 @@ N1/N3（第 33 轮）与 chat 闭环（第 38 轮）。
 
 ---
 
+## 3.1 `executor.sandbox`：一个会说自己还不支持的旋钮（0.10.0 登记）
+
+`settings.executor.sandbox: 'local' | 'vm'` 是 0.9.0 为"将来把 worker 放进虚拟机"预留的字段。
+**它至今没有第二个取值可用的实现**：`DshExecutor` 恒定构造 `LocalHostSandbox`
+（`src/app/executor.ts:126`），`'vm'` 没有任何对应的类。
+
+0.9.0 的问题不是"没实现"，而是**没实现却静默**：把设置改成 `'vm'`，系统行为一个字节都不变、
+不报错、不上健康板——一个在撒谎的配置项比没有这个配置项更坏，因为操作者会以为自己的任务被隔离了。
+
+0.10.0 的处置是让它**说真话**而不是删掉它：`Runtime.announceSandbox()` 在启动与每次保存设置时检查，
+`'vm'` 就在健康板上写一行"this build has no VM sandbox: every Ticket still runs in a directory on this host"，
+改回 `'local'` 时清除（且只在条目已存在时清除，因为 `entry()` 按需创建，无条件调用会给一块
+形状被既有断言钉住的健康板凭空加一行）。没有选择删字段，是因为 `SettingsSchema` 是 `.strict()`：
+任何**已经存过**这个键的部署会在启动时解析失败，那比一个诚实的旋钮更糟。
+
+**接入 `vm` 还差什么**（`ExecutionSandbox` 现在只抽象了两个动作，其余六处仍是宿主直接 IO，
+逐条列在 `src/app/executor.ts` 接口注释里）：附件投递（`executor.ts` 的 `prepareDirectory`）、
+`RESULT.md` 与 `REPLY-UNDELIVERED.md`（`delivery.ts`）、任务删除时的目录清理（`runtime.ts`）、
+目录列举与度量（`files.ts`）、以及 `prepare` 命令的执行（`executor.ts` 的 `run`，其 cwd 是 workRoot
+——一个在 VM 内根本不存在的宿主路径）。在这六处搬进接口之前，`ExecutionSandbox` 只是**给边界上的两个洞
+起了名字**，不等于封装了边界；而它会"看起来能跑"，错误只在真上 VM 那天暴露。
+
 ## 4. P3 协作
 
 | 能力 | 现在有什么 | 缺什么 | 状态 | 接入它需要什么 | 出处 |

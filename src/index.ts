@@ -8,7 +8,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { createRuntime, type Runtime } from './app/runtime.ts'
-import { registerSkills, type SkillsPort } from './app/skills.ts'
+import { BUILTIN_SKILL_NAMES, confirmRegistered, registerSkills, type SkillsPort } from './app/skills.ts'
 import { Config, type DeploymentConfig } from './deployment.ts'
 
 export const name = 'myagent'
@@ -48,10 +48,24 @@ export async function apply(ctx: Context, config: DeploymentConfig): Promise<voi
     return
   }
   const skills = (ctx as unknown as { skills?: SkillsPort }).skills
+  // One sink for everything this entry can see and cannot fix: the panel's header, which is where the operator looks.
+  // A skill that failed to register used to be swallowed by an empty `catch {}`, so the panel listed a capability no
+  // worker could load and the first person to find out was the one whose Ticket stalled on it.
+  const report = (detail: string): void => { runtime.markProblem(detail) }
+  // `Sessions` registers promoted crafts into each worker's OWN scope layer, and a refusal there is invisible from
+  // this entry unless it holds the same sink. `SessionsHost` has no problem member by design (each of its members is
+  // one narrow fact) and `runtime.ts` is not this bundle's to change, so the sink is installed here instead.
+  runtime.sessions.setProblemSink(report)
   if (skills !== undefined) {
     ctx.effect(() => {
-      const release = registerSkills(skills, runtime.prompts)
+      const release = registerSkills(skills, report)
       return () => { release() }
+    })
+    // Read back rather than trust the disposer: the host answers a same-layer duplicate name with `logger.warn` and a
+    // NO-OP disposer, which looks exactly like success from here. Not awaited — discovery can be slow, and the answer
+    // only ever produces a report, so holding startup for it would trade a delay for nothing.
+    void confirmRegistered(skills, BUILTIN_SKILL_NAMES, report).catch((error: unknown) => {
+      ctx.logger.warn('myagent could not confirm its built-in skills reached the host catalog: %s', String(error))
     })
   }
   // Stopping releases the state lock, the routes, the pump and the Store, in that order.

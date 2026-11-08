@@ -376,8 +376,42 @@ describe('the worker\'s one tool', () => {
     const id = await open(h)
     await h.call('myagent_stop_ticket', { ticket_id: id })
     const tool = h.worker(id)
-    await expect(definitionOf(tool).execute({ state: 'ready', summary: '太晚了' }, { signal: new AbortController().signal }))
-      .rejects.toMatchObject({ code: 'ticket_ended' })
+    // 【产品变更】旧断言：await expect(definitionOf(tool).execute({ state: 'ready', summary: '太晚了' }, { signal: new AbortController().signal }))
+    //   .rejects.toMatchObject({ code: 'ticket_ended' })
+    // 理由：异常逃给宿主会变成 worker 读不懂的 tool error，而 `NEXT_STEP` 表里早就为 `ticket_ended` 写好了
+    // "下一步该做什么"的文案却送不到它眼前。现在与 `myagent_note_ticket` 一致：resolve 成 { error, code, next }。
+    // 断言没有放宽——`code` 仍然被钉住，另外新增 `next` 文案必须真的送到。
+    const answer = await definitionOf(tool).execute({ state: 'ready', summary: '太晚了' }, { signal: new AbortController().signal }) as Record<string, unknown>
+    expect(answer).toMatchObject({ code: 'ticket_ended' })
+    expect(String(answer.error)).toContain('has ended')
+    expect(String(answer.next)).toContain('needs a Ticket of its own')
+  })
+
+  /**
+   * Order is the assertion here, not the promotion's own outcome.
+   *
+   * A promotion writes into the shared craft library and cannot be taken back by a later failure, while a report that
+   * lands on an ended Ticket is refused cleanly — so the reversible step must not come after the irreversible one.
+   * And the answer must not look like a failed report: a top-level `error` is what tells a worker "your report did not
+   * land", which sends it to report the same work again against a Ticket that has already ended.
+   */
+  it('lands the report first, then reports a failed promotion beside it rather than instead of it', async () => {
+    const h = harness()
+    const id = await open(h)
+    // The harness's `promoteSkill` answers `{ ok: false, error: 'stubbed' }`, which is the failing half of the pair.
+    const answer = await h.report(id, {
+      state: 'ready', summary: '写好了 digest.md', files: ['digest.md'],
+      promote_skill: { name: 'dedup', title: '去重器', description: '去重', script_path: 'dedup.py' },
+    }) as Record<string, unknown>
+    // (a) The report landed: the Ticket really ended, and with the outcome a `ready` report produces.
+    expect(h.engine.require(id).ended).toMatchObject({ outcome: 'done' })
+    expect(answer).toMatchObject({ state: 'ready', ended: true, outcome: 'done' })
+    // (b) The promotion's failure travels on the result, and no success is claimed for it.
+    expect(String(answer.skill_promotion_error)).toContain('stubbed')
+    expect('promoted_skill' in answer).toBe(false)
+    // (c) Nothing at the top level reads as "the report failed".
+    expect('error' in answer).toBe(false)
+    expect('code' in answer).toBe(false)
   })
 })
 

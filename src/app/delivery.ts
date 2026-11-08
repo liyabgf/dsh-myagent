@@ -124,6 +124,162 @@ function clipped(text: string, max: number): string {
 }
 
 /**
+ * The hard ceiling on the borrowed-work line, in UTF-16 characters.
+ *
+ * A bridge already splits an outbound reply to fit a platform's own limit (Telegram's is 4096), so this is not about
+ * fitting: it is about the line staying ONE glance on a phone. A courtesy that has to be scrolled past is a courtesy
+ * nobody reads, and the moment it wraps to three lines it is competing with the answer it is meant to explain.
+ */
+export const CREDIT_LINE_MAX = 120
+/**
+ * How much of one source Ticket's title the line may carry.
+ *
+ * Titles are written by whoever asked, so they are as long as a sentence can be. Clipped rather than refused: a
+ * truncated title still tells the operator WHICH earlier job this is, which is the whole content of the line.
+ */
+const CREDIT_TITLE_MAX = 20
+/** How many source titles are named before the rest of them become a count. */
+const CREDIT_NAMED_MAX = 2
+
+/**
+ * What this Ticket borrowed from other Tickets, as its own event log records it.
+ *
+ * The Engine writes an `artifact_read` into BOTH Tickets when one reads an artifact the other registered
+ * (`recordArtifactRead`, on the success path of a read `authorizeArtifactRead` allowed), and a `skill_used` into both
+ * when one uses a 手艺 another promoted (`skillUsed`). Until
+ * now the only reader of those events was the panel's lineage view, so the operator on a phone got a summary that read
+ * as self-produced even when it was mostly an earlier job's data — and "this one reused last week's crawl" is exactly
+ * the fact that decides whether the answer can be trusted without opening a browser.
+ *
+ * Only the direction this Ticket borrowed in is read (`fromTicketId`). The mirror image (`byTicketId`: somebody else
+ * reused YOUR output) is a fact about a different Ticket's report, and saying it here would be noise on this one.
+ * `input` hand-offs are left out for the same reason `citationsOf` is not reused wholesale: a note handed over is not
+ * work borrowed, and the line is only worth its characters if it means "this answer stands on that answer".
+ */
+export interface BorrowedWork {
+  /** Titles of the sources that are alive and have one, in the order this Ticket borrowed from them, deduplicated. */
+  readonly titles: readonly string[]
+  /** Sources that cannot be named: the operator deleted the Ticket, or the store no longer resolves the id at all. */
+  readonly gone: number
+  /** Sources that are alive but carry no usable title. Counted and never printed — a bare id is not a name. */
+  readonly nameless: number
+  /** How many distinct 手艺 this Ticket used. Counted and never named, because the name is a `myagent-…` string. */
+  readonly skills: number
+}
+
+/**
+ * Read one Ticket's borrowings out of its own log.
+ *
+ * Deduplicated by source Ticket rather than by event: the Engine records one `artifact_read` per (source, path), so a
+ * report built on four files of the same earlier job is one borrowing, not four, and naming that job four times would
+ * read as a stutter. Order is the log's own, which is oldest first — the order the work was actually borrowed in.
+ *
+ * Throws are left to the caller: this reads a database, and the caller is the one that knows whether the line it was
+ * building was worth a report.
+ */
+export function borrowedFrom(store: Store, ticketId: string): BorrowedWork {
+  const titles: string[] = []
+  const seen = new Set<string>()
+  const skills = new Set<string>()
+  let gone = 0
+  let nameless = 0
+  for (const event of store.events.list(ticketId)) {
+    const detail = event.detail
+    if (event.type === 'skill_used') {
+      const from = detail?.fromTicketId
+      if (typeof from !== 'string' || from === ticketId) continue
+      // Counted by name so two events for the same 手艺 are one, but the name itself never leaves this function.
+      // A missing one still means a 手艺 was used, so it gets a placeholder that cannot collide with a real name.
+      skills.add(typeof detail?.skill === 'string' && detail.skill !== '' ? detail.skill : `\u0000${skills.size}`)
+      continue
+    }
+    if (event.type !== 'artifact_read') continue
+    const from = detail?.fromTicketId
+    if (typeof from !== 'string' || from === ticketId || seen.has(from)) continue
+    seen.add(from)
+    // `get` rather than `list`: a tombstone is hidden from every list but still resolves here, which is what makes
+    // "the job this borrowed from has been deleted" distinguishable from "this borrowed from nothing".
+    const source = store.tickets.get(from)
+    const title = source?.title.trim() ?? ''
+    if (source === undefined || source.deleted !== undefined) gone++
+    else if (title === '') nameless++
+    else titles.push(clipped(title, CREDIT_TITLE_MAX))
+  }
+  return { titles, gone, nameless, skills: skills.size }
+}
+
+/**
+ * The borrowed-work sentence, bare — what `RESULT.md` writes under its own heading.
+ *
+ * `undefined` and not an empty string when there is nothing to say, because the alternative is a line reading
+ * "（未复用其它任务）" on every ordinary report: noise that trains a person to skip the parenthesis, which is how a
+ * real borrowing stops being believed too.
+ *
+ * Rendered as a ladder from most to least specific, and the first rung that fits {@link CREDIT_LINE_MAX} is the one
+ * used. Naming a job is what makes the line worth reading, so names are given up only to the ceiling and only one at
+ * a time; the bottom rung is a bare count, which needs no title and so cannot fail the ceiling.
+ */
+export function creditText(borrowed: BorrowedWork): string | undefined {
+  const total = borrowed.titles.length + borrowed.gone + borrowed.nameless
+  if (total === 0 && borrowed.skills === 0) return undefined
+  const quoted = (titles: readonly string[]): string => titles.map(title => `「${title}」`).join('')
+  const sources: string[] = []
+  if (total === 0) {
+    sources.push(`这份用上了 ${borrowed.skills} 门已沉淀的手艺`)
+  } else {
+    if (borrowed.titles.length === 0) {
+      // Deleted, or a row the store no longer resolves: both are "that job is not there to be named". Said as a count
+      // of deleted work rather than dropped, because "built on something you deleted" is a fact worth a glance.
+      sources.push(borrowed.nameless === 0
+        ? `这份用上了 ${borrowed.gone} 项已删除任务的成果`
+        : `这份用上了 ${total} 项前序成果`)
+    } else if (total === borrowed.titles.length && total <= CREDIT_NAMED_MAX) {
+      sources.push(`这份用上了${quoted(borrowed.titles)}的成果`)
+    } else {
+      sources.push(`这份用上了${quoted(borrowed.titles.slice(0, CREDIT_NAMED_MAX))}等 ${total} 项前序成果`)
+      sources.push(`这份用上了${quoted(borrowed.titles.slice(0, 1))}等 ${total} 项前序成果`)
+    }
+    sources.push(`这份用上了 ${total} 项前序成果`)
+  }
+  const skill = total === 0 || borrowed.skills === 0 ? '' : `，以及 ${borrowed.skills} 门已沉淀的手艺`
+  // +2 for the full-width parentheses `creditLine` adds, so the ceiling is on the line a person receives, not on the
+  // sentence inside it.
+  const bodies = sources.map(form => `${form}${skill}`)
+  return bodies.find(body => body.length + 2 <= CREDIT_LINE_MAX) ?? clipped(bodies[bodies.length - 1]!, CREDIT_LINE_MAX - 2)
+}
+
+/**
+ * The same sentence as the line a requester receives: wrapped, and bounded by {@link CREDIT_LINE_MAX}.
+ *
+ * Parenthesised because it is not the answer, it is a fact about the answer, and on a phone the two have to be
+ * distinguishable at a glance. No Ticket id, no directory and no tool name — the same discipline `replyText` and
+ * `escalationText` already keep, and for the same reason: none of the three is anything a person on a platform can
+ * act on. A title is, because a title is how the operator remembers the job.
+ *
+ * WHICH OUTBOUND TEXTS CARRY IT. The test is the one this file already uses for every other line it writes: is this
+ * text read by a person who has no other way to know?
+ * - `replyText` — yes. The requester is on a phone and has never seen the panel; this is the entire point.
+ * - `resultDocument` (`RESULT.md`) — yes, in the same words unwrapped. The file is the durable copy of the answer for
+ *   somebody who was not in the room, and a copy that quietly dropped where the answer came from would contradict the
+ *   message rather than outlive it.
+ * - `REPLY-UNDELIVERED.md` — yes, and for free: `sendGaveUp` writes `payload.text` VERBATIM so a person can send it by
+ *   hand, and that text is already the reply above. Anything else would make the hand-sent copy differ from the copy
+ *   the system tried to send.
+ * - `relayText` / `escalationRelayText` (the front desk) — no. This reader is myagent's own main Session at this
+ *   machine: the text already carries the Ticket id and the directory because the front desk CAN act on both, and the
+ *   lineage is one panel click away. Repeating it here would only lengthen a notice the operator is charged a model
+ *   turn to read.
+ * - `escalationText` — no. There is no report and no answer to qualify; the Watchdog has given up, and the sentence
+ *   that follows has to be the only thing the requester reads.
+ * - `machineNotification` — no. A banner is clipped to a sentence by design and belongs to the operator at this
+ *   machine, who has the panel; spending its characters on provenance would push the summary out of view.
+ */
+export function creditLine(borrowed: BorrowedWork): string | undefined {
+  const text = creditText(borrowed)
+  return text === undefined ? undefined : `（${text}）`
+}
+
+/**
  * The identity of one reply: a pure function of what it carries, and of nothing else.
  *
  * No timestamp and no attempt counter, so a `send` that is asked twice for the same words to the same address
@@ -141,8 +297,12 @@ export function sendKey(ticketId: string, replyTo: ReplyTo, text: string): strin
  * The worker's own words, and nothing about this machine: no Ticket directory and no `myagent_answer_ticket`, both of
  * which are instructions only myagent's own front desk can follow. A requester who cannot act on a line is better off
  * without it — the same reason `relayText` and `resultDocument` are separate texts rather than one.
+ *
+ * @param credit the borrowed-work line from {@link creditLine}, when this Ticket borrowed anything. Optional and
+ *   appended last: a report with no lineage is byte-for-byte what it was before this parameter existed, so the
+ *   ordinary case pays nothing and reads exactly as it always did.
  */
-export function replyText(ticket: Ticket, report: Report): string {
+export function replyText(ticket: Ticket, report: Report, credit?: string): string {
   // A `ready` needs no heading: the summary IS the answer. Anything else has to say what became of the work first,
   // because "needs you" and "failed" are facts the requester is waiting on and cannot infer from a summary.
   const lines = report.state === 'ready' ? [report.summary] : [headline(ticket, report.state), '', report.summary]
@@ -151,6 +311,9 @@ export function replyText(ticket: Ticket, report: Report): string {
   if (report.files !== undefined && report.files.length > 0) {
     lines.push('', 'Files:', ...report.files.slice(0, 20).map(file => `- ${file}`))
   }
+  // Last, after the files: it qualifies the whole answer rather than any one line of it, and a person skimming on a
+  // phone reads the answer first.
+  if (credit !== undefined && credit !== '') lines.push('', credit)
   return lines.join('\n')
 }
 
@@ -245,7 +408,15 @@ export function escalationRelayText(ticket: Ticket, why: string): string {
   ].join('\n')
 }
 
-export function resultDocument(ticket: Ticket, payload: Extract<NotifyPayload, { kind: 'report' }>): string {
+/**
+ * What `RESULT.md` says, which is the Ticket's ending in full.
+ *
+ * @param credit the borrowed-work sentence from {@link creditText}, when this Ticket borrowed anything. The SAME
+ *   words the requester got in the chat room, unwrapped: a person who reads the file later and a person who read the
+ *   message then must not be told two different things about where the answer came from. It is a section rather than
+ *   another `- Key: value` row because it is prose about the work, not metadata about the Ticket.
+ */
+export function resultDocument(ticket: Ticket, payload: Extract<NotifyPayload, { kind: 'report' }>, credit?: string): string {
   const lines = [
     `# ${ticket.title}`,
     '',
@@ -269,6 +440,7 @@ export function resultDocument(ticket: Ticket, payload: Extract<NotifyPayload, {
   if (payload.files !== undefined && payload.files.length > 0) {
     lines.push('', '## Files', '', ...payload.files.map(file => `- ${file}`))
   }
+  if (credit !== undefined && credit !== '') lines.push('', '## Borrowed work', '', credit)
   lines.push('')
   return lines.join('\n')
 }
@@ -360,6 +532,30 @@ export class OutcomeDelivery implements Delivery {
   }
 
   /**
+   * What this Ticket borrowed, or nothing at all — including when reading that throws.
+   *
+   * The try is the whole reason this is a method and not a call to `borrowedFrom` at each site. This line is a
+   * courtesy that explains a report, so it may not cost the report: a store that throws while being read is answered
+   * with no line and a warning, never with an exception that would leave the reply unqueued and the requester
+   * unanswered. That is a strictly worse outcome than an unexplained answer, and it is reachable from a database that
+   * is momentarily busy — the same shape as `machineNotification`, which logs and settles because a banner is not the
+   * record.
+   *
+   * Warned rather than silently dropped, and rather than `complain`ed: it is not a delivery problem (nothing owed to
+   * anybody went missing), so writing it onto the health board would erase a real one — the S19/N5 rule this file
+   * already follows for `nowhere`.
+   */
+  private borrowedOf(ticketId: string): BorrowedWork | undefined {
+    try {
+      return borrowedFrom(this.host.store, ticketId)
+    } catch (error) {
+      this.host.context.logger.warn('myagent could not read what Ticket %s borrowed, so its report goes out without '
+        + 'that line: %s', ticketId, reason(error))
+      return undefined
+    }
+  }
+
+  /**
    * The Watchdog has given up on a Ticket (S2).
    *
    * Until this existed, giving up produced two things: an `escalated` event in the Ticket's history and a line on the
@@ -395,7 +591,13 @@ export class OutcomeDelivery implements Delivery {
     const files = report.state === 'ready' && report.files !== undefined && report.files.length > 0
       ? report.files
       : undefined
-    this.send(ticket, replyText(ticket, report), files)
+    // Read here rather than inside `send`, because `send` also carries the escalation and the front desk's own words
+    // back to a requester, and neither of those is a report that could have borrowed anything. The cost is one query
+    // over this Ticket's own event log, paid only for a state somebody is told about — a Ticket with no address
+    // (`send`'s counted no-op) pays it too, and that is accepted rather than worked around: the alternative is
+    // duplicating `send`'s address lookup here, which would let the two disagree about whether a reply is going out.
+    const borrowed = this.borrowedOf(ticket.id)
+    this.send(ticket, replyText(ticket, report, borrowed === undefined ? undefined : creditLine(borrowed)), files)
   }
 
   /**
@@ -570,7 +772,12 @@ export class OutcomeDelivery implements Delivery {
     }
     if (ENDING.includes(payload.state) && ticket.execution !== undefined) {
       try {
-        await writeFile(`${ticket.execution.directory}/RESULT.md`, resultDocument(ticket, payload), 'utf8')
+        // Read again rather than carried on the payload: the notify row is durable and may be retried long after it
+        // was queued, and the log is the only place this fact lives. Keeping it out of the payload also keeps the
+        // dedup key (`notify`, id, at, state) and every stored row's shape exactly as they were.
+        const borrowed = this.borrowedOf(ticket.id)
+        const document = resultDocument(ticket, payload, borrowed === undefined ? undefined : creditText(borrowed))
+        await writeFile(`${ticket.execution.directory}/RESULT.md`, document, 'utf8')
       } catch (error) { this.complain(`Could not write RESULT.md for ${ticket.id}: ${reason(error)}`) }
     }
     const text = relayText(ticket, payload)

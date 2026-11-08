@@ -16,7 +16,7 @@ export const USER_ERRORS = {
   // directory it owns, so deleting the record under it would leave that Session writing where nobody is accountable.
   ticket_not_stopped: 'That Ticket has not ended; stop it before deleting it',
   empty_name: 'A name cannot be empty',
-  collaboration_refused: 'Only Tickets in the same Work can hand something to each other',
+  collaboration_refused: 'Only Tickets in the same Work — or two Tickets that belong to no Work at all — can hand something to each other',
   empty_text: 'There is nothing to hand over: the text is empty',
   artifact_missing: 'No artifact of that Ticket is registered under this path',
   // A separate code from `artifact_missing`, because the two have different causes and different remedies: one means
@@ -25,6 +25,10 @@ export const USER_ERRORS = {
   artifact_unreachable: 'That Ticket has no directory to read the artifact from',
   decision_missing: 'No decision has that id',
   dependency_cycle: 'That would make a Ticket wait for itself, directly or through others',
+  // Separate from `dependency_cycle` and from `ticket_missing`: the upstream exists and is not a tombstone, but it
+  // already ended some way other than `done`, so an edge that waits for its success can never be released — the
+  // dependant would defer every few seconds forever and never fail, which is the one outcome nobody can see.
+  dependency_upstream_ended: 'That Ticket already ended without succeeding, so waiting for its success would never be released',
   // A reply whose `replyTo` names a Source that cannot take it: switched off between the request and the answer, or one
   // that only ever produces. Deliberately separate from a Ticket whose Trigger carries no `replyTo` at all — that case
   // is not an error, it does nothing and stays observable — because this one says an address WAS written down and

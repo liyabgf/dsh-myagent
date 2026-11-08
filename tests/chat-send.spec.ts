@@ -805,3 +805,112 @@ describe('a reply nothing can take', () => {
     expect((unreceivable as UserError).code).not.toBe((unroutable as UserError).code)
   })
 })
+
+/**
+ * The borrowed-work line reaching the room (减负).
+ *
+ * The wording has its own unit tests in `delivery.spec.ts`, against a queue that records instead of delivering. What
+ * only a whole deployment can show is the wiring: the sentence is read out of the real event log at report time,
+ * survives the effects queue's payload, and lands in the file a bridge picks up. Every other test in this suite has one
+ * Ticket in it, so until now there was nowhere for this line to come from.
+ */
+describe('a reply that says what it was built on', () => {
+  it('names the earlier job in the room, and in RESULT.md, with no id and no path in either', async () => {
+    const context = await chatDeployment()
+    try {
+      const first = await asked(context)
+      // Registered by a report, which is the only thing that makes a file another Ticket's artifact at all.
+      await context.runtime.engine.report(first.id, { state: 'ready', summary: '数据抓完了', files: ['data/table.csv'] })
+      await settle(context.runtime)
+
+      // A second question in the same room, so the second Ticket has its own way back.
+      drop(context.channel, 'second.md', message(
+        { from: 'U01ABCDEF', id: 'msg-2', thread: 't-9', title: 'write it up' }, 'Write it up.'))
+      await settle(context.runtime)
+      const second = context.runtime.store.tickets.list().find(row => row.title === 'write it up')!
+      expect(second, '第二张任务应当已经起来').toBeDefined()
+      expect(second.execution).toBeDefined()
+
+      // The real door, and the only thing this test arranges by hand: `authorizeArtifactRead` answers whether the read
+      // may happen and `recordArtifactRead` is what writes the lineage into both Tickets' logs — the same two calls the
+      // Runtime makes on a worker's success path (`runtime.ts:742`, `runtime.ts:771`). So the sentence below is caused
+      // by the system's own recording, not simulated into the log.
+      const authorized = context.runtime.engine.authorizeArtifactRead(second.id, first.id, 'data/table.csv')
+      context.runtime.engine.recordArtifactRead(second.id, first.id, authorized.artifact.path)
+      expect(context.runtime.store.events.list(second.id).filter(event => event.type === 'artifact_read')).toHaveLength(1)
+
+      context.runtime.delivery.report(second, {
+        state: 'ready', summary: '写好了，结论在正文里。', at: '2026-11-08T03:00:00.000Z',
+      })
+      await settle(context.runtime)
+
+      const envelopes = readdirSync(join(context.channel, 'out'))
+        .map(name => readFileSync(join(context.channel, 'out', name), 'utf8'))
+      const envelope = envelopes.find(candidate => candidate.includes('写好了，结论在正文里。'))
+      expect(envelope, '第二张任务的回复应当已经落到 out/').toBeDefined()
+      const cut = envelope!.indexOf('\n---\n', 4)
+      const head = envelope!.slice(0, cut)
+      const body = envelope!.slice(cut + 5)
+      // The envelope's own routing header is the bridge's business and still carries the id, as it always has.
+      expect(head).toContain(`ticket: ${second.id}`)
+      // The prose a person reads carries the earlier job's TITLE — how the operator remembers it — and nothing else.
+      expect(body).toContain('（这份用上了「weekly alerts」的成果）')
+      expect(body).toBe('写好了，结论在正文里。\n\n（这份用上了「weekly alerts」的成果）')
+      expect(body).not.toContain(first.id)
+      expect(body).not.toContain(second.id)
+      expect(body).not.toContain(first.execution!.directory)
+      expect(body).not.toContain('data/table.csv')
+      expect(body).not.toContain('myagent_')
+
+      // The same sentence, unwrapped, in the file that outlives the message: two texts about one fact, agreeing.
+      const document = readFileSync(join(second.execution!.directory, 'RESULT.md'), 'utf8')
+      expect(document).toContain('## Borrowed work')
+      expect(document).toContain('这份用上了「weekly alerts」的成果')
+      expect(document).not.toContain('（这份用上了')
+    } finally { await context.runtime.stop() }
+  })
+
+  /**
+   * The two halves of the craft line live in different files: `Engine.skillUsed` WRITES `detail.fromTicketId` and
+   * `detail.skill`, and `delivery.borrowedFrom` READS those keys. Nothing else owns that comparison — the unit tests on
+   * each side hand-write the shape they expect, so renaming either key would silently drop the line from every reply
+   * and fail nothing. This test goes through the real engine door and the real outbound envelope.
+   */
+  it('counts a craft the engine itself recorded, so the shape one file writes is the shape the other reads', async () => {
+    const context = await chatDeployment()
+    try {
+      const first = await asked(context)
+      await context.runtime.engine.report(first.id, { state: 'ready', summary: '写好了一个通用脚本', files: ['dedup.py'] })
+      await settle(context.runtime)
+
+      drop(context.channel, 'third.md', message(
+        { from: 'U01ABCDEF', id: 'msg-3', thread: 't-9', title: 'reuse it' }, 'Reuse it.'))
+      await settle(context.runtime)
+      const second = context.runtime.store.tickets.list().find(row => row.title === 'reuse it')!
+      expect(second, '第二张任务应当已经起来').toBeDefined()
+
+      // The real door, not a hand-written event: this is what `Runtime.skillLoaded` calls after a worker's load of a
+      // promoted craft completes.
+      context.runtime.engine.skillUsed(second.id, first.id, 'myagent-dedup-merger')
+      const events = context.runtime.store.events.list(second.id).filter(event => event.type === 'skill_used')
+      expect(events).toHaveLength(1)
+      expect(events[0]!.detail).toMatchObject({ fromTicketId: first.id, skill: 'myagent-dedup-merger' })
+
+      context.runtime.delivery.report(second, {
+        state: 'ready', summary: '跑完了。', at: '2026-11-08T04:00:00.000Z',
+      })
+      await settle(context.runtime)
+
+      const envelope = readdirSync(join(context.channel, 'out'))
+        .map(name => readFileSync(join(context.channel, 'out', name), 'utf8'))
+        .find(candidate => candidate.includes('跑完了。'))
+      expect(envelope, '回复应当已经落到 out/').toBeDefined()
+      const body = envelope!.slice(envelope!.indexOf('\n---\n', 4) + 5)
+      // The craft is counted, never named: `myagent-dedup-merger` is a plugin identifier that means nothing on a phone.
+      expect(body).toBe('跑完了。\n\n（这份用上了 1 门已沉淀的手艺）')
+      expect(body).not.toContain('myagent-dedup-merger')
+      expect(body).not.toContain(first.id)
+      expect(body).not.toContain(second.id)
+    } finally { await context.runtime.stop() }
+  })
+})

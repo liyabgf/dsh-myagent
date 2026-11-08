@@ -480,9 +480,6 @@ export class ChatSource implements TwoWaySource {
         this.host.requestPass()
         continue
       }
-      const followupWorkId = message.replyToTicket !== undefined
-        ? this.host.engine.ensureFollowupWork(message.replyToTicket)?.workId
-        : undefined
       const trigger: Trigger = {
         // A pure function of the message's identity — channel and message id, never the scan instant, never the
         // mtime (S31). A bridge that re-delivers the same message under a fresh file write must deduplicate.
@@ -498,7 +495,11 @@ export class ChatSource implements TwoWaySource {
         meta: {
           channel: channel.id, file: entry.name, from: message.from,
           ...(message.thread === undefined ? {} : { thread: message.thread }),
-          ...(followupWorkId === undefined ? {} : { work: followupWorkId }),
+          // The Ticket this message follows up on, as DATA. Grouping the two is the Engine's decision and happens only
+          // if the gate accepts this request (`Engine.receive` resolves `meta.followupTicket` inside its accepted
+          // branch): doing it here would create a Work and reclassify a historical Ticket even for a message the gate
+          // refuses — including every message in an `observe`-mode deployment, which promises to execute nothing.
+          ...(message.replyToTicket === undefined ? {} : { followupTicket: message.replyToTicket }),
         },
         // Where the answer goes, written from the MESSAGE's own facts — the channel this file was read from and the
         // thread it names. Never derived from the actor: an actor id says who asked, not where to answer, and an

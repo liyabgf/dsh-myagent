@@ -1137,7 +1137,17 @@ declare class Engine {
    * the Trigger and the settings. An ended Ticket may still be classified: putting last month's work into the Work it
    * belonged to is bookkeeping, not new authorization.
    */
-  attachWork(ticketId: string, workId: string): Ticket;
+  attachWork(ticketId: string, workId: string, by?: TicketEvent['by']): Ticket;
+  /**
+   * A Work by exact name among the non-archived ones, or a new one.
+   *
+   * Every AUTOMATIC path goes through here — an explicit `workName`, inheriting from an upstream that has no Work, and
+   * grouping a follow-up with the Ticket it follows. Without the lookup each of them mints a fresh Work per event, and
+   * a chat-first deployment drowns the 工作 page in single-Ticket Works named after old titles: a mess the operator has
+   * to clean up by hand, which is the opposite of what this system exists to do. Manual `createWork` keeps no dedupe,
+   * because two Works an operator deliberately gave the same name are the operator's business, not the Engine's.
+   */
+  private workNamedOrCreate;
   /**
    * Every Project, oldest first. Archived ones are left out unless asked for (U21): they are still real records with
    * real history under them, they are just not part of what an operator is choosing from right now.
@@ -1308,13 +1318,28 @@ declare class Engine {
    * file in the other Ticket's directory: the registry is the surface a report claimed and a person can audit, whereas
    * "whatever happens to be in that directory" is neither.
    *
-   * This authorizes and locates; it does not read. Core does no IO, so the caller resolves the path against the
-   * directory with the same traversal guard the panel uses and does the reading itself.
+   * This authorizes and locates; it does not read AND IT DOES NOT WRITE. Core does no IO, so the caller resolves the
+   * path against the directory with the same traversal guard the panel uses, does the reading itself, and then calls
+   * `recordArtifactRead` on the success path — a caller that only wants to pre-check may call this freely.
    */
   authorizeArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): {
     directory: string;
     artifact: Artifact;
   };
+  /**
+   * Record that one Ticket actually GOT one registered artifact of another: one `artifact_read` event on each side.
+   *
+   * Deliberately a separate command rather than a side effect of `authorizeArtifactRead`. Authorization is answered
+   * before the read happens, and three refusals live after it (the path is a symlink or escapes the directory, the file
+   * is not text, the file is over the inline budget) — recording at authorization time wrote lineage for reads that
+   * never happened, which made the panel's 关联引用 box and the audit log say "who asked for whose output" while both
+   * claim to say "who used whose output". Callers record on the success paths only, so "a refusal leaves no trace" is a
+   * structural property rather than a matter of calling things in the right order.
+   *
+   * Deduplicated per (source, target, path) for the lifetime of the Ticket, so a worker that re-reads the same artifact
+   * on every retry does not bury the log; the count of reads is therefore NOT recoverable from these events.
+   */
+  recordArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): void;
   /**
    * Bidirectional cross-Ticket lineage derived from the Engine's event log (`artifact_read` and worker `input` hand-offs).
    * - `citedBy`: other Tickets that read this Ticket's artifacts or received a note from it.
@@ -1713,12 +1738,13 @@ declare const USER_ERRORS: {
   readonly work_missing: "No Work has this id";
   readonly ticket_not_stopped: "That Ticket has not ended; stop it before deleting it";
   readonly empty_name: "A name cannot be empty";
-  readonly collaboration_refused: "Only Tickets in the same Work can hand something to each other";
+  readonly collaboration_refused: "Only Tickets in the same Work — or two Tickets that belong to no Work at all — can hand something to each other";
   readonly empty_text: "There is nothing to hand over: the text is empty";
   readonly artifact_missing: "No artifact of that Ticket is registered under this path";
   readonly artifact_unreachable: "That Ticket has no directory to read the artifact from";
   readonly decision_missing: "No decision has that id";
   readonly dependency_cycle: "That would make a Ticket wait for itself, directly or through others";
+  readonly dependency_upstream_ended: "That Ticket already ended without succeeding, so waiting for its success would never be released";
   readonly reply_unroutable: "That reply has nowhere to go: its channel is gone or disabled";
   readonly reply_unreceivable: "No Source is running that can take this reply back";
 };

@@ -3483,33 +3483,49 @@ WantedBy=default.target
         + (pinned.length > 0 ? ` · 注意：${pinned.join('/')} 的覆盖与内置文本相同，会把该角色钉在当前版本上` : '')
       $('prompt-error').textContent = ''
       renderPromptMeta()
-      renderSkillsList(body.skills || [])
+      lastSavedSkills = body.skills || []
+      lastBuiltInSkills = body.builtInSkills || []
+      // 换页回来时不留下上一次的确认行：确认态属于那一次点击，不属于这一页。
+      confirmDeleteSkill = null
+      renderSkillsList()
     } catch (error) { $('prompt-error').textContent = error.message }
   }
 
-  const BUILTIN_SKILLS_VIEW = [
-    { name: 'myagent-html-to-text', title: '网页转干净正文', description: '把抓取的 HTML 网页转为保留表格结构的纯文本（零第三方依赖）', builtIn: true },
-    { name: 'myagent-source-registry', title: '可审计信源登记表', description: '边抓取边登记最终 URL、状态码与本地存档，自动生成一二级信源核查表', builtIn: true },
-    { name: 'myagent-polite-fetch', title: '礼貌批量抓取器', description: '带限速、重试与双层超时的批量网页抓取方法，防止被站点封禁或中途丢记录', builtIn: true },
-  ]
-
   let confirmDeleteSkill = null
-  const renderSkillsList = savedSkills => {
+  /**
+   * 内置手艺由 `GET prompts` 的 `builtInSkills` 给，页面自己不再存一份。
+   *
+   * 这里原先硬编码着三门内置手艺的中文名与说明，与 `src/app/skills.ts` 的 `SKILLS` 是同一批事实的两份副本，
+   * 而且没有任何测试拥有这处比较——加第四门内置手艺时，页面会继续 advertise 一个宿主已不再注册的名字，
+   * 或静默漏掉新的那门，而两边测试各自全绿。现在唯一的所有者是服务端（`builtInSkillsView()`）。
+   */
+  let lastBuiltInSkills = []
+  /**
+   * 服务端最近一次给的手艺列表。重绘（展开/取消"忘掉"确认）一律读它，而不是读某次渲染时闭包捕获的快照：
+   * 用快照重绘会把期间新沉淀的手艺从视图里抹掉，直到下次切页才回来——视图回滚虽然不改服务端，
+   * 但操作者看到的东西少了，就等于要他自己去核对。
+   */
+  let lastSavedSkills = []
+  const renderSkillsList = () => {
     const box = $('skills-list')
     if (box === null) return
     box.replaceChildren()
     const items = [
-      ...BUILTIN_SKILLS_VIEW.map(item => ({ ...item, enabled: true, useCount: undefined })),
-      ...(savedSkills || []).map(item => ({ ...item, builtIn: false })),
+      ...lastBuiltInSkills.map(item => ({ ...item, useCount: undefined })),
+      ...lastSavedSkills.map(item => ({ ...item, builtIn: false })),
     ]
     for (const skill of items) {
       const originEntry = skill.fromTicketId ? ticketIndex.get(skill.fromTicketId) : undefined
       const rowActions = []
       if (skill.fromTicketId) {
+        // 列表取不到来源任务（已结束、被删成墓碑、或超出列表 limit）时，退化成一句人话而不是 8 位十六进制：
+        // 让人眼读哈希是 U16 已经消灭过一次的负担。整串 id 挂在 title 上，链接照样能打开那张任务。
         rowActions.push(el('button', {
           class: 'btn small',
+          id: `skill-origin-${skill.name}`,
+          title: `${skill.fromTicketId}（点击打开这张任务）`,
           onclick: () => { show('tickets'); void open(skill.fromTicketId) },
-        }, `来自：${originEntry ? originEntry.title : skill.fromTicketId.slice(0, 8)} · 打开`))
+        }, originEntry === undefined ? '来自：一张已不在当前列表的任务 · 打开' : `来自：${originEntry.title} · 打开`))
       }
       if (!skill.builtIn) {
         rowActions.push(el('button', {
@@ -3540,14 +3556,14 @@ WantedBy=default.target
             }, '确认删除'),
             el('button', {
               class: 'btn small',
-              onclick: () => { confirmDeleteSkill = null; renderSkillsList(savedSkills) },
+              onclick: () => { confirmDeleteSkill = null; renderSkillsList() },
             }, '取消'),
           )
         } else {
           rowActions.push(el('button', {
             class: 'btn small danger',
             id: `skill-del-${skill.name}`,
-            onclick: () => { confirmDeleteSkill = skill.name; renderSkillsList(savedSkills) },
+            onclick: () => { confirmDeleteSkill = skill.name; renderSkillsList() },
           }, '忘掉'))
         }
       }
@@ -3555,9 +3571,16 @@ WantedBy=default.target
         el('div', { class: 'row' },
           el('b', {}, skill.title),
           el('span', { class: `stage ${skill.enabled ? 'done' : 'stopped'}` }, skill.builtIn ? '内置常驻' : skill.enabled ? '已启用' : '已暂停'),
-          skill.useCount !== undefined ? el('span', { class: 'chip' }, `已复用 ${skill.useCount} 次`) : null,
+          // 语义与 `SavedSkill.useCount` 对齐：它数的是**用过这门手艺的任务数**（同一张任务重复加载只算一次，
+          // 且只算宿主真正加载成功的那次），不是调用次数。写成「已复用 N 次」会让操作者以为一个 worker
+          // 重试五次就等于五张任务验证过它——而那正是这个数要避免的误读。
+          skill.useCount !== undefined ? el('span', { class: 'chip' }, `被 ${skill.useCount} 张任务用过`) : null,
           el('span', { style: 'margin-left:auto;display:flex;gap:6px;align-items:center' }, ...rowActions)),
-        el('p', { class: 'muted', style: 'font-size:12px;margin:4px 0 0' }, skill.description)))
+        el('p', { class: 'muted', style: 'font-size:12px;margin:4px 0 0' }, skill.description),
+        // 与 sessions.ts 的 craftLines 同一句话：晋升手艺的正文由 worker 撰写、没有人复核过。说在这里，
+        // 是因为面板是操作者唯一会读到这门手艺"是什么"的地方，而"没人复核过"正是他判断要不要暂停它的依据。
+        skill.builtIn ? null : el('p', { class: 'muted', style: 'font-size:11px;margin:2px 0 0' },
+          '正文由 worker 撰写、未经人工复核；它只注册进 worker 自己的作用域，不会出现在你与前台的对话里。')))
     }
   }
 

@@ -9,16 +9,79 @@
 # 这个脚本不允许那种读法：它把每一步的退出码收集起来，最后只打印一行结论，
 # 并且**只要有任何一步失败就以非 0 退出**。想知道状态，就读它的退出码。
 #
-# 用法：scripts/gate.sh [--quick | --shipped-only]
+# 用法：scripts/gate.sh [--quick | --shipped-only | --tree-hash]
 #   --quick         跳过构建与产物核对（只跑 typecheck 与测试）。默认不跳，因为产物才是被部署的东西。
 #   --shipped-only  只打印下面那段"随包发布但不进 bundle 的文件"清单，四步一步都不跑，
 #                   也**不碰** /tmp/myagent-gate.log。这个模式的退出码 0 只代表清单打印成功，
 #                   **不代表闸门通过**——判定权始终在完整闸门的退出码（0.1）。
+#   --tree-hash     只打印源码树聚合哈希（16 位十六进制，一行，无装饰），四步一步都不跑，也不写日志。
+#                   存在的理由是**单一实现**：release.sh 第 1 步要重算同一个哈希来识别陈旧日志，
+#                   两处各写一份 find|sort|shasum 管道，早晚有一天其中一处改了取样范围，
+#                   于是"闸门证据"与"发布前重算"量的根本不是同一棵树——而两边都报绿。
 set -uo pipefail
 
 cd "$(dirname "$0")/.." || exit 2
 QUICK=0
 [ "${1:-}" = "--quick" ] && QUICK=1
+
+# ─── 源码树聚合哈希：让闸门日志能证明"它对应哪一棵树" ─────────────────────────
+# 这条规则来自一次真实的漏洞：/tmp/myagent-gate.log 里原先**没有任何源码树哈希**，
+# 只有计数行与结论行。于是一份陈旧日志（上一次跑闸门之后又改了 20 个文件）照样能通过
+# release.sh 的第 1 步前置检查——那一步只 grep 了"首行像不像完整闸门"和"有没有 ^结论：通过"，
+# 两句话都不随源码变化。发布出去的公开仓因此可能比被验过的那棵树新，而"7/7 全绿"。
+# 当时只要做到这一步就能避免：**把树的指纹写进日志本身**，发布前重算并比对，不等就拒绝发布。
+#
+# 取样范围必须覆盖"会随包发布或影响产物的一切"，所以比 release.sh 的树静止采样
+# （src tests scripts panel prompts bridges）更宽：docs / locale / examples / README.md 会进公开仓，
+# lib 是真正的产物，package.json 的 files 决定谁随包发布，cordis.patch.yml 是 bundle 的装载定义。
+# 少一个目录，那个目录里的改动就又能拿旧日志蒙混过关——与随包清单同一个教训（见下面 emit_shipped_manifest）。
+TREE_SAMPLE='src tests scripts panel prompts bridges docs lib locale examples package.json cordis.patch.yml README.md'
+
+emit_tree_hash() {
+  # 确定性是这条哈希的全部价值，所以三件事都要盯住：
+  #  1. LC_ALL=C —— sort 的顺序必须与 locale 无关。同一棵树在 LANG=zh_CN.UTF-8 与 LANG=C 下
+  #     若排出不同顺序，聚合哈希就不同，release.sh 会把它误判成"另一棵树"。
+  #  2. -print0 / sort -z / xargs -0 —— 路径按 NUL 分隔，文件名里有空格或换行也不会错切；
+  #     用换行分隔 + 裸 xargs 的话，一个带空格的文件名会被当成两个不存在的文件（find 报错被吞掉，
+  #     哈希照样算得出来，只是 quietly 少了一个文件）。
+  #  3. shasum 的输出**带路径**，所以"同一批内容换了个名字"也会改变聚合值——重命名不是无害操作。
+  # 排除 *.tsbuildinfo：它是 tsc 的增量缓存，既不入包也不影响产物，却可能因为跑过一次 typecheck
+  # 而变化——留着它会让"同一棵树两次运行逐字节相同"这条要求随机失败，而一个随机失败的检查会被忽略（0.2）。
+  local missing=()
+  local p
+  for p in $TREE_SAMPLE; do [ -e "$p" ] || missing+=("$p"); done
+  {
+    # 缺失的取样路径也要进哈希，并且打印到 stderr 让人看见：
+    # 否则"整个目录不见了"与"目录在但是空的"会量出同一个数，而前者是事故。
+    if [ "${#missing[@]}" -gt 0 ]; then
+      for p in "${missing[@]}"; do printf 'MISSING %s\n' "$p"; echo "⚠ 源码树取样路径不存在：$p" >&2; done
+    fi
+    # shellcheck disable=SC2086  # TREE_SAMPLE 是空格分隔的路径清单，这里正是要它分词
+    LC_ALL=C find $TREE_SAMPLE -type f \
+      ! -name '.DS_Store' ! -name '*.tsbuildinfo' ! -path '*/node_modules/*' -print0 2>/dev/null \
+      | LC_ALL=C sort -z \
+      | LC_ALL=C xargs -0 shasum -a 256
+  } | shasum -a 256 | cut -c1-16
+}
+
+# 只打印哈希的模式：release.sh 用它重算，避免两处实现漂移。不写日志、不跑四步。
+if [ "${1:-}" = "--tree-hash" ]; then
+  emit_tree_hash
+  exit $?
+fi
+
+# 写进日志（以及 --shipped-only 的 stdout）的那份带说明的版本。
+# 第一行的形状是**契约**：release.sh 第 1 步用 `^── 源码树哈希：` 找它、用 [0-9a-f]{16} 取值。
+# 改这一行的格式就等于悄悄废掉发布前的陈旧日志检查——所以格式改动必须同时改 release.sh。
+emit_tree_hash_line() {
+  local h
+  h=$(emit_tree_hash)
+  echo "── 源码树哈希：${h}"
+  echo "   取样：${TREE_SAMPLE}"
+  echo "   排除：node_modules、.DS_Store、*.tsbuildinfo；find -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256，再聚合一次"
+  echo "   含义：这一行是**这份证据对应哪一棵树**的指纹。release.sh 第 1 步会重算它并与这里比对，"
+  echo "         不等就说明日志是陈旧的（闸门跑过之后树又变了），必须重跑 ./scripts/gate.sh。"
+}
 
 # ─── 随包发布但不进 bundle 的文件：清单生成 ───────────────────────────────────
 # 为什么要在 node 里解析、而不是在 bash 里 glob：清单的来源是 package.json 的 files 数组，
@@ -117,7 +180,11 @@ emit_shipped_manifest() {
 if [ "${1:-}" = "--shipped-only" ]; then
   echo "── shipped（单独模式：只报告清单，四步一步都没跑；退出码 0 ≠ 闸门通过）"
   emit_shipped_manifest
-  exit $?
+  code=$?
+  # 树哈希也打一份供人工比对，但**只打到 stdout、不落盘**：这个模式不产生闸门证据，
+  # 而证据文件里出现一行"某棵树的哈希"却没有任何四步结论，正是 release.sh 会被骗的那种东西。
+  emit_tree_hash_line
+  exit $code
 fi
 
 log=/tmp/myagent-gate.log
@@ -197,6 +264,11 @@ echo "── 计数：${tests:-无} ${errors:+/ $errors}" | tee -a "$log"
 { echo "── 随包发布但不进 bundle 的文件（只报告，与上次发布的清单 diff）"
   emit_shipped_manifest
 } | tee -a "$log"
+
+# 源码树聚合哈希：放在计数行之后、结论之前，与随包清单同一块"报告区"。
+# 它是这份日志唯一能证明"我验的是哪一棵树"的东西，所以必须落盘（只打到 stdout 的话事后无从复核，
+# 与上面计数行同一条理由）。取样范围含 lib：闸门刚构建完，此刻的 lib 才是被验过的那一份。
+emit_tree_hash_line | tee -a "$log"
 
 echo
 if [ "${#failures[@]}" -eq 0 ]; then

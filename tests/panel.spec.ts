@@ -5387,6 +5387,10 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
           { role: 'worker', current: '自定义的 worker 文本', base: '内置的 worker 文本', override: '自定义的 worker 文本', pinsBase: false },
           { role: 'orchestrator', current: '内置的 orchestrator 文本', base: '内置的 orchestrator 文本', override: undefined, pinsBase: false },
         ],
+        // 内置手艺现在由服务端给（面板不再存副本），所以桩必须带上它——否则这一页只会渲染动态那批。
+        builtInSkills: [
+          { name: 'myagent-html-to-text', title: '网页转干净正文', description: '把抓取的 HTML 网页转为纯文本', whenToUse: 'x', builtIn: true, enabled: true },
+        ],
         skills: deleted ? [] : [{
           name: 'myagent-dedup-merger',
           title: '多源实体归一化去重器',
@@ -5410,20 +5414,65 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
     const listText = one('#skills-list').textContent ?? ''
     expect(listText).toContain('网页转干净正文')
     expect(listText).toContain('多源实体归一化去重器')
-    expect(listText).toContain('已复用 3 次')
+    // 【产品变更】旧断言：expect(listText).toContain('已复用 3 次')
+    // 理由：`useCount` 数的是**用过这门手艺的任务数**（同任务重复加载只算一次、且只算宿主真正加载成功那次），
+    // 不是调用次数。写「已复用 3 次」会让人以为一个 worker 重试三次等于三张任务验证过它。
+    expect(listText).toContain('被 3 张任务用过')
+    expect(listText).toContain('未经人工复核')
 
     click(one('#skill-toggle-myagent-dedup-merger'))
     await settle()
     expect(sent('POST prompts/skills/myagent-dedup-merger/toggle').at(-1)?.body).toEqual({ enabled: false })
     expect(one('#skill-card-myagent-dedup-merger').textContent).toContain('已暂停')
 
+    // 来源任务不在列表里时，标签退化成人话而不是 8 位十六进制；整串 id 挂在 title 上（U16 的既有规矩）。
+    const origin = one('#skill-origin-myagent-dedup-merger')
+    expect(origin.textContent).toContain('一张已不在当前列表的任务')
+    expect(origin.textContent).not.toContain('68172c09')
+    expect(origin.getAttribute('title')).toContain('68172c094da50125a6fbbc642e56006b')
+
+    // 取消分支：确认行收回去、卡片回到「忘掉」态、且**一个请求都不发**（第一步不发请求是两步确认的全部意义）。
+    const beforeCancel = sent('POST prompts/skills/myagent-dedup-merger/delete').length
     click(one('#skill-del-myagent-dedup-merger'))
     await settle()
     expect(one('#skill-card-myagent-dedup-merger').textContent).toContain('确定忘掉这项手艺？')
+    click(button('取消', one('#skill-card-myagent-dedup-merger')))
+    await settle()
+    expect(one('#skill-card-myagent-dedup-merger').textContent).not.toContain('确定忘掉这项手艺？')
+    expect(document.querySelector('#skill-del-myagent-dedup-merger')).not.toBeNull()
+    expect(sent('POST prompts/skills/myagent-dedup-merger/delete')).toHaveLength(beforeCancel)
+    // 取消用的是服务端最近一次的列表，所以卡片还在（用旧快照重绘会让它凭空消失）。
+    expect(one('#skills-list').textContent).toContain('多源实体归一化去重器')
+
+    // 确认态属于那一次点击，不属于这一页：切走再回来，确认行不该还开着（旧实现把 confirmDeleteSkill
+    // 留在模块级且 loadPrompts 从不重置它，于是操作者切个页回来还会看到一个自己已经放弃的删除确认）。
+    click(one('#skill-del-myagent-dedup-merger'))
+    await settle()
+    expect(one('#skill-card-myagent-dedup-merger').textContent).toContain('确定忘掉这项手艺？')
+    click(button('任务'))
+    await settle()
+    click(button('提示词'))
+    await settle()
+    expect(one('#skill-card-myagent-dedup-merger').textContent).not.toContain('确定忘掉这项手艺？')
+
+    click(one('#skill-del-myagent-dedup-merger'))
+    await settle()
     click(one('#skill-del-confirm-myagent-dedup-merger'))
     await settle()
     expect(sent('POST prompts/skills/myagent-dedup-merger/delete')).toHaveLength(1)
     expect(document.querySelector('#skill-card-myagent-dedup-merger')).toBeNull()
+  })
+})
+
+describe('面板不再自己存一份内置手艺清单', () => {
+  it('页面源码里没有内置手艺的名字或中文标题，它们只能来自 GET prompts 的 builtInSkills', () => {
+    // 这一条拥有那处跨文件比较：内置手艺的事实住在 src/app/skills.ts 的 SKILLS 与 builtInSkillsView()，
+    // 页面若再存一份，加第四门内置手艺时两边就会各自全绿地漂移（tests/skills.spec.ts 已钉住服务端那侧）。
+    for (const needle of ['myagent-html-to-text', 'myagent-source-registry', 'myagent-polite-fetch',
+      '网页转干净正文', '可审计信源登记表', '礼貌批量抓取器', 'BUILTIN_SKILLS_VIEW']) {
+      expect(PAGE).not.toContain(needle)
+    }
+    expect(PAGE).toContain('body.builtInSkills')
   })
 })
 

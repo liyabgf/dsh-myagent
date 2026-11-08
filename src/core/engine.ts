@@ -330,7 +330,17 @@ export class Engine {
       // A Trigger may name the Work its Ticket belongs to — a rule's `then.workId`, or a schedule bound to one later.
       // Classified here rather than by a follow-up command so that it is part of the same fact as the Ticket's
       // creation: a rule-produced Ticket that belongs to no Work is invisible in every grouping the operator has.
-      const wantedWork = typeof trigger.meta?.work === 'string' && trigger.meta.work !== '' ? trigger.meta.work : undefined
+      // A Source may name the Ticket this request follows up on (`meta.followupTicket`). It is resolved HERE — inside
+      // the accepted branch, after the gate — and never by the Source before it built the Trigger, because grouping is a
+      // WRITE (`workNamedOrCreate` + `attachWork`) and a write made before the verdict cannot be undone by a refusal:
+      // an `observe`-mode deployment would then rewrite a historical Ticket's classification while claiming it executed
+      // nothing, and a message the gate rejects would still leave a Work behind. Resolving it here also puts it in this
+      // transaction, so anything that throws below rolls the grouping back with the Ticket.
+      const followupId = typeof trigger.meta?.followupTicket === 'string' && trigger.meta.followupTicket !== ''
+        ? trigger.meta.followupTicket : undefined
+      const followupWorkId = followupId === undefined ? undefined : this.ensureFollowupWork(followupId)?.workId
+      const wantedWork = (typeof trigger.meta?.work === 'string' && trigger.meta.work !== '' ? trigger.meta.work : undefined)
+        ?? followupWorkId
       const workMissing = wantedWork !== undefined && this.repos.works.get(wantedWork) === undefined
       const classification = wantedWork === undefined || workMissing
         ? {}
@@ -390,24 +400,29 @@ export class Engine {
       const attachments = (request.attachments ?? []).filter(path => path.trim() !== '')
       const upstreams = [...new Set((request.dependsOn ?? []).map(id => id.trim()).filter(Boolean))]
       for (const upId of upstreams) {
-        this.require(upId)
+        // `require` resolves tombstones (`get` does, `list` does not), so the two cases a dependency edge must not be
+        // built on are checked here explicitly: a deleted Ticket's artifacts may already be gone, and an upstream that
+        // ended any way but `done` will never release a `done` edge — the dependant would defer forever, silently.
+        const up = this.require(upId)
+        if (up.deleted !== undefined) throw new UserError('ticket_missing', { ticketId: upId })
+        if (up.ended !== undefined && up.ended.outcome !== 'done') {
+          throw new UserError('dependency_upstream_ended', { ticketId: upId, outcome: up.ended.outcome })
+        }
       }
       let resolvedWorkId = request.workId?.trim() || undefined
       if (resolvedWorkId !== undefined) {
         this.requireWork(resolvedWorkId)
       } else if (request.workName !== undefined && request.workName.trim() !== '') {
-        const wantedName = request.workName.trim()
-        const existing = this.repos.works.list().find(w => w.archivedAt === undefined && w.name === wantedName)
-        resolvedWorkId = existing !== undefined ? existing.id : this.createWork({ name: wantedName }).id
+        resolvedWorkId = this.workNamedOrCreate(request.workName)
       } else if (upstreams.length > 0) {
         const firstUp = this.repos.tickets.get(upstreams[0]!)
         if (firstUp !== undefined) {
           if (firstUp.workId !== undefined) {
             resolvedWorkId = firstUp.workId
           } else {
-            const autoWork = this.createWork({ name: firstUp.title.slice(0, 120) })
-            this.attachWork(firstUp.id, autoWork.id)
-            resolvedWorkId = autoWork.id
+            const autoWorkId = this.workNamedOrCreate(firstUp.title)
+            this.attachWork(firstUp.id, autoWorkId, { kind: 'system', id: 'depends-on' })
+            resolvedWorkId = autoWorkId
           }
         }
       }
@@ -445,12 +460,16 @@ export class Engine {
     return this.tx.atomic(() => {
       const prior = this.repos.tickets.get(priorTicketId)
       if (prior === undefined || prior.deleted !== undefined) return undefined
+      // Only an ENDED Ticket is grouped, which is what this method's contract says and what its one caller needs: a
+      // still-open Ticket is answered or noted by `ChatSource.findContinuationTarget` instead, and grouping a running
+      // Ticket would silently change which other Tickets it may collaborate with (`canCollaborate` is Work-bounded).
+      if (prior.ended === undefined) return undefined
       if (prior.workId !== undefined && this.repos.works.get(prior.workId) !== undefined) {
         return { workId: prior.workId, prior }
       }
-      const work = this.createWork({ name: prior.title.slice(0, 120) })
-      const updated = this.attachWork(prior.id, work.id)
-      return { workId: work.id, prior: updated }
+      const workId = this.workNamedOrCreate(prior.title)
+      const updated = this.attachWork(prior.id, workId, { kind: 'system', id: 'followup' })
+      return { workId, prior: updated }
     })
   }
 
@@ -745,16 +764,34 @@ export class Engine {
    * the Trigger and the settings. An ended Ticket may still be classified: putting last month's work into the Work it
    * belonged to is bookkeeping, not new authorization.
    */
-  attachWork(ticketId: string, workId: string): Ticket {
+  attachWork(ticketId: string, workId: string, by: TicketEvent['by'] = { kind: 'person' }): Ticket {
     return this.mutate(ticketId, ticket => {
       if (this.repos.works.get(workId) === undefined) throw new UserError('work_missing')
       if (ticket.workId === workId) return ticket
       // The position counts the Tickets already in the Work, so it is a fact about the Work's history rather than
       // about when this Ticket was created: one made last month and attached today is simply the next in line.
       const workSeq = this.repos.tickets.byWork(workId).length + 1
-      this.record(ticketId, 'classified', { kind: 'person' }, { workId, workSeq })
+      // Attribution is a parameter because one caller is not a person: grouping a follow-up with the Ticket it follows
+      // is decided by the system, and stamping `{kind:'person'}` on it sends whoever audits the log looking for an
+      // operator who never clicked anything (`model.ts` on `by`: "A fact nobody caused says so by leaving this out").
+      this.record(ticketId, 'classified', by, { workId, workSeq })
       return { ...ticket, workId, workSeq }
     })
+  }
+
+  /**
+   * A Work by exact name among the non-archived ones, or a new one.
+   *
+   * Every AUTOMATIC path goes through here — an explicit `workName`, inheriting from an upstream that has no Work, and
+   * grouping a follow-up with the Ticket it follows. Without the lookup each of them mints a fresh Work per event, and
+   * a chat-first deployment drowns the 工作 page in single-Ticket Works named after old titles: a mess the operator has
+   * to clean up by hand, which is the opposite of what this system exists to do. Manual `createWork` keeps no dedupe,
+   * because two Works an operator deliberately gave the same name are the operator's business, not the Engine's.
+   */
+  private workNamedOrCreate(name: string): string {
+    const wanted = name.trim().slice(0, 120)
+    const existing = this.repos.works.list().find(item => item.archivedAt === undefined && item.name === wanted)
+    return existing !== undefined ? existing.id : this.createWork({ name: wanted }).id
   }
 
   /**
@@ -1273,8 +1310,9 @@ export class Engine {
    * file in the other Ticket's directory: the registry is the surface a report claimed and a person can audit, whereas
    * "whatever happens to be in that directory" is neither.
    *
-   * This authorizes and locates; it does not read. Core does no IO, so the caller resolves the path against the
-   * directory with the same traversal guard the panel uses and does the reading itself.
+   * This authorizes and locates; it does not read AND IT DOES NOT WRITE. Core does no IO, so the caller resolves the
+   * path against the directory with the same traversal guard the panel uses, does the reading itself, and then calls
+   * `recordArtifactRead` on the success path — a caller that only wants to pre-check may call this freely.
    */
   authorizeArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): { directory: string; artifact: Artifact } {
     return this.tx.atomic(() => {
@@ -1287,21 +1325,40 @@ export class Engine {
       if (artifact === undefined) throw new UserError('artifact_missing')
       const directory = target.execution?.directory
       if (directory === undefined) throw new UserError('artifact_unreachable')
-      // Record bidirectional lineage once per (sourceTicketId, targetTicketId, path) so the panel and audit log
-      // always show who used whose output, even when the worker forgets to mention the Ticket id in its summary.
+      return { directory, artifact }
+    })
+  }
+
+  /**
+   * Record that one Ticket actually GOT one registered artifact of another: one `artifact_read` event on each side.
+   *
+   * Deliberately a separate command rather than a side effect of `authorizeArtifactRead`. Authorization is answered
+   * before the read happens, and three refusals live after it (the path is a symlink or escapes the directory, the file
+   * is not text, the file is over the inline budget) — recording at authorization time wrote lineage for reads that
+   * never happened, which made the panel's 关联引用 box and the audit log say "who asked for whose output" while both
+   * claim to say "who used whose output". Callers record on the success paths only, so "a refusal leaves no trace" is a
+   * structural property rather than a matter of calling things in the right order.
+   *
+   * Deduplicated per (source, target, path) for the lifetime of the Ticket, so a worker that re-reads the same artifact
+   * on every retry does not bury the log; the count of reads is therefore NOT recoverable from these events.
+   */
+  recordArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): void {
+    this.tx.atomic(() => {
       const already = this.repos.events.list(sourceTicketId).some(event =>
         event.type === 'artifact_read'
         && (event.detail as { fromTicketId?: string; path?: string } | undefined)?.fromTicketId === targetTicketId
-        && (event.detail as { fromTicketId?: string; path?: string } | undefined)?.path === artifact.path)
-      if (!already) {
-        this.record(sourceTicketId, 'artifact_read', { kind: 'agent', id: sourceTicketId }, {
-          fromTicketId: targetTicketId, path: artifact.path,
-        })
+        && (event.detail as { fromTicketId?: string; path?: string } | undefined)?.path === path)
+      if (already) return
+      this.record(sourceTicketId, 'artifact_read', { kind: 'agent', id: sourceTicketId }, {
+        fromTicketId: targetTicketId, path,
+      })
+      // The producer's side is best-effort: its Ticket may have been deleted between authorization and the read, and a
+      // missing back-link must not fail the reader's work.
+      if (this.repos.tickets.get(targetTicketId) !== undefined) {
         this.record(targetTicketId, 'artifact_read', { kind: 'agent', id: sourceTicketId }, {
-          byTicketId: sourceTicketId, path: artifact.path,
+          byTicketId: sourceTicketId, path,
         })
       }
-      return { directory, artifact }
     })
   }
 

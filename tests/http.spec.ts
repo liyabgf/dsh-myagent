@@ -250,6 +250,45 @@ describe('what the panel writes', () => {
     })
   })
 
+  /**
+   * The server owns the built-in list.
+   *
+   * `panel/index.html` kept its own `BUILTIN_SKILLS_VIEW` because this route answered with only the promoted crafts,
+   * so the page had to hardcode what the bundle contributes — a third copy of one fact (`skills.ts` and `prompts.ts`
+   * held the other two). Serving them lets the page delete its copy, and the shape has to be one the page can render
+   * without inventing fields.
+   */
+  it('answers GET prompts with the built-in crafts as well as the promoted ones', async () => {
+    await withDeployment(async ({ host, runtime }) => {
+      runtime.prompts.saveSkill({
+        name: 'entity-dedup', title: '多源实体归一化去重器', description: '归一化工商全称并消除重复融资记录',
+        content: '# 正文', fromTicketId: 'ticket-origin-1',
+      })
+      const read = await host.request(api('prompts'))
+      expect(read.status).toBe(200)
+      const builtIn = read.json.builtInSkills as { name: string; title: string; description: string; whenToUse: string; builtIn: boolean; enabled: boolean }[]
+      expect(builtIn.map(skill => skill.name)).toEqual([
+        'myagent-html-to-text', 'myagent-source-registry', 'myagent-polite-fetch',
+      ])
+      // The page rendered these three Chinese titles from its own list; the server has to answer with the same words.
+      expect(builtIn.map(skill => skill.title)).toEqual(['网页转干净正文', '可审计信源登记表', '礼貌批量抓取器'])
+      for (const skill of builtIn) {
+        expect(skill.builtIn).toBe(true)
+        expect(skill.enabled).toBe(true)
+        expect(skill.description.length).toBeGreaterThan(0)
+        expect(skill.whenToUse.length).toBeGreaterThan(0)
+      }
+      // Both halves arrive in one answer, and they stay distinguishable: the promoted one carries the counter and the
+      // provenance the page links back to a Ticket with.
+      const promoted = read.json.skills as { name: string; title: string; useCount: number; fromTicketId?: string }[]
+      expect(promoted.map(skill => skill.name)).toEqual(['myagent-entity-dedup'])
+      expect(promoted[0]!.useCount).toBe(0)
+      expect(promoted[0]!.fromTicketId).toBe('ticket-origin-1')
+      // A built-in is not a saved skill, so the panel's toggle and delete must not be pointed at one.
+      expect(promoted.map(skill => skill.name)).not.toContain('myagent-html-to-text')
+    })
+  })
+
   it('creates the main Session on demand, which mounting deliberately did not do', async () => {
     await withDeployment(async ({ host }) => {
       expect((await host.request(api('state'))).json.mainSession).toMatchObject({ exists: false })
