@@ -3449,7 +3449,9 @@ WantedBy=default.target
       channels.length === 0
         // 【U12】空态指向下面的表单，而不是让人去改 JSON；JSON 那条路仍在（设置页的高级折叠区），所以两处都提到。
         ? el('p', { class: 'muted' }, '还没有频道：用下面的表单加一条（也可以在「设置」页的高级区直接改 sources.chat.channels）。')
-        : table(['频道', '目录', '状态', '积压', '待取回信', '最近进气', '操作'], channels.map(channel => {
+        // 【B-6】「心跳」列加在状态之后：它回答"主动脉通不通"——桥死了积压/回信是看不出来的
+        // （消息没来就没有积压），心跳年龄是唯一当晚上线当晚就能报的数。
+        : table(['频道', '目录', '状态', '心跳', '积压', '待取回信', '最近进气', '操作'], channels.map(channel => {
           // 每频道健康（N5）：三个数各自回答一个问题——积压是"你要去映射身份"，
           // 待取回信是"**桥没在跑**"（myagent 已经写完答案，没人来取），最近进气区分"连着但安静"与"三天没动静"。
           const fact = channelHealth.get(channel.id)
@@ -3461,6 +3463,13 @@ WantedBy=default.target
               // 读不到的频道必须说出为什么：否则它和"没人往这儿写"是同一片零，而只有一个是能修的。
               ? el('span', { class: 'bad', title: fact.error }, '读不到')
               : el('span', { class: 'ok' }, '启用'),
+          // 【B-6】心跳年龄：fresh 显示「X 秒/分钟前」；文件不存在显示「无」（title 解释旧版桥不写心跳，
+          // 没人承诺过说话就不能把沉默当死亡——与 G-2 的判据同一句话）。
+          fact === undefined || channel.enabled === false
+            ? el('span', { class: 'muted' }, '—')
+            : fact.heartbeatAt === undefined
+              ? el('span', { class: 'muted', title: '桥没写心跳文件（旧版本不写）：不知道它是否在跑' }, '无')
+              : el('span', { title: `桥每轮 touch 心跳（最后：${fact.heartbeatAt}）` }, ago(fact.heartbeatAt)),
           fact === undefined || channel.enabled === false
             ? el('span', { class: 'muted' }, '—')
             : fact.error !== undefined

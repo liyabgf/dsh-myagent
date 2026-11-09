@@ -109,6 +109,12 @@ export interface ChannelFact {
   readonly settling: number
   readonly pendingReplies: number
   readonly lastAcceptedAt?: string
+  /**
+   * When this channel's bridge last touched its heartbeat file (G-2/B-6): the panel shows "X seconds/minutes ago",
+   * which is the one number that answers "is the aorta connected". Absent rather than 0 when the file does not
+   * exist — an older bridge never promised to write one, and "no promise" is not an age.
+   */
+  readonly heartbeatAt?: string
   /** Why this channel could not be read, when it could not be. A channel that errors must not look like a quiet one. */
   readonly error?: string
 }
@@ -336,6 +342,8 @@ export class ChatSource implements TwoWaySource {
         // 而 myagent 的每条健康线都读不到它。
         const beat = join(channel.directory, '.heartbeat')
         const beatInfo = await stat(beat).catch(() => undefined)
+        // 一次 stat 两用：年龄进健康板（有问题才说），时刻进 fact（B-6 的面板列随时可读）。
+        const heartbeatAt = beatInfo === undefined ? undefined : new Date(beatInfo.mtimeMs).toISOString()
         if (beatInfo !== undefined) {
           const ageMs = Date.now() - beatInfo.mtimeMs
           if (ageMs > HEARTBEAT_STALE_MS) {
@@ -347,6 +355,7 @@ export class ChatSource implements TwoWaySource {
           id: channel.id, enabled: true, waiting: found.waiting, settling: found.settling,
           ...(found.error === undefined ? {} : { error: found.error }),
           ...outbound,
+          ...(heartbeatAt === undefined ? {} : { heartbeatAt }),
         })
       } catch (error) {
         // A channel that could not be read says so on its own row: without this it would render as zeros, and

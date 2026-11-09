@@ -838,6 +838,10 @@ describe('the bridge heartbeat the chat source watches (G-2)', () => {
       await source.poll()
       // 新鲜心跳：无心跳问题。
       expect(problems(context)).not.toContain('heartbeat')
+      // 【B-6】fact 同时带上心跳时刻——面板的「心跳」列读它画相对年龄；键在，值是个合法 ISO 时刻。
+      const fact = source.channels()[0]!
+      expect(fact.heartbeatAt).toEqual(expect.any(String))
+      expect(new Date(fact.heartbeatAt!).getTime()).not.toBeNaN()
     } finally { await source.stop() }
 
     // 文件不存在：旧版桥没写过心跳——不能把"没人承诺过说话"读成"它死了"。
@@ -849,6 +853,8 @@ describe('the bridge heartbeat the chat source watches (G-2)', () => {
     try {
       await source2.poll()
       expect(problems(context2)).not.toContain('heartbeat')
+      // 键缺席（而不是空串、不是 0）：旧版桥没承诺过写心跳，面板据此画「无」而不是画一个假年龄。
+      expect(source2.channels()[0]!.heartbeatAt).toBeUndefined()
     } finally { await source2.stop() }
   })
 })

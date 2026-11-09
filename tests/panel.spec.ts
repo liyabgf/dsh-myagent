@@ -2860,9 +2860,12 @@ describe('the chat Source', () => {
     for (const node of tables) expect(read(node), read(node)).not.toMatch(/[[{}"]/)
     // 【U12 产品变更】频道表多了「操作」列——这一节原先只读，指引把人送去改 JSON，那就是记在案的债。
     // 旧断言：toEqual(['频道', '目录', '状态'])
-    expect(all('th', tables[0]!).map(node => node.textContent)).toEqual(// 【N5 产品变更】频道表多了三列健康数据。旧值：['频道', '目录', '状态', '操作']。
-      // 加它的理由：全局一个 waiting 数说不出是**哪个**频道，而"待取回信"长期非零就等于"桥没在跑"。
-      ['频道', '目录', '状态', '积压', '待取回信', '最近进气', '操作'])
+    // 【N5 产品变更】频道表多了三列健康数据。旧值：['频道', '目录', '状态', '操作']。
+    // 【B-6 产品变更】又多了「心跳」列（在状态之后）。旧值：['频道', '目录', '状态', '积压', '待取回信', '最近进气', '操作']。
+    // 加它的理由：桥死了积压与回信都看不出来（消息没来就没有积压），心跳年龄是唯一在桥死掉的
+    // 那个当下就能报的数——G-2 首夜实捕证明它当晚上线当晚就能干活。
+    expect(all('th', tables[0]!).map(node => node.textContent))
+      .toEqual(['频道', '目录', '状态', '心跳', '积压', '待取回信', '最近进气', '操作'])
     expect(read(all('tbody tr', tables[0]!)[0]!)).toContain('/chat/ops')
     // A channel that is switched off is neither read nor answered, and that is worth more than a missing row.
     expect(read(all('tbody tr', tables[0]!)[1]!)).toContain('停用（不读，也不回）')
@@ -3818,16 +3821,34 @@ describe('平台接入页与每频道健康（N5）', () => {
     const byId = Object.fromEntries(rows.map(cells => [cells[0] as string, cells]))
     expect(byId.ops).toBeDefined()
     // 待取回信 = 3 是"桥没在跑"的信号，所以要显眼（warn），并且 title 说明它是什么。
-    const pending = all('#chat table tbody tr')[0]!.querySelectorAll('td')[4]!
+    const pending = all('#chat table tbody tr')[0]!.querySelectorAll('td')[5]!  // 【B-6】心跳列插在状态后，索引 +1
     expect(read(pending)).toBe('3')
     expect(pending.querySelector('span')!.getAttribute('title')).toContain('桥没在跑')
     // 读不到的频道说"读不到"并把原因放 title，而不是显示 0——0 与"健康的安静频道"长得一样。
     const brokenRow = rows.find(cells => cells[0] === 'broken')!
     expect(brokenRow[2]).toBe('读不到')
-    expect(brokenRow[3]).toBe('—')
+    expect(brokenRow[4]).toBe('—')  // 【B-6】积压列从 3 挪到 4
     // 从没受理过消息的频道说"还没有"，而不是编一个时间。
     const devRow = rows.find(cells => cells[0] === 'dev')!
-    expect(devRow[5]).toBe('还没有')
+    expect(devRow[6]).toBe('还没有')  // 【B-6】最近进气列从 5 挪到 6
+  })
+
+  it('心跳列：有心跳显示年龄，桥没写过心跳显示「无」，两者都不是空', async () => {
+    // 【B-6】心跳年龄是"主动脉通不通"的唯一实时信号。三种状态三种画法：
+    // 有值 → 相对时间（ago）；键缺席 → 「无」+ title 解释旧版桥不写；频道停用/读不到 → 「—」与其他健康列一致。
+    await mount(chatWith([
+      facts({ heartbeatAt: new Date(Date.now() - 30_000).toISOString() }),
+      facts({ id: 'oldbridge' }),   // 没有 heartbeatAt 键
+    ]))
+    click(button('聊天'))
+    await settle()
+    const rows = all('#chat table tbody tr').map(node => all('td', node).map(cell => read(cell)))
+    const beatOf = (id: string) => rows.find(cells => cells[0] === id)![3]!
+    expect(beatOf('ops')).toBe('刚刚')
+    expect(beatOf('oldbridge')).toBe('无')
+    // 「无」的格子必须解释自己：title 里说清这是"旧版桥没写心跳"，不是"桥死了"。
+    const noBeat = all('#chat table tbody tr').map(node => all('td', node)[3]!).find(cell => read(cell) === '无')!
+    expect(noBeat.querySelector('span')!.getAttribute('title')).toContain('旧版本不写')
   })
 
   it('旧 bundle 没有 channels() 时不画数字——缺席就是缺席，画成 0 是撒谎', async () => {
@@ -3835,7 +3856,7 @@ describe('平台接入页与每频道健康（N5）', () => {
     click(button('聊天'))
     await settle()
     const cells = all('#chat table tbody tr')[0]?.querySelectorAll('td')
-    expect(cells === undefined || read(cells[3]!) === '—').toBe(true)
+    expect(cells === undefined || read(cells[4]!) === '—').toBe(true)  // 【B-6】积压列 3 → 4
   })
 
   it('平台目录把没做的和不能做的也列出来，并当场说清，而不是让人以为配置没找对', async () => {

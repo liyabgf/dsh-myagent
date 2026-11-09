@@ -974,18 +974,19 @@ try {
   // 断规则不断数据的形状（这条纪律本仓已错过四次）：这个部署可能一个频道都没配，表就不渲染，
   // 表头自然为空——那不是缺陷，是"没有可断言的对象"。U12 的频道表检查就是这么写的，照它办。
   if (onboarding.head.length > 0) {
-    check('频道表带三个健康列（积压/待取回信/最近进气）',
-      ['积压', '待取回信', '最近进气'].every(col => onboarding.head.includes(col)),
+    // 【B-6】健康列从三个变四个：心跳年龄回答"桥活着吗"——积压与回信在桥死的当下都是看不出来的。
+    check('频道表带四个健康列（心跳/积压/待取回信/最近进气）',
+      ['心跳', '积压', '待取回信', '最近进气'].every(col => onboarding.head.includes(col)),
       onboarding.head.join('|'))
   } else {
-    skip('频道表带三个健康列（积压/待取回信/最近进气）',
-      '本部署没有配置任何频道，表未渲染（表头为空），没有可断言对象；三个健康列由 tests/panel.spec.ts 覆盖')
+    skip('频道表带四个健康列（心跳/积压/待取回信/最近进气）',
+      '本部署没有配置任何频道，表未渲染（表头为空），没有可断言对象；四个健康列由 tests/panel.spec.ts 覆盖')
   }
   if (onboarding.firstRow.length > 0) {
     // 每一列要么是数字/相对时间，要么是"—"；空字符串意味着渲染漏了一格。
     check('健康列不留空格子（缺席画"—"，不画成空白）',
-      onboarding.firstRow.slice(3, 6).every(cell => cell.length > 0),
-      onboarding.firstRow.slice(3, 6).join('|'))
+      onboarding.firstRow.slice(3, 7).every(cell => cell.length > 0),
+      onboarding.firstRow.slice(3, 7).join('|'))
   } else {
     skip('健康列不留空格子（缺席画"—"，不画成空白）',
       '这个部署还没有配置任何频道，没有第一行可量；缺席画"—"由 tests/panel.spec.ts 覆盖')
