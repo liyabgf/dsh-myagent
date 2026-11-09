@@ -33,6 +33,8 @@ import { aesKeyFrom, encrypt, decrypt, signatureOf, verifiedDecrypt } from '../b
 // @ts-expect-error -- see above
 import { mapMessage, xmlField, echoAnswer } from '../bridges/wecom/transform.mjs'
 // @ts-expect-error -- see above
+import { mapEvent as qqMapEvent, nextSeq as qqNextSeq } from '../bridges/qq/transform.mjs'
+// @ts-expect-error -- see above
 import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
 // @ts-expect-error -- see above
 import { describeError } from '../bridges/lib/log.mjs'
@@ -800,5 +802,53 @@ describe('the WeCom message mapping (decrypted callback XML)', () => {
     expect(xmlField('<xml><AgentID>9</AgentID></xml>', 'AgentID')).toBe('9')
     expect(xmlField('<xml/>', 'Nothing')).toBeUndefined()
     expect(echoAnswer('  echo-42  ')).toBe('echo-42')
+  })
+})
+
+describe('the QQ mapping (WebSocket dispatch payload)', () => {
+  /** One C2C_MESSAGE_CREATE `d` payload, fields per the official v2 docs. */
+  const c2c = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    id: 'msg-7', content: '整理周报', author: { id: 'openid-alice' }, timestamp: '1700000000', ...over,
+  })
+  const group = (over: Record<string, unknown> = {}): Record<string, unknown> => c2c({
+    group_openid: 'group-b', content: '@mybot 整理周报', ...over,
+  })
+
+  it('maps a private chat: openid is the identity (per-bot!), the id verbatim', () => {
+    const { message } = qqMapEvent(c2c()) as { message: Record<string, unknown> }
+    expect(message.from).toBe('openid-alice')
+    expect(message.id).toBe('msg-7')          // 平台文档说全局唯一——不加前缀，也不赌
+    expect(message.body).toBe('整理周报')
+    expect(message.isDirect).toBe(true)
+    expect(message.openid).toBe('openid-alice')
+    expect(message.groupOpenid).toBeUndefined()
+    expect(String(message.title)).toContain('整理周报')
+  })
+
+  it('maps a group message and strips the leading @; only the @-itself is not a request', () => {
+    const mapped = qqMapEvent(group()) as { message: Record<string, unknown> }
+    expect(mapped.message.body).toBe('整理周报')
+    expect(mapped.message.chatId).toBe('group-b')
+    expect(mapped.message.groupOpenid).toBe('group-b')
+    expect(qqMapEvent(group({ content: '@mybot' })).skip).toBe('no-text:empty-after-clean')
+    expect(qqMapEvent(group({ content: '@mybot /cmd 参数' }), {}).skip).toBeUndefined()
+  })
+
+  it('skips what a bridge must not forward, and filters disallowed users', () => {
+    expect(qqMapEvent({ id: 'x', author: {} }).skip).toBe('no-text:unknown')
+    // 附件消息 content 缺席（不是字符串）→ no-text:attachment；带 author 是为了让它不被 no-sender 先挡下。
+    expect(qqMapEvent({ id: 'x', author: { id: 'openid-alice' }, attachments: [{ url: 'u' }] }).skip).toBe('no-text:attachment')
+    expect(qqMapEvent(c2c({ author: { id: '' } })).skip).toBe('no-sender')
+    expect(qqMapEvent(undefined).skip).toBe('not-a-message')
+    expect(qqMapEvent(c2c(), { allowUsers: ['openid-bob'] }).skip).toBe('user-not-allowed')
+    // member_openid 是兜底：author.id 缺席的群消息用它，而不是丢掉。
+    const fallback = qqMapEvent(group({ author: { member_openid: 'member-9' } })) as { message: { from: string } }
+    expect(fallback.message.from).toBe('member-9')
+  })
+
+  it('the reply bookkeeping: seq starts at 1 and counts (up to 5 per inbound is the documented window)', () => {
+    expect(qqNextSeq()).toBe(1)
+    expect(qqNextSeq(0)).toBe(1)
+    expect(qqNextSeq(3)).toBe(4)
   })
 })

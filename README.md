@@ -432,11 +432,12 @@ pnpm typecheck && pnpm vitest run && pnpm build   # = pnpm check
 - 面板是服务端渲染的单页，没有 React 客户端 bundle；够用，但不是 DSH 原生 UI 插件。
 - `tickets.page()` / `count()` 会把所有 Ticket 读进内存——个人规模（几百到几千条）没问题，上万条要换成分页 SQL。
 - 没有模型评审（Assessor）：门禁是确定性的，「这个请求值不值得做」由提示词、`triage` 与 `acceptMode` 决定。
-- 个人微信 / 个人 QQ 没有官方 API，不做。**钉钉桥已有**（`bridges/dingtalk/`，Stream 模式）、
-  **企业微信桥已有**（`bridges/wecom/`，自建应用回调模式，AES 加解密零依赖实现——公网回调 URL 是它
-  固有的部署前提，README 有两条路子）。两者都以官方文档/SDK 类型为准但尚未在真实租户上跑过——
-  诚实清单在它们各自的 README 里。Discord、Slack、QQ 官方机器人的桥尚未写；接缝是现成的：
-  照 `bridges/telegram/` 写一个 transform + bridge，再在面板的平台清单里加一行。
+- 个人微信没有官方 API，不做（个人 QQ 有官方机器人，见下）。**钉钉桥已有**（`bridges/dingtalk/`，
+  Stream 模式）、**企业微信桥已有**（`bridges/wecom/`，回调模式，AES 零依赖——公网回调 URL 是它
+  固有的部署前提）、**QQ 桥已有**（`bridges/qq/`，WebSocket 零依赖——个人主体认证即可，
+  官方明说适合个人单机）。三者都以官方文档为准但尚未在真实租户上跑过——诚实清单在它们各自的
+  README 里。Discord、Slack 的桥尚未写；接缝是现成的：照 `bridges/telegram/` 写一个
+  transform + bridge，再在面板的平台清单里加一行。
 
 ## 报告安全问题
 

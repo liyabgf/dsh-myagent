@@ -3037,7 +3037,26 @@
     },
     discord: { label: 'Discord', status: 'planned', notes: ['计划中：Bot + Gateway websocket（免公网）。'] },
     slack: { label: 'Slack', status: 'planned', notes: ['计划中：Socket Mode（免公网）。'] },
-    qq: { label: 'QQ 官方机器人', status: 'planned', notes: ['计划中：需要开发者资质与审核，主动消息有频率限制——动手前先核清当前政策。'] },
+    qq: {
+      label: 'QQ', status: 'ready', dir: 'bridges/qq', entry: 'bridge.mjs', deps: false,
+      env: [
+        ['QQ_APP_ID', 'QQ 开放平台 → 机器人管理端 → 开发设置', true],
+        ['QQ_APP_SECRET', '同上（App Secret）', true],
+        ['MYAGENT_CHANNEL_DIR', '这个频道的目录（与下面选的频道一致）', true],
+        ['QQ_USERS', '只收这些 openid（逗号分隔），留空即不限', false],
+      ],
+      steps: [
+        'QQ 开放平台注册并做个人主体认证（身份证实名即可，不需要企业资质）。',
+        '创建机器人（个人主体可建 5 个）。',
+        '开发设置里选 WebSocket 回调方式（官方明说适合个人单机，免公网）。',
+        '私聊要在管理端加体验号码（个人主体 20 个）；群聊要求你是群主/管理员。',
+        '跑桥（零依赖，Node 22+）→ 发一句话 → 回这一页把出现的 openid 映射成一个人。',
+      ],
+      notes: ['个人主体不公开使用：机器人只进自己是群主/管理员的群、私聊只对体验号码——单用户部署正好够用；要给同事公开用需企业主体。',
+        '同一人在不同机器人下 openid 不同：identities 里的映射换机器人就失效，这是平台身份模型。',
+        '回信两扇门：被动回复（不耗配额，有窗口）→ 主动推送（有月度配额）→ 都关时留在 out/（面板「待取回信」），新消息重新开门。',
+        'WebSocket 断线做 RESUME，丢 session 就重新 IDENTIFY（中间消息平台不补投）；字段以官方 v2 文档为准，尚未在真实机器人上跑过——第一条消息对照桥日志核字段就是验收。'],
+    },
     wechat: {
       label: '个人微信 / 个人 QQ', status: 'none',
       notes: ['没有官方机器人 API。市面上的逆向协议（hook 类）违反服务条款、封号风险高，本仓不做。',
