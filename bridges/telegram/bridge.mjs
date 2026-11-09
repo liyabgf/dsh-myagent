@@ -212,5 +212,6 @@ const poll = async () => {
 
 state.data = await loadState(directory)
 log.info('config', { directory, mode, intervalMs, chatAllowList, offset: state.data.offset ?? 0, keepDays })
-const { start } = supervise({ name: 'telegram', poll, log, intervalMs })
+// 【G-2】心跳文件落在频道目录里，myagent 的 chat 扫描看它的年龄——桥活着这件事终于不用读 launchd 日志才知道。
+const { start } = supervise({ name: 'telegram', poll, log, intervalMs, heartbeatFile: join(directory, '.heartbeat') })
 await start()

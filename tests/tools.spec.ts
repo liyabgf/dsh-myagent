@@ -145,9 +145,15 @@ describe('the registration shape', () => {
     //    'myagent_reply', 'myagent_note_ticket', 'myagent_stop_ticket', 'myagent_close_ticket', 'myagent_retry_ticket']
     // 加它的理由：操作者要求"中间不需要我决断的机制"——值得他决断的事必须有一个**不打断任何事**的落点，
     // 否则 worker 遇到"该扩展但不该我自决"的事时，只有停下手等人这一种诚实做法。
+    // 【G-1 产品变更】前台多了 `myagent_recall`（按关键词检索历史任务）。上一行的旧值是：
+    //   ['myagent_create_ticket', 'myagent_list_tickets', 'myagent_ticket_status', 'myagent_answer_ticket',
+    //    'myagent_reply', 'myagent_raise_decision', 'myagent_note_ticket', 'myagent_stop_ticket',
+    //    'myagent_close_ticket', 'myagent_retry_ticket']
+    // 加它的理由：操作者问"上次找到什么、那个文件叫什么"时，前台只有 list（state 筛选）没有检索——
+    // 任务一多 list 就回答不了这个问题，而"凭印象回答"正是它该拒绝的事。
     expect(names).toEqual([
-      'myagent_create_ticket', 'myagent_list_tickets', 'myagent_ticket_status', 'myagent_answer_ticket',
-      // 顺序照 mainTools 里的声明顺序：raise_decision 在 note 之前，close_ticket 在 stop 之后、retry 之前。
+      'myagent_create_ticket', 'myagent_list_tickets', 'myagent_recall', 'myagent_ticket_status', 'myagent_answer_ticket',
+      // 顺序照 mainTools 里的声明顺序：recall 紧跟 list（同族读者），raise_decision 在 note 之前，close_ticket 在 stop 之后、retry 之前。
       'myagent_reply', 'myagent_raise_decision', 'myagent_note_ticket', 'myagent_stop_ticket',
       'myagent_close_ticket', 'myagent_retry_ticket',
     ])
@@ -441,5 +447,71 @@ describe('what the report tool answers with', () => {
     const answer = await context.report(made.ticketId!, { state: 'ready', summary: '做完了' }) as Record<string, unknown>
     expect(answer).toMatchObject({ ended: true, outcome: 'done' })
     expect(String(answer.note)).toContain('has ended')
+  })
+})
+
+describe('recalling past work (G-1: myagent_recall)', () => {
+  /** 一张已完成的任务，带产物与摘要——回忆的主要对象。 */
+  const done = async (h: Harness, title: string, summary: string, files: string[] = []): Promise<string> => {
+    const id = await open(h, title)
+    h.engine.assignmentStarted(id, h.engine.require(id).assignments[0]!.id)
+    h.engine.report(id, { state: 'ready', summary, files })
+    return id
+  }
+
+  it('finds ended work by title and by summary, with artifacts and outcome on each hit', async () => {
+    const h = harness()
+    const china = await done(h, '资本布局调研', '中国 AI 产业的投资流向已整理。', ['report.md', 'data/capital.csv'])
+    await done(h, '竞品日报', '竞品的定价变化。', ['daily.md'])
+    const mine = await open(h, '还在做')   // 未完成：没有 result
+
+    const hit = await h.call('myagent_recall', { query: '资本' }) as {
+      count: number; total: number; truncated: boolean
+      tickets: { ticket_id: string; title: string; stage: string; outcome: string; summary: string; artifacts: string[] }[]
+    }
+    // 只命中那张，且把它真正需要回忆的东西都带上了：结局、完整摘要、产物路径。
+    expect(hit.count).toBe(1)
+    expect(hit.tickets[0]).toMatchObject({ ticket_id: china, title: '资本布局调研', stage: 'done', outcome: 'done' })
+    expect(hit.tickets[0]!.summary).toBe('中国 AI 产业的投资流向已整理。')
+    // 产物按存储顺序（路径字母序）返回——顺序不是这条断言的对象，齐全才是。
+    expect(hit.tickets[0]!.artifacts).toEqual(expect.arrayContaining(['report.md', 'data/capital.csv']))
+    // 摘要也能作为检索面：问"投资流向"而不是标题词。
+    const bySummary = await h.call('myagent_recall', { query: '投资流向' }) as { count: number }
+    expect(bySummary.count).toBe(1)
+    // 进行中的那张按 state 不筛——回忆本来就包括"还没做完的"。
+    const openHit = await h.call('myagent_recall', { query: '还在做' }) as { tickets: { ticket_id: string }[] }
+    expect(openHit.tickets[0]!.ticket_id).toBe(mine)
+  })
+
+  it('ANDs the terms, ignores case, orders newest first, and truncates honestly', async () => {
+    const h = harness()
+    await done(h, 'A 融资统计', '第一季度的融资。')
+    const second = await done(h, 'B 融资统计', '第二季度的融资。')
+    // 两个词都命中才召回（AND 不是 OR）——问句里的限定词才有效。
+    const both = await h.call('myagent_recall', { query: '融资 第二季度' }) as { count: number; tickets: { ticket_id: string }[] }
+    expect(both.count).toBe(1)
+    expect(both.tickets[0]!.ticket_id).toBe(second)
+    // 大小写不敏感：检索词用大写也命中中文摘要里的英文。
+    await done(h, 'CSV 整理', 'The CSV file is ready.')
+    const upper = await h.call('myagent_recall', { query: 'csv' }) as { count: number }
+    expect(upper.count).toBe(1)
+    // newest first；limit 收口并如实说 truncated。
+    await done(h, 'C 融资统计', '第三季度的融资。')
+    const limited = await h.call('myagent_recall', { query: '融资', limit: 1 }) as {
+      count: number; total: number; truncated: boolean; tickets: { title: string }[]
+    }
+    expect(limited).toMatchObject({ count: 1, total: 3, truncated: true })
+    expect(limited.tickets[0]!.title).toBe('C 融资统计')
+  })
+
+  it('answers count 0 honestly when nothing matched, and leaves tombstones out', async () => {
+    const h = harness()
+    const id = await done(h, '会被删掉的', '删掉它')
+    h.engine.deleteTicket(id, { assets: 'keep', record: 'tombstone' })
+    const none = await h.call('myagent_recall', { query: '删掉' }) as { count: number; total: number; tickets: unknown[] }
+    expect(none).toMatchObject({ count: 0, total: 0, truncated: false })
+    expect(none.tickets).toEqual([])
+    const missing = await h.call('myagent_recall', { query: '不存在' }) as { count: number }
+    expect(missing.count).toBe(0)
   })
 })

@@ -51,7 +51,7 @@ export function definitionOf(definition: Tool): {
 
 export interface ToolsHost {
   readonly engine: Engine
-  readonly store: Pick<Store, 'tickets' | 'decisions'>
+  readonly store: Pick<Store, 'tickets' | 'decisions' | 'artifacts'>
   /** The accept mode now, so a tool can say why nothing executed. */
   acceptMode(): 'auto' | 'observe'
   /**
@@ -337,6 +337,55 @@ export function mainTools(host: ToolsHost): Tool[] {
       execute: async args => {
         const tickets = host.store.tickets.page(args.state, 0, args.limit)
         return { count: tickets.length, state: args.state, tickets: tickets.map(ticketSummary) }
+      },
+    }),
+    tool({
+      name: 'myagent_recall',
+      description: 'Search PAST work by keyword — every Ticket, ended or open, title and final summary both matched. '
+        + 'Use it whenever the operator asks "上次/之前找到什么、做了什么、那个文件叫什么": answer from what actually '
+        + 'happened, with Ticket ids and artifact paths, instead of guessing or saying you do not remember. '
+        + 'Every term must match; use one distinctive word first, then narrow.',
+      schema: z.object({
+        query: z.string().trim().min(1).max(200).describe('Keywords, whitespace-separated. Each one must appear in the title or summary; fewer, distinctive words work better.'),
+        limit: z.number().int().min(1).max(20).default(10),
+      }).strict(),
+      execute: async args => {
+        // 覆盖全部（含已结束）是它的本职：回忆只对历史有意义。逐词 AND 匹配、大小写不敏感——
+        // 检索面是标题与最终摘要，那是"人问起时会想到的两句话"。
+        const terms = args.query.toLowerCase().split(/\s+/).filter(term => term !== '')
+        const haystack = (ticket: Ticket) => {
+          const report = latestReport(ticket)
+          return `${ticket.title}\n${report?.summary ?? ''}`.toLowerCase()
+        }
+        const matches = host.store.tickets.list()
+          .filter(ticket => ticket.deleted === undefined)
+          .filter(ticket => terms.every(term => haystack(ticket).includes(term)))
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        const page = matches.slice(0, args.limit)
+        return {
+          count: page.length,
+          total: matches.length,
+          truncated: matches.length > page.length,
+          tickets: page.map(ticket => {
+            const report = latestReport(ticket)
+            const artifacts = host.store.artifacts.list(ticket.id).map(entry => entry.path)
+            const lineage = host.engine.citationsOf(ticket.id)
+            return {
+              ticket_id: ticket.id,
+              title: ticket.title,
+              stage: ticketStage(ticket),
+              outcome: ticket.ended?.outcome ?? null,
+              ended_reason: ticket.ended?.reason ?? null,
+              // 摘要给全文——它通常就是几句话，而回忆的价值恰恰在那几句里。
+              summary: report?.summary ?? null,
+              created_at: ticket.createdAt,
+              work_id: ticket.workId ?? null,
+              artifacts,
+              cites: lineage.cites.length,
+              cited_by: lineage.citedBy.length,
+            }
+          }),
+        }
       },
     }),
     tool({

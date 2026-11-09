@@ -57,6 +57,13 @@ import type { Dirent } from 'node:fs'
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { key, UserError } from '../core/index.ts'
+
+/**
+ * How long a channel's bridge may go without touching its heartbeat file before the health board says so (G-2).
+ * Five minutes against a default poll of 5 s is sixty missed beats — a bridge that is alive but merely slow will
+ * never trip it, and one that is dead trips it fast enough to matter the same evening.
+ */
+const HEARTBEAT_STALE_MS = 5 * 60_000
 import { sourcePolicy, type Settings } from '../core/policy.ts'
 import { latestReport, waitsForPerson, type ReplyTo, type Ticket, type Trigger } from '../core/model.ts'
 import type { HealthEntry } from '../app/health.ts'
@@ -322,6 +329,20 @@ export class ChatSource implements TwoWaySource {
         // `outboundFacts` is skipped for a channel that could not be read: its zeros would otherwise sit next to
         // the error and read as "nothing pending either", which is not something anybody knows.
         const outbound = found.error === undefined ? await this.outboundFacts(channel.directory) : { pendingReplies: 0 }
+        // 【G-2】桥的心跳：每轮由桥自己 touch `<channel directory>/.heartbeat`，这里只看它的年龄。
+        // 文件不存在 = 旧版桥没写过（或频道从未接过桥）——沉默，不报警：只有桥先承诺"我会写心跳"，
+        // 我们才敢把"它没写"说成"它死了"。年龄超过阈值 = 循环停了：进程被杀、机器睡了、或它一直在报错。
+        // 这正是"面板说系统安静，而聊天室一片沉默"那个事故的形状——桥死掉时它欠的消息在频道目录里堆积，
+        // 而 myagent 的每条健康线都读不到它。
+        const beat = join(channel.directory, '.heartbeat')
+        const beatInfo = await stat(beat).catch(() => undefined)
+        if (beatInfo !== undefined) {
+          const ageMs = Date.now() - beatInfo.mtimeMs
+          if (ageMs > HEARTBEAT_STALE_MS) {
+            issues.push(`channel ${channel.id}: its bridge has not written a heartbeat for ${Math.round(ageMs / 60000)} `
+              + 'minute(s) — the loop died, was killed, or has been erroring; messages it owes are piling up unseen')
+          }
+        }
         facts.push({
           id: channel.id, enabled: true, waiting: found.waiting, settling: found.settling,
           ...(found.error === undefined ? {} : { error: found.error }),

@@ -9,7 +9,7 @@
  * The end-to-end half (bridge writes → the REAL `ChatSource` reads → a Trigger appears) lives in
  * `tests/chat.spec.ts`, next to the harness that builds a Source; the tests here cover the kit and the mapping.
  */
-import { mkdtemp, readFile, readdir, rm, writeFile, mkdir } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm, stat, utimes, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -22,6 +22,8 @@ import { messageFileName, writeMessage } from '../bridges/lib/inbound.mjs'
 import { chunkText, drainOut } from '../bridges/lib/outbound.mjs'
 // @ts-expect-error -- 同上
 import { formatRoute, parseRoute } from '../bridges/lib/route.mjs'
+// @ts-expect-error -- see above
+import { supervise } from '../bridges/lib/run.mjs'
 // @ts-expect-error -- see above
 import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform.mjs'
 // @ts-expect-error -- see above
@@ -628,5 +630,37 @@ describe('a failure says why, not just that it failed', () => {
     expect(describeError(new Error('just this'))).toEqual({ message: 'just this' })
     expect(describeError('a string')).toEqual({ message: 'a string' })
     expect(describeError(undefined)).toEqual({ message: 'undefined' })
+  })
+})
+
+describe('the bridge heartbeat (G-2)', () => {
+  it('supervise touches <directory>/.heartbeat on every iteration, and keeps it fresh', async () => {
+    const dir = await directory()
+    const heartbeat = join(dir, '.heartbeat')
+    const calls = { count: 0 }
+    const { start, stop } = supervise({
+      name: 'test', poll: async () => { calls.count += 1; stop('one iteration is enough') },
+      log: {}, intervalMs: 10, heartbeatFile: heartbeat,
+    })
+    await start()
+    // 一轮之后文件已存在，且 mtime 就是"刚刚"。
+    const info = await stat(heartbeat)
+    expect(info.mtimeMs).toBeGreaterThan(Date.now() - 60_000)
+    expect(calls.count).toBeGreaterThanOrEqual(1)
+    // 第二轮只是刷新 mtime，不新建内容。
+    const before = (await readFile(heartbeat, 'utf8')).trim().split('\n').at(-1)
+    expect(before).toBe('bridge heartbeat: mtime says alive')
+  })
+
+  it('a heartbeat is not a dependency: a poll that throws still touches it, a missing path is only logged', async () => {
+    const dir = await directory()
+    const heartbeat = join(dir, '.heartbeat')
+    const { start, stop } = supervise({
+      name: 'test', poll: async () => { stop('enough'); throw new Error('platform down') },
+      log: {}, intervalMs: 10, heartbeatFile: heartbeat,
+    })
+    await start()
+    // 轮次失败也 touch——"进程活着但一直报错"正是 myagent 应当能看见的状态，不能只在成功时说活着。
+    expect((await stat(heartbeat)).mtimeMs).toBeGreaterThan(Date.now() - 60_000)
   })
 })

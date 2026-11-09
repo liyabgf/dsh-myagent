@@ -799,3 +799,56 @@ describe('per-channel health (N5)', () => {
     } finally { await source.stop() }
   })
 })
+
+describe('the bridge heartbeat the chat source watches (G-2)', () => {
+  /** One enabled channel with a settled message, so a scan actually runs over it. */
+  const beatChannel = (dir: string) => ({
+    acceptMode: 'auto' as const, allowedSenders: ['operator', 'alice'],
+    sources: { chat: { enabled: true, identities: IDS, channels: [channel('ops', dir)] } },
+  })
+
+  it('says on the health board that a bridge went silent, with its age in minutes', async () => {
+    const ops = directory()
+    drop(ops, 'ping.md', message({ from: 'U01ABCDEF', id: 'm-90', title: 'ping' }, 'ping'))
+    const context = harness(beatChannel(ops))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      // 心跳停在 12 分钟前：5 分钟阈值之上。
+      const beat = join(ops, '.heartbeat')
+      // 本文件其余处的工具都是同步的（writeFileSync/utimesSync）——跟随而不是另引一套异步依赖。
+      writeFileSync(beat, 'bridge heartbeat: mtime says alive\n', 'utf8')
+      const stale = new Date(Date.now() - 12 * 60_000)
+      utimesSync(beat, stale, stale)
+      await source.poll()
+      expect(problems(context)).toContain('has not written a heartbeat for 12')
+      expect(problems(context)).toContain('piling up unseen')
+    } finally { await source.stop() }
+  })
+
+  it('a fresh heartbeat and an absent one both stay quiet — silence only claims what it can back', async () => {
+    const fresh = directory()
+    drop(fresh, 'ok.md', message({ from: 'U01ABCDEF', id: 'm-91', title: 'ok' }, 'ok'))
+    const context = harness(beatChannel(fresh))
+    const source = new ChatSource(context.host)
+    await source.start()
+    try {
+      const beat = join(fresh, '.heartbeat')
+      writeFileSync(beat, 'bridge heartbeat: mtime says alive\n', 'utf8')
+      await source.poll()
+      // 新鲜心跳：无心跳问题。
+      expect(problems(context)).not.toContain('heartbeat')
+    } finally { await source.stop() }
+
+    // 文件不存在：旧版桥没写过心跳——不能把"没人承诺过说话"读成"它死了"。
+    const bare = directory()
+    drop(bare, 'ok2.md', message({ from: 'U01ABCDEF', id: 'm-92', title: 'ok2' }, 'ok2'))
+    const context2 = harness(beatChannel(bare))
+    const source2 = new ChatSource(context2.host)
+    await source2.start()
+    try {
+      await source2.poll()
+      expect(problems(context2)).not.toContain('heartbeat')
+    } finally { await source2.stop() }
+  })
+})

@@ -1,3 +1,4 @@
+import { utimes, writeFile } from 'node:fs/promises'
 import { describeError } from './log.mjs'
 
 /**
@@ -10,7 +11,13 @@ import { describeError } from './log.mjs'
  *
  * `stop()` is exposed (rather than only handled here) so a bridge can be driven from a test without signals.
  */
-export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs = 60_000, heartbeatMs = 300_000 }) {
+/**
+ * `heartbeatFile` (G-2): a file whose mtime says "this loop is alive", touched after EVERY iteration — success or
+ * failure — because "the process is up but its poll has been erroring for an hour" is exactly the state myagent
+ * should be able to see. The log line above only reaches whoever reads launchd logs; the mtime reaches the panel.
+ * Write failures are logged once and ignored: the heartbeat is a courtesy, not a dependency of the bridge itself.
+ */
+export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs = 60_000, heartbeatMs = 300_000, heartbeatFile }) {
   let stopped = false
   let failures = 0
   const stop = reason => {
@@ -23,6 +30,7 @@ export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs =
   const run = async () => {
     log.info?.('started', { name, intervalMs, pid: process.pid, node: process.version })
     let lastHeartbeat = Date.now()
+    const fresh = new Date()
     while (!stopped) {
       try {
         const result = await poll()
@@ -33,6 +41,16 @@ export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs =
         // `describeError` rather than `error.message`: for a failed fetch the message is only "fetch failed",
         // and the reason that tells you what to fix is on `.cause`.
         log.error?.('poll-failed', { failures, ...describeError(error) })
+      }
+      if (heartbeatFile !== undefined) {
+        try {
+          await utimes(heartbeatFile, fresh, fresh)
+        } catch {
+          // `utimes` cannot create a missing file; make it once with a readable timestamp inside, then the
+          // mtime keeps it fresh on its own. `wx` so two loops cannot clobber each other's meaning.
+          try { await writeFile(heartbeatFile, `${new Date().toISOString()}\nbridge heartbeat: mtime says alive\n`, { flag: 'wx' }) }
+          catch (error) { log.debug?.('heartbeat-create', { file: heartbeatFile, ...describeError(error) }) }
+        }
       }
       if (Date.now() - lastHeartbeat >= heartbeatMs) {
         lastHeartbeat = Date.now()

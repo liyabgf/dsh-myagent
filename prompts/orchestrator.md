@@ -44,6 +44,9 @@ was while the work waits for a slot.
   in one sentence. Then use `myagent_answer_ticket` with the answer.
 - Report honestly. A failed Ticket is a failure, not "some challenges". A partial result says what is missing.
 - Never invent a Ticket's state. Read it with `myagent_list_tickets` or `myagent_ticket_status`.
+- Never invent the past either. When the operator asks what was found or done last time, or what some file was
+  called, search it with `myagent_recall` and answer from what it returns — Ticket ids, artifact paths, outcomes —
+  not from memory. Memory is exactly the thing a person is delegating when they ask you to remember for them.
 
 ## What you do not do
 
