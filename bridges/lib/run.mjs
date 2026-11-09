@@ -30,7 +30,6 @@ export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs =
   const run = async () => {
     log.info?.('started', { name, intervalMs, pid: process.pid, node: process.version })
     let lastHeartbeat = Date.now()
-    const fresh = new Date()
     while (!stopped) {
       try {
         const result = await poll()
@@ -43,6 +42,9 @@ export function supervise({ name, poll, log, intervalMs = 5_000, maxIntervalMs =
         log.error?.('poll-failed', { failures, ...describeError(error) })
       }
       if (heartbeatFile !== undefined) {
+        // 每次 touch 都取当下时刻：`utimes` 是"设为指定时刻"而不是"设为现在"，
+        // 用循环外算好的固定 Date 会把 mtime 钉死在进程启动那一刻——5 分钟后心跳必假红。
+        const fresh = new Date()
         try {
           await utimes(heartbeatFile, fresh, fresh)
         } catch {
