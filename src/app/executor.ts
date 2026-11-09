@@ -17,6 +17,7 @@ import {
   type Assignment, type Engine, type Executor, type Ticket,
 } from '../core/index.ts'
 import type { Settings } from '../core/policy.ts'
+import { listFiles, readForPanel, type FileListing } from './files.ts'
 import { stopBackground } from './background.ts'
 import { Later, type Effects } from './effects.ts'
 import type { HealthBoard, HealthEntry } from './health.ts'
@@ -93,8 +94,8 @@ const reason = (error: unknown): string => error instanceof Error ? `${error.nam
  * Execution environment boundary: workspace preparation and cross-Ticket input materialization.
  *
  * WHAT THIS DOES NOT COVER YET — read before believing a `vm` sandbox is close. Still direct host IO, so each would
- * have to move behind this interface first: listing/measuring a workspace (`files.ts`), and running the `prepare`
- * command (`run` below, whose cwd is the workRoot — a host path that does not exist inside a VM).
+ * have to move behind this interface first: running the `prepare` command (`run` below, whose cwd is the workRoot —
+ * a host path that does not exist inside a VM).
  * MIGRATED (G-3, 0.13.2): attachment delivery (`deliverAttachment`), `RESULT.md` and workspace removal
  * (`writeWorkspaceFile` / `removeWorkspace`). `REPLY-UNDELIVERED.md` stays direct BY DESIGN: it is written
  * synchronously in the give-up path, and a trace a crash can miss is worse than one record the interface does not
@@ -128,6 +129,18 @@ export interface ExecutionSandbox {
    * and a sandbox that enforced it would be the second owner of a decision that belongs to one place.
    */
   removeWorkspace(directory: string): Promise<void>
+  /**
+   * 【G-3 站点 4】List a workspace, bounded and sorted (see `files.ts` for what "bounded" means and why: the panel
+   * polls this on a timer, and a worker's directory is whatever a model decided to create). The walk policy —
+   * skip-list, entry and depth caps — is shared shape, not host detail: a VM sandbox must enumerate its own tree
+   * under the same bounds or the panel would tell two different stories about the same workspace.
+   */
+  listWorkspace(directory: string): Promise<FileListing>
+  /**
+   * 【G-3 站点 4】Read one validated file's bytes for the panel. The path is the caller's to validate
+   * (`resolveRealInside` in `files.ts` is policy and stays there); the read is the sandbox's.
+   */
+  readWorkspaceFile(absolute: string): Promise<{ base64: string; size: number; mtime: string }>
 }
 
 /**
@@ -179,6 +192,14 @@ export class LocalHostSandbox implements ExecutionSandbox {
   }
   async removeWorkspace(directory: string): Promise<void> {
     await rm(directory, { recursive: true, force: true })
+  }
+  // 站点 4 的本地实现委托给 files.ts 的既有纯走查（SKIP/上限/排序都留在那里，连同它们的测试）：
+  // 沙箱负责的是"列举工作区"这个边界动作，不是重新发明边界内的规则。
+  async listWorkspace(directory: string): Promise<FileListing> {
+    return await listFiles(directory)
+  }
+  async readWorkspaceFile(absolute: string): Promise<{ base64: string; size: number; mtime: string }> {
+    return await readForPanel(absolute)
   }
   async materializeInput(workspaceDir: string, sourceFile: string, sourceTicketId: string, relativeDest: string): Promise<string> {
     // Rejected, never rewritten. The first version stripped a leading `../` and a leading `/` before the containment

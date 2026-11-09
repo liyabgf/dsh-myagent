@@ -18,7 +18,7 @@ import { aboutView } from './about.ts'
 import { PROMPT_ROLES, PromptConflict } from './prompts.ts'
 import { builtInSkillsView } from './skills.ts'
 import { scheduleView } from './views.ts'
-import { isTextFile, listFiles, MAX_FILE_BYTES, readForPanel, resolveInside, resolveRealInside } from './files.ts'
+import { isTextFile, MAX_FILE_BYTES, resolveInside, resolveRealInside } from './files.ts'
 import type { Recipe, WorkerProgress } from './runtime.ts'
 import { SetupError, machineView, type Machine } from '../deployment.ts'
 import type { HealthBoard } from './health.ts'
@@ -501,7 +501,8 @@ function table(host: HttpHost): readonly Route[] {
       const ticket = host.engine.require(params.id!)
       const directory = ticket.execution?.directory
       if (directory === undefined) return { directory: undefined, files: [], count: 0, truncated: false }
-      return { directory, ...(await listFiles(directory)) }
+      // 【G-3 站点 4】列举走沙箱：走查规则在 files.ts（形状共享），边界动作在这里归沙箱。
+      return { directory, ...(await host.executor.sandbox.listWorkspace(directory)) }
     }),
     // One file: text is shown, anything else is handed over as base64 for the panel to turn into a download.
     route('GET', 'tickets/:id/file', async ({ params, query }) => {
@@ -523,7 +524,8 @@ function table(host: HttpHost): readonly Route[] {
         throw new RouteError(400, `${requested} is ${(info.size / 1_048_576).toFixed(1)} MB; the panel serves up to `
           + `${Math.floor(MAX_FILE_BYTES / 1_048_576)} MB. Open it where it is: ${absolute}`)
       }
-      return { path: requested, absolute, text: isTextFile(requested, info.size), ...(await readForPanel(absolute)) }
+      // 【G-3 站点 4】读取同理：路径校验（上面的 resolveRealInside）是 policy 留在路由，字节搬运归沙箱。
+      return { path: requested, absolute, text: isTextFile(requested, info.size), ...(await host.executor.sandbox.readWorkspaceFile(absolute)) }
     }),
     // The schedule list, with the next run of each computed in the host's own zone.
     route('GET', 'schedules', () => {

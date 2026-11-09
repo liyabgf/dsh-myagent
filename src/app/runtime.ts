@@ -43,7 +43,7 @@ import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
 import { mainTools, workerTools, type ArtifactCatalogEntry, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
-import { listFiles, isTextFile, readForPanel, resolveInside, resolveRealInside } from './files.ts'
+import { isTextFile, resolveInside, resolveRealInside } from './files.ts'
 import { ticketSummary } from './views.ts'
 import { BASE_PATH, registerHttp, type HttpHost } from './http.ts'
 
@@ -587,7 +587,8 @@ export class Runtime implements HttpHost {
     if (removing) {
       // A directory that cannot be listed is not a reason to refuse the deletion of the RECORD, so the numbers are
       // simply left off and the removal is still attempted.
-      const listing = await listFiles(directory!).catch(() => undefined)
+      // 【G-3 站点 4】删除后果预览的列举走沙箱（同一动作同一边界）。
+      const listing = await this.executor.sandbox.listWorkspace(directory!).catch(() => undefined)
       if (listing !== undefined) {
         files = listing.count
         bytes = listing.files.filter(file => !file.directory).reduce((sum, file) => sum + file.size, 0)
