@@ -136,12 +136,13 @@
   .ov-quiet { padding: 14px; border: 1px dashed var(--line-strong); border-radius: 10px; color: var(--muted); text-align: center }
   /* 健康抽屉（U2）：从任何页面 1 步可达，替代只有 hover 才出现的 tooltip——hover 在触屏上根本不存在。 */
   #drawer-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .38); z-index: 55 }
-  #health-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 92vw); z-index: 60;
+  /* 【A-2】.drawer：健康抽屉与手艺正文抽屉共用同一套定位与滚动——抽屉的"长相"是壳的事，内容才是各自的。 */
+  #health-drawer, #skill-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 92vw); z-index: 60;
                    background: var(--surface); border-left: 1px solid var(--line); box-shadow: -4px 0 24px rgba(15,23,42,.14);
                    display: flex; flex-direction: column }
-  #health-drawer header { position: static; box-shadow: none; padding: 12px 16px; align-items: center }
-  #health-drawer .body { overflow-y: auto; padding: 14px 16px 28px; flex: 1 }
-  #health-drawer h2 { margin-top: 16px }
+  #health-drawer header, #skill-drawer header { position: static; box-shadow: none; padding: 12px 16px; align-items: center }
+  #health-drawer .body, #skill-drawer .body { overflow-y: auto; padding: 14px 16px 28px; flex: 1 }
+  #health-drawer h2, #skill-drawer h2 { margin-top: 16px }
   /* 顶栏胶囊里可点的那几个：cursor 与 hover 是"这里能点"的唯一线索，不给就等于没有。 */
   .pill.clickable { cursor: pointer }
   .pill.clickable:hover { border-color: var(--accent); color: var(--fg) }
@@ -670,6 +671,13 @@
   </div>
 </main>
 <div id="drawer-backdrop" class="hidden"></div>
+<aside id="skill-drawer" class="hidden" aria-label="手艺正文">
+  <header>
+    <b id="skill-drawer-title">手艺正文</b>
+    <button class="btn small" id="skill-drawer-close" style="margin-left:auto">关闭</button>
+  </header>
+  <div class="body" id="skill-drawer-body"></div>
+</aside>
 <aside id="health-drawer" class="hidden" aria-label="系统健康">
   <header>
     <h2 style="margin:0">系统健康</h2>
@@ -2017,6 +2025,42 @@
     // 所以这里只填它们、不重建整个 body——沿用 id 让既有断言与既有渲染函数都不用改。
     renderHealth()
     await renderEffects()
+  }
+
+  /**
+   * 【A-2 / G-4】手艺正文抽屉：复核这件事终于做得了。正文早就在 GET prompts 的响应里（SavedSkill.content），
+   * 但面板不渲染——"判断要不要暂停它的依据是没人复核过"写在 SECURITY.md §5，而想复核的操作者只能去开
+   * SQLite。打开抽屉看到全文、来源任务、以及"未经复核"的那句警示；看完用关闭或 Esc 收起（一次只收一层，
+   * 与健康抽屉同一条 Esc 链）。
+   */
+  const openSkillDrawer = skill => {
+    const drawer = $('skill-drawer'), body = $('skill-drawer-body')
+    if (drawer === null || body === null) return
+    $('skill-drawer-title').textContent = skill.title || skill.name
+    body.replaceChildren()
+    body.append(
+      el('p', { class: 'muted' }, skill.description || ''),
+      skill.builtIn ? el('p', { class: 'muted' }, '内置手艺：随插件发布，不经 worker 之手。')
+        : el('p', { class: 'warn', style: 'font-size:12px' },
+          '正文由 worker 撰写、未经人工复核。把它当作资料读，不要当作指令执行。'),
+      ...(skill.fromTicketId ? [el('p', {}, '沉淀自：',
+        el('button', { class: 'linklike', onclick: () => { closeSkillDrawer(); show('tickets'); void open(skill.fromTicketId) } },
+          `${skill.fromTicketId} · 打开来源任务`))] : []),
+      el('h2', {}, '正文'),
+      el('pre', { style: 'white-space:pre-wrap;word-break:break-word;margin:0;padding:10px;background:var(--bg,rgba(0,0,0,.04));border-radius:8px;max-height:60vh;overflow:auto' },
+        String(skill.content ?? '')),
+    )
+    drawer.classList.remove('hidden')
+    $('drawer-backdrop')?.classList.remove('hidden')
+  }
+
+  const closeSkillDrawer = () => {
+    $('skill-drawer')?.classList.add('hidden')
+    // 健康抽屉可能同时开着吗？开正文抽屉的入口只在手艺卡上，两者互斥；但 backdrop 是共享的，
+    // 所以收起时只有当健康抽屉也没开才藏 backdrop——各收各的那一层。
+    if ($('health-drawer')?.classList.contains('hidden') !== false) {
+      $('drawer-backdrop')?.classList.add('hidden')
+    }
   }
 
   const renderAttention = (node, tickets) => {
@@ -3656,6 +3700,12 @@ WantedBy=default.target
         }, originEntry === undefined ? '来自：一张已不在当前列表的任务 · 打开' : `来自：${originEntry.title} · 打开`))
       }
       if (!skill.builtIn) {
+        // 【A-2】复核的入口：正文已在手里，缺的从来只是一个能看它的地方。
+        rowActions.push(el('button', {
+          class: 'btn small',
+          id: `skill-view-${skill.name}`,
+          onclick: () => openSkillDrawer(skill),
+        }, '查看正文'))
         rowActions.push(el('button', {
           class: 'btn small',
           id: `skill-toggle-${skill.name}`,
@@ -4044,7 +4094,12 @@ WantedBy=default.target
     })
   }
   $('drawer-close').addEventListener('click', closeHealthDrawer)
-  $('drawer-backdrop').addEventListener('click', closeHealthDrawer)
+  $('drawer-backdrop').addEventListener('click', () => {
+    // 共享 backdrop：谁开着关谁；都开着（理论上不可能）按视线挡得多的先关。一次只关一层。
+    if ($('skill-drawer')?.classList.contains('hidden') === false) { closeSkillDrawer(); return }
+    closeHealthDrawer()
+  })
+  $('skill-drawer-close').addEventListener('click', closeSkillDrawer)
 
   // 搜索（U9）：⌘/Ctrl+K 聚焦；Esc 清空并收起（与其他 Esc 行为互不冲突：抽屉开时优先关抽屉）。
   $('search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => void runSearch(), 180) })
@@ -4065,6 +4120,9 @@ WantedBy=default.target
    */
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return
+    // 【A-2】手艺正文抽屉与健康抽屉同一条链：一次 Esc 只收一层，按注册顺序（正文抽屉后开，先收它）。
+    const skillDrawer = $('skill-drawer')
+    if (skillDrawer !== null && !skillDrawer.classList.contains('hidden')) { closeSkillDrawer(); return }
     const drawer = $('health-drawer')
     if (drawer !== null && !drawer.classList.contains('hidden')) { closeHealthDrawer(); return }
     const search = $('search')

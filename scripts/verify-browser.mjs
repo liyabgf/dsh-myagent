@@ -19,6 +19,27 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { chromium } = require('~/deepseek-harness/benchmarks/node_modules/playwright')
 
+/**
+ * 【环境崩溃 ≠ 断言失败】headless Chrome 偶发在运行中途整页关闭（今天三次，崩点都在 U21 之后的
+ * `waitForTimeout`，重跑即绿）。崩溃时 finally 不执行：子进程泄漏（§4.143 记过），结论行也不打印——
+ * 而"没有结论行"正是这套脚本要消灭的那类静默消失。所以：崩在环境上时**自动重跑一次**（带标记，只许一次），
+ * 断言失败则原样退出。重跑的那次打印它自己的结论行，日志里两次的输出都在，没有藏任何东西。
+ */
+import { spawn } from 'node:child_process'
+process.on('uncaughtException', (error) => {
+  const message = String(error?.message ?? error)
+  const envCrash = /Target (page|closed|browser)|browser has been closed|Target crashed/i.test(message)
+  if (!envCrash || process.env.MYAGENT_VB_RETRY === '1') {
+    console.error(`verify-browser 崩溃（${envCrash ? '环境崩溃，已重试过一次仍崩' : '非环境崩溃'}）：${message}`)
+    process.exit(2)
+  }
+  console.log(`── 环境崩溃（${message.slice(0, 80)}…）；自动重跑一次（MYAGENT_VB_RETRY=1）。断言失败不会走这条路。`)
+  const child = spawn(process.execPath, process.argv.slice(1), {
+    env: { ...process.env, MYAGENT_VB_RETRY: '1' }, stdio: 'inherit',
+  })
+  child.on('exit', (code) => process.exit(code ?? 1))
+})
+
 const PORT = process.env.PORT || '3080'
 const BASE = `http://127.0.0.1:${PORT}/myagent/`
 const SHOT_DIR = process.env.SHOT_DIR || '/tmp'
@@ -155,6 +176,17 @@ try {
   check('KPI 一排 6 张卡，且不含机器路径', ov.kpis === 6 && !ov.kpiLabels.some(l => l.includes('/Users')), ov.kpiLabels.join('|'))
   check('「需要你处理」有内容或明确说"系统安静"（不是空白/[object]）',
     ov.attentionText.length > 0 && !ov.attentionText.includes('[object'), ov.attentionText)
+  // 【A-1】说明页：新用户从侧边栏一键入口进来的第一站，值得在真浏览器里真的点开一次。
+  await page.click('#tabs button[data-tab="about"]')
+  await page.waitForTimeout(400)
+  const aboutText = await page.evaluate(() => (document.getElementById('about-body')?.textContent || ''))
+  check('说明页渲染服务端小节（这是什么 / 刻意不做什么）',
+    aboutText.includes('这是什么') && aboutText.includes('刻意不做什么'), aboutText.slice(0, 40))
+  check('说明页说清了两条边界（没有沙箱、不替你决定）',
+    aboutText.includes('沙箱') && aboutText.includes('不替你决定'), '')
+  await page.click('#tabs button[data-tab="overview"]')
+  await page.waitForTimeout(300)
+
   check('决断队列卡片在总览（0.11.0）', ov.decisionsHeading === true)
   check('决断队列的三种状态之一都可读（不是永远的"读取中…"）',
     ov.decisionsText.includes('没有停着的决断') || ov.decisionsText.includes('读不到决断队列')

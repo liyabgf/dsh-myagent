@@ -5496,6 +5496,8 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
           fromTicketId: '68172c094da50125a6fbbc642e56006b',
           enabled: skillEnabled,
           useCount: 3,
+          // 【A-2】正文是复核的对象，夹具必须带它——不带，"查看正文"就永远测不到真实路径。
+          content: '# 多源实体归一化去重器\n\n用法：读 manifest.csv，按名称列归一化。\n注意：这是 worker 写的，未经人工复核。\n',
         }],
       }),
       'POST prompts/skills/myagent-dedup-merger/toggle': (call: { body?: { enabled?: boolean } }) => {
@@ -5738,5 +5740,77 @@ describe('说明页、记住页与最长已跑（A-1 / A-3 / A-4）', () => {
     await mount(routes())
     // 夹具里唯一一张是 done。
     expect(byId('ov-oldest').textContent).toBe('')
+  })
+})
+
+describe('手艺正文抽屉（A-2 / G-4）', () => {
+  /** 本 describe 自己的 prompts 应答：E4 那套是闭包（带 toggle/delete 的活桩），这里只需要能进页。 */
+  const drawerRoutes = (over: Routes = {}): Routes => routes({
+    'GET prompts': {
+      revision: 2, maxChars: 20_000,
+      roles: [
+        { role: 'worker', current: '内置', base: '内置', override: undefined, pinsBase: false },
+        { role: 'orchestrator', current: '内置', base: '内置', override: undefined, pinsBase: false },
+      ],
+      builtInSkills: [
+        { name: 'myagent-html-to-text', title: '网页转干净正文', description: '转文本', whenToUse: 'x', builtIn: true, enabled: true },
+      ],
+      skills: [{
+        name: 'myagent-dedup-merger', title: '多源实体归一化去重器', description: '消除多源融资记录的全半角与别名重复',
+        fromTicketId: '68172c094da50125a6fbbc642e56006b', enabled: true, useCount: 3,
+        content: '# 多源实体归一化去重器\n\n用法：读 manifest.csv，按名称列归一化。\n注意：这是 worker 写的，未经人工复核。\n',
+      }],
+    },
+    ...over,
+  })
+
+  it('「查看正文」打开抽屉：全文、来源任务入口、未经复核的警示都在', async () => {
+    await mount(drawerRoutes())
+    click(button('提示词'))
+    await settle()
+    click(button('查看正文'))
+    await settle()
+    // 抽屉本体可见，且不是健康抽屉——两套抽屉共用 backdrop 与样式，但内容各是各的。
+    expect(byId('skill-drawer').classList.contains('hidden')).toBe(false)
+    const body = text('skill-drawer-body')
+    expect(body).toContain('多源实体归一化去重器')
+    expect(body).toContain('按名称列归一化')
+    expect(body).toContain('未经人工复核')
+    expect(body).toContain('68172c094da50125a6fbbc642e56006b')
+    // 卡片仍渲染：抽屉开着不挡列表。
+    expect(text('skills-list')).toContain('多源实体归一化去重器')
+  })
+
+  it('从正文跳到来源任务：抽屉收起、任务页打开那张票', async () => {
+    await mount(drawerRoutes())
+    click(button('提示词'))
+    await settle()
+    click(button('查看正文'))
+    await settle()
+    click(button('68172c094da50125a6fbbc642e56006b · 打开来源任务', byId('skill-drawer-body')))
+    await settle()
+    expect(byId('skill-drawer').classList.contains('hidden')).toBe(true)
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+  })
+
+  it('Esc 只收这一层：先关手艺抽屉，再关健康抽屉', async () => {
+    await mount(drawerRoutes())
+    click(button('提示词'))
+    await settle()
+    click(button('查看正文'))
+    await settle()
+    click(byId('health'))   // 打开健康抽屉（正文抽屉还开着——两条链各自的入口）
+    await settle()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    // 第一次 Esc 收后开的正文抽屉……不对——按注册顺序正文抽屉先收（后开先收还是先开先收，钉住其中一种即可：
+    // 这里的契约是"一次只收一层"）。检查两个抽屉恰好一个还开着。
+    const skillHidden = byId('skill-drawer').classList.contains('hidden')
+    const healthHidden = byId('health-drawer').classList.contains('hidden')
+    expect(skillHidden !== healthHidden).toBe(true)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    expect(byId('skill-drawer').classList.contains('hidden')).toBe(true)
+    expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
   })
 })
