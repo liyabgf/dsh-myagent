@@ -29,6 +29,10 @@ import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform
 // @ts-expect-error -- see above
 import { cleanText as ddCleanText, mapEvent as ddMapEvent, replyWindowOpen } from '../bridges/dingtalk/transform.mjs'
 // @ts-expect-error -- see above
+import { aesKeyFrom, encrypt, decrypt, signatureOf, verifiedDecrypt } from '../bridges/wecom/crypt.mjs'
+// @ts-expect-error -- see above
+import { mapMessage, xmlField, echoAnswer } from '../bridges/wecom/transform.mjs'
+// @ts-expect-error -- see above
 import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
 // @ts-expect-error -- see above
 import { describeError } from '../bridges/lib/log.mjs'
@@ -720,5 +724,81 @@ describe('the DingTalk mapping (Stream-mode robot message)', () => {
     expect(closed.expiryAt).toEqual(expect.any(String))
     expect(replyWindowOpen({}).open).toBe(true)
     expect(replyWindowOpen({}).expiryAt).toBeUndefined()
+  })
+})
+
+describe('the WeCom callback cipher (WXBizMsgCrypt)', () => {
+  const corpId = 'ww_corp_1'
+  const token = 'callback-token'
+  const key43 = '0123456789abcdef0123456789abcdef0123456789a'   // 43 位
+  const aes = aesKeyFrom(key43)
+
+  it('round-trips: what encrypts is what decrypts, and the corpId tail is verified', () => {
+    const plain = '<xml><MsgType>text</MsgType><Content>整理周报</Content></xml>'
+    const sealed = encrypt(aes, corpId, plain)
+    expect(decrypt(aes, sealed, corpId)).toBe(plain)
+    // corpId 不符拒绝解密：一把钥匙解出别家的消息是静默串台，签名单独挡不住。
+    expect(() => decrypt(aes, sealed, 'ww_other')).toThrow('corpId mismatch')
+  })
+
+  it('the signature is SHA1 over the sorted quadruple, and a wrong signature never decrypts', () => {
+    const sealed = encrypt(aes, corpId, 'x')
+    const timestamp = '1700000000', nonce = 'n-1'
+    const sig = signatureOf(token, timestamp, nonce, sealed)
+    expect(sig).toMatch(/^[0-9a-f]{40}$/)
+    expect(verifiedDecrypt({ token, aesKey: aes, corpId, timestamp, nonce, msgSignature: sig, encrypted: sealed }))
+      .toBe('x')
+    // 错签名在解密之前就被拒——先解密后验签的守卫是"看着在、实际不做"的那种。
+    expect(() => verifiedDecrypt({ token, aesKey: aes, corpId, timestamp, nonce, msgSignature: 'f'.repeat(40), encrypted: sealed }))
+      .toThrow('msg_signature mismatch')
+    // 顺序本身可观测的那把锁（M1 强形式靠它）：坏密文 + 坏签名，报的必须是签名错而不是解密错——
+    // 先解密的实现在这里给攻击者多一次免费解密尝试，正是 padding oracle 的形状。
+    expect(() => verifiedDecrypt({ token, aesKey: aes, corpId, timestamp, nonce, msgSignature: 'f'.repeat(40), encrypted: '###not-cipher###' }))
+      .toThrow('msg_signature mismatch')
+  })
+
+  it('verifiedDecrypt also carries the corpId check: the signature is not the only tail verified', () => {
+    const sealed = encrypt(aes, 'ww_corp_1', 'y')
+    const timestamp = '1700000000', nonce = 'n-2'
+    const sig = signatureOf(token, timestamp, nonce, sealed)
+    expect(() => verifiedDecrypt({ token, aesKey: aes, corpId: 'ww_other', timestamp, nonce, msgSignature: sig, encrypted: sealed }))
+      .toThrow('corpId mismatch')
+  })
+
+  it('rejects a 43-char-less AES key rather than failing deep inside crypto', () => {
+    expect(() => aesKeyFrom('too-short')).toThrow('43 characters')
+  })
+})
+
+describe('the WeCom message mapping (decrypted callback XML)', () => {
+  const xml = (fields: Record<string, string>): string =>
+    `<xml>${Object.entries(fields).map(([k, v]) => `<${k}><![CDATA[${v}]]></${k}>`).join('')}</xml>`
+  const inbound = (over: Record<string, string> = {}): string => xml({
+    ToUserName: 'ww_corp_1', FromUserName: 'zhang.san', MsgType: 'text', Content: '整理周报',
+    MsgId: '12345', CreateTime: '1700000000', AgentID: '1000002', ...over,
+  })
+
+  it('maps a text message: userid is the identity, agent thread, msg id scoped per user', () => {
+    const { message } = mapMessage(inbound()) as { message: Record<string, unknown> }
+    expect(message.from).toBe('zhang.san')
+    expect(message.id).toBe('zhang.san-12345')
+    expect(message.body).toBe('整理周报')
+    expect(String(message.title)).toContain('整理周报')
+    expect(message.agentId).toBe('1000002')
+  })
+
+  it('skips non-text and empty bodies with the type named, and filters disallowed users', () => {
+    expect(mapMessage(inbound({ MsgType: 'image' })).skip).toBe('no-text:image')
+    expect(mapMessage(inbound({ Content: '' })).skip).toBe('no-text:empty')
+    expect(mapMessage(inbound({ FromUserName: '' })).skip).toBe('no-sender')
+    expect(mapMessage(inbound(), { allowUsers: ['li.si'] }).skip).toBe('user-not-allowed')
+    expect(mapMessage(undefined).skip).toBe('not-a-message')
+  })
+
+  it('reads both CDATA and plain fields, and the verification echo is the decrypted text verbatim', () => {
+    expect(xmlField(xml({ Content: 'a' }), 'Content')).toBe('a')
+    expect(xmlField('<xml><AgentID>9</AgentID></xml>', 'AgentID')).toBe('9')
+    expect(xmlField('<xml/>', 'Nothing')).toBeUndefined()
+    expect(echoAnswer('  echo-42  ')).toBe('echo-42')
   })
 })

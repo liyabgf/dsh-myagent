@@ -2992,7 +2992,29 @@
         '事件必须 3 秒内处理完否则平台重推——所以桥收到事件只写一个文件就返回，入站路径上不调任何 API。',
         '长连接只支持事件订阅，不支持卡片回调。'],
     },
-    wecom: { label: '企业微信', status: 'planned', notes: ['计划中：走企业微信自建应用（官方路径）。'] },
+    wecom: {
+      label: '企业微信', status: 'ready', dir: 'bridges/wecom', entry: 'bridge.mjs', deps: false,
+      env: [
+        ['WECOM_CORP_ID', '管理后台 → 我的企业 → 企业ID', true],
+        ['WECOM_APP_SECRET', '管理后台 → 应用管理 → 自建应用 → Secret', true],
+        ['WECOM_AGENT_ID', '同页面的 AgentId（数字）', true],
+        ['WECOM_TOKEN', '应用 → 接收消息 → 设置 API 接收 生成的 Token', true],
+        ['WECOM_ENCODING_AES_KEY', '同上生成的 43 位 EncodingAESKey', true],
+        ['MYAGENT_CHANNEL_DIR', '这个频道的目录（与下面选的频道一致）', true],
+        ['WECOM_PORT', '回调服务监听端口（默认 3001）', false],
+        ['WECOM_USERS', '只收这些 userid（逗号分隔），留空即不限', false],
+      ],
+      steps: [
+        '管理后台建一个企业自建应用，记下 AgentId 与 Secret。',
+        '应用 → 接收消息 → 设置 API 接收：生成 Token 与 EncodingAESKey。',
+        '把公网回调 URL 指到这个桥（反向代理或隧道，它的 README 有两条现成的路子）——填 URL 那一步平台会当场发 GET 验证，通过即配置成功。',
+        '跑桥（零依赖，Node 18+）：这是套件里不需要 npm install 的桥之二。',
+        '发一句话 → 回这一页把出现的 userid 映射成一个人。',
+      ],
+      notes: ['企业微信没有长轮询与 Stream：回调 URL 必须公网可达——三桥里部署负担最重的一条，是平台固有的。',
+        '回信是主动推送（不是被动回包）：回调的 5 秒窗口装不下答案生成，桥对平台回 success，真话稍后送达。',
+        '加解密按官方文档算法实现（AES-256-CBC + PKCS7 + SHA1 签名），尚未在真实企业里跑过——回调 URL 配置那一步的 GET 验证就是第一关真验收。'],
+    },
     dingtalk: {
       label: '钉钉', status: 'ready', dir: 'bridges/dingtalk', entry: 'bridge.mjs', deps: true,
       env: [

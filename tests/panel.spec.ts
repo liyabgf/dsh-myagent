@@ -3866,7 +3866,9 @@ describe('平台接入页与每频道健康（N5）', () => {
     const labels = all('#platform-pick .chip-btn').map(node => read(node))
     expect(labels.some(label => label.includes('Telegram'))).toBe(true)
     expect(labels.some(label => label.includes('飞书'))).toBe(true)
-    expect(labels.some(label => label.includes('企业微信（未做）'))).toBe(true)
+    // 【B-6 阶段 5 产品变更】旧断言：expect(labels.some(label => label.includes('企业微信（未做）'))).toBe(true)
+    // 企业微信桥已写（0.13.x）：它从「未做」变成第三个 ready 平台。
+    expect(labels.some(label => label.includes('企业微信') && !label.includes('（未做）'))).toBe(true)
     expect(labels.some(label => label.includes('个人微信 / 个人 QQ（无官方路径）'))).toBe(true)
     // 选中"无官方路径"那一项时，说清为什么不做并给替代，而不是给一份跑不通的步骤。
     click(button('个人微信 / 个人 QQ（无官方路径）'))
