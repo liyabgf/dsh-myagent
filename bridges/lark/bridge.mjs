@@ -37,8 +37,9 @@
 import { createLog } from '../lib/log.mjs'
 import { loadState, saveState } from '../lib/state.mjs'
 import { writeMessage } from '../lib/inbound.mjs'
+import { utimes, writeFile } from 'node:fs/promises'
 import { createReadStream } from 'node:fs'
-import { basename } from 'node:path'
+import { basename, join } from 'node:path'
 import { drainOut } from '../lib/outbound.mjs'
 import { parseRoute } from '../lib/route.mjs'
 import { mapEvent } from './transform.mjs'
@@ -184,10 +185,27 @@ const recordSentReceipt = async ({ messageId, ticketId }) => {
   state.data = await saveState(directory, { sentMessages: existing })
 }
 
+/**
+ * 【G-2 补缺口】心跳：长连接是推送制，没有轮询循环可挂，所以进程自己每 3 秒（随出站 tick）touch
+ * `<频道目录>/.heartbeat`。文件说的是「进程活着」不是「流量在流」，与 G-2 的判据一致——
+ * 之前飞书桥是唯一没接心跳的 ready 桥（§4.146 记过这个洞）。
+ */
+const heartbeatFile = join(directory, '.heartbeat')
+const touchHeartbeat = async () => {
+  const fresh = new Date()
+  try {
+    await utimes(heartbeatFile, fresh, fresh)
+  } catch {
+    try { await writeFile(heartbeatFile, `${fresh.toISOString()}\nbridge heartbeat: mtime says alive\n`, { flag: 'wx' }) }
+    catch (error) { log.debug('heartbeat-create', { error: String(error?.message ?? error) }) }
+  }
+}
+
 /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
 const startOutboundLoop = () => {
   const tick = async () => {
     try {
+      await touchHeartbeat()
       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays })
     } catch (error) {
       log.error('outbound-failed', { error: String(error?.message ?? error) })

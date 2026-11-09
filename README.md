@@ -432,8 +432,10 @@ pnpm typecheck && pnpm vitest run && pnpm build   # = pnpm check
 - 面板是服务端渲染的单页，没有 React 客户端 bundle；够用，但不是 DSH 原生 UI 插件。
 - `tickets.page()` / `count()` 会把所有 Ticket 读进内存——个人规模（几百到几千条）没问题，上万条要换成分页 SQL。
 - 没有模型评审（Assessor）：门禁是确定性的，「这个请求值不值得做」由提示词、`triage` 与 `acceptMode` 决定。
-- 个人微信 / 个人 QQ 没有官方 API，不做。企业微信、钉钉、Discord、Slack、QQ 官方机器人的桥尚未写；
-  接缝是现成的：照 `bridges/telegram/` 写一个 transform + bridge，再在面板的平台清单里加一行。
+- 个人微信 / 个人 QQ 没有官方 API，不做。**钉钉桥已有**（`bridges/dingtalk/`，Stream 模式，字段以官方
+  SDK 类型为准但尚未在真实租户上跑过——诚实清单在它自己的 README 里）。企业微信、Discord、Slack、
+  QQ 官方机器人的桥尚未写；接缝是现成的：照 `bridges/telegram/` 写一个 transform + bridge，
+  再在面板的平台清单里加一行。
 
 ## 报告安全问题
 

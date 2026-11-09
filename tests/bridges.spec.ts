@@ -27,6 +27,8 @@ import { supervise } from '../bridges/lib/run.mjs'
 // @ts-expect-error -- see above
 import { cleanText, mapUpdate, mentionsBot } from '../bridges/telegram/transform.mjs'
 // @ts-expect-error -- see above
+import { cleanText as ddCleanText, mapEvent as ddMapEvent, replyWindowOpen } from '../bridges/dingtalk/transform.mjs'
+// @ts-expect-error -- see above
 import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
 // @ts-expect-error -- see above
 import { describeError } from '../bridges/lib/log.mjs'
@@ -662,5 +664,61 @@ describe('the bridge heartbeat (G-2)', () => {
     await start()
     // 轮次失败也 touch——"进程活着但一直报错"正是 myagent 应当能看见的状态，不能只在成功时说活着。
     expect((await stat(heartbeat)).mtimeMs).toBeGreaterThan(Date.now() - 60_000)
+  })
+})
+
+describe('the DingTalk mapping (Stream-mode robot message)', () => {
+  /** One robot message as the SDK's `DWClientDownStream.data` (parsed) carries it — fields per RobotTextMessage. */
+  const robot = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    conversationId: 'cidA', chatbotUserId: 'bot-1', msgId: 'msg-9',
+    senderNick: '张三', senderStaffId: 'staff-9', conversationType: '1',
+    msgtype: 'text', text: { content: '整理周报' },
+    sessionWebhook: 'https://oapi.example/hook', sessionWebhookExpiredTime: 0,
+    ...over,
+  })
+  const ALL = {} as { mode?: 'mentions' | 'dm' | 'all'; chatAllowList?: string[] }
+
+  it('maps a single chat: staff id is the identity, nick names the task, webhook rides along', () => {
+    const { message } = ddMapEvent(robot(), ALL) as { message: Record<string, unknown> }
+    expect(message.from).toBe('staff-9')
+    expect(message.id).toBe('cidA-msg-9')   // 前缀拼接：不在两个会话间赌 msgId 的唯一性范围
+    expect(message.body).toBe('整理周报')
+    expect(String(message.title)).toContain('张三')
+    expect(String(message.title)).toContain('整理周报')
+    expect(message.thread).toContain('dm:cidA')
+    expect(message.sessionWebhook).toBe('https://oapi.example/hook')
+    expect(message.isDirect).toBe(true)
+  })
+
+  it('maps a group message and strips its leading bot-mention; a DM keeps a leading @ intact', () => {
+    const group = ddMapEvent(robot({ conversationType: '2', text: { content: '@myagent 整理周报' } }), ALL)
+    expect((group as { message: { body: string } }).message.body).toBe('整理周报')
+    // 单聊不剥："@审批人 请过一下"里的 @ 是正文，不是给自己的名字。
+    const dm = ddMapEvent(robot({ text: { content: '@审批人 请过一下' } }), ALL)
+    expect((dm as { message: { body: string } }).message.body).toBe('@审批人 请过一下')
+    // 群消息剩不下正文（只有 @ 它自己）按无文本跳过，不写空请求。
+    expect(ddMapEvent(robot({ conversationType: '2', text: { content: '@myagent' } }), ALL).skip).toBe('no-text:empty-after-clean')
+  })
+
+  it('skips what a bridge must not forward: non-text, no sender, the bot itself, disallowed chats, wrong mode', () => {
+    expect(ddMapEvent(robot({ msgtype: 'picture' }), ALL).skip).toBe('no-text:picture')
+    // 第二把锁：另一种非文本类型同样被挡（M1 强形式删掉上一条后由它接手）。
+    expect(ddMapEvent(robot({ msgtype: 'audio' }), ALL).skip).toBe('no-text:audio')
+    expect(ddMapEvent(robot({ senderStaffId: '', senderId: '' }), ALL).skip).toBe('no-sender')
+    // senderId 是兜底：staff 字段缺席时用它，而不是把消息丢掉（两个键是同一个人的两种口径，混用才是错）。
+    const fallback = ddMapEvent(robot({ senderStaffId: '', senderId: 'uid-9' }), ALL) as { message: { from: string } }
+    expect(fallback.message.from).toBe('uid-9')
+    expect(ddMapEvent(robot({ senderStaffId: 'bot-1' }), ALL).skip).toBe('own-message')
+    expect(ddMapEvent(robot(), { chatAllowList: ['cidB'] }).skip).toBe('chat-not-allowed')
+    expect(ddMapEvent(robot({ conversationType: '2' }), { mode: 'dm' }).skip).toBe('not-a-dm')
+  })
+
+  it('the reply window: expiry in the future is open, past is closed, absent is left to the POST to decide', () => {
+    expect(replyWindowOpen({ sessionWebhookExpiredTime: Date.now() + 60_000 }).open).toBe(true)
+    const closed = replyWindowOpen({ sessionWebhookExpiredTime: Date.now() - 1_000 })
+    expect(closed.open).toBe(false)
+    expect(closed.expiryAt).toEqual(expect.any(String))
+    expect(replyWindowOpen({}).open).toBe(true)
+    expect(replyWindowOpen({}).expiryAt).toBeUndefined()
   })
 })

@@ -1,0 +1,16 @@
+{
+  "name": "myagent-bridge-dingtalk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "钉钉桥：Stream 模式机器人 → myagent 聊天频道目录。需要装依赖的桥之二（WebSocket 协议用官方 SDK）。",
+  "scripts": {
+    "start": "node bridge.mjs"
+  },
+  "dependencies": {
+    "dingtalk-stream-sdk-nodejs": "^2.0.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
