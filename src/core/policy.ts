@@ -53,6 +53,16 @@ export const ScheduleSchema = z.object({
    * period later a still-running attempt is interrupted and the Ticket fails in front of a person.
    */
   maxRuntimeMs: z.number().int().min(0).max(7 * 86_400_000).default(0),
+  /**
+   * Which worker preset this schedule's firings run under.
+   *
+   * `worker` is the ordinary one (files, search, shell, web). `researcher` is the same minus the shell group: no
+   * `bash`, no `pwsh`, therefore nothing can be executed, installed or run — which turns a prompt's "do not run
+   * scripts from repositories you found" from a promise into a property of the Session. It still reads, searches the
+   * web, and writes inside its own Ticket directory, because a research run that cannot write its report is useless.
+   * Subagents spawn under the same preset, so the restriction cannot be delegated around.
+   */
+  preset: z.enum(['worker', 'researcher']).default('worker'),
   timing: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('every'), seconds: z.number().int().min(60).max(30 * 86400) }),
     z.object({ kind: z.literal('daily'), time: z.string(), timeZone: z.string().optional() }),

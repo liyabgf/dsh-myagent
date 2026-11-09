@@ -25,6 +25,16 @@ import { definitionOf, type Tool } from './tools.ts'
 
 /** The agent preset every worker Session runs under, which the bundle's patch defines. */
 export const WORKER_PRESET = 'myagent-worker'
+/**
+ * The research variant: the worker's surface minus the shell group.
+ *
+ * A schedule that sends its worker out to read untrusted material can be given this preset, and then "do not run
+ * scripts from repositories you found" stops being a sentence the model has to keep remembering and becomes a property
+ * of the Session: there is no `bash` and no `pwsh` in it, so nothing can be executed, installed or piped. Reading,
+ * web access, skills and writing inside the Ticket's own directory all stay — a research run that cannot write its
+ * report is not a research run. Declared in `cordis.patch.yml` beside the worker preset it mirrors.
+ */
+export const RESEARCHER_PRESET = 'myagent-researcher'
 
 /** The permission preset of an unattended worker: it must be able to work without anyone to ask. */
 export const WORKER_PERMISSION = 'danger-full-access'
@@ -58,6 +68,13 @@ export interface SessionsHost {
    * Runtime already hands over the whole `Prompts`, so widening the pick changes no call site.
    */
   readonly prompts: Pick<Prompts, 'version' | 'revision' | 'skills' | 'onChange'>
+  /**
+   * Which agent preset this Ticket's worker Session is created under.
+   *
+   * Asked of the host rather than read from the Ticket because the answer lives on the Trigger that authorized the
+   * work (`meta.workerPreset`, written by the Source at acceptance), and Sessions deliberately cannot reach the Store.
+   */
+  presetFor(ticket: Ticket): string
   /**
    * Record that a worker loaded a promoted craft, once per (Ticket, craft) and only for a load that succeeded.
    *
@@ -465,7 +482,9 @@ export class Sessions {
     if (existing !== undefined) return existing
     if (this.host.closing()) throw new Error('myagent is stopping')
     const requested = workerSessionId(ticket.id)
-    const created = await this.ctx.sessionController.create({ sessionId: requested, cwd: directory, agentPreset: WORKER_PRESET })
+    const created = await this.ctx.sessionController.create({
+      sessionId: requested, cwd: directory, agentPreset: this.host.presetFor(ticket),
+    })
     // DSH may reuse a blank Session and answer with another identity; from here on, its answer is the truth.
     const sessionId = created?.sessionId ?? requested
     if (sessionId !== requested) this.host.bindSession(ticket.id, sessionId)
@@ -571,7 +590,20 @@ export class Sessions {
     const prompt = this.host.prompts.version(role)
     // A worker's section stays the snapshot it always was: `ticket` is one attempt's facts, and re-reading them at
     // every assembly would make the prompt change under a running turn.
-    const workerText = ticket === undefined ? undefined : workerSection(ticket, this.host.environment(ticket))
+    const workerText = ticket === undefined
+      ? undefined
+      : workerSection(ticket, this.host.environment(ticket))
+        // Said out loud rather than left to be discovered: a worker that finds no shell will otherwise spend its turn
+        // looking for one, or conclude the system is broken. Naming the boundary is what makes it a scope, not a bug.
+        + (this.host.presetFor(ticket) === RESEARCHER_PRESET
+          ? `
+
+### This Session has no shell
+You run under the research preset: there is no \`bash\` and no \`pwsh\` here, so nothing can be executed, installed or
+piped — that is deliberate, because your material comes from outside and untrusted code must not run on this machine.
+You can still read files, search and fetch the web, load skills, and write inside your own Ticket directory. Do not
+spend the turn looking for a shell; if the work genuinely needs one, report \`blocked\` and say what for.`
+          : '')
     // Interpolation is off: a prompt is the operator's own text, and a literal brace in it must not fail an assembly.
     // The front desk's section is built when DSH assembles the prompt rather than here, because the operator asks
     // "你现在会哪些手艺" in the middle of a conversation and a craft promoted two Tickets ago has to be in the answer

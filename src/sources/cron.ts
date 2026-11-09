@@ -221,6 +221,9 @@ export class CronSource implements Source {
           // The schedule's own budget, falling back to the deployment default. Carried on the Trigger rather than
           // re-read from the settings later: the settings may change mid-flight, and a Ticket's budget is part of the
           // authorization it was accepted under, not of what the operator happens to want now.
+          // Which surface the worker gets. Written at acceptance, like the budget: re-reading the settings mid-flight
+          // would let an edit change what an already-authorized Ticket is allowed to do.
+          ...(schedule.preset === 'worker' ? {} : { workerPreset: schedule.preset }),
           ...(budgetOf(schedule, this.host.settings().watchdog.maxRuntimeMs) > 0
             ? { runtimeBudgetMs: budgetOf(schedule, this.host.settings().watchdog.maxRuntimeMs) }
             : {}),

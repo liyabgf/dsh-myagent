@@ -20,6 +20,7 @@ import {
 } from '../core/index.ts'
 import { machineOf, type DeploymentConfig, type Machine } from '../deployment.ts'
 import { chatKind } from '../sources/chat.ts'
+import { RESEARCHER_PRESET, WORKER_PRESET } from './sessions.ts'
 import { cronKind } from '../sources/cron.ts'
 import { frontMatter } from '../sources/inbox.ts'
 import { inboxKind } from '../sources/inbox.ts'
@@ -435,6 +436,7 @@ export class Runtime implements HttpHost {
         this.sessionHealth.problem(impostorSubject(sessionId), impostorDetail(sessionId, claimedTicketId))
       },
       environment: (ticket: Ticket): Record<string, string> => this.executor.environment(ticket),
+      presetFor: (ticket: Ticket): string => this.presetFor(ticket),
       tools: (agent: Agent, ticket?: Ticket): Tool[] => {
         const host = this.toolsHost()
         if (ticket === undefined) return mainTools(host)
@@ -967,6 +969,17 @@ export class Runtime implements HttpHost {
 
   dismissDecision(id: string): void {
     this.store.set(KV.operatorQueue, (this.store.get<DecisionRequest[]>(KV.operatorQueue) ?? []).filter(item => item.id !== id))
+  }
+
+  /**
+   * Which preset a Ticket's worker runs under, read from the Trigger that authorized it.
+   *
+   * Absent or unrecognized means the ordinary worker: a Trigger written before this field existed has no opinion, and
+   * the safe reading of no opinion is the surface every existing Ticket has always had.
+   */
+  private presetFor(ticket: Ticket): string {
+    const meta = this.store.triggers.get(ticket.origin.triggerId)?.trigger.meta
+    return meta?.workerPreset === 'researcher' ? RESEARCHER_PRESET : WORKER_PRESET
   }
 
   /**

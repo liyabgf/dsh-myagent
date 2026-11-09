@@ -235,6 +235,9 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
     "cron": { "enabled": true, "schedules": [
       { "id": "digest", "name": "每日摘要", "prompt": "写今天的摘要", "scope": "",
         "timing": { "kind": "daily", "time": "09:00", "timeZone": "Asia/Shanghai" },
+        "preset": "researcher",       // worker = 标准（含 shell）；researcher = 研究型，**没有 shell**：
+                                     // 不能执行、安装、运行任何东西，只能读文件、搜网、写自己目录里的报告。
+                                     // 要读外部不可信材料的排期用它——把"别跑外来脚本"从提示词里的嘱咐变成 Session 的属性。
         "maxRuntimeMs": 3600000,      // 墙钟预算（毫秒）；0 或省略 = 不限。到点先提醒 worker 收尾并交报告，
                                      // 再过 10 分钟仍未结束就停下、任务记为已停、并在面板「需要你决断的事」停一条。
                                      // 计的是这张任务的墙钟，所以子代理与后台作业都在预算内——绕不过去。

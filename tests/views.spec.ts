@@ -147,7 +147,7 @@ describe('decisionView', () => {
 })
 
 describe('scheduleView', () => {
-  const daily = { id: 'digest', name: '每日摘要', enabled: true, prompt: '写今天的摘要', scope: '', maxRuntimeMs: 0, timing: { kind: 'daily', time: '09:00' } as const }
+  const daily = { id: 'digest', name: '每日摘要', enabled: true, prompt: '写今天的摘要', scope: '', maxRuntimeMs: 0, preset: 'worker' as const, timing: { kind: 'daily', time: '09:00' } as const }
   const from = Date.parse('2026-11-03T02:00:00.000Z')
 
   it('says when an enabled schedule fires next, in words and as an instant', () => {
@@ -185,6 +185,12 @@ describe('scheduleView', () => {
     expect(scheduleView({ ...daily, maxRuntimeMs: 60 * 60_000 }, from).budgetText)
       .toBe('墙钟预算 60 分钟（到点先提醒收尾，再过 10 分钟仍未结束就停下并交给人）')
     expect(scheduleView(daily, from).budgetText).toBe('无墙钟预算（跑多久都行）')
+  })
+
+  it('says which surface the worker gets, because "told not to run things" and "cannot run things" differ', () => {
+    expect(scheduleView(daily, from).presetText).toBe('标准 worker（含 shell）')
+    expect(scheduleView({ ...daily, preset: 'researcher' as const }, from).presetText)
+      .toBe('研究型 worker（无 shell：不能执行、安装或运行任何东西）')
   })
 })
 

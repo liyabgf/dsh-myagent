@@ -124,6 +124,11 @@ export function scheduleView(schedule: Schedule, from: number, zone = localZone(
     // The budget, in words, next to the address: both are facts about where this schedule's work goes and how long
     // it may take, and a cap nobody can see is a cap nobody can rely on. The panel copies this sentence verbatim, so
     // this view is its only owner — which is why `tests/views.spec.ts` pins both of its wordings.
+    // Which surface the worker gets. Shown because "the prompt tells it not to run anything" and "it cannot run
+    // anything" are different guarantees, and the operator is entitled to see which one this schedule has.
+    presetText: schedule.preset === 'researcher'
+      ? '研究型 worker（无 shell：不能执行、安装或运行任何东西）'
+      : '标准 worker（含 shell）',
     budgetText: schedule.maxRuntimeMs > 0
       ? `墙钟预算 ${Math.round(schedule.maxRuntimeMs / 60000)} 分钟（到点先提醒收尾，再过 10 分钟仍未结束就停下并交给人）`
       : '无墙钟预算（跑多久都行）',

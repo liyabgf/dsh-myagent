@@ -546,6 +546,10 @@ declare const ScheduleSchema: z.ZodObject<{
     thread: z.ZodOptional<z.ZodString>;
   }, z.core.$strip>>;
   maxRuntimeMs: z.ZodDefault<z.ZodNumber>;
+  preset: z.ZodDefault<z.ZodEnum<{
+    worker: "worker";
+    researcher: "researcher";
+  }>>;
   timing: z.ZodDiscriminatedUnion<[z.ZodObject<{
     kind: z.ZodLiteral<"every">;
     seconds: z.ZodNumber;
@@ -593,6 +597,10 @@ declare const SettingsSchema: z.ZodObject<{
           thread: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>>;
         maxRuntimeMs: z.ZodDefault<z.ZodNumber>;
+        preset: z.ZodDefault<z.ZodEnum<{
+          worker: "worker";
+          researcher: "researcher";
+        }>>;
         timing: z.ZodDiscriminatedUnion<[z.ZodObject<{
           kind: z.ZodLiteral<"every">;
           seconds: z.ZodNumber;

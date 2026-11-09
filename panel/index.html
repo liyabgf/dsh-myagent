@@ -3798,6 +3798,8 @@ WantedBy=default.target
           el('span', {}, `送达 ${schedule.deliverToText ?? '（这一版服务端没报，未知）'}`),
           // 预算同理：一个看不见的上限等于没有上限。文案由服务端给，页面不自己拼。
           el('span', {}, schedule.budgetText ?? '墙钟预算：（这一版服务端没报，未知）'),
+          // worker 拿到的是哪副工具面：提示词里的"别执行"和预设里的"不能执行"是两种保证，得看得见是哪一种。
+          el('span', {}, schedule.presetText ?? 'worker 预设：（这一版服务端没报，未知）'),
           el('span', {}, `标识 ${schedule.id}`))))
     }
   }

@@ -455,6 +455,38 @@ describe('cron source', () => {
     } finally { source.stop(); vi.useRealTimers() }
   })
 
+  it('carries a non-default worker preset onto the Trigger, and writes nothing for the default one', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(NOW))
+    const { host, triggers } = harness({
+      sources: {
+        cron: {
+          enabled: true,
+          schedules: [
+            { id: 'scout', name: 'Scout', prompt: 'Go.', preset: 'researcher', timing: { kind: 'cron', expression: '* * * * *' } },
+            { id: 'plain', name: 'Plain', prompt: 'Go.', timing: { kind: 'cron', expression: '* * * * *' } },
+          ],
+        },
+      },
+    })
+    // 两个键一次写入：cursorsSeed 是整份替换，连调两次会抹掉前一个（§4.139 记过的夹具坑）。
+    host.cursor('cron').set({
+      scout: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },
+      plain: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },
+    })
+    const source = new CronSource(host)
+    try {
+      source.start(); await vi.advanceTimersByTimeAsync(60)
+      const byId = new Map(triggers().map(record => [record.trigger.meta?.schedule, record.trigger]))
+      expect(byId.get('scout')!.meta).toMatchObject({ workerPreset: 'researcher' })
+      // 第二把锁：删掉上面那条 toMatchObject 之后，这条仍然会因为"cron 根本不写 workerPreset"而红。
+      expect(byId.get('scout')!.meta!.workerPreset).toBe('researcher')
+      // Absent for the default, so an old Trigger and a default one are indistinguishable — which is the point:
+      // "no opinion" must keep meaning "the ordinary worker surface" rather than a narrowed one.
+      expect(byId.get('plain')!.meta).not.toHaveProperty('workerPreset')
+    } finally { source.stop(); vi.useRealTimers() }
+  })
+
   it('leaves the return address absent when the schedule names none, and refuses an address with no channel', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(NOW))

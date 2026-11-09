@@ -26,6 +26,21 @@ describe('the files this package ships', () => {
   it('finds the panel page and the bundle patch', () => {
     expect(readFileSync(packageFile('panel/index.html'), 'utf8')).toContain('x-myagent-request')
     expect(readFileSync(packageFile('cordis.patch.yml'), 'utf8')).toContain('myagent-worker')
+    // S-4：研究型预设的价值全在于"没有 shell"。这句话要是哪天被人顺手加回一个 bash 插件，
+    // 提示词里"不要执行外来脚本"就又变回一句嘱咐——所以钉住的是 patch 的文本本身。
+    const patch = readFileSync(packageFile('cordis.patch.yml'), 'utf8')
+    const at = patch.indexOf('id: myagent-researcher-preset')
+    expect(at, 'patch 里应当有研究型预设').toBeGreaterThan(0)
+    const researcher = patch.slice(at)
+    expect(researcher).toContain('id: myagent-researcher')
+    expect(researcher).not.toContain('dsh-tool-bash')
+    expect(researcher).not.toContain('dsh-tool-pwsh')
+    expect(researcher).not.toContain('dsh-bash-sandbox')
+    // 它的子代理也在同一副预设下生成，所以限制不能被"派个子任务去跑"绕过。
+    expect(researcher).toContain('agentPreset: myagent-researcher')
+    // 研究还是要能研究：读文件、搜网、写自己目录里的报告都留着。
+    expect(researcher).toContain('dsh-tool-fs')
+    expect(researcher).toContain('dsh-tool-web')
   })
 
   it('says plainly what is missing rather than serving nothing', () => {
