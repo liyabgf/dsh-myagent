@@ -118,6 +118,16 @@ export function scheduleView(schedule: Schedule, from: number, zone = localZone(
     prompt: schedule.prompt, scope: schedule.scope, timing: schedule.timing,
     describe: describeTiming(schedule.timing), zone,
     next: next === undefined ? undefined : new Date(next).toISOString(),
+    // Where this schedule's reports go, in the operator's own words. Omitting it would leave the panel showing a
+    // schedule whose output silently lands nowhere the operator looks — the exact failure `deliverTo` exists to fix,
+    // so the absence is stated as a fact rather than left blank.
+    ...(schedule.deliverTo === undefined
+      ? { deliverToText: '只落 RESULT.md 与主会话通知（不进聊天室）' }
+      : {
+        deliverTo: schedule.deliverTo,
+        deliverToText: `送到聊天频道 ${schedule.deliverTo.channel}`
+          + (schedule.deliverTo.thread === undefined ? '（该频道的默认会话）' : ` 的会话 ${schedule.deliverTo.thread}`),
+      }),
   }
 }
 

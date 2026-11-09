@@ -3793,6 +3793,9 @@ WantedBy=default.target
         el('div', { class: 'meta' },
           el('span', {}, schedule.describe ?? ''),
           el('span', {}, schedule.enabled ? `下次 ${when(schedule.next)}` : '不会触发'),
+          // 报告送到哪儿：一个无人值守的排期，如果没人知道它的产出去了哪里，它就等于没跑。
+          // 服务端给的是人话（含"只落文件与主会话"这种缺席状态），页面不做第二套措辞。
+          el('span', {}, `送达 ${schedule.deliverToText ?? '（这一版服务端没报，未知）'}`),
           el('span', {}, `标识 ${schedule.id}`))))
     }
   }

@@ -7736,3 +7736,34 @@ DSH 自带接口：bundle 的 `package.json` 加 `dsh.client` 段与 `./client` 
   deliverTo 是可投递的**——这一点是查了桥的代码与 `.bridge-state.json` 才敢写的，不是假设。
 - 变异 2 组、强形式全红；S-2 的测试因此加了"第二把锁"（`Object.keys(trigger)` 含 `replyTo`），
   删掉 `toEqual` 那条仍有东西接手。还原 SHA-256 核对一致，`MUTATION` 残留 0。
+
+## 4.138 送达地址要能被看见（0.11.3）：S-2 的收尾与活体落地
+
+S-2 的代码在 0.11.2 就有了，但只到"能存"为止：`GET schedules` 的视图不带 `deliverTo`，
+面板的排期行也就不知道报告送去哪——**一个无人值守的排期，如果没人看得见它的产出去了哪里，它就等于没跑**。
+这一版把最后一公里补上：`scheduleView` 暴露 `deliverTo` 与一句人话 `deliverToText`，
+缺席时也不留空白，而是明说 `只落 RESULT.md 与主会话通知（不进聊天室）`；面板排期行照抄这句话，不自己拼措辞。
+
+### 活体落地（S-2 + S-5 都已生效）
+
+- `PUT settings` 200：侦察排期现在带 `deliverTo: { channel: 'telegram' }`（不带 thread，
+  因为 `parseRoute('')` 会回落到桥记住的 `defaultChat`，实测该键存在）。
+- 提示词加了第六节「把当日结论登记成产物」，字数 2207 → 2599。
+- `GET state` 复核：`settings.sources.cron.schedules[0].deliverTo = {"channel":"telegram"}`、提示词含 S-5 段落；
+  下次运行 `2026-11-09T01:00:00Z`（本地 09:00）。S-3 的归组已随 0.11.2 生效，所以今天这次运行会落在
+  一个叫「每日技术演进侦察」的工作下，是第 1 次运行。
+
+### 这一轮的三次量具错误
+
+1. **把 `{"error":"No route for GET /myagent/api/settings"}` 当设置读了**，于是得出"watchdog 未生效"的错判；
+   设置从 `GET state` 读、用 `PUT settings` 写。读到 error 对象就当数据用，是最便宜的错误。
+2. **追加测试后没重跑 typecheck**（`createWork` 只收一个参数，我传了两个；改成 `{name, by}` 又踩了
+   `by` 不在这个签名里）。闸门抓到了，退出码 1 —— 这是第 N 次同一条教训，纪律里已经写着，
+   问题是"改完就跑测试"的肌肉记忆盖过了"改完先 typecheck"。
+3. **夹具的默认值会赢过调用者的省略**：`scheduleView({deliverToText: undefined})` 造不出"缺席"，
+   因为夹具把 `deliverToText` 写在展开之后。要造缺席只能造完再删键。夹具这个写法本身是对的
+   （默认值就该赢过省略），错的是我拿它当"能表达缺席"的工具。
+4. 面板排期列表在「派活 → 定时派」两级之下（U13 的结果），只点「派活」时 `#schedules` 是空的；
+   而容器 id 是 `schedules` 不是 `sched-list`。**先读页面结构再写断言**，别凭 id 的命名习惯猜。
+
+变异 2 组、强形式全红；还原 SHA-256 核对一致；`MUTATION` 残留 0。

@@ -165,6 +165,20 @@ describe('scheduleView', () => {
   it('carries the request and the scope, which is what the editor has to show', () => {
     expect(scheduleView(daily, from)).toMatchObject({ id: 'digest', name: '每日摘要', enabled: true, prompt: '写今天的摘要' })
   })
+
+  it('says where the reports go, and says so plainly when they go nowhere but the file system', () => {
+    expect(scheduleView({ ...daily, deliverTo: { channel: 'telegram' } }, from)).toMatchObject({
+      deliverTo: { channel: 'telegram' },
+      deliverToText: '送到聊天频道 telegram（该频道的默认会话）',
+    })
+    expect(scheduleView({ ...daily, deliverTo: { channel: 'ops', thread: 't-9' } }, from).deliverToText)
+      .toBe('送到聊天频道 ops 的会话 t-9')
+    // The absence is a fact worth stating: a schedule whose output lands only in RESULT.md is invisible to a
+    // chat-first operator, and a blank cell would not tell which of the two it is.
+    const plain = scheduleView(daily, from)
+    expect(plain.deliverTo).toBeUndefined()
+    expect(plain.deliverToText).toBe('只落 RESULT.md 与主会话通知（不进聊天室）')
+  })
 })
 
 describe('the triage marker on a summary (S3b)', () => {

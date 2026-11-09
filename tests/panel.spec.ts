@@ -142,6 +142,8 @@ const scheduleRecord = (over: Record<string, unknown> = {}): Record<string, unkn
 /** The same schedule as `GET schedules` answers it, which is the record plus what only a view can know. */
 const scheduleView = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
   ...scheduleRecord(over), describe: '每天 09:00', zone: 'Asia/Shanghai', next: NEXT_DAY,
+  // 【S-2】报告送去哪儿：服务端给人话，页面只照抄，不自己拼措辞。
+  deliverToText: '送到聊天频道 telegram（该频道的默认会话）',
 })
 
 /** The settings document as the server keeps it: every default filled in, which is what `GET state` hands over. */
@@ -5582,5 +5584,31 @@ describe('bounded box-model CSS, cross-Ticket citation backlinks (F6), deep link
     const parsed = JSON.parse(area('settings').value)
     expect(parsed.acceptMode).toBe('observe')
     expect(parsed.allowedSenders).toEqual(['operator', 'alice'])
+  })
+})
+
+describe('排期的送达地址（S-2）', () => {
+  it('在排期行上说清报告送去哪个聊天频道', async () => {
+    await mount(scheduleRoutes())
+    click(button('派活'))
+    await settle()
+    click(button('定时派'))
+    await settle()
+    const rows = all('#schedules li').map(node => read(node)).join('\n')
+    expect(rows).toContain('送到聊天频道 telegram')
+  })
+
+  it('服务端没报送达地址时明说未知，而不是留一格空白让人猜', async () => {
+    await mount(scheduleRoutes({
+      // 夹具的 deliverToText 在展开之后、会盖掉 over 里的 undefined，所以"服务端没报"只能这样造：
+      // 造一份视图再把键删掉。夹具的写法本身不是错的——默认值必须能赢过调用者的省略——只是这里要的恰恰是"缺席"。
+      'GET schedules': { zone: 'Asia/Shanghai', schedules: [(() => { const view = scheduleView(); delete view.deliverToText; return view })()] },
+    }))
+    click(button('派活'))
+    await settle()
+    click(button('定时派'))
+    await settle()
+    const rows = all('#schedules li').map(node => read(node)).join('\n')
+    expect(rows).toContain('送达 （这一版服务端没报，未知）')
   })
 })
