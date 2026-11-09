@@ -1163,6 +1163,27 @@ try {
       + '#work= 路由由 tests/panel.spec.ts 覆盖，而 #ticket= 那一半在本节上面已经行使过')
   }
 
+  // 【G-7/C8】后台停表的真浏览器行使：把 document.hidden 定义成 true（影子掉原型上的 getter——
+  // 我们自己页面的守卫读的就是这个属性），数 6.5 秒里的 fetch；然后回前台，数"立刻补上"。
+  // 真浏览器里 CDP 的可见性模拟走的是 Page.setWebLifecycleState 一族，不如直接影子属性来得直白。
+  await page.evaluate(() => {
+    window.__fetchCount = 0
+    const original = window.fetch
+    window.fetch = (...args) => { window.__fetchCount += 1; return original(...args) }
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
+  })
+  await page.waitForTimeout(6_500)
+  const hiddenCount = await page.evaluate(() => window.__fetchCount)
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+  await page.waitForTimeout(800)
+  const backCount = await page.evaluate(() => window.__fetchCount)
+  check('后台停表：document.hidden 的 6.5 秒里 0 个请求，回前台立刻补上',
+    hiddenCount === 0 && backCount > 0,
+    `隐藏期 fetch=${hiddenCount}，回前台后累计=${backCount}`)
+
   check('全程 0 页面未捕获异常 (pageerror)', pageErrors.length === 0, `errors=${pageErrors.length}`)
   check('全程 0 条控制台错误 (console.error)', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | ') || 'clean')
   check('全程 0 条失败请求 (>=4xx)', badResponses.length === 0, badResponses.slice(0, 2).join(' | ') || 'clean')

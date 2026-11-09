@@ -1136,7 +1136,9 @@
       if (backend !== false) { void refreshDeps(selected); void loadEvents(selected) }
       stopPolling()
       // An ended Ticket does not change, so polling it would only spend requests; a live one changes while you watch.
-      if (!ticket.ended) detailTimer = setInterval(() => void pollDetail(), 3000)
+      // 【G-7/C8】详情轮询同样后台停表（守卫放在 tick 里而不是 pollDetail 里：open() 直接调用的
+      // 那次是"人刚点开"，永远要跑）。
+      if (!ticket.ended) detailTimer = setInterval(() => { if (document.hidden) return; void pollDetail() }, 3000)
     } catch (error) {
       stopPolling()
       $('detail').replaceChildren(el('pre', { class: 'bad' }, error.message))
@@ -4456,9 +4458,19 @@ WantedBy=default.target
   window.addEventListener('hashchange', applyHash)
   document.addEventListener('visibilitychange', () => {
     // Coming back to a tab that was hidden re-reads at once, rather than showing what was there when it was left.
-    if (document.hidden !== true && tab === 'tickets' && selected !== null) void showDetail()
+    // 【G-7/C8】回来不仅重读选中的任务详情，也立刻 load()：后台停表省下的请求，在页面重新被看见的
+    // 那一刻全数补上——停表不是为了少看，是为了没人看的时候不看。
+    if (document.hidden !== true) {
+      if (tab !== 'settings' && tab !== 'prompts' && tab !== 'new') void load()
+      if (tab === 'tickets' && selected !== null) void showDetail()
+    }
   })
-  setInterval(() => { if (tab !== 'settings' && tab !== 'prompts' && tab !== 'new') void load() }, 5000)
+  // 【G-7/C8】后台停表：document.hidden 时不轮询（5 秒全量与 3 秒详情都停）。一个挂在后台几小时的
+  // 标签页不再每 5 秒拉一遍全量 state——功能越长越重的那条线，从"没人看的时候不看"开始剪。
+  setInterval(() => {
+    if (document.hidden) return
+    if (tab !== 'settings' && tab !== 'prompts' && tab !== 'new') void load()
+  }, 5000)
 })()
 </script>
 </body>

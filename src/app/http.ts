@@ -42,6 +42,13 @@ export interface HttpHost {
   /** The operator's decision queue, and the dismissal of one entry; the Runtime owns the kv it lives in. */
   decisions(): readonly { id: string; title: string; detail: string; source: string; raisedAt: string }[]
   dismissDecision(id: string): void
+  /**
+   * Park a decision in front of the operator（「需要你决断的事」）— the same writer the system's own
+   * exhausted-retry path uses. Needed because the queue is also where non-runtime items belong (a "this is
+   * yours to decide" from the lead, a platform policy), and until this route existed there was NO way to
+   * park one from outside the process: the mechanism the goal names as the alternative to asking had no door.
+   */
+  raiseDecision(title: string, detail: string, source: string): string
   readonly store: Store
   readonly health: HealthBoard
   readonly prompts: Prompts
@@ -485,6 +492,16 @@ function table(host: HttpHost): readonly Route[] {
       const ticket = host.engine.retryTicket(params.id!)
       host.passes.requestPass()
       return ticketView(ticket)
+    }),
+    // 【机制补口】停一条决定的路由早就有，"新增一条"却一直只能从进程内来（runtime 自己、worker 工具）——
+    // 目标里"值得操作者决断的事进面板队列等他处理"这条协调线，从进程外根本没有门。开一扇，走同一个写入者。
+    route('POST', 'decisions', async ({ body }) => {
+      const payload = await body() as Record<string, unknown>
+      const title = String(payload.title ?? '').trim()
+      const detail = String(payload.detail ?? '').trim()
+      if (title === '' || detail === '') throw new RouteError(400, 'A decision needs both a title and a detail (the detail is where the trade-off lives)')
+      const id = host.raiseDecision(title, detail, String(payload.source ?? 'external'))
+      return { raised: id, queue: host.decisions().length }
     }),
     // A Decision is what a person dismisses ("I saw this refusal, it is fine"), so it lives under decisions.
     route('POST', 'decisions/:id/dismiss', ({ params }) => {

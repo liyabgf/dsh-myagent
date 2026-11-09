@@ -167,6 +167,23 @@ describe('what the panel reads', () => {
       expect((dismissed.json.decision as { detail: string }).detail).toContain('[dismissed]')
     })
   })
+  it("parks a decision from outside the process (the queue the goal's coordination line needs)", async () => {
+    await withDeployment(async ({ host }) => {
+      // 【机制补口】「需要你决断的事」此前只能从进程内来：runtime 自己、worker 工具。
+      // 目标把"值得操作者决断的事进面板队列"定为不提问的替代路径，这条路径需要一个门。
+      const parked = await host.request(api('decisions'), {
+        method: 'POST',
+        body: { title: 'G-6：面板要不要出中文之外的语言', detail: 'locale 键位迁移是逐屏的活；要不要做只有操作者知道。', source: 'panel-c-group' },
+      })
+      expect(parked.json.raised).toEqual(expect.any(String))
+      const list = await host.request(api('operator-queue'))
+      expect((list.json.items as Record<string, unknown>[]).some(item => item.title === 'G-6：面板要不要出中文之外的语言')).toBe(true)
+      // 空标题/空正文被拒：detail 是 trade-off 所在地，没有它队列里就是一条空话。
+      const refused = await host.request(api('decisions'), { method: 'POST', body: { title: 'x', detail: '' } })
+      expect(refused.status).toBe(400)
+    })
+  })
+
 
   it('lists Triggers with what became of them', async () => {
     await withDeployment(async ({ host, runtime }) => {

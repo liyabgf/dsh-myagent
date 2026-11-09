@@ -382,6 +382,10 @@ const mount = async (answers: Routes, hash = '', seedTab?: string) => {
   localStorage.clear()
   // A-4 的"记得的页"只能在这里预置：boot 在 SCRIPT 运行后异步读它，挂载后再写就晚了。
   if (seedTab !== undefined) localStorage.setItem('myagent-tab', seedTab)
+  // 【G-7/C8】jsdom 的 document 默认是 prerender（hidden=true），而产品把"后台停表"当真：
+  // 不显式当它可见，所有轮询测试都会静默全绿地"不再轮询"。测试要控制可见性时用
+  // Object.defineProperty(document, 'hidden', ...) 覆盖（jsdom 的 hidden 不是可写属性）。
+  Object.defineProperty(document, 'hidden', { value: false, configurable: true })
   // The page's own stylesheet is not installed, so what a test can assert is the class the page hides things with —
   // which is also the class a browser hides them by.
   document.body.innerHTML = MARKUP
@@ -2896,6 +2900,31 @@ describe('the chat Source', () => {
     expect(read(held[1]!)).toContain('改法是编辑那个文件')
     // Why holding beats refusing, on the surface where the operator decides: it is the reason this queue exists.
     expect(text('chat')).toContain('永远不会被重新评估')
+  })
+
+  it('后台停表：document.hidden 时 5 秒轮询与 3 秒详情轮询都不发请求，回前台立刻补上', async () => {
+    // 【G-7/C8】jsdom 的 5 秒轮询由 tick 驱动；数 calls 而不是断 DOM，因为"没有发生"只能数出来。
+    const log = await mount(routes())
+    const visible = () => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }) }
+    const hidden = () => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }) }
+    // 量纲用 state 的请求数（load() 是一组请求，总 calls 数会混进别的东西——第一版 +1 断言
+    // 就这么红过：一次 load 实际带 5 个请求）。5 秒轮询的footprint就是「每 tick 一组 load」。
+    const stateCalls = () => log.calls.filter(call => call.path === 'state').length
+    const before = stateCalls()
+    hidden()
+    await tick(11_000)
+    expect(stateCalls()).toBe(before)               // 11 秒一组 load 都没有：后台停表
+    visible()
+    document.dispatchEvent(new window.Event('visibilitychange'))
+    await settle()
+    // 第二把锁（M1 强形式靠它）：补上的是**恰好一组**。如果停表没生效，隐藏的 11 秒里
+    // 间隔已经多发了 ≥2 组，这里的「恰好 +1 组」不再成立——两把锁测同一个事实的两面。
+    expect(stateCalls()).toBe(before + 1)           // 回前台立刻补一组 load()，且只有这一组
+    // 详情轮询同样停表：hidden 期间 3 秒一次的详情读不再发生（此处未选任务，直接断言没有
+    // 任何 /tickets/ 读——选了任务的那个行为由「nobody is looking at」那条既有测试双向覆盖）。
+    hidden()
+    await tick(6_000)
+    expect(log.calls.filter(call => call.path.includes('/tickets/')).length).toBe(0)
   })
 
   it('says how many identities were not named, and where the rest of the queue is', async () => {
