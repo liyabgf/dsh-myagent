@@ -1360,75 +1360,92 @@
         // 那一个"当前就在的已归档工作"要标出来，否则操作者分不清它和在用的那些有什么不同。
         ...choices.map(item => el('option', { value: item.id },
           item.archivedAt !== undefined ? `${item.name}（已归档）` : item.name)))
-      workSelect.value = draft.work
+      // 【B-7】选中"当前就在的那个"而不是永远空着：归组是个编辑动作，打开时显示现值，
+      // 操作者才知道"改"改的是什么；空白看起来像"从未归过组"，那是两种不同的状态。
+      workSelect.value = ticket.workId ?? draft.work
+      if (ticket.workId !== undefined && !choices.some(item => item.id === ticket.workId)) {
+        workSelect.append(el('option', { value: ticket.workId }, `（列表外的）工作 ${ticket.workId.slice(0, 8)}`))
+        workSelect.value = ticket.workId
+      }
       node.append(el('div', { class: 'row', style: 'margin-top:8px' },
         el('span', { class: 'muted' }, '归入工作'), workSelect,
         el('button', {
-          class: 'btn small', onclick: () => {
+          class: 'btn small', onclick: async () => {
             const workId = $('d-work').value
             if (!workId) return toast('先选一个工作')
-            void act(`tickets/${encodeURIComponent(ticket.id)}/work`, { workId })
+            // 【B-7】归入成功后重读详情：旧的写法把 POST 的结果就地画回，详情里的「归属」行
+            // 仍是归组前的名字——操作者刚做完的事页面不认账，正是"入口藏得深"之外的第二层负担。
+            await act(`tickets/${encodeURIComponent(ticket.id)}/work`, { workId })
+            draft.work = workId
+            await showDetail()
           },
         }, '归入')))
     }
 
-    // F6 + E1/E4 + P-1: Cross-Ticket citation & bidirectional engine lineage.
-    // `citedBy`/`cites` 只含产物引用与笔记交接（artifact_read/input）；手艺传承是单独一对字段
-    // `learnedFrom`/`taughtTo`，单独渲染一行——两种事实混在一个数字里，面板就没法被相信（P-1）。
+    // F6 + E1/E4 + P-1 + B-5: Cross-Ticket lineage, drawn as the graph it is.
+    // `citedBy`/`cites` 只含产物引用与笔记交接（artifact_read/input）；手艺传承是 `learnedFrom`/`taughtTo`
+    // ——两种事实分开计算（P-1 的纪律），在图里合并呈现：左边是"我站在谁之上"（引用或传承），
+    // 右边是"谁站在我之上"（被引用或被传承）。本任务居中，箭头指方向；每侧最多 8 个节点，
+    // 截断时 caption 写出总数——"看不到"不等于"没有"。
+    // 【B-5 产品变更】旧断言（两块行式列表）：
+    //   expect(document.querySelector('#d-mentions-cited-by')).not.toBeNull()  /  .toBeNull()
+    //   expect(citesRow?.textContent).toContain('借力来源')  /  citedByRow '关联引用'
+    //   expect(document.querySelector('#d-skill-lineage')).not.toBeNull()  /  learned '手艺传承'  /  taught '手艺被继承'
+    //   （A-2 的抽屉开合测试依赖 #d-mentions 的存在性判断——改为 #d-lineage，测试已同步迁移。）
+    // 理由：血缘是图的事实，两排平列表读不出"谁通过谁连到谁"，尤其当一张任务既被引用又引用别人时。
+    // 结构、流向、可点性（每个节点都是真按钮，title 带完整 id）现在一处给出。
     const shortId = ticket.id.slice(0, 8)
     const textCitedBy = [...ticketIndex.values()].filter(other => {
       if (other.id === ticket.id) return false
       const hay = `${other.title || ''} ${other.summary || ''}`
-      return hay.includes(shortId) || (ticket.title && ticket.title.length >= 3 && hay.includes(`（${ticket.title}`)) || (ticket.title && hay.includes(`${ticket.title} / ${shortId}`))
+      return hay.includes(shortId) || (ticket.title && ticket.title.length >= 3 && hay.includes(`（${ticket.title}`)) || (ticket.title && ticket.title.includes(`${shortId}`))
     })
-    const citedByIds = new Set([...(ticket.citedBy || []), ...textCitedBy.map(item => item.id)])
-    citedByIds.delete(ticket.id)
-    const citedByList = [...citedByIds].map(id => ticketIndex.get(id) || { id, title: `任务 ${id.slice(0, 8)}` })
-    const citesIds = new Set(ticket.cites || [])
-    citesIds.delete(ticket.id)
-    const citesList = [...citesIds].map(id => ticketIndex.get(id) || { id, title: `任务 ${id.slice(0, 8)}` })
-    if (citedByList.length > 0 || citesList.length > 0) {
-      const mentionRows = []
-      if (citedByList.length > 0) {
-        mentionRows.push(el('div', { class: 'row', id: 'd-mentions-cited-by' },
-          el('b', {}, `关联引用（${citedByList.length} 张后续 Ticket 在摘要或产物备注中引用了本 Ticket）：`),
-          ...citedByList.map(other => el('button', {
-            class: 'btn small', onclick: () => { show('tickets'); void open(other.id) },
-          }, `${other.title}（${other.id.slice(0, 8)}） · 打开`))))
-      }
-      if (citesList.length > 0) {
-        mentionRows.push(el('div', { class: 'row', id: 'd-mentions-cites', style: citedByList.length > 0 ? 'margin-top:6px' : undefined },
-          el('b', {}, `借力来源（本任务复用了 ${citesList.length} 张前序任务的成果）：`),
-          ...citesList.map(other => el('button', {
-            class: 'btn small', onclick: () => { show('tickets'); void open(other.id) },
-          }, `${other.title}（${other.id.slice(0, 8)}） · 打开`))))
-      }
-      node.append(el('div', { id: 'd-mentions', class: 'mentions-box' }, ...mentionRows))
-    }
-    // P-1：手艺传承单独一行。它回答的问题与产物引用不同——不是"这份答案站在谁的数据上"，
-    // 而是"哪张任务沉淀的手艺还在被用"。为空时整行不渲染（没有传承不是需要解释的事）。
+    const citedByIds = [...new Set([...(ticket.citedBy || []), ...textCitedBy.map(item => item.id)])].filter(id => id !== ticket.id)
+    const citesIds = [...new Set(ticket.cites || [])].filter(id => id !== ticket.id)
     const learnedFrom = (ticket.learnedFrom || []).filter(id => id !== ticket.id)
     const taughtTo = (ticket.taughtTo || []).filter(id => id !== ticket.id)
-    if (learnedFrom.length > 0 || taughtTo.length > 0) {
+    const leftTotal = citesIds.length + learnedFrom.length
+    const rightTotal = citedByIds.length + taughtTo.length
+    const leftIds = [...new Set([...citesIds, ...learnedFrom])].slice(0, 8)
+    const rightIds = [...new Set([...citedByIds, ...taughtTo])].slice(0, 8)
+    if (leftIds.length > 0 || rightIds.length > 0) {
       const nameOf = id => {
         const other = ticketIndex.get(id)
-        return other ? `${other.title}（${id.slice(0, 8)}）` : `任务 ${id.slice(0, 8)}`
+        return other ? String(other.title).slice(0, 22) : `任务 ${id.slice(0, 8)}`
       }
-      const link = id => el('button', {
-        class: 'btn small', onclick: () => { show('tickets'); void open(id) },
-      }, `${nameOf(id)} · 打开`)
-      const rows = []
-      if (learnedFrom.length > 0) {
-        rows.push(el('div', { class: 'row', id: 'd-skill-learned' },
-          el('b', {}, `手艺传承（用了 ${learnedFrom.length} 张前序任务沉淀的手艺）：`),
-          ...learnedFrom.map(link)))
+      const lineageNode = (id, kind) => el('button', {
+        class: `btn small lineage-node ${kind}`, title: `${id}（${kind === 'cites' ? '本任务引用/继承了它' : '它引用/继承/提起了本任务'}）`,
+        onclick: () => { show('tickets'); void open(id) },
+      }, nameOf(id))
+      const arrow = () => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+        svg.setAttribute('viewBox', '0 0 70 20')
+        svg.setAttribute('preserveAspectRatio', 'none')
+        svg.setAttribute('style', 'flex:0 0 70px;height:20px;align-self:center;color:var(--fg,inherit)')
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+        line.setAttribute('d', 'M2,10 C30,10 40,10 62,10')
+        line.setAttribute('style', 'fill:none;stroke:currentColor;stroke-width:1.5;opacity:.45')
+        const head = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+        head.setAttribute('d', 'M58,5 L66,10 L58,15')
+        head.setAttribute('style', 'fill:none;stroke:currentColor;stroke-width:1.5;opacity:.45')
+        svg.append(line, head)
+        return svg
       }
-      if (taughtTo.length > 0) {
-        rows.push(el('div', { class: 'row', id: 'd-skill-taught', style: learnedFrom.length > 0 ? 'margin-top:6px' : undefined },
-          el('b', {}, `手艺被继承（${taughtTo.length} 张后续任务用了本任务沉淀的手艺）：`),
-          ...taughtTo.map(link)))
-      }
-      node.append(el('div', { id: 'd-skill-lineage', class: 'mentions-box' }, ...rows))
+      const column = (ids, kinds, caption) => el('div', { style: 'display:flex;flex-direction:column;gap:4px;min-width:150px' },
+        el('span', { class: 'muted', style: 'font-size:11px' }, caption),
+        ...ids.map(id => lineageNode(id, kinds(id))),
+        ...(ids.length === 0 ? [el('span', { class: 'muted', style: 'font-size:11px' }, '（无）')] : []))
+      // 哪个 id 属于哪一类：同侧混列（引用+传承）时靠 title 区分，节点颜色只分左右。
+      const kindOf = id => (citesIds.includes(id) || learnedFrom.includes(id) ? 'cites' : 'citedBy')
+      node.append(el('div', { id: 'd-lineage', class: 'mentions-box' },
+        el('div', { style: 'display:flex;gap:10px;align-items:stretch;overflow-x:auto' },
+          column(leftIds, kindOf, leftTotal > 8 ? `前序（显示前 8，共 ${leftTotal}）` : `前序（${leftTotal}）`),
+          arrow(),
+          el('div', { style: 'display:flex;flex-direction:column;gap:4px;min-width:150px' },
+            el('span', { class: 'muted', style: 'font-size:11px' }, '本任务'),
+            el('span', { class: 'btn small', style: 'pointer-events:none;font-weight:600' }, String(ticket.title).slice(0, 22))),
+          arrow(),
+          column(rightIds, kindOf, rightTotal > 8 ? `后续（显示前 8，共 ${rightTotal}）` : `后续（${rightTotal}）`))))
     }
     node.append(el('details', { class: 'tech' },
       el('summary', {}, '技术细节（授权、来源 Trigger、范围）'),

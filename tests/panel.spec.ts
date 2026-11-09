@@ -5407,7 +5407,13 @@ describe('分诊任务在面板上看得出来（S3b）', () => {
 })
 
 describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）', () => {
-  it('即使后续任务的摘要没有提原任务名字，只要引擎记录了 citedBy / cites，#d-mentions 蓝框就双向渲染并可点开', async () => {
+  it('即使后续任务的摘要没有提原任务名字，只要引擎记录了 citedBy / cites，#d-lineage 图就双向渲染并可点开', async () => {
+    // 【B-5 产品变更】旧断言（两块行式列表 #d-mentions-cited-by / #d-mentions-cites）：
+    //   expect(citedByRow?.textContent).toContain('关联引用')
+    //   expect(citedByRow?.textContent).toContain('信息比对（19dd5c9c） · 打开')
+    //   expect(citesRow?.textContent).toContain('借力来源')  …
+    // 理由：血缘是图的事实——两排平列表读不出"谁通过谁连到谁"。图（#d-lineage：前序 → 本任务 → 后续，
+    // 每个节点是真按钮）一处给出结构、流向与可点性。断言的事实没变：双向都渲染、点开能过去。
     const t1 = 'b356ac649bc46a144c38f9b4b6619175'
     const t2 = '19dd5c9ca7bce11fb2c9f7a2b04728b0'
     await mount(routes({
@@ -5422,21 +5428,21 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
     await settle()
     click(all('#tickets li')[0]!)
     await settle()
-    const citedByRow = document.querySelector('#d-mentions-cited-by')
-    expect(citedByRow).not.toBeNull()
-    expect(citedByRow?.textContent).toContain('关联引用')
-    expect(citedByRow?.textContent).toContain('信息比对（19dd5c9c） · 打开')
-
-    // 点按钮跳转到引用方 t2，看到反向的「借力来源」
-    click(button('信息比对（19dd5c9c） · 打开', one('#d-mentions')))
+    // 引用方 t2 出现在 t1 的「后续」列，是个可点的按钮。
+    const graph = one('#d-lineage')
+    expect(graph.textContent).toContain('后续')
+    const jump = button('信息比对', graph)
+    click(jump)
     await settle()
-    const citesRow = document.querySelector('#d-mentions-cites')
-    expect(citesRow).not.toBeNull()
-    expect(citesRow?.textContent).toContain('借力来源')
-    expect(citesRow?.textContent).toContain('搜集信息（b356ac64） · 打开')
+    // 反向：t2 的图里 t1 在「前序」列。
+    expect(one('#d-lineage').textContent).toContain('前序')
+    expect(one('#d-lineage').textContent).toContain('搜集信息')
+    // 每个节点带整串 id（悬停可复制语义）与方向说明。
+    const node = [...one('#d-lineage').querySelectorAll('.lineage-node')][0]
+    expect(node?.getAttribute('title')).toContain(t1)
   })
 
-  it('手艺传承单独渲染成 #d-skill-lineage，不混进产物引用的蓝框（P-1）', async () => {
+  it('手艺传承渲染成图里的前序/后续节点，不与产物引用混进同一个数字（P-1 → B-5）', async () => {
     const t1 = 'b356ac649bc46a144c38f9b4b6619175'
     const t2 = '19dd5c9ca7bce11fb2c9f7a2b04728b0'
     await mount(routes({
@@ -5444,7 +5450,8 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
         listed({ id: t1, title: '沉淀了抓取手艺', stage: 'done', summary: '' }),
         listed({ id: t2, title: '复用抓取手艺', stage: 'done', summary: '' }),
       ] },
-      // 只有手艺传承、没有产物引用：两个框必须各自独立地"有或没有"，这才证明它们真的分开了。
+      // 只有手艺传承、没有产物引用：图照常渲染（左右两列就是传承的两个方向），
+      // 而引用与传承的**计数**仍然分开算——P-1 的纪律不因画法的改变而松动。
       [`GET tickets/${t1}`]: ticket({ id: t1, title: '沉淀了抓取手艺', stage: 'done', citedBy: [], cites: [], learnedFrom: [], taughtTo: [t2] }),
       [`GET tickets/${t2}`]: ticket({ id: t2, title: '复用抓取手艺', stage: 'done', citedBy: [], cites: [], learnedFrom: [t1], taughtTo: [] }),
     }))
@@ -5452,18 +5459,13 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
     await settle()
     click(all('#tickets li')[0]!)
     await settle()
-    // 产物引用的蓝框不出现——旧行为里 skill_used 会让它冒出来并把传承说成"引用"。
-    expect(document.querySelector('#d-mentions')).toBeNull()
-    const taught = document.querySelector('#d-skill-taught')
-    expect(taught).not.toBeNull()
-    expect(taught?.textContent).toContain('手艺被继承')
-    expect(taught?.textContent).toContain('复用抓取手艺（19dd5c9c） · 打开')
-    // 反向：消费方看到的是「手艺传承（用了 …）」。
-    click(button('复用抓取手艺（19dd5c9c） · 打开', one('#d-skill-lineage')))
+    // 传承方看到消费方在「后续」列，可点开。
+    expect(one('#d-lineage').textContent).toContain('后续（1）')
+    click(button('复用抓取手艺', one('#d-lineage')))
     await settle()
-    const learned = document.querySelector('#d-skill-learned')
-    expect(learned?.textContent).toContain('手艺传承')
-    expect(learned?.textContent).toContain('沉淀了抓取手艺（b356ac64） · 打开')
+    // 消费方看到传承方在「前序」列。
+    expect(one('#d-lineage').textContent).toContain('前序（1）')
+    expect(one('#d-lineage').textContent).toContain('沉淀了抓取手艺')
   })
 
   it('没有手艺传承时不渲染那个框——缺席就是缺席，不画空框', async () => {
@@ -5613,10 +5615,12 @@ describe('bounded box-model CSS, cross-Ticket citation backlinks (F6), deep link
     }))
     click(one('#tickets li'))
     await settle()
-    const mentions = one('#d-mentions')
-    expect(read(mentions)).toContain('关联引用')
-    expect(read(mentions)).toContain('信息比对（19dd5c9c）')
-    click(one('#d-mentions button'))
+    // 【B-5 产品变更】旧断言：#d-mentions 文本含『关联引用』与『信息比对（19dd5c9c）』。
+    // 文本匹配的引用现在也进图：本任务居中，提及者落在「后续」列且可点。
+    const graph = one('#d-lineage')
+    expect(read(graph)).toContain('后续')
+    expect(read(graph)).toContain('信息比对')
+    click(one('#d-lineage button'))
     await settle()
     expect(read(one('#detail h2'))).toBe('信息比对')
   })
@@ -5812,5 +5816,47 @@ describe('手艺正文抽屉（A-2 / G-4）', () => {
     await settle()
     expect(byId('skill-drawer').classList.contains('hidden')).toBe(true)
     expect(byId('health-drawer').classList.contains('hidden')).toBe(true)
+  })
+})
+
+describe('行内归组（B-7）', () => {
+  /** 有状态详情：POST work 之后 GET 也带回 workId——归入后重读详情才有东西可读。 */
+  it('归组下拉显示"当前就在的"那个工作，而不是永远空白', async () => {
+    await mount(routes({
+      'GET works': { works: [work()] },
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ workId: 'work-1', workSeq: 2 })] },
+      // 列表行有 workId，详情也必须带（两条路由是两个数据源，测试只填一条就会假失败——夹具教训老几条了）。
+      'GET tickets/ticket-1': ticket({ workId: 'work-1', workSeq: 2 }),
+    }))
+    click(button('任务'))
+    await settle()
+    click(one('#tickets li'))
+    await settle()
+    // 【B-7】打开时显示现值：归组是编辑，不是"从未归过"。
+    expect((byId('d-work') as HTMLSelectElement).value).toBe('work-1')
+  })
+
+  it('归入之后详情立即认账：归属行换上新名字，而不是要操作者自己重开一次', async () => {
+    let filed = false
+    await mount(routes({
+      'GET works': { works: [work()] },
+      'GET tickets': () => ({ offset: 0, limit: 80, count: 1, tickets: [listed(filed ? { workId: 'work-1', workSeq: 1 } : {})] }),
+      'GET tickets/ticket-1': () => ticket(filed ? { workId: 'work-1', workSeq: 1 } : {}),
+      'POST tickets/ticket-1/work': () => { filed = true; return ticket({ workId: 'work-1', workSeq: 1 }) },
+    }))
+    click(button('任务'))
+    await settle()
+    click(one('#tickets li'))
+    await settle()
+    expect((byId('d-work') as HTMLSelectElement).value).toBe('')
+    choose('d-work', 'work-1')
+    click(button('归入'))
+    await settle()
+    // 【B-7】归属行换新：POST 后详情被重读（旧写法就地画回 POST 的返回值，这一步也会绿，
+    // 但下一轮轮询会把旧值画回去——重读才是对的）。
+    const kvs = [...byId('detail').querySelectorAll('dt')].map(dt => String(dt.textContent))
+    const idx = kvs.findIndex(k => k === '归属')
+    expect(idx).toBeGreaterThanOrEqual(0)
+    expect(String(byId('detail').querySelectorAll('dd')[idx]?.textContent)).toContain('周报（work-1）')
   })
 })

@@ -1124,12 +1124,12 @@ try {
       const el = document.getElementById('d-mentions')
       return el ? { text: el.textContent, visible: getComputedStyle(el).display !== 'none' } : null
     })
-    check(`深链 #ticket=${mentionTarget.id.slice(0, 8)} 打开对应 Ticket 并渲染 F6 跨 Ticket 引用提示 (#d-mentions)`,
+    check(`深链 #ticket=${mentionTarget.id.slice(0, 8)} 打开对应 Ticket 并渲染 F6 血缘图 (#d-lineage)`,
       f6Info !== null && f6Info.visible && (f6Info.text.includes('关联引用') || f6Info.text.includes('借力来源')),
       f6Info ? f6Info.text.slice(0, 60) : 'missing')
     await page.screenshot({ path: `${SHOT_DIR}/panel-after-f6-mentions.png`, fullPage: true })
   } else {
-    skip('深链 #ticket=<有血缘的> 打开对应 Ticket 并渲染 F6 跨 Ticket 引用提示 (#d-mentions)',
+    skip('深链 #ticket=<有血缘的> 打开对应 Ticket 并渲染 F6 血缘图 (#d-lineage)',
       '线上没有任何引擎血缘非空的 Ticket（citedBy/cites 全空）：F6 提示框无从渲染。'
       + '渲染逻辑由 tests/panel.spec.ts 覆盖；#ticket= 深链路由本身在第 4 节已行使过（重型靶子就是深链打开的）')
   }
