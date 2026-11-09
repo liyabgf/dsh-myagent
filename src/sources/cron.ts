@@ -21,6 +21,10 @@ type CursorState = Record<string, { next: number; last?: number; missed?: number
  * waiting for a slot the operator no longer asked for, while the panel's preview — which computes the next run fresh —
  * showed the new one. The two would disagree, and the disagreement would only surface as work that never happens.
  */
+/** The wall-clock budget one firing carries: its own, else the deployment default. 0 means no budget. */
+const budgetOf = (schedule: Schedule, fallbackMs: number): number =>
+  schedule.maxRuntimeMs > 0 ? schedule.maxRuntimeMs : (fallbackMs > 0 ? fallbackMs : 0)
+
 const specOf = (schedule: Schedule): string => JSON.stringify(schedule.timing)
 
 /** The longest one timer may sleep, so a clock jump or a missed wake-up costs at most this. */
@@ -214,6 +218,12 @@ export class CronSource implements Source {
             ...(schedule.deliverTo.thread === undefined ? {} : { thread: schedule.deliverTo.thread }) } }),
         meta: {
           schedule: schedule.id, scheduledAt: at,
+          // The schedule's own budget, falling back to the deployment default. Carried on the Trigger rather than
+          // re-read from the settings later: the settings may change mid-flight, and a Ticket's budget is part of the
+          // authorization it was accepted under, not of what the operator happens to want now.
+          ...(budgetOf(schedule, this.host.settings().watchdog.maxRuntimeMs) > 0
+            ? { runtimeBudgetMs: budgetOf(schedule, this.host.settings().watchdog.maxRuntimeMs) }
+            : {}),
           ...(missed > 0 ? { missed } : {}),
           ...(schedule.scope === '' ? {} : { scope: schedule.scope }),
         },

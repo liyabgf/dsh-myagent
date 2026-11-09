@@ -121,6 +121,12 @@ export function scheduleView(schedule: Schedule, from: number, zone = localZone(
     // Where this schedule's reports go, in the operator's own words. Omitting it would leave the panel showing a
     // schedule whose output silently lands nowhere the operator looks — the exact failure `deliverTo` exists to fix,
     // so the absence is stated as a fact rather than left blank.
+    // The budget, in words, next to the address: both are facts about where this schedule's work goes and how long
+    // it may take, and a cap nobody can see is a cap nobody can rely on. The panel copies this sentence verbatim, so
+    // this view is its only owner — which is why `tests/views.spec.ts` pins both of its wordings.
+    budgetText: schedule.maxRuntimeMs > 0
+      ? `墙钟预算 ${Math.round(schedule.maxRuntimeMs / 60000)} 分钟（到点先提醒收尾，再过 10 分钟仍未结束就停下并交给人）`
+      : '无墙钟预算（跑多久都行）',
     ...(schedule.deliverTo === undefined
       ? { deliverToText: '只落 RESULT.md 与主会话通知（不进聊天室）' }
       : {

@@ -222,6 +222,7 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
     "enabled": true, "everyMs": 60000,
     "launchStuckMs": 600000,        // 启动卡多久算卡住
     "silentMs": 0,                  // 0 = 关；非 0 时静默超过它就打断并换一轮重做
+    "maxRuntimeMs": 0,              // 排期没写自己预算时用的默认墙钟预算；0 = 不限
     "autoRetry": true,              // 一轮因上游错误（如 API 超时重试耗尽）而死时自动重启；false = 老行为：停在原地等人
     "autoRetryMax": 0,              // 0 = 不限次（默认）；>0 到上限就把任务判 failed，并在面板「需要你决断的事」停一条等你
     "maxActions": 2                 // 救几次；到上限就 escalate（写事件 + 上健康板 + 告诉请求者需要人）
@@ -234,6 +235,9 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
     "cron": { "enabled": true, "schedules": [
       { "id": "digest", "name": "每日摘要", "prompt": "写今天的摘要", "scope": "",
         "timing": { "kind": "daily", "time": "09:00", "timeZone": "Asia/Shanghai" },
+        "maxRuntimeMs": 3600000,      // 墙钟预算（毫秒）；0 或省略 = 不限。到点先提醒 worker 收尾并交报告，
+                                     // 再过 10 分钟仍未结束就停下、任务记为已停、并在面板「需要你决断的事」停一条。
+                                     // 计的是这张任务的墙钟，所以子代理与后台作业都在预算内——绕不过去。
         // 报告送到哪个聊天频道（省略 = 只落 RESULT.md 与主会话通知，不进聊天室）。
         // thread 可省：省了就用桥记住的默认会话。同一排期的历次运行会自动归进一个以排期名命名的「工作」。
         "deliverTo": { "channel": "telegram" } }

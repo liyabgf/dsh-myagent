@@ -400,7 +400,58 @@ describe('cron source', () => {
       // The address is on the Trigger, which is where Delivery reads it from — a Ticket whose Trigger carries none
       // delivers nowhere, and before this every scheduled Ticket carried none.
       expect(trigger.replyTo).toEqual({ kind: 'chat', channel: 'ops', thread: 't-9' })
+      // 独立于上面那条的第二把锁：地址**在**触发器上这件事本身。删掉 toEqual 之后，这条仍会因为
+      // "cron 根本不写 replyTo" 而红——0.8 的强形式要求删掉任何一条断言都还有别的东西接手。
+      expect(Object.keys(trigger)).toContain('replyTo')
       expect(tickets()[0]!.origin.triggerId).toBe(trigger.id)
+    } finally { source.stop(); vi.useRealTimers() }
+  })
+
+  it('carries the schedule’s own wall-clock budget onto the Trigger, and falls back to the deployment default', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(NOW))
+    const { host, triggers } = harness({
+      watchdog: { maxRuntimeMs: 30 * 60_000 },
+      sources: {
+        cron: {
+          enabled: true,
+          schedules: [
+            { id: 'own', name: 'Own budget', prompt: 'Go.', maxRuntimeMs: 60 * 60_000, timing: { kind: 'cron', expression: '* * * * *' } },
+            { id: 'inherited', name: 'Inherited', prompt: 'Go.', timing: { kind: 'cron', expression: '* * * * *' } },
+          ],
+        },
+      },
+    })
+    // 两个键一次写入：`cursorsSeed` 是整份替换游标状态，连着调两次会把前一个排期的读位置抹掉
+    // （第一版就是这么红的，红在"own 一次没触发"上，看起来像产品缺陷，其实是夹具用法错）。
+    host.cursor('cron').set({
+      own: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },
+      inherited: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },
+    })
+    const source = new CronSource(host)
+    try {
+      source.start(); await vi.advanceTimersByTimeAsync(60)
+      const byId = new Map(triggers().map(record => [record.trigger.meta?.schedule, record.trigger]))
+      // The schedule's own budget wins, and the deployment default covers a schedule that names none. Written onto the
+      // Trigger at acceptance rather than re-read from the settings later: the settings may change mid-flight, and a
+      // Ticket's budget is part of the authorization it was accepted under.
+      expect(byId.get('own')!.meta).toMatchObject({ runtimeBudgetMs: 60 * 60_000 })
+      expect(byId.get('inherited')!.meta).toMatchObject({ runtimeBudgetMs: 30 * 60_000 })
+    } finally { source.stop(); vi.useRealTimers() }
+  })
+
+  it('writes no budget key at all when neither the schedule nor the deployment names one', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(NOW))
+    const { host, triggers } = harness({
+      sources: { cron: { enabled: true, schedules: [{ id: 'free', name: 'Free', prompt: 'Go.', timing: { kind: 'cron', expression: '* * * * *' } }] } },
+    })
+    cursorsSeed(host, 'free', Date.parse('2026-11-03T09:59:00Z'))
+    const source = new CronSource(host)
+    try {
+      source.start(); await vi.advanceTimersByTimeAsync(60)
+      // Absent, not zero: both mean "no budget", but only one of them is honest about what the settings said.
+      expect(triggers()[0]!.trigger.meta).not.toHaveProperty('runtimeBudgetMs')
     } finally { source.stop(); vi.useRealTimers() }
   })
 

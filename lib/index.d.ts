@@ -545,6 +545,7 @@ declare const ScheduleSchema: z.ZodObject<{
     channel: z.ZodString;
     thread: z.ZodOptional<z.ZodString>;
   }, z.core.$strip>>;
+  maxRuntimeMs: z.ZodDefault<z.ZodNumber>;
   timing: z.ZodDiscriminatedUnion<[z.ZodObject<{
     kind: z.ZodLiteral<"every">;
     seconds: z.ZodNumber;
@@ -591,6 +592,7 @@ declare const SettingsSchema: z.ZodObject<{
           channel: z.ZodString;
           thread: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>>;
+        maxRuntimeMs: z.ZodDefault<z.ZodNumber>;
         timing: z.ZodDiscriminatedUnion<[z.ZodObject<{
           kind: z.ZodLiteral<"every">;
           seconds: z.ZodNumber;
@@ -699,6 +701,7 @@ declare const SettingsSchema: z.ZodObject<{
     everyMs: z.ZodDefault<z.ZodNumber>;
     launchStuckMs: z.ZodDefault<z.ZodNumber>;
     silentMs: z.ZodDefault<z.ZodNumber>;
+    maxRuntimeMs: z.ZodDefault<z.ZodNumber>;
     autoRetry: z.ZodDefault<z.ZodBoolean>;
     autoRetryMax: z.ZodDefault<z.ZodNumber>;
     maxActions: z.ZodDefault<z.ZodNumber>;
@@ -1091,10 +1094,15 @@ declare class Engine {
   /** Add an Input to an open Ticket and hand it to the running Assignment, or hold it for the next launch. */
   private addInput;
   /**
-   * A person's stop, which withdraws the Mandate: the Ticket ends `stopped`, its worker's turn is cancelled and its
-   * background work stops. The stop message itself is never re-evaluated.
+   * Withdraw the Mandate: the Ticket ends `stopped`, its worker's turn is cancelled and its background work stops.
+   * The stop message itself is never re-evaluated.
+   *
+   * `by` defaults to a person because that is the usual caller, and it is a parameter because it is not the only one:
+   * a Ticket that ran past its wall-clock budget is stopped by the system, and recording that as a person's decision
+   * would put a choice in the operator's history that the operator never made. Attribution is the one thing an audit
+   * log cannot recover after the fact.
    */
-  stopTicket(ticketId: string, reason?: string): Ticket;
+  stopTicket(ticketId: string, reason?: string, by?: TicketEvent['by']): Ticket;
   /**
    * End the stalled Assignment of a Ticket that waits for a person — after a `failed` or `blocked` Report, or a
    * failed Input delivery — and start a fresh one that continues from the same directory.

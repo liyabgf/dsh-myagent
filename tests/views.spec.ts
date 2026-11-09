@@ -147,7 +147,7 @@ describe('decisionView', () => {
 })
 
 describe('scheduleView', () => {
-  const daily = { id: 'digest', name: '每日摘要', enabled: true, prompt: '写今天的摘要', scope: '', timing: { kind: 'daily', time: '09:00' } as const }
+  const daily = { id: 'digest', name: '每日摘要', enabled: true, prompt: '写今天的摘要', scope: '', maxRuntimeMs: 0, timing: { kind: 'daily', time: '09:00' } as const }
   const from = Date.parse('2026-11-03T02:00:00.000Z')
 
   it('says when an enabled schedule fires next, in words and as an instant', () => {
@@ -178,6 +178,13 @@ describe('scheduleView', () => {
     const plain = scheduleView(daily, from)
     expect(plain.deliverTo).toBeUndefined()
     expect(plain.deliverToText).toBe('只落 RESULT.md 与主会话通知（不进聊天室）')
+  })
+
+  it('says the wall-clock budget in words, and says plainly when there is none', () => {
+    // 面板照抄这句话，所以这个视图是它唯一的所有者：这里不钉住，删掉它就没人发现。
+    expect(scheduleView({ ...daily, maxRuntimeMs: 60 * 60_000 }, from).budgetText)
+      .toBe('墙钟预算 60 分钟（到点先提醒收尾，再过 10 分钟仍未结束就停下并交给人）')
+    expect(scheduleView(daily, from).budgetText).toBe('无墙钟预算（跑多久都行）')
   })
 })
 

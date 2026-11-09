@@ -44,6 +44,15 @@ export const ScheduleSchema = z.object({
     channel: z.string().trim().min(1, 'a delivery address needs the channel it delivers to'),
     thread: z.string().trim().min(1).optional(),
   }).optional(),
+  /**
+   * Wall-clock budget for one firing, in milliseconds; 0 or absent means no budget.
+   *
+   * Measured on the Ticket's running attempt, so it covers everything the worker does inside it — including the
+   * subagents it spawns, which is exactly what makes "do not get around the limit by delegating" a fact about the
+   * system rather than a sentence in the prompt. At the budget the worker is told to wrap up and report; a grace
+   * period later a still-running attempt is interrupted and the Ticket fails in front of a person.
+   */
+  maxRuntimeMs: z.number().int().min(0).max(7 * 86_400_000).default(0),
   timing: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('every'), seconds: z.number().int().min(60).max(30 * 86400) }),
     z.object({ kind: z.literal('daily'), time: z.string(), timeZone: z.string().optional() }),
@@ -255,6 +264,11 @@ export const SettingsSchema = z.object({
      * flaky upstream is not a reason to stop — the failed turn's own duration is the backoff. The escape hatch exists
      * because an upstream that is down for a day would otherwise burn a day of retries.
      */
+    /**
+     * Default wall-clock budget for a scheduled firing when the schedule names none; 0 = no budget.
+     * It lives with the watchdog because it is a time-based enforcement knob, not a property of the executor.
+     */
+    maxRuntimeMs: z.number().int().min(0).max(7 * 86_400_000).default(0),
     autoRetry: z.boolean().default(true),
     autoRetryMax: z.number().int().min(0).max(1000).default(0),
     /** How many rescues one Ticket gets before the Watchdog stops and tells a person instead. */

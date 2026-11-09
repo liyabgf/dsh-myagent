@@ -144,6 +144,8 @@ const scheduleView = (over: Record<string, unknown> = {}): Record<string, unknow
   ...scheduleRecord(over), describe: '每天 09:00', zone: 'Asia/Shanghai', next: NEXT_DAY,
   // 【S-2】报告送去哪儿：服务端给人话，页面只照抄，不自己拼措辞。
   deliverToText: '送到聊天频道 telegram（该频道的默认会话）',
+  // 【S-1】墙钟预算，同样由服务端给人话。
+  budgetText: '墙钟预算 60 分钟（到点先提醒收尾，再过 10 分钟仍未结束就停下并交给人）',
 })
 
 /** The settings document as the server keeps it: every default filled in, which is what `GET state` hands over. */
@@ -5596,13 +5598,15 @@ describe('排期的送达地址（S-2）', () => {
     await settle()
     const rows = all('#schedules li').map(node => read(node)).join('\n')
     expect(rows).toContain('送到聊天频道 telegram')
+    // 【S-1】预算也在同一行：一个看不见的上限等于没有上限。
+    expect(rows).toContain('墙钟预算 60 分钟')
   })
 
   it('服务端没报送达地址时明说未知，而不是留一格空白让人猜', async () => {
     await mount(scheduleRoutes({
       // 夹具的 deliverToText 在展开之后、会盖掉 over 里的 undefined，所以"服务端没报"只能这样造：
       // 造一份视图再把键删掉。夹具的写法本身不是错的——默认值必须能赢过调用者的省略——只是这里要的恰恰是"缺席"。
-      'GET schedules': { zone: 'Asia/Shanghai', schedules: [(() => { const view = scheduleView(); delete view.deliverToText; return view })()] },
+      'GET schedules': { zone: 'Asia/Shanghai', schedules: [(() => { const view = scheduleView(); delete view.deliverToText; delete view.budgetText; return view })()] },
     }))
     click(button('派活'))
     await settle()
@@ -5610,5 +5614,6 @@ describe('排期的送达地址（S-2）', () => {
     await settle()
     const rows = all('#schedules li').map(node => read(node)).join('\n')
     expect(rows).toContain('送达 （这一版服务端没报，未知）')
+    expect(rows).toContain('墙钟预算：（这一版服务端没报，未知）')
   })
 })

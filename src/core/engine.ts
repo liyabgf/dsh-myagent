@@ -580,10 +580,15 @@ export class Engine {
   // ---------------------------------------------------------------- People
 
   /**
-   * A person's stop, which withdraws the Mandate: the Ticket ends `stopped`, its worker's turn is cancelled and its
-   * background work stops. The stop message itself is never re-evaluated.
+   * Withdraw the Mandate: the Ticket ends `stopped`, its worker's turn is cancelled and its background work stops.
+   * The stop message itself is never re-evaluated.
+   *
+   * `by` defaults to a person because that is the usual caller, and it is a parameter because it is not the only one:
+   * a Ticket that ran past its wall-clock budget is stopped by the system, and recording that as a person's decision
+   * would put a choice in the operator's history that the operator never made. Attribution is the one thing an audit
+   * log cannot recover after the fact.
    */
-  stopTicket(ticketId: string, reason = 'A person stopped this Ticket'): Ticket {
+  stopTicket(ticketId: string, reason = 'A person stopped this Ticket', by: TicketEvent['by'] = { kind: 'person' }): Ticket {
     return this.tx.atomic(() => {
       const ticket = this.require(ticketId)
       if (!liveTicket(ticket)) throw new UserError('stop_refused')
@@ -593,8 +598,8 @@ export class Engine {
       // leaving an ended Ticket with a permanently `pending` Assignment.
       const latest = latestAssignment(ticket)
       const assignment = latest !== undefined && latest.state !== 'ended' ? latest : undefined
-      this.record(ticketId, 'stopped', { kind: 'person' }, { reason })
-      let next = ended(ticket, at, 'person', 'stopped', reason)
+      this.record(ticketId, 'stopped', by, { reason })
+      let next = ended(ticket, at, by.kind, 'stopped', reason)
       if (assignment !== undefined) {
         next = withAssignment(next, { ...assignment, state: 'ended', endedAt: at, endedReason: 'stopped' })
       }

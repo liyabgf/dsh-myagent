@@ -115,6 +115,8 @@ export const KV = {
   autoRetry: (ticketId: string) => `auto-retry:${ticketId}` as const,
   /** The operator's decision queue: items parked there wait for a person, and the panel shows them. */
   operatorQueue: 'operator:queue' as const,
+  /** That one attempt has already been told its runtime budget is up: `budget:nudge:<ticket>:<attempt>`. */
+  budgetNudge: (ticketId: string, assignmentId: string) => `budget:nudge:${ticketId}:${assignmentId}` as const,
   /** The team's prompt overrides: `prompts:config`. */
   promptsConfig: 'prompts:config' as const,
   /** The prompt revision counter. */

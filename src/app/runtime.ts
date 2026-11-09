@@ -74,6 +74,14 @@ const CATALOG_BYTES = 32 * 1024
 const SKILL_SCRIPT_BYTES = 64 * 1024
 
 const PASS_INTERVAL_MS = 2_000
+/**
+ * How long a worker gets to wrap up after being told its runtime budget is up.
+ *
+ * Long enough to write a report and register it — the whole point of the nudge is that a partial, honest report beats
+ * a killed process — and short enough that "the budget" still means something. Ten minutes against a 60-minute
+ * budget is a wrap-up, not a second shift.
+ */
+const BUDGET_GRACE_MS = 10 * 60_000
 /** The panel page, as this installation ships it. */
 const PANEL_FILE = 'panel/index.html'
 
@@ -467,7 +475,8 @@ export class Runtime implements HttpHost {
     this.effects.handle('trigger', payload => { this.engine.receive(payload as Trigger) })
     this.passes = new Passes({
       effects: this.effects, intervalMs: PASS_INTERVAL_MS, health: this.health.entry('passes'),
-      lifetime: this.lifetime, extra: [async (): Promise<void> => this.refresh()],
+      lifetime: this.lifetime,
+      extra: [async (): Promise<void> => this.refresh(), async (): Promise<void> => this.enforceRuntimeBudgets()],
       onPassError: (error: unknown): void => { context.logger.warn('a myagent pass failed: %s', reason(error)) },
     })
     this.sources = new SourceRegistry(this.sourceHost(), [cronKind, inboxKind(this.machine.inboxDir), sessionKind, ruleKind, chatKind])
@@ -958,6 +967,54 @@ export class Runtime implements HttpHost {
 
   dismissDecision(id: string): void {
     this.store.set(KV.operatorQueue, (this.store.get<DecisionRequest[]>(KV.operatorQueue) ?? []).filter(item => item.id !== id))
+  }
+
+  /**
+   * Enforce the wall-clock budget a scheduled firing carries: tell the worker to wrap up at the budget, and stop it
+   * a grace period later if it is still running.
+   *
+   * On the pass loop rather than on a timer of its own: the pass already runs every two seconds and already has the
+   * lifetime and the health entry, and a second timer is a second thing that has to be disposed correctly. The
+   * measurement is the running attempt's own `startedAt`, so it covers the subagents and background jobs the worker
+   * started — a limit a worker could delegate its way around would not be a limit.
+   *
+   * The nudge is remembered per attempt in `kv` rather than in the Ticket's log: the log already carries the note
+   * itself (that IS the nudge), and a second record of "we told them" would be one fact with two owners.
+   */
+  enforceRuntimeBudgets(now = Date.now()): void {
+    for (const ticket of this.store.tickets.list()) {
+      if (ticket.ended !== undefined) continue
+      const assignment = runningAssignment(ticket)
+      if (assignment === undefined || assignment.startedAt === undefined) continue
+      const trigger = this.store.triggers.get(ticket.origin.triggerId)?.trigger
+      const budget = typeof trigger?.meta?.runtimeBudgetMs === 'number' ? trigger.meta.runtimeBudgetMs : 0
+      if (budget <= 0) continue
+      const elapsed = now - Date.parse(assignment.startedAt)
+      if (elapsed < budget) continue
+      const nudgeKey = KV.budgetNudge(ticket.id, assignment.id)
+      if (this.store.get<boolean>(nudgeKey) !== true) {
+        this.store.set(nudgeKey, true)
+        this.engine.note(ticket.id,
+          `时间预算已用完（${Math.round(budget / 60000)} 分钟）。停止开始新的搜索或新的子任务，把已有的结论写成产物并登记，`
+          + '然后用 myagent_report 收尾——一份说明"预算到了、做到哪里、还差什么"的报告，好过一份永远交不出的完美报告。')
+        this.sessionHealth.problem(ticket.id,
+          `Ticket ${ticket.id}: its runtime budget of ${Math.round(budget / 60000)} minute(s) is up; it has been told to wrap up and report`)
+        this.context.logger.warn('myagent — runtime budget reached for %s after %s ms', ticket.id, elapsed)
+        continue
+      }
+      if (elapsed < budget + BUDGET_GRACE_MS) continue
+      // Still running a grace period after being told: the budget is not a request. `stopTicket` withdraws the
+      // Mandate, cancels the turn and stops background work — including the subagents, which is what makes
+      // "delegate your way past the limit" not a strategy. Attributed to the system, not to the operator.
+      const reason = `超出时间预算：预算 ${Math.round(budget / 60000)} 分钟，宽限 ${Math.round(BUDGET_GRACE_MS / 60000)} 分钟后仍在运行，已被系统停下。`
+      this.engine.stopTicket(ticket.id, reason, { kind: 'system', id: 'runtime-budget' })
+      // And it lands in the operator's decision queue: whether to raise the budget, split the job, or leave it is
+      // theirs, and a stopped Ticket on a list is easy to miss while a queue entry says "this needs a decision".
+      this.raiseDecision(`任务 ${ticket.id.slice(0, 8)} 超出墙钟预算被停下`, reason, 'runtime-budget')
+      this.sessionHealth.problem(ticket.id,
+        `Ticket ${ticket.id}: ran past a ${Math.round(budget / 60000)}-minute budget plus the ${Math.round(BUDGET_GRACE_MS / 60000)}-minute wrap-up window, and was stopped`)
+      this.context.logger.warn('myagent — stopped %s for exceeding its runtime budget', ticket.id)
+    }
   }
 
   /**
