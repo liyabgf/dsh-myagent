@@ -1383,13 +1383,18 @@ export class Engine {
    * Bidirectional cross-Ticket lineage derived from the Engine's event log (`artifact_read` and worker `input` hand-offs).
    * - `citedBy`: other Tickets that read this Ticket's artifacts or received a note from it.
    * - `cites`: other Tickets whose artifacts this Ticket read or that handed a note to it.
+   *
+   * 【P-1 产品变更】`skill_used` 不再混进这里（旧行为：`event.type === 'artifact_read' || event.type === 'skill_used'`
+   * 共用同一对 citedBy/cites）。理由：手艺传承与产物引用是两种事实，混进同一对数字后，面板把"用了谁的手艺"
+   * 显示成"引用了谁的产物"，操作者要开 SQLite 才能分清——而"每个数字都必须可信"是这个面板的第一纪律。
+   * 手艺传承见 {@link skillLineageOf}。
    */
   citationsOf(ticketId: string): { citedBy: string[]; cites: string[] } {
     const citedBy = new Set<string>()
     const cites = new Set<string>()
     for (const event of this.repos.events.list(ticketId)) {
       const detail = event.detail as Record<string, unknown> | undefined
-      if (event.type === 'artifact_read' || event.type === 'skill_used') {
+      if (event.type === 'artifact_read') {
         if (typeof detail?.byTicketId === 'string' && detail.byTicketId !== ticketId) citedBy.add(detail.byTicketId)
         if (typeof detail?.fromTicketId === 'string' && detail.fromTicketId !== ticketId) cites.add(detail.fromTicketId)
       } else if (event.type === 'input') {
@@ -1398,6 +1403,28 @@ export class Engine {
       }
     }
     return { citedBy: [...citedBy], cites: [...cites] }
+  }
+
+  /**
+   * Skill-inheritance lineage, from `skill_used` events only (P-1: the other half of the split).
+   * - `learnedFrom`: Tickets whose promoted crafts this Ticket used.
+   * - `taughtTo`: Tickets that used a craft this Ticket promoted.
+   *
+   * Kept apart from {@link citationsOf} because "stood on somebody's data" and "somebody's technique got reused"
+   * answer different questions: the first is about trust in this answer, the second about which work keeps paying off.
+   */
+  skillLineageOf(ticketId: string): { learnedFrom: string[]; taughtTo: string[] } {
+    const learnedFrom = new Set<string>()
+    const taughtTo = new Set<string>()
+    for (const event of this.repos.events.list(ticketId)) {
+      if (event.type !== 'skill_used') continue
+      const detail = event.detail as Record<string, unknown> | undefined
+      // `skillUsed` writes the consumer's log with `fromTicketId` and the origin's log with `byTicketId`,
+      // so each side reads its own direction off the same event type.
+      if (typeof detail?.fromTicketId === 'string' && detail.fromTicketId !== ticketId) learnedFrom.add(detail.fromTicketId)
+      if (typeof detail?.byTicketId === 'string' && detail.byTicketId !== ticketId) taughtTo.add(detail.byTicketId)
+    }
+    return { learnedFrom: [...learnedFrom], taughtTo: [...taughtTo] }
   }
 
   /** Record that a worker promoted a verified reusable script into the shared skill library (E2). */

@@ -370,6 +370,8 @@ function table(host: HttpHost): readonly Route[] {
         // `files` route answers "what is on disk right now"; this answers "what did this Ticket say it made".
         artifacts: host.artifacts(params.id!),
         ...host.engine.citationsOf(params.id!),
+        // P-1：手艺传承与产物引用分开暴露。面板分开渲染，聊天里的"借力"一句由 Delivery 自己聚合（那是另一个读者）。
+        ...host.engine.skillLineageOf(params.id!),
         /**
          * Where this Ticket's answer goes back to, read from the Trigger that asked — the only place an address was
          * ever written down (contract §3.3). Resolved here rather than in `ticketView` because a view computes what one

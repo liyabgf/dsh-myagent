@@ -611,8 +611,16 @@ describe('tool asset promotion and skill reuse lineage (E2)', () => {
       // A load that succeeded is, and it writes both directions of the lineage.
       finished('myagent-dedup-merger', false)
       expect(craft()).toBe(1)
-      expect(runtime.engine.citationsOf(builder.id).citedBy).toContain(consumer.id)
-      expect(runtime.engine.citationsOf(consumer.id).cites).toContain(builder.id)
+      // 【P-1 产品变更】旧断言：
+      //   expect(runtime.engine.citationsOf(builder.id).citedBy).toContain(consumer.id)
+      //   expect(runtime.engine.citationsOf(consumer.id).cites).toContain(builder.id)
+      // 理由：手艺传承与产物引用是两种事实，citationsOf 曾把 skill_used 混进产物引用，面板于是把
+      // "用了谁的手艺"显示成"引用了谁的产物"。拆分后传承走 skillLineageOf，产物引用保持纯净。
+      // 断言没有放宽：两个方向都改钉在正确的对上，且引用对必须为空（旧写法无法表达这一点）。
+      expect(runtime.engine.skillLineageOf(builder.id).taughtTo).toContain(consumer.id)
+      expect(runtime.engine.skillLineageOf(consumer.id).learnedFrom).toContain(builder.id)
+      expect(runtime.engine.citationsOf(builder.id).citedBy).toEqual([])
+      expect(runtime.engine.citationsOf(consumer.id).cites).toEqual([])
       // One Ticket counts one craft once, however often its worker loads it — the vector this closes is a worker
       // raising its own craft's score by calling in a loop.
       finished('myagent-dedup-merger', false)

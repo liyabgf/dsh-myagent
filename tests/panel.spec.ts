@@ -5416,6 +5416,45 @@ describe('双向引擎血缘 (#d-mentions) 与已掌握的手艺管理（E4）',
     expect(citesRow?.textContent).toContain('搜集信息（b356ac64） · 打开')
   })
 
+  it('手艺传承单独渲染成 #d-skill-lineage，不混进产物引用的蓝框（P-1）', async () => {
+    const t1 = 'b356ac649bc46a144c38f9b4b6619175'
+    const t2 = '19dd5c9ca7bce11fb2c9f7a2b04728b0'
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 2, tickets: [
+        listed({ id: t1, title: '沉淀了抓取手艺', stage: 'done', summary: '' }),
+        listed({ id: t2, title: '复用抓取手艺', stage: 'done', summary: '' }),
+      ] },
+      // 只有手艺传承、没有产物引用：两个框必须各自独立地"有或没有"，这才证明它们真的分开了。
+      [`GET tickets/${t1}`]: ticket({ id: t1, title: '沉淀了抓取手艺', stage: 'done', citedBy: [], cites: [], learnedFrom: [], taughtTo: [t2] }),
+      [`GET tickets/${t2}`]: ticket({ id: t2, title: '复用抓取手艺', stage: 'done', citedBy: [], cites: [], learnedFrom: [t1], taughtTo: [] }),
+    }))
+    click(button('任务'))
+    await settle()
+    click(all('#tickets li')[0]!)
+    await settle()
+    // 产物引用的蓝框不出现——旧行为里 skill_used 会让它冒出来并把传承说成"引用"。
+    expect(document.querySelector('#d-mentions')).toBeNull()
+    const taught = document.querySelector('#d-skill-taught')
+    expect(taught).not.toBeNull()
+    expect(taught?.textContent).toContain('手艺被继承')
+    expect(taught?.textContent).toContain('复用抓取手艺（19dd5c9c） · 打开')
+    // 反向：消费方看到的是「手艺传承（用了 …）」。
+    click(button('复用抓取手艺（19dd5c9c） · 打开', one('#d-skill-lineage')))
+    await settle()
+    const learned = document.querySelector('#d-skill-learned')
+    expect(learned?.textContent).toContain('手艺传承')
+    expect(learned?.textContent).toContain('沉淀了抓取手艺（b356ac64） · 打开')
+  })
+
+  it('没有手艺传承时不渲染那个框——缺席就是缺席，不画空框', async () => {
+    await mount(routes())
+    click(button('任务'))
+    await settle()
+    click(one('#tickets li'))
+    await settle()
+    expect(document.querySelector('#d-skill-lineage')).toBeNull()
+  })
+
   it('在「提示词」页展示内置与任务沉淀的手艺（Skills），支持暂停与两步确认忘掉', async () => {
     let skillEnabled = true
     let deleted = false

@@ -1353,9 +1353,9 @@
         }, '归入')))
     }
 
-    // F6 + E1/E4: Cross-Ticket citation & bidirectional engine lineage (`artifact_read`, `skill_used`, `input`).
-    // Merges engine-recorded `ticket.citedBy` with text-matched citations, and also renders `ticket.cites` (upstream
-    // Tickets whose artifacts or skills this Ticket used) inside the same `.mentions-box` banner.
+    // F6 + E1/E4 + P-1: Cross-Ticket citation & bidirectional engine lineage.
+    // `citedBy`/`cites` 只含产物引用与笔记交接（artifact_read/input）；手艺传承是单独一对字段
+    // `learnedFrom`/`taughtTo`，单独渲染一行——两种事实混在一个数字里，面板就没法被相信（P-1）。
     const shortId = ticket.id.slice(0, 8)
     const textCitedBy = [...ticketIndex.values()].filter(other => {
       if (other.id === ticket.id) return false
@@ -1379,12 +1379,37 @@
       }
       if (citesList.length > 0) {
         mentionRows.push(el('div', { class: 'row', id: 'd-mentions-cites', style: citedByList.length > 0 ? 'margin-top:6px' : undefined },
-          el('b', {}, `借力来源（本任务复用了 ${citesList.length} 张前序任务的成果或手艺）：`),
+          el('b', {}, `借力来源（本任务复用了 ${citesList.length} 张前序任务的成果）：`),
           ...citesList.map(other => el('button', {
             class: 'btn small', onclick: () => { show('tickets'); void open(other.id) },
           }, `${other.title}（${other.id.slice(0, 8)}） · 打开`))))
       }
       node.append(el('div', { id: 'd-mentions', class: 'mentions-box' }, ...mentionRows))
+    }
+    // P-1：手艺传承单独一行。它回答的问题与产物引用不同——不是"这份答案站在谁的数据上"，
+    // 而是"哪张任务沉淀的手艺还在被用"。为空时整行不渲染（没有传承不是需要解释的事）。
+    const learnedFrom = (ticket.learnedFrom || []).filter(id => id !== ticket.id)
+    const taughtTo = (ticket.taughtTo || []).filter(id => id !== ticket.id)
+    if (learnedFrom.length > 0 || taughtTo.length > 0) {
+      const nameOf = id => {
+        const other = ticketIndex.get(id)
+        return other ? `${other.title}（${id.slice(0, 8)}）` : `任务 ${id.slice(0, 8)}`
+      }
+      const link = id => el('button', {
+        class: 'btn small', onclick: () => { show('tickets'); void open(id) },
+      }, `${nameOf(id)} · 打开`)
+      const rows = []
+      if (learnedFrom.length > 0) {
+        rows.push(el('div', { class: 'row', id: 'd-skill-learned' },
+          el('b', {}, `手艺传承（用了 ${learnedFrom.length} 张前序任务沉淀的手艺）：`),
+          ...learnedFrom.map(link)))
+      }
+      if (taughtTo.length > 0) {
+        rows.push(el('div', { class: 'row', id: 'd-skill-taught', style: learnedFrom.length > 0 ? 'margin-top:6px' : undefined },
+          el('b', {}, `手艺被继承（${taughtTo.length} 张后续任务用了本任务沉淀的手艺）：`),
+          ...taughtTo.map(link)))
+      }
+      node.append(el('div', { id: 'd-skill-lineage', class: 'mentions-box' }, ...rows))
     }
     node.append(el('details', { class: 'tech' },
       el('summary', {}, '技术细节（授权、来源 Trigger、范围）'),

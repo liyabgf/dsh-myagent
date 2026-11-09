@@ -1267,6 +1267,33 @@ describe('bidirectional artifact lineage and unclassified collaboration (E1)', (
     engine.attachWork(a, work.id)
     expect(() => engine.authorizeArtifactRead(b, a, 'data/table.csv')).toThrow(/same Work/)
   })
+
+  it('keeps skill inheritance out of artifact citations, in its own pair of directions (P-1)', () => {
+    const { engine } = harness()
+    const a = engine.createTicket({ title: '沉淀了抓取手艺', text: '抓取' }).ticketId!
+    const b = engine.createTicket({ title: '复用抓取手艺', text: '复用' }).ticketId!
+    // 【产品变更】旧行为：skill_used 与 artifact_read 混进同一对 citedBy/cites ——
+    //   engine.skillUsed(b, a, 'polite-fetch')
+    //   expect(engine.citationsOf(a)).toEqual({ citedBy: [b], cites: [] })
+    // 理由：两种事实共用一对数字后，面板把"用了谁的手艺"显示成"引用了谁的产物"，操作者无法从界面上分辨，
+    // 只能开 SQLite。拆分后 citationsOf 只管产物与笔记，skillLineageOf 只管手艺传承，各自双向。
+    engine.skillUsed(b, a, 'polite-fetch')
+
+    expect(engine.citationsOf(a)).toEqual({ citedBy: [], cites: [] })
+    expect(engine.citationsOf(b)).toEqual({ citedBy: [], cites: [] })
+    expect(engine.skillLineageOf(a)).toEqual({ learnedFrom: [], taughtTo: [b] })
+    expect(engine.skillLineageOf(b)).toEqual({ learnedFrom: [a], taughtTo: [] })
+
+    // And an artifact read still lands in citations only — the two lineages never cross in either direction.
+    engine.assignmentStarted(a, engine.require(a).assignments[0]!.id)
+    engine.report(a, { state: 'ready', summary: '抓完了', files: ['data/table.csv'] })
+    engine.recordArtifactRead(b, a, 'data/table.csv')
+    expect(engine.citationsOf(a)).toEqual({ citedBy: [b], cites: [] })
+    expect(engine.skillLineageOf(a)).toEqual({ learnedFrom: [], taughtTo: [b] })
+    // 去重仍然成立：同一名手艺重复使用不产生第二条传承。
+    engine.skillUsed(b, a, 'polite-fetch')
+    expect(engine.skillLineageOf(a).taughtTo).toEqual([b])
+  })
 })
 
 describe('multi-stage Work and dependency orchestration in createTicket (E3)', () => {

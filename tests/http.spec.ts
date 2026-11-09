@@ -470,6 +470,36 @@ describe('the artifacts a Ticket registered', () => {
     })
   })
 
+  /**
+   * P-1 的另一半比较，归这条路由所有：手艺传承（`skill_used`）与产物引用（`artifact_read`）在同一个响应里
+   * 是**两对分开的字段**。旧行为只有 citationsOf 一对，且把 skill_used 混进去——面板于是把"用了谁的手艺"
+   * 显示成"引用了谁的产物"。`engine.skillUsed` 是这对事件在生产里的唯一写入者，所以从这里驱动。
+   */
+  it('keeps skill inheritance apart from artifact citations on the same detail route (P-1)', async () => {
+    await withDeployment(async context => {
+      const producer = await createTicket(context, '沉淀了抓取手艺')
+      const consumer = await createTicket(context, '复用抓取手艺')
+      await context.runtime.nudge()
+      await untilPass(() => context.runtime.engine.require(consumer).assignments.at(-1)!.state === 'running', 'the launch')
+
+      context.runtime.engine.skillUsed(consumer, producer, 'polite-fetch')
+
+      const forward = await context.host.request(api(`tickets/${producer}`), { headers: PANEL_HEADERS })
+      // 传承有自己的字段……
+      expect(forward.json.taughtTo).toEqual([consumer])
+      expect(forward.json.learnedFrom).toEqual([])
+      // ……而且没有污染产物引用：旧行为里这一对会各多出一个 id。
+      expect(forward.json.citedBy).toEqual([])
+      expect(forward.json.cites).toEqual([])
+
+      const backward = await context.host.request(api(`tickets/${consumer}`), { headers: PANEL_HEADERS })
+      expect(backward.json.learnedFrom).toEqual([producer])
+      expect(backward.json.taughtTo).toEqual([])
+      expect(backward.json.citedBy).toEqual([])
+      expect(backward.json.cites).toEqual([])
+    })
+  })
+
   it('records nothing on the detail route for a read that was refused, because the refusal is not a use', async () => {
     await withDeployment(async context => {
       const producer = await createTicket(context, '产出二进制')
