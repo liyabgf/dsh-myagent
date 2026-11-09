@@ -7,7 +7,7 @@
  * retried — a half-made directory would look prepared to the next attempt.
  */
 import { constants } from 'node:fs'
-import { copyFile, lstat, mkdir, realpath } from 'node:fs/promises'
+import { copyFile, lstat, mkdir, realpath, stat } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session'
@@ -151,7 +151,18 @@ export class LocalHostSandbox implements ExecutionSandbox {
     // present in a diff and does nothing. `resolve` already handles a harmless `./`.
     const cleanRel = relativeDest.trim()
     if (cleanRel === '') throw new Error('Refused to materialize an empty destination path')
-    const inputsRoot = resolve(workspaceDir, 'inputs', sourceTicketId.slice(0, 8))
+    // The directory is named by the FULL source Ticket id. The first version used the 8-hex prefix, which meant two
+    // Tickets whose ids share a prefix silently shared one inputs/ directory — the kind of collision nobody notices
+    // because nothing errors, and the worker's own prompt (`worker.md`) always said `inputs/<ticket_id>`, so this is
+    // the documented contract finally honoured. A source Ticket materialized by an older build may already have the
+    // legacy directory in this workspace; that one is REUSED rather than split across two names, because the reader
+    // of these files is a worker with a memory of paths it just saw.
+    const fullRoot = resolve(workspaceDir, 'inputs', sourceTicketId)
+    const legacyRoot = resolve(workspaceDir, 'inputs', sourceTicketId.slice(0, 8))
+    const present = async (path: string): Promise<boolean> => stat(path).then(() => true, () => false)
+    const inputsRoot = await present(fullRoot) || !await present(legacyRoot)
+      ? fullRoot
+      : legacyRoot
     const target = resolve(inputsRoot, cleanRel)
     // Strict containment: equal-to-root is refused too, since copying a file onto a directory path is just EISDIR
     // wearing a success-shaped error message.

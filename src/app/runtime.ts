@@ -7,7 +7,8 @@
  * and an Assignment whose worker Session is gone is interrupted rather than left looking alive.
  */
 import { readdirSync, readFileSync } from 'node:fs'
-import { lstat, readFile, rm } from 'node:fs/promises'
+import type { Dirent } from 'node:fs'
+import { lstat, readdir, readFile, rm } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -67,6 +68,25 @@ const WORKER_ARTIFACT_BYTES = 256 * 1024
  * long-lived deployment is its oldest Tickets.
  */
 const WORKER_MATERIALIZE_BYTES = 64 * 1024 * 1024
+/**
+ * Total bytes one Ticket's `inputs/` may hold. The per-file cap alone let 50 Tickets × 60 MB accumulate into a
+ * 3 GB workspace nobody budgeted for — every single copy legal, the sum not. Measured before the copy, so a
+ * refusal leaves no orphan; the worker is told how much is already there and what the ceiling is.
+ */
+const WORKER_INPUTS_TOTAL_BYTES = 512 * 1024 * 1024
+
+/** Recursive byte size of a directory that is about to be added to; absent directories answer 0. */
+async function directoryBytes(root: string): Promise<number> {
+  const entries: readonly Dirent[] = await readdir(root, { withFileTypes: true })
+    .then(list => list, () => [] as Dirent[])
+  let total = 0
+  for (const entry of entries) {
+    const info = await lstat(join(root, entry.name)).catch(() => undefined)
+    if (info === undefined) continue
+    total += info.isDirectory() ? await directoryBytes(join(root, entry.name)) : info.size
+  }
+  return total
+}
 const CATALOG_TICKETS = 50
 const CATALOG_ARTIFACTS = 20
 const CATALOG_SUMMARY_CHARS = 160
@@ -776,6 +796,17 @@ export class Runtime implements HttpHost {
             ok: false,
             error: `That artifact is ${info.size} bytes, over the ${WORKER_MATERIALIZE_BYTES} a worker may copy into inputs/. `
               + 'Ask the other Ticket for the part you need, or have it publish a smaller extract.',
+          }
+        }
+        // The total quota (P-2): every single copy being legal is exactly how an un-budgeted 3 GB workspace happens.
+        // Measured BEFORE the copy so a refusal leaves no orphan, and the worker is told both numbers.
+        const alreadyHere = await directoryBytes(join(ownDir, 'inputs'))
+        if (alreadyHere + info.size > WORKER_INPUTS_TOTAL_BYTES) {
+          return {
+            ok: false,
+            error: `That artifact is ${info.size} bytes and this workspace's inputs/ already holds ${alreadyHere}, together over `
+              + `the ${WORKER_INPUTS_TOTAL_BYTES} a Ticket may hold in total. Ask the other Ticket for a smaller extract, `
+              + 'or report `blocked` if the work genuinely needs more than the budget.',
           }
         }
         const rel = await this.executor.sandbox.materializeInput(ownDir, absolute, targetTicketId, authorized.artifact.path)

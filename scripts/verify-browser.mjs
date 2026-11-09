@@ -46,6 +46,9 @@ function check(name, cond, detail = '') {
  * `rows === 1 ? !空提示 : true`，0 条时**恒真**，等于把检查关掉还给它记了一次通过。
  * 更早的表现是：同一个脚本在不同数据下跑出过 88/88 与 84/84，两个"全绿"根本不可比。
  *
+ * 【环境教训】一次崩溃会**泄漏**整套 Chromium 子进程（今天实测残留 28 个），让后续每次运行都更接近
+ * "Target page … has been closed"。连续两三次退出码 1 时，先 `ps aux | grep -i chromium` 数残留并
+ * pkill —— 不要先怀疑自己的代码，更不要先怀疑产品。崩溃运行的 finally 不会执行，泄漏是必然的。
  * 当时只要做到这一步就能避免：**守卫不成立时调用 skip(name, reason)**，让被跳过的检查
  * 计数、并在结论行逐条列出名字与原因。一条检查要么行使、要么显式登记为跳过——
  * 于是 `通过 + 失败 + 跳过` 这个总数与数据形状无关，跨运行可比。
@@ -999,7 +1002,7 @@ try {
   check('设置页可视化快捷栏 #settings-quick 渲染可见', quickExists)
 
   await relaunch()
-  console.log('── 4. 打开 547 文件 / 76 产物的重型 Ticket (19dd5c9c) 检验盒模型高度有界性')
+  console.log('── 4. 打开文件最多的重型 Ticket 检验盒模型高度有界性')
   // 【实测教训，勿再加回】这里曾经加过一次 `page.goto(BASE, { waitUntil: 'networkidle' })` 想"让渲染器从干净状态开始"，
   // 结果**必崩**（Target page closed）。原因不是内存：面板每 5 秒轮询一次，`networkidle` 在这种页面上
   // 永远等不到空闲，goto 与轮询互相拖着，最后把 Chrome 弄死。二分定位过程：停用 U23 块→仍崩；去掉重载→72 条全过。
@@ -1007,19 +1010,31 @@ try {
   await page.click('#tabs button[data-tab="tickets"]')
   await page.click('#filter button[data-filter="all"]')  // 【U7】下拉改 chips
   await page.waitForTimeout(500)
-  // 靶子必须是**那一张**重型任务。原先写的是 `find(…'信息比对') || items[0]`：一旦线上那张被删掉，
-  // 回退会悄悄把靶子换成列表第一行，三条高度断言于是量的是一个轻量任务、照样报 ✓——
-  // 16947px / 13510px / 37112px 那个回归就此无人看守，而结论行全绿。
-  // 这比检查变红更坏：红会被人查，"量错了对象还全绿"不会。所以回退不再算通过：
-  // 找不到硬编码的那张就**显式 skip 四条**（见 skip 的纪律：一个守卫里几条 check 就 skip 几次）。
-  // 后续项：靶子应当按"文件数/产物数最多的那张"动态选（API 里能查），而不是硬编码 19dd5c9c 的标题。
-  const heavy = await page.evaluate(() => {
-    const items = [...document.querySelectorAll('#tickets li:not(.group-head)')]  // 【U22】排除分段标题
-    const target = items.find(li => li.textContent.includes('信息比对'))
-    if (!target) return { intended: false, rows: items.length }
-    target.click()
-    return { intended: true, title: (target.querySelector('.title')?.textContent || '').trim().slice(0, 40) }
-  })
+  // 【P-6】靶子按"文件数最多"动态选（Node 侧问 API，不占浏览器），不再硬编码任何活任务的 id 或标题。
+  // 旧版 find('信息比对') 依赖线上恰好有那一张——它被删掉的那天这四条全变 skip，而 16947px /
+  // 13510px / 37112px 那个回归就无人看守。动态选靶让"重型任务存在"成为唯一前提；
+  // 阈值 30 高于一般轻量任务（通常个位数），又远低于那 547 张的真实载荷。
+  const HEAVY_MIN_FILES = 30
+  const heavy = await (async () => {
+    try {
+      const res = await fetch(`${BASE}api/tickets?state=all&limit=100`, { headers: { 'x-myagent-request': '1' } })
+      const list = (await res.json()).tickets || []
+      let best = null
+      for (const row of list.slice(0, 20)) {
+        const detail = await (await fetch(`${BASE}api/tickets/${row.id}/files`, { headers: { 'x-myagent-request': '1' } })).json()
+        const count = detail.count ?? (detail.files || []).length
+        if (count >= HEAVY_MIN_FILES && (best === null || count > best.count)) {
+          best = { id: row.id, title: (row.title || '').slice(0, 40), count }
+        }
+      }
+      return best === null ? { intended: false, rows: list.length } : { intended: true, ...best }
+    } catch { return { intended: false, rows: -1 } }
+  })()
+  if (heavy.intended) {
+    // 【实测教训（上方注释的原样保留）】要重新导航就用 domcontentloaded，别用 networkidle。
+    await page.goto(`${BASE}#ticket=${heavy.id}`, { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(700)
+  }
   if (heavy.intended) {
     await page.waitForTimeout(700)
     const boxMetrics = await page.evaluate(() => {
@@ -1046,9 +1061,8 @@ try {
     // 降为视口截图：断言一条没少，脚本不再随机死在半路。
     await page.screenshot({ path: `${SHOT_DIR}/panel-after-tickets-all.png` })
   } else {
-    const why = `线上没有标题含「信息比对」的那张重型任务（列表 ${heavy.rows} 行），硬编码靶子失效；`
-      + '不按文件数动态选靶就量不到 16947px 那个回归，宁可跳过也不换一张轻量任务假装量过。'
-      + '盒模型有界性由 tests/panel.spec.ts 覆盖'
+    const why = `线上没有文件数 ≥ ${HEAVY_MIN_FILES} 的任务（列表 ${heavy.rows} 行）：没有重型任务可量；`
+      + '宁可跳过也不拿轻量任务假装量过。盒模型有界性由 tests/panel.spec.ts 覆盖'
     skip('已打开重型 Ticket 详情', why)
     skip('#d-files .filelist 高度受控 (<= 400px，修复前 16947px)', why)
     skip('#d-artifacts 高度受控 (<= 400px，修复前 13510px)', why)
@@ -1057,16 +1071,36 @@ try {
 
   await relaunch()
   console.log('── 5. 跨 Ticket 引用回溯 (F6) 与深链路由 (#ticket= / #work=)')
-  await page.goto(`${BASE}#ticket=b356ac649bc46a144c38f9b4b6619175`, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(700)
-  const f6Info = await page.evaluate(() => {
-    const el = document.getElementById('d-mentions')
-    return el ? { text: el.textContent, visible: getComputedStyle(el).display !== 'none' } : null
-  })
-  check('深链 #ticket=b356ac64 打开对应 Ticket 并渲染 F6 跨 Ticket 引用提示 (#d-mentions)',
-    f6Info !== null && f6Info.visible && f6Info.text.includes('信息比对'),
-    f6Info ? f6Info.text.slice(0, 60) : 'missing')
-  await page.screenshot({ path: `${SHOT_DIR}/panel-after-f6-mentions.png`, fullPage: true })
+  // 【P-6】深链靶子动态选：Node 侧找一张引擎血缘非空的（citedBy 或 cites），不再硬编码 b356ac64。
+  const mentionTarget = await (async () => {
+    try {
+      const res = await fetch(`${BASE}api/tickets?state=all&limit=100`, { headers: { 'x-myagent-request': '1' } })
+      const list = (await res.json()).tickets || []
+      for (const row of list.slice(0, 20)) {
+        const detail = await (await fetch(`${BASE}api/tickets/${row.id}`, { headers: { 'x-myagent-request': '1' } })).json()
+        if ((detail.citedBy || []).length > 0 || (detail.cites || []).length > 0) {
+          return { id: row.id, citedBy: (detail.citedBy || []).length, cites: (detail.cites || []).length }
+        }
+      }
+      return null
+    } catch { return null }
+  })()
+  if (mentionTarget) {
+    await page.goto(`${BASE}#ticket=${mentionTarget.id}`, { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(700)
+    const f6Info = await page.evaluate(() => {
+      const el = document.getElementById('d-mentions')
+      return el ? { text: el.textContent, visible: getComputedStyle(el).display !== 'none' } : null
+    })
+    check(`深链 #ticket=${mentionTarget.id.slice(0, 8)} 打开对应 Ticket 并渲染 F6 跨 Ticket 引用提示 (#d-mentions)`,
+      f6Info !== null && f6Info.visible && (f6Info.text.includes('关联引用') || f6Info.text.includes('借力来源')),
+      f6Info ? f6Info.text.slice(0, 60) : 'missing')
+    await page.screenshot({ path: `${SHOT_DIR}/panel-after-f6-mentions.png`, fullPage: true })
+  } else {
+    skip('深链 #ticket=<有血缘的> 打开对应 Ticket 并渲染 F6 跨 Ticket 引用提示 (#d-mentions)',
+      '线上没有任何引擎血缘非空的 Ticket（citedBy/cites 全空）：F6 提示框无从渲染。'
+      + '渲染逻辑由 tests/panel.spec.ts 覆盖；#ticket= 深链路由本身在第 4 节已行使过（重型靶子就是深链打开的）')
+  }
 
   // Test #work=<id> deep link if any work exists
   // 原先这是在 `page.evaluate` 里发的 fetch。第 5 节一直是全脚本最脆弱的一步（此前偶发

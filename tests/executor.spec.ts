@@ -616,13 +616,16 @@ describe('artifact catalog discovery and workspace materialization for VM compat
         })],
       })
 
-      // 2. Materialize into consumer's own `inputs/<shortId>/data/companies.csv`
+      // 2. Materialize into consumer's own `inputs/<ticket_id>/data/companies.csv`
+      // 【P-3 产品变更】旧断言：materialized_to/localCopy 用 `producer.slice(0, 8)`（8 位前缀目录）。
+      // 理由：前缀目录意味着两张前缀相同的任务**静默共享**一个 inputs/ 目录——没有任何错误，只有悄悄混在一起
+      // 的数据；而 worker.md 从头到尾写的都是 `inputs/<ticket_id>`，这次是实现向文档兑现。
       const mat = await runtime.readArtifact(consumer, producer, 'data/companies.csv', true)
       expect(mat).toMatchObject({
         ok: true,
-        materialized_to: join('inputs', producer.slice(0, 8), 'data', 'companies.csv'),
+        materialized_to: join('inputs', producer, 'data', 'companies.csv'),
       })
-      const localCopy = join(consDir, 'inputs', producer.slice(0, 8), 'data', 'companies.csv')
+      const localCopy = join(consDir, 'inputs', producer, 'data', 'companies.csv')
       expect(existsSync(localCopy)).toBe(true)
       expect(readFileSync(localCopy, 'utf8')).toBe('name,round\nDeepSeek,A\n')
       // Both sides recorded lineage
@@ -717,9 +720,44 @@ describe('the artifact catalog a worker browses is bounded and newest-first', ()
       expect(read.error).toContain('over the')
       // The point of measuring first: the old order copied the file and then discovered its size, so a refusal left a
       // 65 MB orphan in the workspace — and the worker, told only that the read failed, would likely try again.
-      const target = join(runtime.engine.require(viewer).execution!.directory, 'inputs', producer.slice(0, 8), 'data', 'huge.csv')
+      const target = join(runtime.engine.require(viewer).execution!.directory, 'inputs', producer, 'data', 'huge.csv')
       expect(existsSync(target)).toBe(false)
       // A refused read also leaves no lineage: see `Engine.recordArtifactRead`.
+      expect(runtime.engine.citationsOf(producer).citedBy).not.toContain(viewer)
+    } finally { await runtime.stop() }
+  })
+
+  it('refuses a copy that would take inputs/ over the TOTAL quota, before copying, and says both numbers (P-2)', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      const viewer = runtime.engine.createTicket({ title: '快装满的', text: '再搬一个进来' }).ticketId!
+      const producer = runtime.engine.createTicket({ title: '产出补充文件的', text: '产出一个文件' }).ticketId!
+      const viewerDir = runtime.engine.require(viewer).execution!.directory
+      const producerDir = runtime.engine.require(producer).execution!.directory
+      // 预填 500MB（稀疏文件，不占真实磁盘）：单文件上限（64MB）挡不住它，总配额（512MB）才挡得住——
+      // 这正是 P-2 存在的理由：每一次拷贝都合法，总和却没人预算过。
+      const fillerDir = join(viewerDir, 'inputs', 'filler')
+      mkdirSync(fillerDir, { recursive: true })
+      const filler = join(fillerDir, 'old.bin')
+      writeFileSync(filler, '', 'utf8')
+      truncateSync(filler, 500 * 1024 * 1024)
+      mkdirSync(join(producerDir, 'data'), { recursive: true })
+      const extra = join(producerDir, 'data', 'more.bin')
+      writeFileSync(extra, '', 'utf8')
+      truncateSync(extra, 20 * 1024 * 1024)
+      runtime.engine.assignmentStarted(producer, runtime.engine.require(producer).assignments[0]!.id)
+      runtime.engine.report(producer, { state: 'ready', summary: '产出了补充文件', files: ['data/more.bin'] })
+
+      const read = await runtime.readArtifact(viewer, producer, 'data/more.bin', true)
+      expect(read.ok).toBe(false)
+      if (read.ok) throw new Error('expected a refusal')
+      // 两个数字都在错误里：worker 得知道"已经有多少"和"上限是多少"才能决定下一步。
+      expect(read.error).toContain('together over')
+      expect(read.error).toContain('536870912')
+      // 先量后拷：拒绝之后 inputs/ 里没有这次拷贝的孤儿。
+      expect(existsSync(join(viewerDir, 'inputs', producer, 'data', 'more.bin'))).toBe(false)
+      // 拒绝不产生血缘。
       expect(runtime.engine.citationsOf(producer).citedBy).not.toContain(viewer)
     } finally { await runtime.stop() }
   })
@@ -754,7 +792,7 @@ describe('LocalHostSandbox.materializeInput refuses what it cannot do safely', (
 
     // 3. The normal path still works, and returns a workspace-relative path.
     const relative = await sandbox.materializeInput(workspace, source, 'dddd2222eeee', 'data/table.csv')
-    expect(relative).toBe(join('inputs', 'dddd2222', 'data', 'table.csv'))
+    expect(relative).toBe(join('inputs', 'dddd2222eeee', 'data', 'table.csv'))
     expect(readFileSync(join(workspace, relative), 'utf8')).toBe('a,b\n1,2\n')
 
     // 4. Re-materializing the same artifact is idempotent: a retried Ticket must not fail on its own earlier copy.
@@ -767,6 +805,37 @@ describe('LocalHostSandbox.materializeInput refuses what it cannot do safely', (
     writeFileSync(mine, '我自己的东西', 'utf8')
     await expect(sandbox.materializeInput(workspace, source, 'eeee3333ffff', 'mine.csv')).rejects.toThrow(/different file is already/)
     expect(readFileSync(mine, 'utf8')).toBe('我自己的东西')
+  })
+
+  it('names the inputs/ directory by the FULL source Ticket id (P-3)', async () => {
+    const root = tempDir('myagent-fullid-')
+    const workspace = join(root, 'ws')
+    const sourceDir = join(root, 'src')
+    for (const directory of [workspace, sourceDir]) mkdirSync(directory, { recursive: true })
+    const source = join(sourceDir, 'table.csv')
+    writeFileSync(source, 'a,b\n1,2\n', 'utf8')
+    const id = 'a1b2c3d4e5f60718293a4b5c6d7e8f90'
+    const relative = await new LocalHostSandbox().materializeInput(workspace, source, id, 'data/table.csv')
+    expect(relative).toBe(join('inputs', id, 'data', 'table.csv'))
+    // 8 位前缀目录不再被创建：前缀目录是静默碰撞的根源（两张前缀相同的任务共享一个目录，谁都不报错）。
+    expect(existsSync(join(workspace, 'inputs', id.slice(0, 8)))).toBe(false)
+  })
+
+  it('reuses the legacy 8-hex directory when an older build already made one, rather than splitting a source in two', async () => {
+    const root = tempDir('myagent-legacy-')
+    const workspace = join(root, 'ws')
+    const sourceDir = join(root, 'src')
+    for (const directory of [workspace, sourceDir]) mkdirSync(directory, { recursive: true })
+    const source = join(sourceDir, 'table.csv')
+    writeFileSync(source, 'a,b\n1,2\n', 'utf8')
+    const id = 'ffff0000eeee1111dddd2222cccc3333'
+    const legacy = join(workspace, 'inputs', id.slice(0, 8))
+    mkdirSync(legacy, { recursive: true })
+    writeFileSync(join(legacy, 'first.csv'), 'a,b\n1,2\n', 'utf8')
+    const relative = await new LocalHostSandbox().materializeInput(workspace, source, id, 'second.csv')
+    // 同一个来源在一个工作区里只能有一个目录：worker 刚看过的路径不该在下一份文件里变样。
+    expect(relative).toBe(join('inputs', id.slice(0, 8), 'second.csv'))
+    expect(existsSync(join(workspace, 'inputs', id))).toBe(false)
   })
 })
 
