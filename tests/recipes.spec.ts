@@ -170,3 +170,17 @@ describe('the gate the recipes run through', () => {
     })
   })
 })
+
+describe('the npm payload carries templates, not run records (P-4)', () => {
+  it('files lists examples by extension glob, never the bare directory', async () => {
+    const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf8')) as { files: string[] }
+    // 产品规则：随包发布的 examples 只能是模板（*.md / *.json）。「examples」裸目录会把公开仓里
+    // 206 个 real-run 文件（5.9MB 真实运行记录）发给每个安装者——0.11.6 审计记过这笔账。
+    expect(pkg.files).not.toContain('examples')
+    // 第二把锁：凡 examples 开头的条目都必须带扩展名 glob——删掉上面那条后，
+    // 一个「examples/」（尾斜杠）会绕过 not.toContain('examples')。
+    for (const entry of pkg.files.filter(item => item.startsWith('examples'))) {
+      expect(entry).toMatch(/^examples\/(\*\.(md|json))$/)
+    }
+  })
+})
