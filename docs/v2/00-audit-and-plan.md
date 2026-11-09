@@ -7949,3 +7949,25 @@ Session 只杀轮次**：assignment 写着 running、agent 状态 idle、健康�
 - 提交序列：`aec303d`（P-1 实现）→ `bb8d6a0`（flow 断言迁移）——**第一次用 git 记录产品变更的两步**。
 - 流程教训一条：全量绿之前就提交了 `aec303d`，5 分钟后 flow.spec 的混用断言红了。
   以后**先全量绿再提交**——git 让提交变便宜，不等于提交可以变早。
+
+### 生产实证：侦察任务在真实世界里走完了全链路（0.11.7 重载后核实）
+
+首跑（09:00 受理）在 15:52 以 `ready` 收尾（stage done），事件日志 18 条完整记录了它经历的一切：
+
+- **0.11.6 reload 接管**：`interrupted by={"kind":"system","id":"reload"}`（13:52 那次重载杀掉的轮次被自动接回）；
+- **0.11.0 auto-retry 两次**：`turn_ended`(error) → `interrupted by=auto-retry` → `launched`（14:58、15:03 两轮上游错误，系统自己爬起来）；
+- **S-3 归组**：`classified → 工作 e5f1abb6 #1`；
+- **S-5 登记**：`proposal-2026-11-09.md`（21770 B）+ `fetch/ghfetch.sh` + `fetch/manifest.csv` + `fetch/registry.md` 全部登记进产物目录，`RESULT.md` 4429 B；
+- **S-2 送达**：Telegram `out/sent/` 里的 reply 文件开头就是 `ticket: 5043d550… files: …proposal-2026-11-09.md…`——报告进了操作者的聊天室；
+- **worker 自己守了 60 分钟**：它的登记备注原文写着"外部搜索实际执行 13:58–14:53（约 55 分钟，≤60 分钟上限），未用任何子代理"，并如实记录"会话因上游错误多次中断"。这张票受理于 maxRuntimeMs 写入之前，系统硬上限对它未生效——**是提示词让它自觉守住的**；从明天 09:00 起 S-1 会把它变成系统事实。
+
+一句话总结这一天：一个无人值守的每日任务，被重载杀过、被上游错误杀过两次，每次都自己爬起来，
+最后交出了登记过的提案、送进了聊天室、归进了工作——**这正是"一直推进，直到全部完成"要的样子。**
+
+### 两处小记录
+
+- verify-browser 第一次跑出退出码 1，但**不是断言失败**：`page.waitForTimeout: Target page… has been closed`
+  （Playwright 环境闪断，崩前所有已跑检查全 ✓）。重跑 91/0/1 全绿。**"退出码 1"要先分辨断言红还是环境崩**，
+  两者处置完全不同；这也说明该脚本崩在中途时结论行不会打印——fix-scripts 的"跳过显式登记"纪律同样适用于"崩溃显式可见"。
+- 新字段活体核实：`GET tickets/:id` 返回 `citedBy/cites` 与 `learnedFrom/taughtTo` 两对（当前全空——活体数据里
+  还没有跨任务的手艺使用，缺席渲染为整框不出现，panel.spec 已钉）。
