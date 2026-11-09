@@ -270,6 +270,9 @@
          这是收件箱心智（§6.1），也是 U1 的全部理由。 -->
     <button data-tab="overview" aria-selected="true">总览</button>
     <!-- 【U7 改名】Ticket→任务：操作者的词。data-tab 不动，所以路由、深链与真浏览器断言都不受影响。 -->
+    <!-- 【A-1】说明页：0.10.4 给了侧边栏一键入口，新用户进来第一个问题是"这是什么"——
+         之前答案是一张实时数据表。总览回答"现在有什么需要我"，这里回答"这是个什么系统"。 -->
+    <button data-tab="about">说明</button>
     <button data-tab="tickets" aria-selected="false">任务<span class="badge hidden" id="badge-tickets"></span></button>
     <button data-tab="works">工作</button>
     <button data-tab="new">派活</button>
@@ -280,6 +283,14 @@
     <button data-tab="settings">设置</button>
     <button data-tab="prompts">提示词</button>
   </nav>
+
+  <!-- 【A-1】说明页内容：正文由服务端 about.ts 单一所有，页面照抄，不自己拼第二份。 -->
+  <div id="tab-about" class="hidden">
+    <section class="card" id="about-body">
+      <h2>说明</h2>
+      <p class="muted">读取中…</p>
+    </section>
+  </div>
 
   <div id="tab-overview">
     <!-- KPI 一排：只放"一眼要知道"的数，不放机器路径这类排障时才看的东西。 -->
@@ -1860,6 +1871,7 @@
       ? ((await api('tickets?state=attention&limit=20').catch(() => ({ tickets: [] }))).tickets || [])
       : currentList.filter(item => item.waitsForPerson === true)
     renderAttention(attention, waiting)
+    renderOldestRunning()
     renderUpcoming(upcoming, schedBody.schedules || [])
     renderRecent(recent, decisionsBody.decisions || [])
     // 决断队列单独一条读：它不在 state 里（state 是"系统现在怎么样"，队列是"系统在等你拍板什么"），
@@ -1868,6 +1880,48 @@
     if (decisionsNode !== null) {
       const queue = await api('operator-queue').catch(() => null)
       renderDecisions(decisionsNode, queue === null ? null : (queue.items || []))
+    }
+  }
+
+  /**
+   * 【A-3】「最长已跑」：一张进行中的任务跑了多久，操作者应该从总览一眼看到——worker 静默卡死
+   * 默认不可见（watchdog.silentMs=0），这一行是"看不见的时限"最便宜的替代。只在 ≥30 分钟才出现：
+   * 刚开的任务带进度条式的噪音没有意义。数据不可知时（列表被截断且没补读）宁可不渲染，不画一个假的。
+   */
+  const renderOldestRunning = () => {
+    const host = $('ov-kpis')
+    if (host === null) return
+    let row = $('ov-oldest')
+    if (row === null) { row = el('div', { id: 'ov-oldest', class: 'muted small' }); host.after(row) }
+    row.replaceChildren()
+    const running = currentList.filter(item => item.stage === 'running')
+    if (running.length === 0) return
+    const oldest = running.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b))
+    const minutes = Math.floor((Date.now() - Date.parse(oldest.createdAt)) / 60000)
+    if (minutes < 30) return
+    const said = minutes < 60 ? `${minutes} 分钟` : `${(minutes / 60).toFixed(1)} 小时`
+    row.append(`进行中的任务里最老的一张已经跑了 ${said}——`, el('button', {
+      class: 'linklike', onclick: () => { show('tickets'); void open(oldest.id) },
+    }, `${oldest.title || oldest.id.slice(0, 8)} · 打开`))
+  }
+
+  /**
+   * 【A-1】说明页：正文全部来自 GET about（about.ts 单一所有者），页面只渲染被服务的内容。
+   * 读不到时明说版本旧，而不是留"读取中…"——缺席要诚实，这是这个面板的第一纪律。
+   */
+  const loadAbout = async () => {
+    const node = $('about-body')
+    if (node === null) return
+    const body = await api('about').catch(() => null)
+    node.replaceChildren()
+    node.append(el('h2', {}, '说明'))
+    if (body === null) {
+      node.append(el('p', { class: 'warn' }, '读不到说明内容（接口报错）。可能是宿主上的版本比这个面板旧。'))
+      return
+    }
+    for (const section of (body.about || {}).sections || []) {
+      node.append(el('h2', { style: 'margin-top:14px' }, section.heading),
+        ...section.lines.map(line => el('p', {}, line)))
     }
   }
 
@@ -3871,10 +3925,14 @@ WantedBy=default.target
   const show = name => {
     tab = name
     for (const button of $('tabs').children) button.setAttribute('aria-selected', String(button.dataset.tab === name))
-    for (const panel of ['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts']) {
+    for (const panel of ['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts']) {
       $(`tab-${panel}`).classList.toggle('hidden', panel !== name)
     }
+    // 【A-4】记住上次的页：下次打开面板直接回到你在的地方。深链（#ticket=…）仍优先——
+    // 那是有人给你指路，比你的习惯重要。
+    try { localStorage.setItem('myagent-tab', name) } catch { /* 无痕/禁用存储时静默降级成不记住 */ }
     if (name === 'overview') void loadOverview()
+    if (name === 'about') void loadAbout()
     if (name === 'settings') loadSettings()
     if (name === 'prompts') void loadPrompts()
     // Entering the page reads the lost detail once. The five-second refresh does not: it redraws the COUNTS from the
@@ -4238,6 +4296,16 @@ WantedBy=default.target
   const boot = async () => {
     await probeBackend()
     await load()
+    // 【A-4】深链优先；没有深链时回到上次离开的页。列表是 show() 认识的那批，防止一个被删掉的页名。
+    if (location.hash === '') {
+      try {
+        const remembered = localStorage.getItem('myagent-tab')
+        if (remembered !== null && remembered !== 'overview'
+          && ['about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'].includes(remembered)) {
+          show(remembered)
+        }
+      } catch { /* 存储不可用：当作没记过 */ }
+    }
     applyHash()
   }
   void boot()

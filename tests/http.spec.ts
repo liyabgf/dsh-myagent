@@ -475,6 +475,26 @@ describe('the artifacts a Ticket registered', () => {
    * 是**两对分开的字段**。旧行为只有 citationsOf 一对，且把 skill_used 混进去——面板于是把"用了谁的手艺"
    * 显示成"引用了谁的产物"。`engine.skillUsed` 是这对事件在生产里的唯一写入者，所以从这里驱动。
    */
+  /**
+   * 【A-1】说明页：路由返回服务端正文（about.ts 单一所有者），面板只照抄。
+   * 断言钉的是结构与几个关键句——"刻意不做什么"一节是诚实的核心（没有沙箱、不替你决定），它必须在。
+   */
+  it('serves the about page content as structured sections (A-1)', async () => {
+    await withDeployment(async context => {
+      const response = await context.host.request(api('about'), { headers: PANEL_HEADERS })
+      expect(response.status).toBe(200)
+      const sections = (response.json.about as { sections: { heading: string; lines: readonly string[] }[] }).sections
+      const headings = sections.map(section => section.heading)
+      expect(headings).toContain('这是什么')
+      expect(headings).toContain('它刻意不做什么')
+      expect(headings).toContain('想再深入读什么')
+      // 诚实的两句必须在：没有沙箱、不替你决定——这两句是面板与宣传的分界线。
+      const flat = sections.flatMap(section => section.lines)
+      expect(flat.some(line => line.includes('沙箱'))).toBe(true)
+      expect(flat.some(line => line.includes('不替你决定'))).toBe(true)
+    })
+  })
+
   it('keeps skill inheritance apart from artifact citations on the same detail route (P-1)', async () => {
     await withDeployment(async context => {
       const producer = await createTicket(context, '沉淀了抓取手艺')

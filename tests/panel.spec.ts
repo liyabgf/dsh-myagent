@@ -246,8 +246,16 @@ const routes = (over: Routes = {}): Routes => ({
   // 0.11.0 的决断队列：总览落地就会读它，所以基础夹具里给一个空队列——
   // 否则每条无关测试都会红在一个与本包行为无关的 404 上（U14 给 decisions 的同一条理由）。
   'GET operator-queue': { items: [] },
+  // 【A-1】说明页：总览之外每个测试都可能点到「说明」tab（遍历测试会真的点），基础夹具必须供给它。
+  'GET about': { about: { sections: aboutSections() } },
   ...over,
 })
+
+/** 【A-1】说明页的服务端正文（与 about.ts 同义的最小版）：断言钉的是结构性行为，不复述全部句子。 */
+const aboutSections = () => ([
+  { heading: '这是什么', lines: ['一个给一个人用的任务系统。', '它跑在 DSH 里。'] },
+  { heading: '它刻意不做什么', lines: ['没有沙箱执行。', '不替你决定。'] },
+])
 
 /** The schedule page's own routes, so a test about one behaviour does not have to arrange the other three. */
 const scheduleRoutes = (over: Routes = {}): Routes => routes({
@@ -365,9 +373,15 @@ let watched: [EventTarget, string, EventListenerOrEventListenerObject][] = []
  * Put the page in the DOM and run it, the way a browser opening `/myagent/` does.
  * @param hash the address to open at, because a notification deep-links the panel rather than landing it on the list.
  */
-const mount = async (answers: Routes, hash = '') => {
+const mount = async (answers: Routes, hash = '', seedTab?: string) => {
   // Faked before the page runs: its boot installs a 5-second interval, and a real one would fire in the next test.
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] })
+  // 【A-4 的教训】jsdom 的 localStorage 跨测试共享，而 show() 现在会记住上次到过的页：
+  // 不清掉，前一个测试的习惯就成了这一个测试的落地页（实测 9 条测试顺序红、隔离全绿）。
+  // 真浏览器每个用户一份 storage，这里 clear 是测试隔离，不是产品行为。
+  localStorage.clear()
+  // A-4 的"记得的页"只能在这里预置：boot 在 SCRIPT 运行后异步读它，挂载后再写就晚了。
+  if (seedTab !== undefined) localStorage.setItem('myagent-tab', seedTab)
   // The page's own stylesheet is not installed, so what a test can assert is the class the page hides things with —
   // which is also the class a browser hides them by.
   document.body.innerHTML = MARKUP
@@ -628,7 +642,7 @@ describe('the tabs', () => {
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
       // 【U1】总览是新增的第一项；其余顺序未动。
       // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
-      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
+      .toEqual(['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
 
     click(button('记录'))
     await settle()
@@ -639,8 +653,8 @@ describe('the tabs', () => {
     for (const other of ['tickets', 'works', 'new', 'chat', 'settings', 'prompts']) {  // 【U13】去 'schedules'；【U14】'sources'→'chat'
       expect(byId(`tab-${other}`).classList.contains('hidden'), other).toBe(true)
     }
-    // 【U1】门禁记录从第 4 个变成第 5 个（总览插在首位），落地的总览此时不该是选中态。
-    expect(byId('tabs').children[4]!.getAttribute('aria-selected')).toBe('true')
+    // 【U1】门禁记录从第 4 个变成第 5 个（总览插在首位）；【A-1】说明页又插一位，它成了第 6 个。
+    expect(byId('tabs').children[5]!.getAttribute('aria-selected')).toBe('true')
     expect(byId('tabs').children[0]!.getAttribute('aria-selected')).toBe('false')
   })
 
@@ -2549,6 +2563,8 @@ describe('the contract with the API', () => {
     'POST tickets/:id/dependencies', 'POST tickets/:id/dependencies/drop',
     // 【0.11.0 产品变更】决断队列：总览读 GET，遍历里点一次「知道了」问 POST。
     'GET operator-queue', 'POST operator-queue/:id/dismiss',
+    // 【A-1】说明页：遍历必须真的进一次「说明」，否则 GET about 就成了表里没人问的路由。
+    'GET about',
   ]
   /** One call as a route of that table, with the record ids it carried turned back into parameters. */
   const routeOf = (call: Call): string => `${call.method} ${call.path
@@ -2618,6 +2634,9 @@ describe('the contract with the API', () => {
     }))
     // 【0.11.0】落地页先把队列里那条决断点掉：它属于"只有操作者能推进的事"这一族。
     click(button('知道了', byId('ov-decisions')))
+    await settle()
+    // 【A-1】说明页也在遍历里：新用户的第一站。
+    click(button('说明'))
     await settle()
     // Every page, and the writes on them: the routes a person can reach by clicking around.
     for (const tab of ['工作', '派活', '记录', '聊天', '设置', '提示词']) {  // 【U7】门禁记录→记录；【U13】排期并入派活；【U14】来源→聊天
@@ -5112,12 +5131,13 @@ describe('改名、筛选 chips 与导航徽标（U7）', () => {
     await mount(routes())
     const labels = [...byId('tabs').children].map(node => labelOf(node))
     // 【U13】排期并入派活，一级菜单 9 → 8。旧值：['总览','任务','工作','派活','记录','来源','排期','设置','提示词']
+    // 【A-1】说明页插在总览之后：新用户进来第一个问题是"这是什么"，第一站就该回答它。旧值是 8 项。
     // 【U14】来源页解散：留下的只有聊天，所以这一项改叫「聊天」。旧值含 '来源'。
-    expect(labels).toEqual(['总览', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词'])
+    expect(labels).toEqual(['总览', '说明', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词'])
     // data-tab 没跟着改：它是路由与深链的键，改它等于改协议，而改名只该改给人看的那一层。
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
       // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
-      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
+      .toEqual(['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
   })
 })
 
@@ -5659,5 +5679,64 @@ describe('排期的送达地址（S-2）', () => {
     expect(rows).toContain('送达 （这一版服务端没报，未知）')
     expect(rows).toContain('墙钟预算：（这一版服务端没报，未知）')
     expect(rows).toContain('worker 预设：（这一版服务端没报，未知）')
+  })
+})
+
+describe('说明页、记住页与最长已跑（A-1 / A-3 / A-4）', () => {
+  it('说明页渲染服务端给的全部小节，页面不自己拼正文', async () => {
+    await mount(routes())
+    click(button('说明'))
+    await settle()
+    const body = text('about-body')
+    // 夹具里两个小节各有一句——照抄的证明是"全都在"，而标题之外的句子页面根本没有第二份。
+    expect(body).toContain('这是什么')
+    expect(body).toContain('一个给一个人用的任务系统。')
+    expect(body).toContain('它刻意不做什么')
+    expect(body).toContain('不替你决定。')
+  })
+
+  it('about 读不到时明说可能版本旧，而不是永远的"读取中…"', async () => {
+    await mount(routes({ 'GET about': refuse(500, 'boom') }))
+    click(button('说明'))
+    await settle()
+    expect(text('about-body')).toContain('读不到说明内容')
+    expect(text('about-body')).toContain('比这个面板旧')
+  })
+
+  it('记住上次的页：无深链时回到离开的地方，深链仍然优先', async () => {
+    await mount(routes(), '', 'chat')
+    // A-4：上次的页被恢复，而不是回总览。
+    expect(byId('tab-chat').classList.contains('hidden')).toBe(false)
+    // 第二把锁：恢复走的也是 show()，所以它会把页写回 storage——删掉上面那条断言后
+    // （tab 不可见），这一条仍会因为"boot 根本没调 show"而变红（storage 里还是预置值本身不算证明，
+    // 但 mount 清过 storage 又预置 'chat'，若 show 未执行值仍是 'chat'——所以再挂一个反向：点到别的页）。
+    click(button('任务'))
+    await settle()
+    expect(localStorage.getItem('myagent-tab')).toBe('tickets')
+    // 深链优先：#ticket= 是有人给你指路，比习惯重要。
+    await mount(routes(), '#ticket=ticket-1')
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+  })
+
+  it('进行中且最老的一张跑了很久，总览有一行说它多久、能点开', async () => {
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 2, tickets: [
+        listed(),
+        listed({ id: 'ticket-slow', title: '慢工出细活', stage: 'running', createdAt: AT }),
+      ] },
+    }))
+    const line = text('ov-oldest')
+    expect(line).toContain('最老的一张已经跑了')
+    expect(line).toContain('慢工出细活')
+    // 点开直达那张慢任务。
+    click(button('慢工出细活 · 打开', byId('ov-oldest')))
+    await settle()
+    expect(byId('tab-tickets').classList.contains('hidden')).toBe(false)
+  })
+
+  it('没有进行中的任务或都不够 30 分钟时，不渲染这一行', async () => {
+    await mount(routes())
+    // 夹具里唯一一张是 done。
+    expect(byId('ov-oldest').textContent).toBe('')
   })
 })
