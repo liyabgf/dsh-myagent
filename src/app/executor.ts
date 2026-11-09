@@ -93,14 +93,15 @@ const reason = (error: unknown): string => error instanceof Error ? `${error.nam
 /**
  * Execution environment boundary: workspace preparation and cross-Ticket input materialization.
  *
- * WHAT THIS DOES NOT COVER YET — read before believing a `vm` sandbox is close. Still direct host IO, so each would
- * have to move behind this interface first: running the `prepare` command (`run` below, whose cwd is the workRoot —
- * a host path that does not exist inside a VM).
- * MIGRATED (G-3, 0.13.2): attachment delivery (`deliverAttachment`), `RESULT.md` and workspace removal
- * (`writeWorkspaceFile` / `removeWorkspace`). `REPLY-UNDELIVERED.md` stays direct BY DESIGN: it is written
+ * ALL SIX SITES MIGRATED (G-3, 0.13.2–0.13.5): attachment delivery, workspace removal, listing, reading,
+ * `RESULT.md`, and the `prepare` command. `REPLY-UNDELIVERED.md` stays direct BY DESIGN: it is written
  * synchronously in the give-up path, and a trace a crash can miss is worse than one record the interface does not
- * cover (see `delivery.ts`'s host comment). Until the last two sites move, this interface does not yet encapsulate
- * the whole boundary, and `settings.executor.sandbox: 'vm'` stays refused at startup rather than silently ignored.
+ * cover (see `delivery.ts`'s host comment).
+ *
+ * The interface now ENCAPSULATES the boundary — and `'vm'` stays refused, because encapsulated is not implemented:
+ * the second implementation is unwritten, and a switch that flips on to a sandbox that exists only as a promise is
+ * the quiet kind of lying this file exists to prevent. The refusal is the honest posture until a real VM sandbox
+ * lands, is exercised, and has earned the switch.
  */
 export interface ExecutionSandbox {
   readonly kind: 'local' | 'vm'
@@ -137,10 +138,37 @@ export interface ExecutionSandbox {
    */
   listWorkspace(directory: string): Promise<FileListing>
   /**
+   * 【G-3 站点 5/6——最后一个】Run the operator's `prepare` command for one workspace, inside this sandbox's world.
+   *
+   * The cwd question is THE design decision of this site, and the interface encodes its answer: the caller passes
+   * the WORKSPACE directory and never a cwd, because `dirname(workspace)` is a HOST fact — the work root, a path
+   * that does not exist inside a VM. Each sandbox decides what "beside the workspace" means in its own world:
+   * LocalHost runs the command where it always ran (the work root), a VM runs it wherever its mount layout puts
+   * the workspace's parent. Nothing host-shaped crosses this boundary.
+   *
+   * Returns the command's stdout; throws with stderr when it fails. The environment (a Ticket's id/title/directory
+   * and mandate facts — nothing secret) and the deadline signal are the caller's; how the command is spawned
+   * (shell, stdio caps, grace period) is the sandbox's.
+   */
+  /**
    * 【G-3 站点 4】Read one validated file's bytes for the panel. The path is the caller's to validate
    * (`resolveRealInside` in `files.ts` is policy and stays there); the read is the sandbox's.
    */
   readWorkspaceFile(absolute: string): Promise<{ base64: string; size: number; mtime: string }>
+  /**
+   * 【G-3 站点 5/6——最后一个】Run the operator's `prepare` command for one workspace, inside this sandbox's world.
+   *
+   * The cwd question is THE design decision of this site, and the interface encodes its answer: the caller passes
+   * the WORKSPACE directory and never a cwd, because `dirname(workspace)` is a HOST fact — the work root, a path
+   * that does not exist inside a VM. Each sandbox decides what "beside the workspace" means in its own world:
+   * LocalHost runs the command where it always ran (the work root), a VM runs it wherever its mount layout puts
+   * the workspace's parent. Nothing host-shaped crosses this boundary.
+   *
+   * Returns the command's stdout; throws with stderr when it fails. The environment (a Ticket's id/title/directory
+   * and mandate facts — nothing secret) and the deadline signal are the caller's; how the command is spawned
+   * (shell, stdio caps, grace period) is the sandbox's.
+   */
+  runPrepare(command: string, workspaceDir: string, env: Record<string, string>, signal: AbortSignal): Promise<string>
 }
 
 /**
@@ -171,8 +199,27 @@ async function assertNoSymlinkUnder(root: string, target: string): Promise<void>
   }
 }
 
+/**
+ * A subprocess-shaped seam for the local sandbox: DSH's real runtime in production, a stub in a unit test.
+ * The shape is narrowed to what `runPrepare` actually calls, so a test stub cannot accidentally widen it.
+ */
+export interface SandboxSubprocess {
+  spawn(options: {
+    argv: readonly string[]
+    cwd: string
+    graceMs: number
+    signal: AbortSignal
+    env: Record<string, string>
+    stdio: { stdin: 'ignore'; stdout: { maxBytes: number }; stderr: { maxBytes: number } }
+  }): {
+    done: Promise<{ exitCode: number | null }>
+    collected: { stdout?: { readFrom(offset: number): { text: string } }; stderr?: { readFrom(offset: number): { text: string } } }
+  }
+}
+
 export class LocalHostSandbox implements ExecutionSandbox {
   readonly kind = 'local' as const
+  constructor(private readonly subprocess?: SandboxSubprocess) {}
   async prepareWorkspace(directory: string): Promise<void> {
     await mkdir(directory, { recursive: true })
   }
@@ -200,6 +247,22 @@ export class LocalHostSandbox implements ExecutionSandbox {
   }
   async readWorkspaceFile(absolute: string): Promise<{ base64: string; size: number; mtime: string }> {
     return await readForPanel(absolute)
+  }
+  async runPrepare(command: string, workspaceDir: string, env: Record<string, string>, signal: AbortSignal): Promise<string> {
+    if (this.subprocess === undefined) {
+      throw new Error('this sandbox was built without a subprocess runtime — the prepare command cannot run here')
+    }
+    // cwd 由沙箱决定（见接口注释的"THE design decision"）：本地世界里，工作区的父目录就是 work root，
+    // 也就是 prepare 命令从它存在以来一直运行的地方——迁移不改行为，只改"谁来回答 cwd 是什么"。
+    const handle = this.subprocess.spawn({
+      argv: ['sh', '-c', command], cwd: dirname(workspaceDir), graceMs: 2000, signal, env,
+      stdio: { stdin: 'ignore', stdout: { maxBytes: 1 << 20 }, stderr: { maxBytes: 1 << 16 } },
+    })
+    const { exitCode } = await handle.done
+    const text = (reader: { readFrom(offset: number): { text: string } } | undefined): string => reader?.readFrom(0).text ?? ''
+    if (exitCode === 0) return text(handle.collected.stdout)
+    const ended = exitCode === null ? 'was stopped before it finished' : `exited with ${exitCode}`
+    throw new Error(text(handle.collected.stderr).trim() || `The prepare command ${ended}`)
   }
   async materializeInput(workspaceDir: string, sourceFile: string, sourceTicketId: string, relativeDest: string): Promise<string> {
     // Rejected, never rewritten. The first version stripped a leading `../` and a leading `/` before the containment
@@ -251,7 +314,9 @@ export class LocalHostSandbox implements ExecutionSandbox {
 }
 
 export class DshExecutor implements Executor {
-  readonly sandbox: ExecutionSandbox = new LocalHostSandbox()
+  // 注入 spawn 的地方：本地沙箱需要 DSH 的子进程运行时（真实运行时剥掉凭据形状的环境变量——
+  // 那个安全性质随运行时一起进来，而不是由沙箱自己再实现一次）。
+  readonly sandbox: ExecutionSandbox
   private healthEntry?: HealthEntry
   private get health(): HealthEntry { return this.healthEntry ??= this.host.health.entry('executor') }
 
@@ -261,6 +326,9 @@ export class DshExecutor implements Executor {
   private readonly halting = new Set<string>()
 
   constructor(private readonly host: ExecutorHost) {
+    // 注入 spawn 的地方（在构造函数而不是字段初始化器：参数属性在初始化器运行时还没赋上）：
+    // 本地沙箱需要 DSH 的子进程运行时——真实运行时剥掉凭据形状的环境变量，那个安全性质随运行时进来。
+    this.sandbox = new LocalHostSandbox(host.subprocess)
     host.effects.handle('launch', payload => this.launch(payload as LaunchPayload))
     host.effects.handle('input', payload => this.deliverInputs(payload as InputPayload))
   }
@@ -484,7 +552,10 @@ export class DshExecutor implements Executor {
     if (runPrepare && command !== '') {
       const environment = this.environment(ticket)
       try {
-        await this.run(command, dirname(execution.directory), environment, AbortSignal.any([this.host.lifetime, AbortSignal.timeout(PREPARE_LIMIT_MS)]))
+        // 【G-3 站点 5/6】prepare 在哪个世界里跑由沙箱回答（见接口注释）：调用方只递工作区，
+        // 不递 cwd——work root 是宿主事实，不该穿过边界。
+        await this.sandbox.runPrepare(command, execution.directory, environment,
+          AbortSignal.any([this.host.lifetime, AbortSignal.timeout(PREPARE_LIMIT_MS)]))
       } catch (error) {
         throw new PrepareFailed(reason(error))
       }
@@ -525,19 +596,6 @@ export class DshExecutor implements Executor {
         throw new PrepareFailed(`The attached file ${attachment.source} could not be copied into the Ticket's directory: ${reason(error)}`)
       }
     }
-  }
-
-  /** Run one shell command through DSH's subprocess runtime, which strips credential-shaped variables. */
-  private async run(command: string, cwd: string, env: Record<string, string>, signal: AbortSignal): Promise<string> {
-    const handle = this.host.subprocess.spawn({
-      argv: ['sh', '-c', command], cwd, graceMs: 2000, signal, env,
-      stdio: { stdin: 'ignore', stdout: { maxBytes: 1 << 20 }, stderr: { maxBytes: 1 << 16 } },
-    })
-    const { exitCode } = await handle.done
-    const text = (reader: { readFrom(offset: number): { text: string } } | undefined): string => reader?.readFrom(0).text ?? ''
-    if (exitCode === 0) return text(handle.collected.stdout)
-    const ended = exitCode === null ? 'was stopped before it finished' : `exited with ${exitCode}`
-    throw new Error(text(handle.collected.stderr).trim() || `The prepare command ${ended}`)
   }
 
   /**
