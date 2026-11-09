@@ -763,6 +763,39 @@ describe('the artifact catalog a worker browses is bounded and newest-first', ()
   })
 })
 
+describe('LocalHostSandbox 的 G-3 新接口方法（站点 1/2/3）', () => {
+  it('deliverAttachment puts verified bytes under attachments/, creating the directory lazily', async () => {
+    const root = tempDir('myagent-sb3-')
+    const workspace = join(root, 'ws')
+    await new LocalHostSandbox().deliverAttachment(workspace, 'data.csv', Buffer.from('a,b\n1,2\n'))
+    expect(readFileSync(join(workspace, 'attachments', 'data.csv'), 'utf8')).toBe('a,b\n1,2\n')
+  })
+
+  it('writeWorkspaceFile writes the text, and refuses a path that escapes the workspace', async () => {
+    const root = tempDir('myagent-sb4-')
+    const workspace = join(root, 'ws')
+    // 生产语义原样保留：写 RESULT.md 不隐式建目录（目录该由 launch 的 prepareWorkspace 建好；
+    // 缺目录的写入失败由 delivery 捕获并上健康板——REPLY-UNDELIVERED 那侧才自己 mkdir，理由在它的注释里）。
+    mkdirSync(workspace, { recursive: true })
+    const sandbox = new LocalHostSandbox()
+    await sandbox.writeWorkspaceFile(workspace, 'RESULT.md', '# done\n')
+    expect(readFileSync(join(workspace, 'RESULT.md'), 'utf8')).toBe('# done\n')
+    // 接口是通用的，守卫就不能指望每个调用方都传常量名——带 ../ 的名字必须被拒绝而不是写出工作区。
+    await expect(sandbox.writeWorkspaceFile(workspace, '../escape.md', 'x')).rejects.toThrow(/outside the workspace/)
+  })
+
+  it('removeWorkspace removes the tree, and an absent directory is fine (force)', async () => {
+    const root = tempDir('myagent-sb5-')
+    const workspace = join(root, 'ws')
+    mkdirSync(join(workspace, 'nested'), { recursive: true })
+    writeFileSync(join(workspace, 'nested', 'deep.txt'), 'x', 'utf8')
+    await new LocalHostSandbox().removeWorkspace(workspace)
+    expect(existsSync(workspace)).toBe(false)
+    // 幂等：删一个不存在目录不是错误（runtime 的 force 语义原样保留）。
+    await new LocalHostSandbox().removeWorkspace(workspace)
+  })
+})
+
 describe('LocalHostSandbox.materializeInput refuses what it cannot do safely', () => {
   it('rejects a traversal instead of rewriting it, rejects a symlinked destination, never clobbers a different file, and is idempotent for the same one', async () => {
     const root = tempDir('myagent-sandbox-')

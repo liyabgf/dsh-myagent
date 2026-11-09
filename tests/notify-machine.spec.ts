@@ -14,6 +14,7 @@ import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import { afterEach, describe, expect, it } from 'vitest'
+import { writeFile } from 'node:fs/promises'
 import { findNotifier, OutcomeDelivery } from '../src/app/delivery.ts'
 import { Effects } from '../src/app/effects.ts'
 import { HealthBoard } from '../src/app/health.ts'
@@ -102,6 +103,10 @@ function harness(options: HarnessOptions = {}): Harness {
     // No reply is ever given up on here, so nothing is recorded; a stub that wrote to a log this harness has no
     // Engine for would be the one thing that could make a notification test lie about a delivery.
     replyLost: () => {},
+    // 【G-3 站点 2】同生产路径的真写：notify 走 ENDING 时这里就是 RESULT.md 的落点。
+    writeResultFile: async (directory: string, name: string, text: string) => {
+      await writeFile(join(directory, name), text, 'utf8')
+    },
   }, options.notifier ?? null)
   return {
     store, health, spawns: host.calls.spawns, notices, debugs, directory,

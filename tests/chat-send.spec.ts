@@ -12,6 +12,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, utimesSync, writeFileSync, symlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { writeFile } from 'node:fs/promises'
 import { OutcomeDelivery, sendKey, UNDELIVERED_FILE } from '../src/app/delivery.ts'
 import { Effects } from '../src/app/effects.ts'
 import { HealthBoard } from '../src/app/health.ts'
@@ -767,6 +768,10 @@ describe('a reply nothing can take', () => {
       // Nothing is told anything here: a reply is refused before it reaches a Session, and the log event is the
       // deployment test's business. What is under test is which error the dispatcher threw.
       sessions: {} as unknown as Sessions, replyLost: () => {},
+      // 【G-3 站点 2】同生产路径的真写（这个桩的 notify 也会走到结束文档）。
+      writeResultFile: async (directory: string, name: string, text: string) => {
+        await writeFile(join(directory, name), text, 'utf8')
+      },
     }, null)
     const triggerId = key('chat', 'ops', 'msg-1')
     store.triggers.save({

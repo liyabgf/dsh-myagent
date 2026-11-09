@@ -84,6 +84,17 @@ export interface DeliveryHost {
    */
   replyLost(ticketId: string, detail: Record<string, unknown>): void
   /**
+   * 【G-3 站点 2】Write the Ticket's ending document (`RESULT.md`) into its workspace. A narrow member rather than
+   * the sandbox itself: Delivery gets exactly the one write it needs, and "what the document says" stays this
+   * file's decision while "that it lands in the workspace" becomes the sandbox's promise.
+   *
+   * REPLY-UNDELIVERED.md deliberately does NOT go through this: `sendGaveUp` writes it SYNCHRONOUSLY, on the
+   * documented reasoning that a trace still being written when the giving-up pass returns is a trace a crash can
+   * miss — that guarantee outranks interface purity, and a VM sandbox would have to offer a synchronous write
+   * through its boundary or this one record stays host-local.
+   */
+  writeResultFile(directory: string, name: string, text: string): Promise<void>
+  /**
    * The panel's URL prefix, ending where a Ticket id can be appended: `http://127.0.0.1:3080/myagent/#ticket=`.
    * A notification that cannot be clicked is a banner that is gone before it is read, so it carries a way in.
    */
@@ -777,7 +788,9 @@ export class OutcomeDelivery implements Delivery {
         // dedup key (`notify`, id, at, state) and every stored row's shape exactly as they were.
         const borrowed = this.borrowedOf(ticket.id)
         const document = resultDocument(ticket, payload, borrowed === undefined ? undefined : creditText(borrowed))
-        await writeFile(`${ticket.execution.directory}/RESULT.md`, document, 'utf8')
+        // 【G-3 站点 2】写入走宿主成员（最终到 ExecutionSandbox.writeWorkspaceFile）：文档说什么归这里，
+        // 落进工作区归沙箱——VM 那天它推过边界而不是直写宿主盘。
+        await this.host.writeResultFile(ticket.execution.directory, 'RESULT.md', document)
       } catch (error) { this.complain(`Could not write RESULT.md for ${ticket.id}: ${reason(error)}`) }
     }
     const text = relayText(ticket, payload)

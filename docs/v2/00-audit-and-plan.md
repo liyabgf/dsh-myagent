@@ -8280,3 +8280,33 @@ M2 强形式第一次跑"存活"了，根因不在断言弱：**git checkout 把
 全量 **1135 条**（+6：加密 4、映射 3，另有平台目录断言迁移）；变异 2 组强形式全红
 （M1 坏密文锁、M2 verifiedDecrypt 锁）；交叉核验三个新文件零缺失导入；git `78f39c5 → 9e000ca`；
 还原核验空、残留 0。
+
+## 4.151 阶段 6（0.13.2）：G-3 前三个站点搬进 ExecutionSandbox
+
+### 搬了什么（每站点一提交）
+
+- **站点 1（附件投递）**：`copyAttachments` 的安全检查（symlink、workRoot 包含、纯文件名）留在调用方
+  ——policy 归 myagent；搬字节的动作走 `sandbox.deliverAttachment(workspaceDir, name, bytes)`：
+  宿主读（附件源在 workRoot 之外），沙箱写。VM 那天它把已验证字节推过边界，executor 不知道边界长什么样。
+- **站点 2（RESULT.md）**：DeliveryHost 加了一个**窄**成员 `writeResultFile`（转发到
+  `writeWorkspaceFile`）——Delivery 拿到的恰好是它需要的那一次写，"文档说什么"仍是 delivery 的决定。
+  **REPLY-UNDELIVERED.md 刻意不走接口**：它在放弃路径里**同步**写（文档化的理由：pass 返回时还在写的
+  记录是崩溃会丢的记录），这个保证高于接口纯度。例外记录在两处注释里。
+- **站点 3（删除清理）**：包含检查（存的路径不是我们的不许删——policy）留在 runtime，
+  `sandbox.removeWorkspace(directory)` 搬"删掉这个目录"。
+
+接口注释的"尚未覆盖"清单同步销账：剩**两**处（files.ts 的列举与度量、prepare 命令的执行）。
+`'vm'` 仍然诚实拒绝——接口没有封装整个边界之前，它不许被相信。
+
+### 量具：同一夜两次踩进同一个坑
+
+`git checkout` 把**未提交**的单元测试连同变异一起还原了（第二次，上次在 wecom 轮）——M2/M3 的
+"存活"其实是第二把锁根本不在场。**先提交再变异**已是纪律；这一夜把它从教训变成制度。
+另一课：**单元测试必须对齐生产语义**——writeWorkspaceFile 不隐式建目录（缺目录的写入失败由
+delivery 捕获上板），我第一版想当然地给了 mkdir，测试当场红在 ENOENT。
+
+### 证据
+
+全量 **1139 条**（+3：三个接口方法的单元测试）；变异 3 组（deliverAttachment / writeWorkspaceFile /
+removeWorkspace 空操作）强形式全红——M1 本来就有两把锁（两个附件测试），M2/M3 的第二把锁是
+单元测试 + tombstone 测试；git `3bdca39 → 35b4fa3 → 038afc0`；还原核验空、残留 0。

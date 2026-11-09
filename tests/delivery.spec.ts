@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { hostname } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { writeFile } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
 import {
   borrowedFrom, creditLine, creditText, escalationRelayText, escalationText, headline, isFirstEscalation, relayText,
@@ -234,6 +235,10 @@ describe('the borrowed-work line on the way back to whoever asked', () => {
         relay: async (text: string) => { notices.push(text) },
       } as unknown as Sessions,
       replyLost: () => {},
+      // 【G-3 站点 2】镜像生产的写路径（LocalHostSandbox.writeWorkspaceFile）：测试断的是盘上的文件。
+      writeResultFile: async (directory: string, name: string, text: string) => {
+        await writeFile(join(directory, name), text, 'utf8')
+      },
     }, null)
     return {
       store, notices, warnings, delivery,

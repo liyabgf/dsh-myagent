@@ -8,7 +8,7 @@
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import type { Dirent } from 'node:fs'
-import { lstat, readdir, readFile, rm } from 'node:fs/promises'
+import { lstat, readdir, readFile } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -483,6 +483,8 @@ export class Runtime implements HttpHost {
       // and a lost reply is the only fact about a Ticket's life it has to add. Read at call time, because the Engine is
       // constructed after the Delivery that needs it.
       replyLost: (ticketId, detail) => { this.engine.replyLost(ticketId, detail) },
+      // 【G-3 站点 2】Delivery 的窄写接口：转发到沙箱的 writeWorkspaceFile（same promise，见 delivery.ts 的注释）。
+      writeResultFile: (directory, name, text) => this.executor.sandbox.writeWorkspaceFile(directory, name, text),
       panelPath: (): string => this.panelPath(),
     })
     this.engine = engine = new Engine({
@@ -614,7 +616,8 @@ export class Runtime implements HttpHost {
       return
     }
     try {
-      await rm(target, { recursive: true, force: true })
+      // 【G-3 站点 3】删除动作走 sandbox 接口：包含检查（上面的 policy）留在 runtime，搬"删掉这个目录"归沙箱。
+      await this.executor.sandbox.removeWorkspace(target)
     } catch (error) {
       this.health.entry('panel').problem(
         `could not delete Ticket ${ticketId.slice(0, 8)}'s assets at ${directory}: ${error instanceof Error ? error.message : String(error)}`)

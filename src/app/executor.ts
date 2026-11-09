@@ -7,7 +7,7 @@
  * retried — a half-made directory would look prepared to the next attempt.
  */
 import { constants } from 'node:fs'
-import { copyFile, lstat, mkdir, realpath, stat } from 'node:fs/promises'
+import { copyFile, lstat, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session'
@@ -93,12 +93,13 @@ const reason = (error: unknown): string => error instanceof Error ? `${error.nam
  * Execution environment boundary: workspace preparation and cross-Ticket input materialization.
  *
  * WHAT THIS DOES NOT COVER YET — read before believing a `vm` sandbox is close. Still direct host IO, so each would
- * have to move behind this interface first: attachment delivery (`prepareDirectory` below), `RESULT.md`
- * (`delivery.ts`), `REPLY-UNDELIVERED.md` (`delivery.ts`), workspace removal on Ticket deletion (`runtime.ts`),
- * listing/measuring a workspace (`files.ts`), and running the `prepare` command (`run` below, whose cwd is the
- * workRoot — a host path that does not exist inside a VM). Until those move, this interface abstracts two holes in the
- * boundary and names them; it does not encapsulate the boundary, and `settings.executor.sandbox: 'vm'` is refused at
- * startup rather than silently ignored.
+ * have to move behind this interface first: listing/measuring a workspace (`files.ts`), and running the `prepare`
+ * command (`run` below, whose cwd is the workRoot — a host path that does not exist inside a VM).
+ * MIGRATED (G-3, 0.13.2): attachment delivery (`deliverAttachment`), `RESULT.md` and workspace removal
+ * (`writeWorkspaceFile` / `removeWorkspace`). `REPLY-UNDELIVERED.md` stays direct BY DESIGN: it is written
+ * synchronously in the give-up path, and a trace a crash can miss is worse than one record the interface does not
+ * cover (see `delivery.ts`'s host comment). Until the last two sites move, this interface does not yet encapsulate
+ * the whole boundary, and `settings.executor.sandbox: 'vm'` stays refused at startup rather than silently ignored.
  */
 export interface ExecutionSandbox {
   readonly kind: 'local' | 'vm'
@@ -109,6 +110,24 @@ export interface ExecutionSandbox {
    * of either Ticket.
    */
   materializeInput(workspaceDir: string, sourceFile: string, sourceTicketId: string, relativeDest: string): Promise<string>
+  /**
+   * 【G-3 站点 1】Put verified attachment bytes into a workspace under a plain name. The security checks (symlink,
+   * workRoot containment, plain file name) stay at the CALLER — policy is myagent's; moving bytes is the sandbox's.
+   * A VM sandbox reads the buffer on the host and pushes it across the boundary; nothing about a VM mount leaks
+   * into the executor.
+   */
+  deliverAttachment(workspaceDir: string, name: string, bytes: Buffer): Promise<void>
+  /**
+   * 【G-3 站点 2】Write one text file inside a workspace (`RESULT.md`, `REPLY-UNDELIVERED.md`). The same split:
+   * what the document says is the caller's decision, that it lands inside the workspace is the sandbox's promise.
+   */
+  writeWorkspaceFile(workspaceDir: string, relativePath: string, text: string): Promise<void>
+  /**
+   * 【G-3 站点 3】Remove a workspace wholesale (delete with `assets: 'delete'`). The containment check stays at the
+   * caller: a stored path that is not ours must not be removed on the strength of being stored — that is policy,
+   * and a sandbox that enforced it would be the second owner of a decision that belongs to one place.
+   */
+  removeWorkspace(directory: string): Promise<void>
 }
 
 /**
@@ -143,6 +162,23 @@ export class LocalHostSandbox implements ExecutionSandbox {
   readonly kind = 'local' as const
   async prepareWorkspace(directory: string): Promise<void> {
     await mkdir(directory, { recursive: true })
+  }
+  async deliverAttachment(workspaceDir: string, name: string, bytes: Buffer): Promise<void> {
+    const target = join(workspaceDir, 'attachments')
+    await mkdir(target, { recursive: true })
+    await writeFile(join(target, name), bytes)
+  }
+  async writeWorkspaceFile(workspaceDir: string, relativePath: string, text: string): Promise<void> {
+    const target = resolve(workspaceDir, relativePath)
+    // 越界防护与 materializeInput 同族：调用方给的是固定名字（RESULT.md），但接口是通用的，
+    // 一个带 `../` 的名字会把"写进工作区"写成"写到工作区外"——守卫在这里，不指望每个调用方。
+    if (!target.startsWith(resolve(workspaceDir) + sep) && target !== resolve(workspaceDir)) {
+      throw new Error(`Refused to write outside the workspace: ${relativePath}`)
+    }
+    await writeFile(target, text, 'utf8')
+  }
+  async removeWorkspace(directory: string): Promise<void> {
+    await rm(directory, { recursive: true, force: true })
   }
   async materializeInput(workspaceDir: string, sourceFile: string, sourceTicketId: string, relativeDest: string): Promise<string> {
     // Rejected, never rewritten. The first version stripped a leading `../` and a leading `/` before the containment
@@ -444,11 +480,10 @@ export class DshExecutor implements Executor {
    */
   private async copyAttachments(ticket: Ticket, directory: string): Promise<void> {
     if (ticket.attachments.length === 0) return
-    const target = join(directory, 'attachments')
-    await mkdir(target, { recursive: true })
     const root = resolve(this.host.workRoot())
     const realRoot = await realpath(root).catch(() => root)
     for (const attachment of ticket.attachments) {
+      // 安全检查留在调用方（policy 归 myagent）：symlink、workRoot 包含、纯文件名——一个都不搬进 sandbox。
       const safeName = basename(attachment.name)
       if (safeName === '' || safeName === '.' || safeName === '..' || safeName !== attachment.name) {
         throw new PrepareFailed(`The attached file name ${attachment.name} is not a plain file name`)
@@ -462,7 +497,9 @@ export class DshExecutor implements Executor {
         if (realSource === realRoot || realSource.startsWith(realRoot + sep)) {
           throw new Error('files inside myagent workRoot belong to other Tickets and may not be attached')
         }
-        await copyFile(realSource, join(target, safeName))
+        // 【G-3 站点 1】搬字节的动作走接口：宿主读（附件源在宿主上、workRoot 之外），sandbox 写。
+        // VM sandbox 在这里把已验证的字节推过边界——executor 不需要知道边界长什么样。
+        await this.sandbox.deliverAttachment(directory, safeName, await readFile(realSource))
       } catch (error) {
         throw new PrepareFailed(`The attached file ${attachment.source} could not be copied into the Ticket's directory: ${reason(error)}`)
       }
