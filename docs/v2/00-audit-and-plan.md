@@ -7875,3 +7875,42 @@ S-2 的代码在 0.11.2 就有了，但只到"能存"为止：`GET schedules` �
   researcher 的插件清单里 `shell|bash|pwsh` 零命中。
 - 一个 YAML 陷阱记下来：`prefix: You are … no shell: you read …` 里的**冒号+空格**会把纯量解析成映射，
   必须加引号。第一次写就炸在 yaml 解析上。
+
+## 4.141 生产事故驱动的一课（0.11.6）：插件重载会杀死正在跑的轮次，而恢复检查看不见这种死法
+
+### 事故
+
+侦察排期 09:00 首跑（`5043d550`）。到 12:00 它还挂着 `running`，但它的 Session 日志（`session.v4.jsonl.zstd`，
+zstd 解开读的）显示两轮都早已结束，且都是同一种死法：
+
+```
+01:00:00 turn/start {"turn":1}
+01:21:28 turn/end   {"turn":1,"reason":{"kind":"aborted","reason":{"kind":"user"}}}
+03:07:25 turn/start {"turn":2}
+03:10:25 turn/end   {"turn":2,"reason":{"kind":"aborted","reason":{"kind":"user"}}}
+```
+
+两个 abort 时刻（本地 09:21、11:10）都精确落在我跑闸门构建/重载插件的窗口里——**卸载插件时宿主取消正在跑的
+轮次（reason `aborted/user`），而 myagent 的监听器在卸载时已先摘除，这个 ending 没有任何人观察到**。
+重载后 `recover()` 只检查"Session 还在不在"（`agents.get(...) === undefined` 才接管），而插件重载恰恰**不杀
+Session 只杀轮次**：assignment 写着 running、agent 状态 idle、健康板全绿、`silentMs=0` 所以 watchdog 也不管。
+自动重启（0.11.0）帮不上忙——它靠 `agent/status` 事件触发，而事件发生在我没在听的时候。三条防线全部漏过，
+因为它们的假设都是"轮次结束时我在场"。
+
+### 修复
+
+`recover()` 增加第二种接管：Session 活着但 `status !== 'running'` ⇒ 轮次死在我没看着的时候 ⇒
+`assignmentInterrupted(..., byId: 'reload')`——死 attempt 记 interrupted、开新 pending、带恢复笔记重启，
+与崩溃恢复同一原语。真在跑轮次的（`status === 'running'`）维持原语义不动（那是 resume，不是事故）。
+`assignmentInterrupted` 因此获得 `byId` 参数：watchdog、auto-retry、reload 三种系统行为各记各的名字——
+归属是审计日志里唯一事后补不回来的东西，而且 `actionsTaken` 按 `by.id === 'watchdog'` 计数，
+把 reload 记到 watchdog 头上会白白烧掉 watchdog 的 `maxActions` 预算（测试里有第二把锁钉住这一点）。
+
+### 顺带记录
+
+- **轮次上限从 400 调到 60**（操作者指示）：400 是把上限当目标，掩盖"该收敛了"的信号。按剩余工程量诚实估算
+  约 30-35 轮，60 已含近一倍余量。预算大到失去意义就等于没有预算——这正是 S-1 给 worker 立规矩时写的道理，
+  对 lead 同样成立。
+- `worker-preset.spec.ts` 在全量并行下闪现过一次红（隔离跑绿）：启动助手只 `nudge()` 没等 effect 跑完，
+  负载高时被超车。已补完整 settle。**"隔离绿、全量红"先查时序，不要先怀疑产品代码。**
+- 变异 2 组、强形式全红；备份严格在编辑后、变异前（§4.139 的纪律第一次全程执行，没有再咬到自己）。

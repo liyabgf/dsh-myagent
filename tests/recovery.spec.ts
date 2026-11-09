@@ -100,6 +100,46 @@ describe('a restart', () => {
     } finally { await second.runtime.stop() }
   })
 
+  it('takes over an Assignment whose Session survived the reload but whose turn did not', async () => {
+    // The shape a PLUGIN reload leaves, as distinct from a process crash: the DSH Session is still loaded, but
+    // unloading the plugin cancelled its turn (`turn/end` reason `aborted`) while myagent's listeners were already
+    // detached — so nothing observed the ending, and the Assignment says "running" beside an idle agent. A production
+    // scout run hung in exactly this state for hours with a green health board (§4.141).
+    const first = await deployment('auto')
+    const { runtime: old, host } = first
+    const path = `${first.inbox}/reload.md`
+    writeFileSync(path, '写一份摘要', 'utf8')
+    const at = new Date(Date.now() - 5_000)
+    utimesSync(path, at, at)
+    await settle(old)
+    const ticketId = old.store.tickets.list()[0]!.id
+    expect(host.agents.get(workerId(ticketId))!.status).toBe('running')
+    await old.stop()
+    // The reload cancelled the turn: the Session is loaded, but idle.
+    host.spawn(workerId(ticketId), 'idle')
+
+    const second = await restart(first.stateDir, host)
+    try {
+      const ticket = second.runtime.store.tickets.get(ticketId)!
+      expect(ticket.assignments).toHaveLength(2)
+      expect(ticket.assignments[0]).toMatchObject({ state: 'ended', endedReason: 'interrupted' })
+      expect(ticket.assignments[1]).toMatchObject({ state: 'pending' })
+      // Attributed to the reload, not to the watchdog and not to the operator: three system acts, three names.
+      const interrupted = second.runtime.engine.history(ticketId).find(event => event.type === 'interrupted')!
+      expect(interrupted.by).toEqual({ kind: 'system', id: 'reload' })
+      expect(interrupted.detail).toMatchObject({ why: expect.stringContaining('never observed') })
+      // And it is NOT a watchdog action: `actionsTaken` counts interrupted-by-watchdog against `maxActions`, so
+      // charging a reload to that budget would make the watchdog give up on this Ticket earlier than it should.
+      expect(second.runtime.engine.history(ticketId)
+        .filter(event => event.type === 'interrupted' && event.by?.id === 'watchdog')).toHaveLength(0)
+      // And the work continues rather than being mourned: the fresh attempt launches in the same directory.
+      await settle(second.runtime)
+      const fresh = second.runtime.store.tickets.get(ticketId)!
+      expect(fresh.assignments.at(-1)).toMatchObject({ state: 'running' })
+      expect(fresh.execution!.directory).toBe(ticket.execution!.directory)
+    } finally { await second.runtime.stop() }
+  })
+
   it('replays a launch that was queued but never started, without marking anything interrupted', async () => {
     const first = await deployment('auto')
     const { runtime } = first

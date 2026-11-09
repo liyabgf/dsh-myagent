@@ -945,7 +945,8 @@ export class Runtime implements HttpHost {
       return
     }
     this.engine.assignmentInterrupted(ticketId, assignmentId, 'auto-retry: the turn ended in an upstream error',
-      '你的上一轮因为上游 API 错误而中断（通常是超时重试耗尽），不是你的错。读一遍目录里的当前状态，从停下的地方继续；不要重复已完成的工作。')
+      '你的上一轮因为上游 API 错误而中断（通常是超时重试耗尽），不是你的错。读一遍目录里的当前状态，从停下的地方继续；不要重复已完成的工作。',
+      'auto-retry')
     this.store.set(retryKey, count + 1)
     const detail = `Ticket ${ticketId}: its turn ended in an error (${causeText}); auto-relaunched, attempt ${count + 1}${max > 0 ? ` of ${max}` : ' (uncapped)'}`
     this.sessionHealth.problem(ticketId, detail)
@@ -1422,9 +1423,25 @@ export class Runtime implements HttpHost {
     for (const ticket of this.store.tickets.open()) {
       const assignment = runningAssignment(ticket)
       if (assignment === undefined) continue
-      if (this.context.agents.get(workerSessionOf(ticket)) !== undefined) continue
-      this.engine.assignmentInterrupted(ticket.id, assignment.id)
-      recovered++
+      const agent = this.context.agents.get(workerSessionOf(ticket))
+      if (agent === undefined) {
+        this.engine.assignmentInterrupted(ticket.id, assignment.id)
+        recovered++
+        continue
+      }
+      // The Session outlived the reload but its turn did not: unloading the plugin cancels a running turn
+      // (`turn/end` with reason `aborted`), and myagent's listeners were already detached, so the ending was never
+      // observed and nothing was recorded. What is left is an Assignment that says "running" beside an agent that is
+      // idle — a dead attempt wearing a live badge, invisible to every other mechanism (auto-retry needs the
+      // `agent/status` event that already fired into the void; the watchdog's silence check is off by default).
+      // A production run proved it: a worker hung in this exact shape for hours with a green health board.
+      // A worker genuinely mid-turn is `status === 'running'` and stays untouched — that is the resume case.
+      if (agent.status !== 'running') {
+        this.engine.assignmentInterrupted(ticket.id, assignment.id,
+          'myagent was reloaded while this turn was in flight, so its ending was never observed',
+          undefined, 'reload')
+        recovered++
+      }
     }
     // A lock holder that is gone left its effects claimed; the Store gives them back before the first pass.
     const released = this.store.releaseRunning()

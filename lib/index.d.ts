@@ -1278,7 +1278,7 @@ declare class Engine {
    * An Assignment was running when the host stopped. It ends as interrupted, and a fresh pending Assignment takes the
    * Ticket over with a recovery note, so a restart continues the work instead of losing it.
    */
-  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string, noteText?: string): void;
+  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string, noteText?: string, byId?: string): void;
   /**
    * Tell each live Ticket the change bears on how, under the new Policy. A change is delivered, never enforced by
    * cancellation: cancelling would leave half-finished work with no one to explain it.

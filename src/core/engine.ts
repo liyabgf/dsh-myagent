@@ -1115,15 +1115,18 @@ export class Engine {
    * An Assignment was running when the host stopped. It ends as interrupted, and a fresh pending Assignment takes the
    * Ticket over with a recovery note, so a restart continues the work instead of losing it.
    */
-  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string, noteText?: string): void {
+  assignmentInterrupted(ticketId: string, assignmentId: string, why?: string, noteText?: string, byId?: string): void {
     this.mutate(ticketId, ticket => {
       const assignment = ticket.assignments.find(item => item.id === assignmentId)
       if (assignment === undefined || assignment.state !== 'running') return ticket
       const at = this.now()
       // `why` is present when something decided to interrupt this attempt rather than a restart finding it already
       // dead. Naming the decider is what lets the Watchdog count its own actions in the log, and what lets the
-      // operator tell "the host restarted" from "myagent gave up waiting for you" apart afterwards.
-      this.record(ticketId, 'interrupted', why === undefined ? { kind: 'system' } : { kind: 'system', id: 'watchdog' },
+      // operator tell "the host restarted" from "myagent gave up waiting for you" apart afterwards. `byId` keeps
+      // that promise honest now that more than the Watchdog decides: auto-retry and reload-recovery each name
+      // themselves, and every one of them still counts as a system act, never as the operator's.
+      this.record(ticketId, 'interrupted',
+        why === undefined ? { kind: 'system' } : { kind: 'system', id: byId ?? 'watchdog' },
         why === undefined ? { assignmentId } : { assignmentId, why })
       const note: TicketInput = {
         id: key('input', ticketId, 'interrupted', assignmentId), kind: 'note', at,

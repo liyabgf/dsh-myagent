@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Trigger } from '../src/core/index.ts'
 import { deployment, type Deployment } from './helpers/deployment.ts'
+import { wait } from './helpers/host.ts'
 
 const workerId = (ticketId: string) => `worker-${ticketId}`
 
@@ -29,7 +30,12 @@ async function startedWithPreset(context: Deployment, workerPreset?: string): Pr
   const result = context.runtime.engine.receive(trigger)
   expect(result.disposition.state).toBe('accepted')
   const ticketId = (result.disposition as { ticketId: string }).ticketId
+  // The same settle the other live-launch specs use: nudge alone raced the launch effect under full-suite load and
+  // made the created-calls assertion flaky (one red run out of two, green in isolation).
   await context.runtime.nudge()
+  await wait(80)
+  context.runtime.passes.requestPass()
+  await wait(80)
   return ticketId
 }
 
