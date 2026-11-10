@@ -35,6 +35,8 @@ import { mapMessage, xmlField, echoAnswer } from '../bridges/wecom/transform.mjs
 // @ts-expect-error -- see above
 import { mapEvent as qqMapEvent, nextSeq as qqNextSeq } from '../bridges/qq/transform.mjs'
 // @ts-expect-error -- see above
+import { OP as QQ_OP, helloOf, handshakeFrame, heartbeatFrame, dispatchOf, controlOf } from '../bridges/qq/protocol.mjs'
+// @ts-expect-error -- see above
 import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
 // @ts-expect-error -- see above
 import { describeError } from '../bridges/lib/log.mjs'
@@ -158,6 +160,12 @@ describe('consuming the replies myagent owes back', () => {
     const tally = await drainOut({ directory: dir, send: async (reply: Reply) => { sent.push(reply.text) } })
     expect(sent).toEqual(['done'])
     expect(tally.skipped).toBe(1)
+    // 【误报修正】重复的那份必须从 out/ 里消失：留在原地的话，myagent 的 pendingReplies 会永远数着它，
+    // 而那一列的文档含义是"非零一会儿就说明桥没在跑"——一条已送达两次的回信把桥报成死的。
+    // 送达的那份仍在 sent/（记录不丢），这是"删重复"与"删记录"的区别。
+    const left = (await readdir(join(dir, 'out'))).filter(name => name.endsWith('.md'))
+    expect(left).toEqual([])
+    expect((await readdir(join(dir, 'out', 'sent')))).toContain('reply-ccc.md')
   })
 
   it('reads a reply with no front matter as having no thread, which is what deliver writes when there is none', async () => {
@@ -850,5 +858,57 @@ describe('the QQ mapping (WebSocket dispatch payload)', () => {
     expect(qqNextSeq()).toBe(1)
     expect(qqNextSeq(0)).toBe(1)
     expect(qqNextSeq(3)).toBe(4)
+  })
+})
+
+describe('the QQ WebSocket protocol decisions（生产实捕的四个 bug，每个一条锁）', () => {
+  // 这四条不是假想：第一版桥把帧处理写在 bridge.mjs 里（顶层 await main()，一 import 就连平台），
+  // 于是四个协议错误一个都测不到，生产用 46 行 socket-closed(code 1006) 把它们逐条报了出来。
+
+  it('心跳间隔取 HELLO 说的，不是我们的兜底值（错间隔 = 服务端 ~60 秒踢线）', () => {
+    expect(helloOf({ op: QQ_OP.HELLO, d: { heartbeat_interval: 41_250 } }).heartbeatMs).toBe(41_250)
+    // 兜底只在 HELLO 没给数时生效：0、负数、缺失都退回 30s，而不是把 0 当成"每秒心跳"。
+    expect(helloOf({ op: QQ_OP.HELLO, d: {} }).heartbeatMs).toBe(30_000)
+    expect(helloOf({ op: QQ_OP.HELLO, d: { heartbeat_interval: 0 } }).heartbeatMs).toBe(30_000)
+  })
+
+  it('IDENTIFY 带 intents 与 shard；有 session 时才改走 RESUME', () => {
+    const identify = handshakeFrame('QQBot tok', {}) as { op: number; d: Record<string, unknown> }
+    expect(identify.op).toBe(QQ_OP.IDENTIFY)
+    expect(identify.d.shard).toEqual([0, 1])           // 漏 shard 是平台会拒的那一类
+    expect(identify.d.intents).toBe(1 << 25)
+    expect(identify.d.token).toBe('QQBot tok')
+    const resume = handshakeFrame('QQBot tok', { id: 'sess-1', seq: 7 }) as { op: number; d: Record<string, unknown> }
+    expect(resume.op).toBe(QQ_OP.RESUME)
+    expect(resume.d).toMatchObject({ session_id: 'sess-1', seq: 7 })
+  })
+
+  it('session_id 只认 READY——从每个帧上取会把它抹成 undefined，于是永远 RESUME 不了', () => {
+    const ready = dispatchOf({ op: QQ_OP.DISPATCH, t: 'READY', s: 1, d: { session_id: 'sess-9' } })
+    expect(ready.sessionId).toBe('sess-9')
+    expect(ready.seq).toBe(1)
+    // 普通业务帧：只给 seq 与 dispatch，绝不给 sessionId（旧代码在这里把 session 抹掉了）。
+    const message = dispatchOf({ op: QQ_OP.DISPATCH, t: 'C2C_MESSAGE_CREATE', s: 2, d: { id: 'm-1' } })
+    expect(message.sessionId).toBeUndefined()
+    // 第二把锁（M2 强形式靠它）：**从反面钉**同一条规则——一个带了游离顶层 session_id 的业务帧
+    // 也不能被当成 session 来源。上面那条"READY 要取到"被删掉时，这条仍然会因为旧 bug 的形状
+    // （每帧都取顶层）而变红；两把锁一把钉"该取的取到"，一把钉"不该取的别取"。
+    const stray = dispatchOf({ op: QQ_OP.DISPATCH, t: 'C2C_MESSAGE_CREATE', s: 3, d: { id: 'm-2' }, session_id: 'not-from-here' })
+    expect(stray.sessionId).toBeUndefined()
+    expect(message.seq).toBe(2)
+    expect(message.dispatch).toEqual({ type: 'C2C_MESSAGE_CREATE', data: { id: 'm-1' } })
+    expect(dispatchOf({ op: QQ_OP.DISPATCH, t: 'RESUMED', s: 3 }).resumed).toBe(true)
+  })
+
+  it('控制帧：op 9 丢 session 重连，op 7 保留 session 重连，op 11 只是确认', () => {
+    expect(controlOf({ op: QQ_OP.INVALID_SESSION })).toEqual({ action: 'reconnect', dropSession: true })
+    expect(controlOf({ op: QQ_OP.RECONNECT })).toEqual({ action: 'reconnect', dropSession: false })
+    expect(controlOf({ op: QQ_OP.HEARTBEAT_ACK })).toEqual({ action: 'ack' })
+    expect(controlOf({ op: 999 }).action).toBe('none')
+  })
+
+  it('心跳帧带上最后见到的 seq，还没见到任何帧时带 null', () => {
+    expect(heartbeatFrame(5)).toEqual({ op: QQ_OP.HEARTBEAT, d: 5 })
+    expect(heartbeatFrame(undefined)).toEqual({ op: QQ_OP.HEARTBEAT, d: null })
   })
 })

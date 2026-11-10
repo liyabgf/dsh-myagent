@@ -41,6 +41,7 @@ import { utimes, writeFile } from 'node:fs/promises'
 import { drainOut } from '../lib/outbound.mjs'
 import { parseRoute } from '../lib/route.mjs'
 import { cleanText, mapEvent, nextSeq } from './transform.mjs'
+import { OP, helloOf, handshakeFrame, heartbeatFrame, dispatchOf, controlOf } from './protocol.mjs'
 
 const log = createLog('qq', { level: process.env.BRIDGE_LOG_LEVEL ?? 'info' })
 
@@ -211,58 +212,104 @@ const startOutboundLoop = () => {
  * The protocol opcodes (official docs): 0 DISPATCH, 1 HEARTBEAT, 2 IDENTIFY, 6 RESUME, 7 RECONNECT, 10 HELLO.
  * `intents: 1 << 25` is the C2C-and-group-events window the docs name for robots of this kind.
  */
+/**
+ * The WebSocket lifecycle, in the order the protocol requires. The DECISIONS live in `protocol.mjs` (pure,
+ * pinned by tests); this file owns the transport: open, send, timers, and what a live account is the only
+ * real test of.
+ */
 const session = { id: undefined, seq: undefined }
 let socket = undefined
+let beat = undefined
+let reconnectTimer = undefined
+
+const isOpen = () => socket !== undefined && socket.readyState === 1
+const send = frame => { if (isOpen()) socket.send(JSON.stringify(frame)) }
 
 const connect = async () => {
   const token = await accessToken()
+  socket = new WebSocket(WS_URL)
   await new Promise((resolve, reject) => {
-    socket = new WebSocket(WS_URL, { headers: { authorization: `QQBot ${token}`, 'x-app-id': appId } })
     const openFailure = setTimeout(() => reject(new Error('websocket open timed out (30s)')), 30_000)
-    socket.addEventListener('open', () => { clearTimeout(openFailure); resolve() })
-    socket.addEventListener('error', event => { clearTimeout(openFailure); reject(new Error(`websocket error: ${String(event.message ?? 'unknown')}`)) })
+    socket.addEventListener('open', () => { clearTimeout(openFailure); resolve() }, { once: true })
+    socket.addEventListener('error', event => {
+      clearTimeout(openFailure)
+      reject(new Error(`websocket error: ${String(event.message ?? event.type ?? 'unknown')}`))
+    }, { once: true })
   })
-  let hello
+
   socket.addEventListener('message', event => {
-    const frame = JSON.parse(String(event.data ?? '{}'))
-    if (frame.op === 10) hello = frame.d
-    if (frame.op === 0) {
-      session.id = frame.session_id
-      session.seq = frame.s
-      void onDispatch(frame.t, frame.d).catch(error => log.error('inbound-failed', { error: String(error?.message ?? error) }))
+    let frame
+    try { frame = JSON.parse(String(event.data ?? '{}')) } catch { return }
+    switch (frame.op) {
+      case OP.HELLO: {
+        // Heartbeat first, then the handshake: the server measures silence from HELLO, on HELLO's own schedule.
+        const { heartbeatMs } = helloOf(frame)
+        clearInterval(beat)
+        beat = setInterval(() => send(heartbeatFrame(session.seq)), heartbeatMs)
+        beat.unref?.()
+        send(handshakeFrame(`QQBot ${token}`, session))
+        log.info('hello', { heartbeatMs, resuming: session.id !== undefined })
+        break
+      }
+      case OP.DISPATCH: {
+        const read = dispatchOf(frame)
+        if (read.seq !== undefined) session.seq = read.seq
+        if (read.sessionId !== undefined) session.id = read.sessionId
+        if (read.dispatch !== undefined) {
+          void onDispatch(read.dispatch.type, read.dispatch.data)
+            .catch(error => log.error('inbound-failed', { error: String(error?.message ?? error) }))
+        } else {
+          log.info(read.resumed === true ? 'resumed' : 'identified', {
+            sessionId: session.id === undefined ? null : 'present',
+            note: read.resumed === true ? 'RESUME 被平台接受了' : 'READY 到手 = token 与 intents 都被平台接受了',
+          })
+        }
+        break
+      }
+      default: {
+        const control = controlOf(frame)
+        if (control.action === 'reconnect') {
+          log.warn(control.dropSession ? 'invalid-session' : 'server-asked-reconnect', {
+            note: control.dropSession
+              ? 'session 无效：放弃 RESUME，重开时重新 IDENTIFY（错过的消息平台不补投）'
+              : '按平台要求重连；保留的 session 会走 RESUME',
+          })
+          if (control.dropSession) { session.id = undefined; session.seq = undefined }
+          try { socket.close(4000, control.dropSession ? 'invalid session' : 'server asked to reconnect') } catch { void reconnect() }
+        } else if (control.action === 'ack') {
+          log.debug('heartbeat-acked', {})
+        }
+      }
     }
-    if (frame.op === 7) { log.warn('server-asked-reconnect', { note: 'RESUME with the kept session, falling back to IDENTIFY' }); void reconnect() }
-    if (frame.op === 11) log.debug('heartbeat-acked', {})
   })
-  // IDENTIFY or RESUME: the kept session resumes the stream where it broke; a lost one re-identifies from zero
-  // (the platform does not redeliver what was missed in between — the log says which path ran).
-  socket.send(JSON.stringify({
-    op: session.id === undefined ? 2 : 6,
-    d: session.id === undefined
-      ? { token: `QQBot ${token}`, intents: 1 << 25 }
-      : { token: `QQBot ${token}`, session_id: session.id, seq: session.seq },
-  }))
-  const interval = hello?.heartbeat_interval ?? 30_000
-  const beat = setInterval(() => {
-    try { socket.send(JSON.stringify({ op: 1, d: session.seq })) }
-    catch (error) { log.warn('heartbeat-failed', { error: String(error?.message ?? error) }) }
-  }, interval)
-  beat.unref?.()
-  socket.addEventListener('close', ({ code, reason }) => {
+
+  socket.addEventListener('close', event => {
     clearInterval(beat)
-    log.warn('socket-closed', { code, reason: String(reason ?? ''), note: 'reconnecting with RESUME after 3s' })
-    setTimeout(() => void reconnect(), 3_000)
+    log.warn('socket-closed', {
+      code: event?.code ?? null, reason: String(event?.reason ?? ''), wasClean: Boolean(event?.wasClean),
+      note: 'reconnecting after 3s' + (session.id === undefined ? ' with IDENTIFY (no session kept)' : ' with RESUME'),
+    })
+    scheduleReconnect(3_000)
   })
-  log.info('connected', { transport: 'qq-websocket', resumed: session.id !== undefined, heartbeatMs: interval })
+  socket.addEventListener('error', event => {
+    log.error('socket-error', { message: String(event?.message ?? event?.type ?? 'unknown') })
+  })
+  log.info('connected', { transport: 'qq-websocket', url: WS_URL })
 }
 
 let reconnecting = false
+const scheduleReconnect = delayMs => {
+  if (reconnectTimer !== undefined) return
+  reconnectTimer = setTimeout(() => { reconnectTimer = undefined; void reconnect() }, delayMs)
+  reconnectTimer.unref?.()
+}
+
 const reconnect = async () => {
   if (reconnecting) return
   reconnecting = true
   try { await connect() } catch (error) {
     log.error('reconnect-failed', { error: String(error?.message ?? error), note: 'retrying in 30s' })
-    setTimeout(() => void reconnect(), 30_000)
+    scheduleReconnect(30_000)
   } finally { reconnecting = false }
 }
 
@@ -272,7 +319,12 @@ const main = async () => {
   await connect()
   const timer = startOutboundLoop()
   for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => { log.info('stopping', { reason: signal }); clearInterval(timer); try { socket?.close() } catch {}; process.exit(0) })
+    process.on(signal, () => {
+      log.info('stopping', { reason: signal })
+      clearInterval(timer); clearInterval(beat); clearTimeout(reconnectTimer)
+      try { socket?.close() } catch { /* already gone */ }
+      process.exit(0)
+    })
   }
 }
 

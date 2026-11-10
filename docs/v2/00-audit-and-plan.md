@@ -8645,3 +8645,55 @@ kill 扑空抛错 → 进 AggregateError → 上健康板。"它已经停了"被
 `src/app/runtime.ts` 里 `announceSandbox()` 的文档注释仍列着六处"还是宿主直接 IO"——
 G-3 早已把六处全搬进沙箱接口，**这段注释过期了**（健康板那句提示本身仍正确：确实没有 VM 沙箱实现）。
 按上一条对操作者的承诺：不为一段注释单独发一版，**留到下一次实质改动一起带**。
+
+## 4.163 调查健康问题牵出的两条实病（0.14.5）：pendingReplies 假非零 + QQ 桥 60 秒断线循环
+
+### 病二：`out/` 里滞留的重复回信让「待取回信」永远非零
+
+操作者让查的健康问题修掉之后（0.14.4，见 §4.159–4.161），顺手核面板全绿时发现 telegram 频道
+`pendingReplies=3` 挂了一整天——而那一列的文档含义是"**非零一会儿就说明桥没在跑**"。查证：
+三条滞留文件**全部已在 `sent/` 里、字节逐对相同**（文件名是 channel+thread+text 的纯哈希，同名即同
+字节）——myagent 重试一条已送达的回信时，桥按"跳过"处理但**把重复留在 `out/` 原地**，
+`out/` 顶层的文件数恰是 myagent 数的 `pendingReplies`。修法：跳过时把重复删掉（送达记录在 `sent/`
+里留着，`keepDays` 照旧裁）；既有"不重发"测试扩了"out/ 清空、sent/ 仍在"两条断言。
+变异一对：跳过不删 → 新断言红；无差别删（不看 sent/）→ 四条既有测试红（at-least-once 的两把老锁全红）。
+
+**生产验证**：重启桥后 `out/` 顶层 3 → 0、`sent/` 24 条一条不少、myagent 侧 telegram
+`pendingReplies` 3 → 0、qq 0。
+
+### 病三：QQ 桥从上线起就在 60 秒断线循环（G-2 心跳把"进程活着"与"传输在工作"分开，恰好救了这次调查）
+
+操作者已把 QQ 桥配成 launchd 服务在跑（`ai.myagent.bridge.qq`）。查它的日志：**46 行
+`socket-closed code 1006`，每 ~60 秒一次，循环；0 条 error；心跳文件一直新鲜**——心跳说的是进程
+活着，不是传输在工作（G-2 的定义原文），所以面板把它当健康。
+
+根因四个，全是我 0.14.0 写桥时的错：socket 一 open 就发 IDENTIFY（协议要求先等 op 10 HELLO）；
+心跳间隔读的是发送后一瞬间的 `hello` 变量——**永远是兜底的 30 秒，而平台要 41250ms**
+（日志里 `heartbeatMs: 30000` 一直在自我证明）；`session_id` 从每个 dispatch 帧上取（只有 READY
+带，于是被抹成 undefined，`resumed: false` 刷了 46 次也在自我证明）；IDENTIFY 漏 `shard`。
+外加一个：把 options 对象传成了 Node 原生 WebSocket 的第二个参数（那是子协议列表）。
+
+修法分两层：**协议决定抽进 `protocol.mjs`**（纯函数：HELLO 的间隔、握手帧、dispatch 的
+session_id 只认 READY、op 7/9 的处置），一个 bug 一把锁（4 组变异全红，M2 的第二把锁
+**从反面钉**——游离顶层 session_id 的业务帧不许被采用；第一版第二把锁只是把删掉的断言换了个说法，
+强形式存活）；**传输留在 bridge.mjs**（open/send/定时器——只有真账号能验的那一半，§4.146
+"把桥尾巴抽成可测函数"的承诺在这条上兑现了）。
+
+**生产验证（重构前后各一次 kickstart + 读日志，§4.146 的纪律）**：`hello heartbeatMs 41250`
+（平台的真间隔）、`identified sessionId present`（READY 到手 = token 与 intents 被平台接受）、
+75 秒内 0 次 socket-closed（之前每分钟一次）。**入站消息还没来过**——第一条消息对照
+`message-written` 核字段仍是最后一步验收；README 与面板 notes 已把验收进度写成真话。
+
+### 量具追加：第二把锁要换角度，不是换说法
+
+M2 强形式第一次存活：第二把锁断言的仍是 READY 那条事实，只是复述了一遍被删的断言。**第二把锁
+必须从另一个方向钉同一条规则**（该取的取到 × 不该取的别取），否则它只是被删断言的回声。
+并入量具清单第 12 条。
+
+### 证据
+
+全量 **1150 条**（+5：QQ 协议）；变异 4 组（间隔用兜底 / 每帧取 session_id / op 9 不丢 session /
+漏 shard）强形式全红（M2 靠反面钉的第二把锁）；两桥经 kickstart 重启且进程+日志核实；
+`out/` 3 → 0、`pendingReplies` 3 → 0、QQ READY 到手 0 断线；git `566ff6a → 2ca5300`；
+**本版不需要重载插件**——改动只在 bridges/（launchd 从源码树直接跑）与测试/文档，
+lib/index.js 一字节未动，任务零打扰。

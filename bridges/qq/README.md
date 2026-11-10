@@ -41,8 +41,17 @@ Node 22+（原生 `WebSocket`），无 `npm install`。
 - **WebSocket 断线**：桥带着 session 做 RESUME；丢了 session 就重新 IDENTIFY（中间的消息平台
   **不补投**，日志会说走的是哪条路）。心跳文件每 3 秒 touch，进程死了面板当晚报。
 - **文件暂不支持**；回执（点开回信跳来源任务）等第一批真实流量见过再写——不发明字段形状。
-- **字段形状以官方 v2 文档为准，但整个桥尚未在真实 QQ 机器人上跑过**——第一条消息进来时对照
-  桥日志的 `message-written` 行核字段就是验收。
+- **传输已在真实机器人上验收**：桥日志出现 `hello`（心跳间隔取平台给的 **41250ms**）与
+  `identified`（READY 到手 = token 与 intents 被平台接受），并且不再每 ~60 秒断线。
+  **入站消息还没来过**——第一条消息进来时对照 `message-written` 行核字段（`author.id`/`content`/
+  `group_openid`）仍是最后一步验收。
+- **第一版为什么会在真机上断线循环**（留着当教训）：它在 socket 一 open 就发 IDENTIFY（协议要求先等
+  HELLO）、把心跳间隔写成兜底的 30 秒（平台要 41.25 秒）、从**每个** dispatch 帧上取 `session_id`
+  （只有 READY 带，于是它被抹成 undefined、RESUME 永远不可能）、IDENTIFY 漏了 `shard`、还把一个
+  options 对象当成 Node 原生 WebSocket 的第二个参数（那是子协议列表，不是 headers）。服务端收下握手、
+  等不到合法 IDENTIFY、约 60 秒后按 1006 断开——**而心跳文件一直是新鲜的**，所以面板上看它是活的。
+  协议决定现在抽在 `protocol.mjs`（纯函数，`tests/bridges.spec.ts` 一条 bug 一把锁），
+  传输留在 `bridge.mjs`（只有真账号能验的那一半）。
 
 ## 心跳
 

@@ -7,7 +7,9 @@
  * - the file is moved to `out/sent/` only AFTER the platform accepted it, so a crash between reading and sending
  *   re-sends rather than silently dropping (an answer that never arrived must not be indistinguishable from an
  *   answer that was never owed);
- * - a name already in `sent/` is skipped, so myagent retrying the same reply does not post it to the room twice.
+ * - a name already in `sent/` is skipped AND its duplicate removed from `out/`, so myagent retrying the same
+ *   reply neither posts it to the room twice nor leaves a permanent "answer nobody collected" in `out/` —
+ *   the count myagent reports as `pendingReplies`, whose whole job is to mean "the bridge is not running".
  *
  * Files are never deleted on success, only moved: what the operator's colleagues received is worth keeping, and
  * `keepDays` prunes it on an age the operator chooses.
@@ -117,7 +119,22 @@ export async function drainOut({ directory, send, sendFile, onSent, log = {}, ke
   for (const entry of entries) {
     // Top-level `*.md` only, and never a dotfile: `sent/` is a directory, and a temporary is dot-prefixed.
     if (!entry.isFile() || entry.name.startsWith('.') || !entry.name.toLowerCase().endsWith('.md')) continue
-    if (delivered.has(entry.name)) { tally.skipped += 1; continue }
+    if (delivered.has(entry.name)) {
+      // 【误报修正】A name already in `sent/` is the SAME ANSWER, already delivered: the file name is a pure
+      // hash of (channel, thread, text), so myagent retrying a send writes byte-identical content under the
+      // same name. Skipping without removing left that duplicate in `out/` FOREVER — and `out/`'s top-level
+      // count is exactly what myagent reports as `pendingReplies`, a column whose documented meaning is
+      // "non-zero for a while means the bridge is not running". A production channel sat at 3 for a day with a
+      // live heartbeat and three delivered answers, so the one number that says "your room heard nothing"
+      // said it about answers the room had already received. The record is kept: the delivered copy in
+      // `sent/` is the one worth keeping (and `keepDays` prunes it); the duplicate records nothing new.
+      await rm(join(out, entry.name), { force: true }).catch(error => {
+        log.warn?.('reply-duplicate-kept', { name: entry.name, error: String(error?.message ?? error) })
+      })
+      log.debug?.('reply-duplicate-removed', { name: entry.name, note: 'already in sent/' })
+      tally.skipped += 1
+      continue
+    }
     const path = join(out, entry.name)
     let text
     try {
