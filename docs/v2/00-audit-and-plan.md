@@ -8697,3 +8697,52 @@ M2 强形式第一次存活：第二把锁断言的仍是 READY 那条事实，�
 `out/` 3 → 0、`pendingReplies` 3 → 0、QQ READY 到手 0 断线；git `566ff6a → 2ca5300`；
 **本版不需要重载插件**——改动只在 bridges/（launchd 从源码树直接跑）与测试/文档，
 lib/index.js 一字节未动，任务零打扰。
+
+## 4.164 同族第三处（0.14.6）+ QQ 桥真机验收与两处实捕（0.14.7）
+
+### 同族误报的第三处：`stopSubagents`
+
+killJobs 的核实修复上线（0.14.4）之后，同一条红线**又出现了**——形状一模一样：红线时刻比任务
+自己的 `report` 晚 6 毫秒、任务正常结束、零残留进程。差别是这次 `stopBackground` 的
+AggregateError 来自**另一半**：`stopSubagents` 的 drain 在孩子于 list 与 drain 之间自己结束时扑空抛错。
+同一个"把已经停了报成停不掉"的 bug，在两个地方各住了一份。修法同族：drain 失败后**重新列一次孩子**，
+都走了就是成功，还有活的才记失败。
+
+**并且把红线改成可诊断的**：`AggregateError.message` 只有外层一句"Stopping the background work … failed"，
+不说是 shell jobs 还是 subagents、也不说为什么——两次实捕都没法从红线本身定位，只能去读代码猜。
+现在 `halt()` 把内层错误逐条拼进健康线。**红线自己就该是诊断**，这是 N5/N8 那条"板子要说人话"
+的同一要求，只是这次轮到了聚合错误。
+
+### QQ 桥真机验收：跑通了，并且当场抓到两个 bug
+
+操作者已把 QQ 桥配成 launchd 服务。修好 WebSocket 生命周期后（§4.163），**端到端第一次真跑通**：
+入站 `C2C_MESSAGE_CREATE`（openid + 正文 1 字）→ accepted/ → myagent 建 Ticket（标题=发起者+正文）
+→ worker 报告 → 回信经 QQ 送达（多段切分也work：850 字切成 572+289 两段）。
+这正是 README 里写的"第一条消息就是验收"，它兑现了，而且立刻交出两条真实缺陷：
+
+1. **被动回信门发错路径**：`/v2/messages` 不存在 → 平台回 `404 code 11001` → 每条回信都掉进主动门
+   → **白烧操作者的主动消息月度配额**。修成 per-target 端点（`/v2/users/{openid}/messages` 或
+   `/v2/groups/{group_openid}/messages`）带 `msg_id`+`msg_seq`。两个门的路径与载荷抽成
+   `protocol.mjs` 的纯函数，三条测试钉住（含 openid 的 URL 编码），两组变异全红。
+2. **入站日志的事件名被自己的字段遮蔽**：`log.info('message-written', { event, … })` 里的 `event`
+   键盖掉了 createLog 的事件名，于是日志里那行显示成 `"event":"C2C_MESSAGE_CREATE"`——
+   我 grep `message-written` 零命中，一度以为消息没进来。**字段名撞了日志的结构字段**，
+   改成 `dispatch`。
+
+### 量具追加（第 13、14 条）
+
+13. **能工作的兜底会把底下的洞藏起来**：两扇门的设计让"被动门 404"完全不影响送达，
+    于是这个 bug 在生产里唯一的痕迹是一条 warn。兜底不是免检的理由——**兜底生效时也要看它为什么生效**。
+14. **判"是不是活的"第二次栽在同一个坑**：我用 `lib/index.js` 里有没有 `stillLive` 这个标识符判断
+    修复上线，得到假的"不在"——esbuild 把 const 内联进了 if 条件（killJobs 那次也是）。
+    正确做法是**直接读产物里那个函数**，或搜不会被改写的字符串字面量。§4.161 记过一遍，
+    同一天又踩一遍，所以这条从"教训"升级成"规矩"：判活体 = 读产物代码，不搜源码标识符。
+
+### 证据
+
+全量 **1154 条**（+4：QQ 回信门 3 + stopSubagents 同族 1）；变异 6 组（drain 不核实 / 吞掉失败 /
+被动门旧路径 / 被动门漏 msg_id / …）全红；QQ 桥两次 kickstart 后进程+日志核实（`hello 41250ms`、
+`identified sessionId present`、0 断线）；健康红线 **0**、`pendingReplies` 两频道均 **0**；
+verify-browser **94/0/1**；0.14.6 需重载（bundle 内改动，重载前核过未结束任务 0）、
+**0.14.7 不需要重载**（改动只在 bridges/、测试与文档，lib 产物哈希与 0.14.6 相同：
+`4eddd4acae127e8a…`）——任务零打扰。git `ba7a96c → 187c711`；公开仓 `61ce66b0f434`（150 文件）。
