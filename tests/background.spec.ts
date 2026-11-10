@@ -95,6 +95,19 @@ describe('releasing a worker\'s subagents', () => {
     expect(agent.cancelled).toBe(0)
   })
 
+  it('treats a subagent that ended on its own between listing and draining as released, not as a failure', async () => {
+    // 【误报修正的同族】生产实捕：killJobs 的核实修复上线后，同一条红线从另一半（stopSubagents）
+    // 又冒出来——孩子在 list 与 drain 之间自己结束，drain 扑空抛错，"已经停了"被报成"停不掉"。
+    // 这条与 failDrains 那条互为对方变异的第二把锁：不核实（全记失败）这条红；吞掉所有失败那条红。
+    const host = stubHost({ services: true, children: { 'worker-1': ['child-self-ended'] } })
+    host.spawn('child-self-ended')
+    const agent = host.spawn('worker-1')
+    host.services.vanishDrains.push('child-self-ended')
+    await expect(stopSubagents(host.ctx, agent as never)).resolves.toBeUndefined()
+    // 试过 drain（日志为证），且没有谁被记为失败。
+    expect(host.services.log).toContain('drain:child-self-ended')
+  })
+
   it('releases the children that still exist, and skips the ones already gone', async () => {
     const host = stubHost({ services: true, children: { 'worker-1': ['child-live', 'child-gone'] } })
     host.spawn('child-live')

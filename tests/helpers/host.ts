@@ -36,6 +36,8 @@ export interface ServiceCalls {
   failKills: string[]
   /** Jobs that end on their own between the listing and the kill: the kill throws, and the job is GONE from the registry. */
   vanishKills: string[]
+  /** Subagents that end on their own between the listing and the drain: the drain throws, and the child is GONE. */
+  vanishDrains: string[]
   failDrains: string[]
 }
 
@@ -342,7 +344,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
     return log
   }
   const services: ServiceCalls = {
-    log: [], failKills: [], vanishKills: [], failDrains: [],
+    log: [], failKills: [], vanishKills: [], vanishDrains: [], failDrains: [],
     jobs: (options.jobs ?? []).map(job => ({ id: job.id, owner: job.owner, status: job.status ?? 'running' })),
     children: new Map(Object.entries(options.children ?? {})),
   }
@@ -497,6 +499,12 @@ export function stubHost(options: StubOptions = {}): StubHost {
           drainChildren: async (_parent: unknown, childIds: readonly string[]) => {
             for (const id of childIds) {
               services.log.push(`drain:${id}`)
+              if (services.vanishDrains.includes(id)) {
+                // 先从目录消失（它自己结束了），然后 drain 才发现扑空——stopSubagents 同族误报的形状。
+                const gone = services.children.get('worker-1') ?? []
+                services.children.set('worker-1', gone.filter(child => child !== id))
+                throw new Error(`subagent ${id} is not running`)
+              }
               if (services.failDrains.includes(id)) throw new Error(`subagent ${id} will not release`)
             }
           },

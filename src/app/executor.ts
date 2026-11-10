@@ -729,7 +729,13 @@ export class DshExecutor implements Executor {
       if (cancelTurn && agent !== undefined && agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox })
       await stopBackground(this.host.context, sessionId, haltReason, keepInbox)
     } catch (error) {
-      this.health.problem(`Could not stop the work of ${ticketId}: ${reason(error)}`)
+      // AggregateError 的 message 只有外层一句话（"Stopping the background work … failed"），不说是哪一半
+      // （shell jobs？subagents？）也不说为什么——健康线上只有它，于是两次实捕都没法从红线本身定位。
+      // 内层错误逐条写进来：红线自己就是诊断，不用再翻代码猜是哪半。
+      const detail = error instanceof AggregateError
+        ? [reason(error), ...error.errors.map((inner: unknown) => reason(inner))].join('；')
+        : reason(error)
+      this.health.problem(`Could not stop the work of ${ticketId}: ${detail}`)
     } finally {
       this.halting.delete(ticketId)
       this.starting.delete(ticketId)

@@ -73,15 +73,29 @@ export async function killJobs(ctx: Context, sessionId: string, reason: string):
  * Release a worker's live subagents, for a bounded time. DSH delivers each one's end to the worker before the release
  * returns, which wakes it, so its turn is cancelled after — keeping its inbox when `keepInbox` — and the stop ends with
  * that turn.
+ *
+ * 【误报修正的同族】A drain that fails because a child ended ON ITS OWN between the listing and the drain is
+ * success in disguise — the goal was "these subagents stop", and they did. Verified by re-listing, exactly as
+ * `killJobs` verifies a failed kill against the job registry: message-matching would couple us to DSH's wording,
+ * the agent list is the fact. Production showed this shape a day after the killJobs fix: the same red line,
+ * from the OTHER half of `stopBackground`.
  */
 export async function stopSubagents(ctx: Context, agent: Agent, keepInbox = false): Promise<void> {
   const subagents = subagentsOf(ctx)
   if (subagents === undefined) return
   // The catalog lists every subagent the Session ever had; one that already ended has no agent.
-  const live_ = (await subagents.listChildren(agent.id)).map(child => child.id)
-    .filter(id => ctx.agents.get(id as SessionId) !== undefined)
+  const live = (id: string) => ctx.agents.get(id as SessionId) !== undefined
+  const live_ = (await subagents.listChildren(agent.id)).map(child => child.id).filter(live)
   if (live_.length === 0) return
   try { await until(subagents.drainChildren(agent, live_), undefined, DRAIN_LIMIT_MS) }
+  catch (error) {
+    // Re-list: every child of ours that no longer has an agent ended on its own — a drain that complains about
+    // exactly those is reporting success as failure. Only a child that is STILL live after a failed drain is a
+    // real refusal (recorded, re-raised, and shown on the board).
+    const stillLive = (await subagents.listChildren(agent.id)).map(child => child.id).filter(live)
+    if (stillLive.length === 0) return
+    throw error
+  }
   finally {
     if (agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox })
     await until(agent.whenIdle(), undefined, DRAIN_LIMIT_MS)
