@@ -34,6 +34,8 @@ export interface ServiceCalls {
   readonly children: Map<string, string[]>
   /** Set to make a kill or a drain fail, which is how one bad job must not stop the rest. */
   failKills: string[]
+  /** Jobs that end on their own between the listing and the kill: the kill throws, and the job is GONE from the registry. */
+  vanishKills: string[]
   failDrains: string[]
 }
 
@@ -340,7 +342,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
     return log
   }
   const services: ServiceCalls = {
-    log: [], failKills: [], failDrains: [],
+    log: [], failKills: [], vanishKills: [], failDrains: [],
     jobs: (options.jobs ?? []).map(job => ({ id: job.id, owner: job.owner, status: job.status ?? 'running' })),
     children: new Map(Object.entries(options.children ?? {})),
   }
@@ -475,6 +477,13 @@ export function stubHost(options: StubOptions = {}): StubHost {
           wait: async (id: string) => { services.log.push(`wait:${id}`) },
           kill: (id: string, _caller: string, reason?: string) => {
             services.log.push(`kill:${id}`)
+            if (services.vanishKills.includes(id)) {
+              // 先从注册表消失（它自己停了），然后 kill 才发现扑空——正是那次误报的形状。
+              // splice 而不是整体赋值：jobs 是 readonly 的（对外只读），对内的原地变更不破契约。
+              const gone = services.jobs.findIndex(item => item.id === id)
+              if (gone >= 0) services.jobs.splice(gone, 1)
+              throw new Error(`job ${id} is not running`)
+            }
             if (services.failKills.includes(id)) throw new Error(`job ${id} will not die`)
             const job = services.jobs.find(item => item.id === id)
             if (job !== undefined) { job.status = 'killed'; job.killedWith = reason }

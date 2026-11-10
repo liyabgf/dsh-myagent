@@ -53,7 +53,17 @@ export async function killJobs(ctx: Context, sessionId: string, reason: string):
   const collected = running.map(job => jobs!.wait(job.id, KILL_WAIT_MS, sessionId).catch(() => undefined))
   const failures: unknown[] = []
   for (const job of running) {
-    try { jobs!.kill(job.id, sessionId, reason) } catch (error) { failures.push(error) }
+    try { jobs!.kill(job.id, sessionId, reason) } catch (error) {
+      // 【误报修正】A kill that fails because the job ended on its own is a success in disguise: the goal was
+      // "this job stops", and it did — between the listing and the kill is exactly the window where a worker's
+      // own job finishes. VERIFY rather than guess at the error text: re-read the registry, and only a job that
+      // is STILL live after a failed kill is a real refusal. (Message-matching would couple us to DSH's wording;
+      // the registry is the fact.) The first shape of this bug: a ticket with ten concurrent background jobs
+      // completes them one by one, and every completion turns the ticket's own stop into a red health line.
+      const stillLive = jobs!.list(sessionId).some(item => item.id === job.id && live(item.status))
+      if (!stillLive) continue
+      failures.push(error)
+    }
   }
   await Promise.all(collected)
   if (failures.length > 0) throw new AggregateError(failures, `Killing the shell jobs of ${sessionId} failed`)

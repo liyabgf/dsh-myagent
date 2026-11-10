@@ -64,6 +64,21 @@ describe('killing a Session\'s shell jobs', () => {
     expect(host.services.log.slice(2)).toEqual(['kill:job-1', 'kill:job-2'])
   })
 
+  it('treats a job that ended on its own between listing and killing as stopped, not as a failure', async () => {
+    // 【误报修正】那次健康误报的形状：一个任务带着十个后台 job 收尾，逐个完成，每个先于 kill 完成
+    // 的 job 都把 kill 变成 AggregateError——"它已经停了"被报成"停不掉"。这条与下面 failKills 那条
+    // 互为对方变异的第二把锁：不核实（全记失败）这条红；什么都不记（吞掉所有失败）那条红。
+    const host = stubHost({
+      services: true,
+      jobs: [{ id: 'job-vanished', owner: 'worker-1' }, { id: 'job-live', owner: 'worker-1' }],
+    })
+    host.services.vanishKills.push('job-vanished')
+    await expect(killJobs(host.ctx, 'worker-1', 'stopped')).resolves.toBeUndefined()
+    // 消失的那个尝试过 kill（证据在日志里），活着的那个真的被杀掉。
+    expect(host.services.log).toContain('kill:job-vanished')
+    expect(host.services.jobs.find(job => job.id === 'job-live')).toMatchObject({ status: 'killed' })
+  })
+
   it('kills the rest when one job will not die, and reports the failure', async () => {
     const host = stubHost({ services: true, jobs: [{ id: 'job-bad', owner: 'worker-1' }, { id: 'job-good', owner: 'worker-1' }] })
     host.services.failKills.push('job-bad')
