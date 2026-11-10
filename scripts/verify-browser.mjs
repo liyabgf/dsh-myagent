@@ -1126,12 +1126,14 @@ try {
   if (mentionTarget) {
     await page.goto(`${BASE}#ticket=${mentionTarget.id}`, { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(700)
+    // 【量具修正】旧体读 #d-mentions（B-5 0.12.3 就换成 #d-lineage 了）——检查名改了、体没改，
+    // 五个版本以来全靠"线上无血缘数据 → skip"躺着，今天侦察第一次产生真实血缘才红出来。
     const f6Info = await page.evaluate(() => {
-      const el = document.getElementById('d-mentions')
+      const el = document.getElementById('d-lineage')
       return el ? { text: el.textContent, visible: getComputedStyle(el).display !== 'none' } : null
     })
     check(`深链 #ticket=${mentionTarget.id.slice(0, 8)} 打开对应 Ticket 并渲染 F6 血缘图 (#d-lineage)`,
-      f6Info !== null && f6Info.visible && (f6Info.text.includes('关联引用') || f6Info.text.includes('借力来源')),
+      f6Info !== null && f6Info.visible && (f6Info.text.includes('前序') || f6Info.text.includes('后续')),
       f6Info ? f6Info.text.slice(0, 60) : 'missing')
     await page.screenshot({ path: `${SHOT_DIR}/panel-after-f6-mentions.png`, fullPage: true })
   } else {

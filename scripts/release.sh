@@ -335,7 +335,9 @@ echo "  ✓ 真源静止（${h1}）"
 # 【操作者决定】面板最后的页签展示版本更新内容；数据源 CHANGELOG.md 只由这条管道追加，
 # 一版一行，写的人是发布这个动作本身（不是任何一只手）。
 DATE=$(date +%F)
-LINE="- **${VERSION}**（${DATE}）：${MESSAGE}"
+# 发布消息习惯以「版本：」开头，而这一行已经有版本了——剥掉前缀，一行一版不重复。
+CLEAN_MESSAGE=${MESSAGE#"${VERSION}："}
+LINE="- **${VERSION}**（${DATE}）：${CLEAN_MESSAGE}"
 if ! grep -qxF "$LINE" "$SRC/CHANGELOG.md"; then
   printf '%s\n' "$LINE" >> "$SRC/CHANGELOG.md"
   echo "  CHANGELOG.md：追加 $VERSION"
