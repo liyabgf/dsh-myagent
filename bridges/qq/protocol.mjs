@@ -77,3 +77,32 @@ export const controlOf = frame => {
     default: return { action: 'none' }
   }
 }
+
+/**
+ * The two reply doors, as pure path+body decisions.
+ *
+ * Production taught this one the expensive way: the first version posted the passive reply to `/v2/messages`,
+ * which does not exist — every reply got `HTTP 404 code 11001` on the passive door and fell back to the active
+ * push, **burning the operator's monthly active-message quota on answers that could have been free**. The fallback
+ * did its job (nothing was lost, the room got its answer), which is exactly why the bug was invisible: a safety net
+ * that works hides the hole under it. The log line `passive-refused … code 11001` was the only trace.
+ *
+ * Both doors use the SAME per-target endpoint; the only difference is that the passive one carries the inbound
+ * `msg_id` and an incrementing `msg_seq` (the platform's "this is a reply to that message" marker, which is what
+ * makes it quota-free inside its window).
+ */
+export const replyPath = carried => (carried?.groupOpenid === undefined
+  ? `/v2/users/${encodeURIComponent(String(carried?.openid ?? ''))}/messages`
+  : `/v2/groups/${encodeURIComponent(String(carried.groupOpenid))}/messages`)
+
+/** The passive door: reply to the inbound message. `seq` counts from 1 per inbound. */
+export const passiveReply = (carried, text, seq) => ({
+  path: replyPath(carried),
+  body: { content: text, msg_type: 0, msg_id: carried?.msgId, msg_seq: seq },
+})
+
+/** The active door: a fresh push, subject to the platform's per-user quota. */
+export const activeReply = (carried, text) => ({
+  path: replyPath(carried),
+  body: { content: text, msg_type: 0, msg_seq: 1 },
+})

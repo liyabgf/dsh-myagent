@@ -35,7 +35,7 @@ import { mapMessage, xmlField, echoAnswer } from '../bridges/wecom/transform.mjs
 // @ts-expect-error -- see above
 import { mapEvent as qqMapEvent, nextSeq as qqNextSeq } from '../bridges/qq/transform.mjs'
 // @ts-expect-error -- see above
-import { OP as QQ_OP, helloOf, handshakeFrame, heartbeatFrame, dispatchOf, controlOf } from '../bridges/qq/protocol.mjs'
+import { OP as QQ_OP, helloOf, handshakeFrame, heartbeatFrame, dispatchOf, controlOf, passiveReply, activeReply } from '../bridges/qq/protocol.mjs'
 // @ts-expect-error -- see above
 import { contentText, mapEvent, mentionInfo, stripMentions } from '../bridges/lark/transform.mjs'
 // @ts-expect-error -- see above
@@ -910,5 +910,32 @@ describe('the QQ WebSocket protocol decisions（生产实捕的四个 bug，每�
   it('心跳帧带上最后见到的 seq，还没见到任何帧时带 null', () => {
     expect(heartbeatFrame(5)).toEqual({ op: QQ_OP.HEARTBEAT, d: 5 })
     expect(heartbeatFrame(undefined)).toEqual({ op: QQ_OP.HEARTBEAT, d: null })
+  })
+})
+
+describe('the QQ reply doors（生产实捕：被动门发错路径 = 每条回信白烧主动配额）', () => {
+  const dm = { msgId: 'msg-1', seq: 0, openid: 'openid-alice', groupOpenid: undefined }
+  const group = { msgId: 'msg-2', seq: 2, openid: 'openid-bob', groupOpenid: 'group-9' }
+
+  it('the passive door replies on the per-target endpoint, carrying msg_id and the next seq', () => {
+    // 第一版把它发到 /v2/messages —— 那个路径不存在，平台回 404 code 11001，
+    // 于是每条回信都掉进主动门（耗月度配额），而"消息没丢"把 bug 藏得干干净净。
+    expect(passiveReply(dm, '好了', 1)).toEqual({
+      path: '/v2/users/openid-alice/messages',
+      body: { content: '好了', msg_type: 0, msg_id: 'msg-1', msg_seq: 1 },
+    })
+    // 群聊走 groups 端点，用 group_openid 而不是发消息那个人的 openid。
+    expect(passiveReply(group, '好了', 3).path).toBe('/v2/groups/group-9/messages')
+  })
+
+  it('the active door uses the same endpoint without msg_id — that is the whole difference', () => {
+    const active = activeReply(dm, '好了')
+    expect(active.path).toBe('/v2/users/openid-alice/messages')
+    expect(active.body).toEqual({ content: '好了', msg_type: 0, msg_seq: 1 })
+    expect('msg_id' in active.body).toBe(false)
+  })
+
+  it('encodes the ids, because an openid with a reserved character must not break the path', () => {
+    expect(passiveReply({ ...dm, openid: 'a b/c' }, 'x', 1).path).toBe('/v2/users/a%20b%2Fc/messages')
   })
 })

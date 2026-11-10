@@ -41,7 +41,7 @@ import { utimes, writeFile } from 'node:fs/promises'
 import { drainOut } from '../lib/outbound.mjs'
 import { parseRoute } from '../lib/route.mjs'
 import { cleanText, mapEvent, nextSeq } from './transform.mjs'
-import { OP, helloOf, handshakeFrame, heartbeatFrame, dispatchOf, controlOf } from './protocol.mjs'
+import { OP, helloOf, handshakeFrame, heartbeatFrame, dispatchOf, controlOf, passiveReply, activeReply } from './protocol.mjs'
 
 const log = createLog('qq', { level: process.env.BRIDGE_LOG_LEVEL ?? 'info' })
 
@@ -133,8 +133,10 @@ const onDispatch = async (event, payload) => {
     lastInboundAt: new Date().toISOString(),
     lastInboundChat: chatId,
   })
+  // 字段名不能叫 `event`：createLog 用它写事件名，同名键会把 message-written 盖成 C2C_MESSAGE_CREATE
+  // （生产实捕：grep message-written 零命中，而消息其实写进去了）。
   log.info('message-written', {
-    event, from: message.from, thread: message.thread ?? null, chars: message.body.length,
+    dispatch: event, from: message.from, thread: message.thread ?? null, chars: message.body.length,
     seq: nextSeq(routes[message.thread]?.seq),
   })
 }
@@ -142,17 +144,18 @@ const onDispatch = async (event, payload) => {
 // ----------------------------------------------------------------- outbound
 const sendPassive = async (carried, text) => {
   const seq = nextSeq(carried.seq)
-  const result = await post('/v2/messages', { content: text, msg_type: 0, msg_id: carried.msgId, msg_seq: seq })
+  // 路径与载荷由 protocol.mjs 的纯函数决定（生产教训：第一版把被动门发到不存在的 /v2/messages，
+  // 每条回信都 404/11001 然后落到主动门——白烧操作者的主动消息月度配额，而"没丢消息"把 bug 藏住了）。
+  const { path, body } = passiveReply(carried, text, seq)
+  const result = await post(path, body)
   // 304023/304024: window closed or reply refused — the documented "passive door is shut" answers.
   if (result.ok) return { seq }
   return { refused: `passive refused (HTTP ${result.status} code ${result.body.code ?? '?'})` }
 }
 
 const sendActive = async (carried, text) => {
-  const path = carried.groupOpenid === undefined
-    ? `/v2/users/${encodeURIComponent(carried.openid)}/messages`
-    : `/v2/groups/${encodeURIComponent(carried.groupOpenid)}/messages`
-  const result = await post(path, { content: text, msg_type: 0, msg_seq: 1 })
+  const { path, body } = activeReply(carried, text)
+  const result = await post(path, body)
   if (result.ok) return { ok: true }
   return { refused: `active refused (HTTP ${result.status} code ${result.body.code ?? '?'}) — quota or permission` }
 }
