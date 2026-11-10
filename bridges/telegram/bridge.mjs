@@ -187,6 +187,11 @@ const recordSentReceipt = async ({ messageId, ticketId }) => {
   state.data = await saveState(directory, { sentMessages: existing })
 }
 
+// 跳过计数与其上报节流：见 poll() 里的 skipped-tally。
+const skips = Object.create(null)
+let lastSkipReport = Date.now()
+const SKIP_REPORT_MS = 5 * 60_000
+
 const poll = async () => {
   if (me === null) {
     me = await call('getMe')
@@ -205,7 +210,20 @@ const poll = async () => {
     if (update.update_id !== undefined) state.data = await saveState(directory, { offset: update.update_id })
     const result = await inbound(update)
     if (result?.written !== undefined) written += result.written
-    else if (result?.skipped !== undefined) log.debug('skipped', result)
+    else if (result?.skipped !== undefined) {
+      log.debug('skipped', result)
+      skips[result.skipped] = (skips[result.skipped] ?? 0) + 1
+    }
+  }
+  // 【实捕修正】被过滤掉的消息只在 debug 级留痕，而默认级别是 info——于是"我说了话它没反应"
+  // 在日志里查不到任何证据（11-10 那次投诉就是这么难查的）。每 5 分钟把计数以 info 落一行：
+  // 不是每条都刷屏，但"这一段时间有 7 条被当成没找它而丢掉"这件事永远可查。
+  const now = Date.now()
+  const hasSkips = Object.keys(skips).some(reason => skips[reason] > 0)
+  if (hasSkips && now - lastSkipReport >= SKIP_REPORT_MS) {
+    log.info('skipped-tally', { since: new Date(lastSkipReport).toISOString(), ...skips })
+    for (const reason of Object.keys(skips)) skips[reason] = 0
+    lastSkipReport = now
   }
   const replies = await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
   return { updates: (updates ?? []).length, written, replies }

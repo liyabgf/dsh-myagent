@@ -1575,6 +1575,16 @@
             void act(`tickets/${encodeURIComponent(ticket.id)}/answer`, { text: answer.value })
           },
         }, '回答'),
+        // 【减负】一次点击的出口：任务在等人回答，而人看完觉得"没有需要我回答的"。
+        // 此前唯一的出路是打字回答（或让它一直挂着——操作者的原话是"根本没有什么真正需要我回答的，
+        // 而它一直挂在那里"）。它发的是一句明确的指示，不是空回答：让 worker 自己决定并把理由写进报告。
+        ticket.waitsForPerson === true ? el('button', {
+          class: 'btn',
+          title: '告诉它：这个问题不需要我回答，按你自己的判断继续，把选择和理由写进报告',
+          onclick: () => void act(`tickets/${encodeURIComponent(ticket.id)}/answer`, {
+            text: '这个问题不需要我回答。按你自己的判断继续；把你选的做法和理由写进报告（RESULT.md）。',
+          }),
+        }, '没有要回答的，继续') : null,
         el('button', {
           class: 'btn', onclick: () => {
             if (!note.value.trim()) return toast('先写备注内容')

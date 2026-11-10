@@ -5880,6 +5880,42 @@ describe('手艺正文抽屉（A-2 / G-4）', () => {
   })
 })
 
+describe('等人回答的任务有一个一次点击的出口', () => {
+  it('waitsForPerson 时出现「没有要回答的，继续」，点它就发出一句明确的指示', async () => {
+    // 【减负】操作者的原话：任务"根本没有什么真正需要我回答的，而它一直挂在那里"。
+    // 挂着不动不是选项，打字回答又太重——所以给一个按钮，发的是一句能让 worker 继续的指示。
+    const log = await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ waitsForPerson: true })] },
+      'GET tickets/ticket-1': ticket({ waitsForPerson: true }),
+      'POST tickets/ticket-1/answer': { answered: 'ticket-1' },
+    }))
+    click(button('任务'))
+    await settle()
+    click(one('#tickets li'))
+    await settle()
+    click(button('没有要回答的，继续'))
+    await settle()
+    const posted = log.sent('POST tickets/ticket-1/answer')
+    expect(posted).toHaveLength(1)
+    // 夹具记的是解析后的对象（本文件其余断言同形），不是 JSON 字符串。
+    const text = String((posted[0]!.body as { text: string }).text)
+    expect(text).toContain('不需要我回答')
+    expect(text).toContain('RESULT.md')   // 让它把理由落到能被看见的地方
+  })
+
+  it('没在等人的任务不给这个按钮——按钮只在它有意义的时候出现', async () => {
+    await mount(routes({
+      'GET tickets': { offset: 0, limit: 80, count: 1, tickets: [listed({ waitsForPerson: false })] },
+      'GET tickets/ticket-1': ticket({ waitsForPerson: false }),
+    }))
+    click(button('任务'))
+    await settle()
+    click(one('#tickets li'))
+    await settle()
+    expect(all('button', byId('detail')).some(node => labelOf(node) === '没有要回答的，继续')).toBe(false)
+  })
+})
+
 describe('行内归组（B-7）', () => {
   /** 有状态详情：POST work 之后 GET 也带回 workId——归入后重读详情才有东西可读。 */
   it('归组下拉显示"当前就在的"那个工作，而不是永远空白', async () => {

@@ -20,8 +20,19 @@ import { formatRoute } from '../lib/route.mjs'
  *    in makes every request begin with noise the worker has to look past.
  */
 
-/** Does this message address the bot? Uses Telegram's entities rather than a substring guess. */
+/**
+ * Does this message address the bot? Uses Telegram's entities rather than a substring guess.
+ *
+ * 【实捕修正】**回复机器人自己的消息也算找它。** Telegram 的"回复"不产生 mention entity——
+ * 只有真的打出 @bot 才有。而平台的隐私模式恰恰会把"回复机器人的消息"投递给机器人，
+ * 也就是说：**平台认为这是找它的，而 mentions 过滤器认为不是**。后果是操作者最自然的那个动作
+ * （对着答案回一句）被静默丢掉：频道目录没文件、面板 waiting=0、日志只有 debug 级的一行——
+ * 三处都没有痕迹。这条是 11-10 晚上一次真实投诉（"我从电报回复安装技能，没有响应"）查出来的。
+ */
 export function mentionsBot(message, me) {
+  // 回复机器人自己的消息：平台已经判定这是给它的（隐私模式只投递这几类），不需要再有 @。
+  if (me?.id !== undefined && message?.reply_to_message?.from?.id !== undefined
+    && String(message.reply_to_message.from.id) === String(me.id)) return true
   if (me?.username === undefined) return false
   const text = message.text ?? message.caption ?? ''
   const handle = `@${me.username.toLowerCase()}`

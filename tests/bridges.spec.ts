@@ -379,6 +379,22 @@ describe('the Telegram mapping', () => {
     expect(mapUpdate(quiet, ME, { mode: 'all' }).message).toBeDefined()
   })
 
+  it('回复机器人自己的消息就算找它——平台会投递它，而回复不带 mention entity', () => {
+    // 【实捕修正】11-10 晚操作者对着答案回了一句"装技能"，三处都没有痕迹：频道目录没文件、
+    // 面板 waiting=0、日志只有 debug 级一行。根因是 Telegram 的"回复"不产生 mention entity，
+    // 而平台的隐私模式恰恰把"回复机器人的消息"投递给机器人——平台认为这是找它的，过滤器认为不是。
+    const replyToBot = { message: groupMessage({ text: '把技能装上', reply_to_message: { message_id: 900, from: { id: 77 } } }) }
+    const mapped = mapUpdate(replyToBot, ME, { mode: 'mentions' })
+    expect(mapped.skip).toBeUndefined()
+    expect((mapped as { message: { body: string } }).message.body).toBe('把技能装上')
+    // 回复的是别人（不是机器人）：仍然不算找它，mentions 的过滤没有被放宽到"群里说什么都收"。
+    const replyToHuman = { message: groupMessage({ text: '收到', reply_to_message: { message_id: 901, from: { id: 555 } } }) }
+    expect(mapUpdate(replyToHuman, ME, { mode: 'mentions' }).skip).toBe('not-mentioned')
+    // 第二把锁：mentionsBot 这个谓词自己也认这条（删掉上面 mapUpdate 那条断言后它仍然红）。
+    expect(mentionsBot(replyToBot.message, ME)).toBe(true)
+    expect(mentionsBot(replyToHuman.message, ME)).toBe(false)
+  })
+
   it('always encodes a canonical conversation route into thread (dm / group / topic), eliminating defaultChat misrouting', () => {
     // 【产品变更】旧断言：expect(mapped.message.thread).toBe('9')
     // 改动理由：原先普通群聊与私聊的 thread 均为 undefined，导致出站依赖 .bridge-state.json 的 defaultChat，
