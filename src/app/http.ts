@@ -14,7 +14,7 @@ import type { Engine } from '../core/index.ts'
 import { UserError } from '../core/errors.ts'
 import { policyVersion, ScheduleSchema, sourcePolicy, type Settings } from '../core/policy.ts'
 import { describeTiming, localZone, nextRun } from '../core/timing.ts'
-import { aboutView } from './about.ts'
+import { changesView } from './about.ts'
 import { PROMPT_ROLES, PromptConflict } from './prompts.ts'
 import { builtInSkillsView } from './skills.ts'
 import { scheduleView } from './views.ts'
@@ -663,7 +663,8 @@ function table(host: HttpHost): readonly Route[] {
       builtInSkills: builtInSkillsView(),
     })),
     // 【A-1】说明页：单一所有者在 about.ts，面板照抄。路由本身是纯函数，不需要 HostHost 成员。
-    route('GET', 'about', () => ({ about: aboutView() })),
+    // 【操作者决定】说明页退役，换成更新内容（GET changes；数据源 CHANGELOG.md，发布管道追加）。
+    route('GET', 'changes', () => ({ changes: changesView().changes })),
     route('GET', 'operator-queue', async () => ({ items: host.decisions() })),
     route('POST', 'operator-queue/:id/dismiss', async ({ params }) => {
       host.dismissDecision(params.id!)

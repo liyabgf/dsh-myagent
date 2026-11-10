@@ -331,6 +331,18 @@ h2=$(cd "$SRC" && find src tests scripts panel prompts bridges -type f -exec sha
 echo "  ✓ 真源静止（${h1}）"
 
 # ── 2. 同步代码与文档；保留只在公开副本里存在的东西 ───────────────────────────
+# ── 1.5 CHANGELOG 追加（发布即记档：面板「更新」页与安装的包不可能漂移）───────────
+# 【操作者决定】面板最后的页签展示版本更新内容；数据源 CHANGELOG.md 只由这条管道追加，
+# 一版一行，写的人是发布这个动作本身（不是任何一只手）。
+DATE=$(date +%F)
+LINE="- **${VERSION}**（${DATE}）：${MESSAGE}"
+if ! grep -qxF "$LINE" "$SRC/CHANGELOG.md"; then
+  printf '%s\n' "$LINE" >> "$SRC/CHANGELOG.md"
+  echo "  CHANGELOG.md：追加 $VERSION"
+else
+  echo "  CHANGELOG.md：$VERSION 已在（重跑发布），不重复追加"
+fi
+
 step "2/7 同步"
 [ -d "$PUB/.git" ] || { echo "✗ ${PUB} 不是一个 git 仓库" >&2; exit 1; }
 # 保留清单：这些是发布物自己的东西，真源里没有，删了就没了。

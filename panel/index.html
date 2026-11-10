@@ -271,9 +271,6 @@
          这是收件箱心智（§6.1），也是 U1 的全部理由。 -->
     <button data-tab="overview" aria-selected="true">总览</button>
     <!-- 【U7 改名】Ticket→任务：操作者的词。data-tab 不动，所以路由、深链与真浏览器断言都不受影响。 -->
-    <!-- 【A-1】说明页：0.10.4 给了侧边栏一键入口，新用户进来第一个问题是"这是什么"——
-         之前答案是一张实时数据表。总览回答"现在有什么需要我"，这里回答"这是个什么系统"。 -->
-    <button data-tab="about">说明</button>
     <button data-tab="tickets" aria-selected="false">任务<span class="badge hidden" id="badge-tickets"></span></button>
     <button data-tab="works">工作</button>
     <button data-tab="new">派活</button>
@@ -283,12 +280,16 @@
     <button data-tab="chat">聊天<span class="badge muted-badge hidden" id="badge-chat"></span></button>
     <button data-tab="settings">设置</button>
     <button data-tab="prompts">提示词</button>
+    <!-- 【操作者决定】「说明」退役：说明不该住在面板里（README 对评估者说话就够了），页签挪到
+         最后、换成版本更新内容——站在面板前的人要的是"这版装了什么"，不是"这是什么系统"。 -->
+    <button data-tab="about">更新</button>
   </nav>
 
-  <!-- 【A-1】说明页内容：正文由服务端 about.ts 单一所有，页面照抄，不自己拼第二份。 -->
+  <!-- 【操作者决定】更新内容页：正文由服务端 about.ts（changesView）单一所有——数据源是
+       CHANGELOG.md，发布管道追加，页面照抄不拼第二份。 -->
   <div id="tab-about" class="hidden">
     <section class="card" id="about-body">
-      <h2>说明</h2>
+      <h2>更新内容</h2>
       <p class="muted">读取中…</p>
     </section>
   </div>
@@ -1939,16 +1940,23 @@
   const loadAbout = async () => {
     const node = $('about-body')
     if (node === null) return
-    const body = await api('about').catch(() => null)
+    const body = await api('changes').catch(() => null)
     node.replaceChildren()
-    node.append(el('h2', {}, '说明'))
+    node.append(el('h2', {}, '更新内容'))
     if (body === null) {
-      node.append(el('p', { class: 'warn' }, '读不到说明内容（接口报错）。可能是宿主上的版本比这个面板旧。'))
+      node.append(el('p', { class: 'warn' }, '读不到更新内容（接口报错）。可能是宿主上的版本比这个面板旧。'))
       return
     }
-    for (const section of (body.about || {}).sections || []) {
-      node.append(el('h2', { style: 'margin-top:14px' }, section.heading),
-        ...section.lines.map(line => el('p', {}, line)))
+    const entries = body.changes || []
+    if (entries.length === 0) {
+      // 空 = 打包丢了 CHANGELOG.md 或解析不出条目——这是打包缺陷不是"从没发过版"，直说。
+      node.append(el('p', { class: 'warn' }, '更新列表是空的：这个包没有带 CHANGELOG.md，或它的格式变了。'))
+      return
+    }
+    for (const entry of entries) {
+      node.append(el('p', { style: 'margin-top:12px' },
+        el('strong', {}, `${entry.version}`),
+        el('span', { class: 'muted' }, `（${entry.date}）：${entry.text}`)))
     }
   }
 

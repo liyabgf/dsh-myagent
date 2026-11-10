@@ -863,12 +863,18 @@ export class Runtime implements HttpHost {
         this.engine.watchdogActed(ticketId, why)
       },
       silentAttempts: (olderThanMs, now) => this.silentAttempts(olderThanMs, now),
-      interrupt: (ticketId, assignmentId, why) => {
-        // The pair `recover()` already uses for an attempt whose worker is gone: stop what it left running, then
-        // replace it. Halting first matters — an interrupted attempt whose background jobs keep running would spend
-        // the operator's machine on work nobody is waiting for.
-        void this.executor.haltBackground(ticketId, why)
-        this.engine.assignmentInterrupted(ticketId, assignmentId, why)
+      // 【操作者决定 G-5】静默只报告：队列（needs your decision）+ 健康板，不打断——打不打断是操作者的事。
+      // 重复报告由两层挡住：watchdog 的内存 Set 挡同一进程里的每一轮；这里的队列检查挡重启后的第一次
+      //（重启后 Set 是空的，但没被「知道了」的决定还在队列里，不该再来一条）。
+      reportSilent: (ticketId, assignmentId, silentForMinutes) => {
+        const short = ticketId.slice(0, 8)
+        const title = `任务 ${short} 的 worker 已经静默 ${silentForMinutes} 分钟`
+        if (this.decisions().some(item => item.source === 'watchdog-silent' && item.title === title)) return
+        this.raiseDecision(title,
+          `这个 worker 已经 ${silentForMinutes} 分钟没有产出任何事件。它可能在长时间安静地计算（不打扰是对的），也可能已经卡死（要处理）。`
+          + `是否停下它由你决定：任务详情页有「停止」按钮；不动它也没关系，这条决定不会重复出现。`,
+          'watchdog-silent')
+        this.health.entry('watchdog').problem(`任务 ${short} 的 worker 已静默 ${silentForMinutes} 分钟（是否处理由操作者决定）`)
       },
       // The log is the counter, so a restart cannot make the Watchdog forget how many times it already tried. It
       // counts both kinds of action, because to the operator they are the same fact: myagent intervened here.

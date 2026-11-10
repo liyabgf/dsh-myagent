@@ -6,7 +6,7 @@
  * and a message a person can act on.
  */
 import { describe, expect, it } from 'vitest'
-import { chmodSync, mkdirSync, readdirSync, utimesSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { api, deployment, type Deployment } from './helpers/deployment.ts'
 import { wait } from './helpers/host.ts'
@@ -496,19 +496,29 @@ describe('the artifacts a Ticket registered', () => {
    * 【A-1】说明页：路由返回服务端正文（about.ts 单一所有者），面板只照抄。
    * 断言钉的是结构与几个关键句——"刻意不做什么"一节是诚实的核心（没有沙箱、不替你决定），它必须在。
    */
-  it('serves the about page content as structured sections (A-1)', async () => {
+  // 【操作者决定产品变更】旧测试『serves the about page content as structured sections (A-1)』退役：
+  // 说明页不该住在面板里，GET about → GET changes（数据源 CHANGELOG.md，随包发布）。
+  it('serves the release history as structured entries (GET changes)', async () => {
     await withDeployment(async context => {
-      const response = await context.host.request(api('about'), { headers: PANEL_HEADERS })
+      const response = await context.host.request(api('changes'), { headers: PANEL_HEADERS })
       expect(response.status).toBe(200)
-      const sections = (response.json.about as { sections: { heading: string; lines: readonly string[] }[] }).sections
-      const headings = sections.map(section => section.heading)
-      expect(headings).toContain('这是什么')
-      expect(headings).toContain('它刻意不做什么')
-      expect(headings).toContain('想再深入读什么')
-      // 诚实的两句必须在：没有沙箱、不替你决定——这两句是面板与宣传的分界线。
-      const flat = sections.flatMap(section => section.lines)
-      expect(flat.some(line => line.includes('沙箱'))).toBe(true)
-      expect(flat.some(line => line.includes('不替你决定'))).toBe(true)
+      const changes = (response.json.changes as { version: string; date: string; text: string }[])
+      expect(changes.length).toBeGreaterThan(0)
+      // 结构性断言：版本三段、日期 ISO、正文非空——渲染层照抄，句子本身归发布管道。
+      for (const entry of changes) {
+        expect(entry.version).toMatch(/^\d+\.\d+\.\d+$/)
+        expect(entry.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+        expect(entry.text.length).toBeGreaterThan(0)
+      }
+      // 排序不变量：条目按版本号升序（最新在最后）。「更新页以安装的版本收尾」这条只在发布后的
+      // 包里成立——真源树的 package.json 一直是 0.1.0（版本号在发布管道里改的是公开副本），
+      // 在这里断言它就是断言一个已知为假的事实。那条由 verify-browser 在活体上行使。
+      const numeric = changes.map(entry => entry.version.split('.').map(part => Number(part)))
+      for (let i = 1; i < numeric.length; i++) {
+        const [a, b] = [numeric[i - 1]!, numeric[i]!]
+        const cmp = a[0]! - b[0]! || a[1]! - b[1]! || a[2]! - b[2]!
+        expect(cmp, `升序：${changes[i - 1]!.version} ≤ ${changes[i]!.version}`).toBeLessThanOrEqual(0)
+      }
     })
   })
 

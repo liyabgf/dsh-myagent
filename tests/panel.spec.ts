@@ -246,15 +246,15 @@ const routes = (over: Routes = {}): Routes => ({
   // 0.11.0 的决断队列：总览落地就会读它，所以基础夹具里给一个空队列——
   // 否则每条无关测试都会红在一个与本包行为无关的 404 上（U14 给 decisions 的同一条理由）。
   'GET operator-queue': { items: [] },
-  // 【A-1】说明页：总览之外每个测试都可能点到「说明」tab（遍历测试会真的点），基础夹具必须供给它。
-  'GET about': { about: { sections: aboutSections() } },
+  // 【A-1→操作者决定】说明页退役为「更新」页：夹具供给 GET changes（遍历测试会真的点到它）。
+  'GET changes': { changes: changeEntries() },
   ...over,
 })
 
-/** 【A-1】说明页的服务端正文（与 about.ts 同义的最小版）：断言钉的是结构性行为，不复述全部句子。 */
-const aboutSections = () => ([
-  { heading: '这是什么', lines: ['一个给一个人用的任务系统。', '它跑在 DSH 里。'] },
-  { heading: '它刻意不做什么', lines: ['没有沙箱执行。', '不替你决定。'] },
+/** 【更新页】夹具的最小条目：断言钉的是结构性行为（版本、日期、正文都在），不复述真实条目。 */
+const changeEntries = () => ([
+  { version: '0.14.1', date: '2026-11-10', text: '后台停表与决断队列的进程外门。' },
+  { version: '0.14.0', date: '2026-11-10', text: 'QQ 桥，阶段 5 三桥收官。' },
 ])
 
 /** The schedule page's own routes, so a test about one behaviour does not have to arrange the other three. */
@@ -646,7 +646,7 @@ describe('the tabs', () => {
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
       // 【U1】总览是新增的第一项；其余顺序未动。
       // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
-      .toEqual(['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
+      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts', 'about'])
 
     click(button('记录'))
     await settle()
@@ -657,8 +657,8 @@ describe('the tabs', () => {
     for (const other of ['tickets', 'works', 'new', 'chat', 'settings', 'prompts']) {  // 【U13】去 'schedules'；【U14】'sources'→'chat'
       expect(byId(`tab-${other}`).classList.contains('hidden'), other).toBe(true)
     }
-    // 【U1】门禁记录从第 4 个变成第 5 个（总览插在首位）；【A-1】说明页又插一位，它成了第 6 个。
-    expect(byId('tabs').children[5]!.getAttribute('aria-selected')).toBe('true')
+    // 【U1】总览插在首位；【操作者决定】说明页退役后这里数的是「记录」（第 5 个）——页签序变了，选中语义没变。
+    expect(byId('tabs').children[4]!.getAttribute('aria-selected')).toBe('true')
     expect(byId('tabs').children[0]!.getAttribute('aria-selected')).toBe('false')
   })
 
@@ -2567,8 +2567,8 @@ describe('the contract with the API', () => {
     'POST tickets/:id/dependencies', 'POST tickets/:id/dependencies/drop',
     // 【0.11.0 产品变更】决断队列：总览读 GET，遍历里点一次「知道了」问 POST。
     'GET operator-queue', 'POST operator-queue/:id/dismiss',
-    // 【A-1】说明页：遍历必须真的进一次「说明」，否则 GET about 就成了表里没人问的路由。
-    'GET about',
+    // 【操作者决定】说明页退役为「更新」页：遍历必须真的进一次，否则 GET changes 就成了表里没人问的路由。
+    'GET changes',
   ]
   /** One call as a route of that table, with the record ids it carried turned back into parameters. */
   const routeOf = (call: Call): string => `${call.method} ${call.path
@@ -2639,8 +2639,8 @@ describe('the contract with the API', () => {
     // 【0.11.0】落地页先把队列里那条决断点掉：它属于"只有操作者能推进的事"这一族。
     click(button('知道了', byId('ov-decisions')))
     await settle()
-    // 【A-1】说明页也在遍历里：新用户的第一站。
-    click(button('说明'))
+    // 【操作者决定】说明页退役：遍历改为点「更新」（GET changes 必须真的被问一次）。
+    click(button('更新'))
     await settle()
     // Every page, and the writes on them: the routes a person can reach by clicking around.
     for (const tab of ['工作', '派活', '记录', '聊天', '设置', '提示词']) {  // 【U7】门禁记录→记录；【U13】排期并入派活；【U14】来源→聊天
@@ -5185,11 +5185,12 @@ describe('改名、筛选 chips 与导航徽标（U7）', () => {
     // 【U13】排期并入派活，一级菜单 9 → 8。旧值：['总览','任务','工作','派活','记录','来源','排期','设置','提示词']
     // 【A-1】说明页插在总览之后：新用户进来第一个问题是"这是什么"，第一站就该回答它。旧值是 8 项。
     // 【U14】来源页解散：留下的只有聊天，所以这一项改叫「聊天」。旧值含 '来源'。
-    expect(labels).toEqual(['总览', '说明', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词'])
+    // 【操作者决定产品变更】「说明」退役为「更新」并挪到最后：旧值 ['总览', '说明', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词']。
+    expect(labels).toEqual(['总览', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词', '更新'])
     // data-tab 没跟着改：它是路由与深链的键，改它等于改协议，而改名只该改给人看的那一层。
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
       // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
-      .toEqual(['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts'])
+      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts', 'about'])
   })
 })
 
@@ -5741,24 +5742,32 @@ describe('排期的送达地址（S-2）', () => {
 })
 
 describe('说明页、记住页与最长已跑（A-1 / A-3 / A-4）', () => {
-  it('说明页渲染服务端给的全部小节，页面不自己拼正文', async () => {
+  // 【操作者决定产品变更】「说明页渲染服务端给的全部小节」退役：说明页不该住在面板里，页签换成
+  // 「更新」（数据源 GET changes → CHANGELOG.md，发布管道单一所有）；旧断言四个 toContain 见 git。
+  it('更新页渲染服务端给的条目（版本/日期/正文），页面不自己拼内容', async () => {
     await mount(routes())
-    click(button('说明'))
+    click(button('更新'))
     await settle()
     const body = text('about-body')
-    // 夹具里两个小节各有一句——照抄的证明是"全都在"，而标题之外的句子页面根本没有第二份。
-    expect(body).toContain('这是什么')
-    expect(body).toContain('一个给一个人用的任务系统。')
-    expect(body).toContain('它刻意不做什么')
-    expect(body).toContain('不替你决定。')
+    // 【操作者决定产品变更】旧断言（说明页）：expect(body).toContain('这是什么') 等四条。
+    // 更新页的照抄证明：版本、日期、正文全都渲染（服务端 changesView 单一所有）。
+    expect(body).toContain('更新内容')
+    expect(body).toContain('0.14.1')
+    expect(body).toContain('2026-11-10')
+    expect(body).toContain('三桥收官')
   })
 
-  it('about 读不到时明说可能版本旧，而不是永远的"读取中…"', async () => {
-    await mount(routes({ 'GET about': refuse(500, 'boom') }))
-    click(button('说明'))
+  it('changes 读不到时明说可能版本旧，空列表明说是打包缺陷，而不是安静的空白', async () => {
+    await mount(routes({ 'GET changes': refuse(500, 'boom') }))
+    click(button('更新'))
     await settle()
-    expect(text('about-body')).toContain('读不到说明内容')
+    expect(text('about-body')).toContain('读不到更新内容')
     expect(text('about-body')).toContain('比这个面板旧')
+    // 空列表不是"从没发过版"：CHANGELOG.md 是随包文件，缺了就是打包缺陷——页面直说。
+    await mount(routes({ 'GET changes': { changes: [] } }))
+    click(button('更新'))
+    await settle()
+    expect(text('about-body')).toContain('CHANGELOG.md')
   })
 
   it('记住上次的页：无深链时回到离开的地方，深链仍然优先', async () => {

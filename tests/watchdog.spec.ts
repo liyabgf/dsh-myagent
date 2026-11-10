@@ -21,7 +21,7 @@ function harness(options: {
 } = {}) {
   const health = new HealthEntry()
   const rescued: { ticketId: string; assignmentId: string; why: string }[] = []
-  const interrupted: { ticketId: string; assignmentId: string; why: string }[] = []
+  const reported: { ticketId: string; assignmentId: string; minutes: number }[] = []
   let passes = 0
   const host: WatchdogHost = {
     settings: () => ({ enabled: true, everyMs: 60_000, launchStuckMs: 600_000, silentMs: 3_600_000, maxActions: 2 }),
@@ -31,16 +31,14 @@ function harness(options: {
       rescued.push({ ticketId, assignmentId, why })
     },
     silentAttempts: () => options.silent ?? [],
-    interrupt: (ticketId, assignmentId, why) => {
-      if (options.throws === true) throw new Error('the Session is gone')
-      interrupted.push({ ticketId, assignmentId, why })
-    },
+    // 【操作者决定 G-5】静默只报告不打断：桩记录的是"报告了"，断言"没打断"靠 rescued 恒空 + 没有 interrupt 入口。
+    reportSilent: (ticketId, assignmentId, minutes) => { reported.push({ ticketId, assignmentId, minutes }) },
     actionsTaken: () => options.taken ?? 0,
     escalate: () => {},
     health,
     requestPass: () => { passes++ },
   }
-  return { host, health, rescued, interrupted, passes: () => passes, watchdog: new Watchdog(host) }
+  return { host, health, rescued, reported, passes: () => passes, watchdog: new Watchdog(host) }
 }
 
 describe('a launch that never produced a Session', () => {
@@ -70,7 +68,7 @@ describe('a launch that never produced a Session', () => {
     const host: WatchdogHost = {
       settings: () => ({ enabled: true, everyMs: 60_000, launchStuckMs: 0, silentMs: 0, maxActions: 2 }),
       stuckLaunches: () => { looked++; return [{ ticketId: 'x', assignmentId: 'y' }] },
-      rescue: () => {}, silentAttempts: () => [], interrupt: () => {},
+      rescue: () => {}, silentAttempts: () => [], reportSilent: () => {},
       actionsTaken: () => 0, escalate: () => {}, health, requestPass: () => {},
     }
     expect(new Watchdog(host).look(1_000_000)).toEqual([])
@@ -86,39 +84,25 @@ describe('a launch that never produced a Session', () => {
   })
 })
 
-describe('a worker that has stopped saying anything', () => {
-  // The opposite state from a stuck launch, and therefore the opposite action: this attempt IS running, so re-queueing
-  // a launch would not touch it, and interrupting is what replaces it. The detector is off by default, because
-  // "nothing happened for an hour" is a judgement about the operator's own work.
-  it('is interrupted with a reason that names the silence', () => {
+describe('a worker that has stopped saying anything（操作者决定 G-5：只报告，不打断）', () => {
+  // 这条尝试在跑，所以"救援卡住的启动"碰不到它；它静默了，所以看门狗把它**摆到操作者面前**——
+  // 停不停在操作者手里（任务详情页有停止按钮）。计时器分不出"卡死"与"长时间安静计算"，那是人的判断。
+  it('is reported with a reason that names the silence, and NOT interrupted', () => {
     const context = harness({ silent: [{ ticketId: 'ticket-2', assignmentId: 'assignment-2', silentForMs: 5_400_000 }] })
     const actions = context.watchdog.look(1_000_000)
     expect(actions).toEqual([{
       ticketId: 'ticket-2', assignmentId: 'assignment-2', silentForMs: 5_400_000,
-      why: 'its worker said nothing for 90 minute(s)', acted: true,
+      why: 'its worker said nothing for 90 minute(s)', acted: false,
     }])
-    expect(context.interrupted).toHaveLength(1)
-    expect(context.rescued).toEqual([])
-    expect(context.passes()).toBe(1)
+    expect(context.reported).toEqual([{ ticketId: 'ticket-2', assignmentId: 'assignment-2', minutes: 90 }])
+    expect(context.rescued).toEqual([])   // 没人被打断、没有新尝试：静默不是动作，是信号
   })
 
-  it('stops interrupting one it has already acted on, and says a person is needed', () => {
-    const context = harness({
-      silent: [{ ticketId: 'ticket-2', assignmentId: 'assignment-2', silentForMs: 5_400_000 }], taken: 2,
-    })
-    const actions = context.watchdog.look(1_000_000)
-    expect(actions).toEqual([{
-      ticketId: 'ticket-2', assignmentId: 'assignment-2', silentForMs: 5_400_000,
-      why: 'already acted 2 time(s)', acted: false,
-    }])
-    expect(context.interrupted).toEqual([])
-    expect(context.health.snapshot().detail).toContain('needs a person, not another attempt')
-  })
-
-  it('reports an interruption that failed rather than leaving the attempt running and the board clean', () => {
-    const context = harness({ silent: [{ ticketId: 'ticket-2', assignmentId: 'assignment-2', silentForMs: 90_000 }], throws: true })
-    expect(context.watchdog.look(1_000_000)[0]!.acted).toBe(false)
-    expect(context.health.snapshot().detail).toContain('the Session is gone')
+  it('is reported ONCE per attempt — a decision every pass is an alarm people learn to ignore', () => {
+    const context = harness({ silent: [{ ticketId: 'ticket-2', assignmentId: 'assignment-2', silentForMs: 5_400_000 }] })
+    context.watchdog.look(1_000_000)
+    context.watchdog.look(2_000_000)
+    expect(context.reported).toHaveLength(1)
   })
 
   it('looks for nothing at all when the whole Watchdog is off', () => {
@@ -128,7 +112,7 @@ describe('a worker that has stopped saying anything', () => {
       settings: () => ({ enabled: false, everyMs: 60_000, launchStuckMs: 600_000, silentMs: 3_600_000, maxActions: 2 }),
       stuckLaunches: () => { looked++; return [] },
       silentAttempts: () => { looked++; return [] },
-      rescue: () => {}, interrupt: () => {}, actionsTaken: () => 0, escalate: () => {}, health, requestPass: () => {},
+      rescue: () => {}, reportSilent: () => {}, actionsTaken: () => 0, escalate: () => {}, health, requestPass: () => {},
     }
     expect(new Watchdog(host).look(1_000_000)).toEqual([])
     expect(looked).toBe(0)
@@ -147,7 +131,7 @@ describe('a settings change to how often it looks', () => {
       settings: () => ({ enabled: true, everyMs, launchStuckMs: 600_000, silentMs: 0, maxActions: 2 }),
       stuckLaunches: () => { looked++; return [] },
       silentAttempts: () => [],
-      rescue: () => {}, interrupt: () => {}, actionsTaken: () => 0, escalate: () => {},
+      rescue: () => {}, reportSilent: () => {}, actionsTaken: () => 0, escalate: () => {},
       health: new HealthEntry(), requestPass: () => {},
     }
     const watchdog = new Watchdog(host)
@@ -182,7 +166,7 @@ describe('escalating a Ticket to a person', () => {
       settings: () => ({ enabled: true, everyMs: 60_000, launchStuckMs: 600_000, silentMs: 0, maxActions: 2 }),
       stuckLaunches: () => [{ ticketId: 'ticket-a', assignmentId: 'attempt-1' }],
       silentAttempts: () => [],
-      rescue: () => {}, interrupt: () => {},
+      rescue: () => {}, reportSilent: () => {},
       actionsTaken: () => 2,
       escalate: (ticketId, why) => { escalations.push({ ticketId, why }) },
       health: new HealthEntry(), requestPass: () => {},
@@ -200,18 +184,6 @@ describe('escalating a Ticket to a person', () => {
     expect(actions.map(action => action.acted)).toEqual([false])
   })
 
-  it('records the silent-worker escalation too, which is the other way in', () => {
-    const escalations: string[] = []
-    const host: WatchdogHost = {
-      settings: () => ({ enabled: true, everyMs: 60_000, launchStuckMs: 0, silentMs: 600_000, maxActions: 1 }),
-      stuckLaunches: () => [],
-      silentAttempts: () => [{ ticketId: 'ticket-b', assignmentId: 'attempt-1', silentForMs: 900_000 }],
-      rescue: () => {}, interrupt: () => {},
-      actionsTaken: () => 1,
-      escalate: (ticketId, why) => { escalations.push(`${ticketId}: ${why}`) },
-      health: new HealthEntry(), requestPass: () => {},
-    }
-    new Watchdog(host).look(Date.now())
-    expect(escalations).toEqual(['ticket-b: has gone silent 1 time(s) and needs a person, not another attempt'])
-  })
+  // 【操作者决定 G-5 产品变更】删掉了「静默到 maxActions 次后升级叫人」那条：静默不再有动作计数
+  // （不打断就没有"重试几次"），可见性由 reportSilent 一次一报承担；stuck-launch 的升级路径不变。
 })

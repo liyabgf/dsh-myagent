@@ -35,13 +35,14 @@ export interface WatchdogHost {
   /** Attempts that are running but whose Session has produced nothing for at least this long. */
   silentAttempts(olderThanMs: number, now: number): { ticketId: string; assignmentId: string; silentForMs: number }[]
   /**
-   * Interrupt a running attempt: stop its background work, end the attempt, leave a recovery note, open a fresh one.
+   * 【操作者决定 G-5】Make a silent attempt VISIBLE: a decision in the operator's queue plus a health line.
    *
-   * The opposite of {@link rescue}, and for the opposite state. An attempt that never started is `pending`, which
-   * interrupting would silently skip; an attempt that went quiet is `running`, which re-queueing a launch would not
-   * touch at all.
+   * Interrupting is deliberately NOT offered here — the operator's own words were "打不打断是操作者的事": a worker
+   * that has been quiet for ten minutes might be stuck, or might be doing exactly the long quiet compute it was asked
+   * to do, and those two shapes cannot be told apart by a timer. The report says "this one has been silent for N
+   * minutes"; what to do about it (the task's stop button, or nothing) stays a person's call.
    */
-  interrupt(ticketId: string, assignmentId: string, why: string): void
+  reportSilent(ticketId: string, assignmentId: string, silentForMinutes: number): void
   /** How many times the Watchdog has already acted on this Ticket, read from its own log. */
   actionsTaken(ticketId: string): number
   /**
@@ -64,6 +65,8 @@ export class Watchdog {
   private stopped = false
   /** The interval the running timer was armed with, so a settings change can tell "different" from "same". */
   private armedEveryMs = 0
+  /** Attempts already reported silent, so the operator's queue hears it once, not every pass. */
+  private reportedSilence = new Set<string>()
 
   /**
    * The interval the running timer is actually on.
@@ -93,7 +96,7 @@ export class Watchdog {
     if (!settings.enabled) return []
     const actions: WatchdogAction[] = []
     if (settings.launchStuckMs > 0) actions.push(...this.rescueStuck(settings, now))
-    if (settings.silentMs > 0) actions.push(...this.interruptSilent(settings, now))
+    if (settings.silentMs > 0) actions.push(...this.reportSilent(settings, now))
     if (actions.some(action => action.acted)) this.host.requestPass()
     return actions
   }
@@ -130,27 +133,22 @@ export class Watchdog {
     return actions
   }
 
-  /** Attempts that are running but have said nothing for a long time: stop them and let a fresh one continue. */
-  private interruptSilent(settings: { silentMs: number; maxActions: number }, now: number): WatchdogAction[] {
+  /**
+   * Attempts that are running but have said nothing for `silentMs`: report them, do not touch them.
+   * 【操作者决定 G-5】Ten minutes of silence makes it visible; interruption belongs to the operator.
+   */
+  private reportSilent(settings: { silentMs: number }, now: number): WatchdogAction[] {
     const actions: WatchdogAction[] = []
     for (const silent of this.host.silentAttempts(settings.silentMs, now)) {
-      const taken = this.host.actionsTaken(silent.ticketId)
-      if (taken >= settings.maxActions) {
-        const escalated = `has gone silent ${taken} time(s) and needs a person, not another attempt`
-        this.host.escalate(silent.ticketId, escalated)
-        this.host.health.problem(`Ticket ${silent.ticketId.slice(0, 8)} ${escalated}`)
-        actions.push({ ...silent, why: `already acted ${taken} time(s)`, acted: false })
-        continue
-      }
-      const why = `its worker said nothing for ${Math.round(silent.silentForMs / 60_000)} minute(s)`
-      try {
-        this.host.interrupt(silent.ticketId, silent.assignmentId, why)
-        actions.push({ ...silent, why, acted: true })
-      } catch (error) {
-        this.host.health.problem(
-          `Could not interrupt the silent worker of Ticket ${silent.ticketId.slice(0, 8)}: ${error instanceof Error ? error.message : String(error)}`)
-        actions.push({ ...silent, why, acted: false })
-      }
+      const minutes = Math.round(silent.silentForMs / 60_000)
+      // Reported ONCE per attempt: the queue is where the operator decides, and the same decision every
+      // `everyMs` is an alarm that trains its reader to ignore it. The in-memory set covers the common case;
+      // a restart re-reports once, and the runtime's queue check keeps the repeat from landing while the first
+      // still sits undismissed.
+      if (this.reportedSilence.has(silent.assignmentId)) continue
+      this.reportedSilence.add(silent.assignmentId)
+      this.host.reportSilent(silent.ticketId, silent.assignmentId, minutes)
+      actions.push({ ...silent, why: `its worker said nothing for ${minutes} minute(s)`, acted: false })
     }
     return actions
   }

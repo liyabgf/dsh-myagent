@@ -167,7 +167,10 @@ try {
       // 0.11.0：决断队列卡片。空队列要说人话，不能停在永远的"读取中…"；读不到时要明说不可信。
       decisionsHeading: [...document.querySelectorAll('#tab-overview section.card h2')]
         .some(n => (n.textContent || '').includes('需要你决断的事')),
-      decisionsText: (document.getElementById('ov-decisions')?.textContent || '').trim().slice(0, 48),
+      // 【量具修正】旧值 .slice(0, 48)：写它时线上队列永远是空的，"有决断"这个状态从没被量过——
+      // 第一条真决断进队就暴露了：来源行在 title+detail 之后，48 字里根本看不见。量具要么量全量，
+      // 要么别把"三态可读"当成已验证。
+      decisionsText: (document.getElementById('ov-decisions')?.textContent || '').trim().slice(0, 400),
     }
   })
   check('落地即总览（tab-overview 可见、tab-tickets 隐藏）', ov.overviewVisible === true && ov.ticketsHidden === true,
@@ -176,14 +179,16 @@ try {
   check('KPI 一排 6 张卡，且不含机器路径', ov.kpis === 6 && !ov.kpiLabels.some(l => l.includes('/Users')), ov.kpiLabels.join('|'))
   check('「需要你处理」有内容或明确说"系统安静"（不是空白/[object]）',
     ov.attentionText.length > 0 && !ov.attentionText.includes('[object'), ov.attentionText)
-  // 【A-1】说明页：新用户从侧边栏一键入口进来的第一站，值得在真浏览器里真的点开一次。
+  // 【操作者决定】说明页退役为「更新」页（挪到页签最后）：真浏览器里点开一次，断言发布历史渲染出来。
   await page.click('#tabs button[data-tab="about"]')
   await page.waitForTimeout(400)
   const aboutText = await page.evaluate(() => (document.getElementById('about-body')?.textContent || ''))
-  check('说明页渲染服务端小节（这是什么 / 刻意不做什么）',
-    aboutText.includes('这是什么') && aboutText.includes('刻意不做什么'), aboutText.slice(0, 40))
-  check('说明页说清了两条边界（没有沙箱、不替你决定）',
-    aboutText.includes('沙箱') && aboutText.includes('不替你决定'), '')
+  check('更新页渲染发布历史（版本号 + 日期 + 一行说明）',
+    /\d+\.\d+\.\d+/.test(aboutText) && aboutText.includes('更新内容') && /\d{4}-\d{2}-\d{2}/.test(aboutText),
+    aboutText.slice(0, 40))
+  check('更新列表不为空（CHANGELOG.md 是随包文件，发布管道追加）',
+    !aboutText.includes('CHANGELOG.md 是随包') && !aboutText.includes('读不到更新内容') && aboutText.length > 60,
+    `len=${aboutText.length}`)
   await page.click('#tabs button[data-tab="overview"]')
   await page.waitForTimeout(300)
 

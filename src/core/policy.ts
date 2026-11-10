@@ -267,7 +267,9 @@ export const SettingsSchema = z.object({
      * operator's own work, and a Watchdog that starts interrupting long-running commands on the day it is installed
      * is worse than one that is off.
      */
-    silentMs: z.number().int().min(0).max(604_800_000).default(0),
+    // 【操作者决定 G-5】默认 10 分钟可见：静默 10 分钟上队列与健康板，**不打断**——打不打断是操作者的事
+    // （要关这条线，把 silentMs 设为 0）。
+    silentMs: z.number().int().min(0).max(604_800_000).default(600_000),
     /**
      * How many times a Ticket whose turn died in an upstream error is relaunched automatically before it goes to a
      * person. 0 means no cap: the operator's standing instruction is that work keeps moving until it is done, and a
