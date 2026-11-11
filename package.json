@@ -1,6 +1,6 @@
 {
   "name": "myagent",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "type": "module",
   "license": "MIT",
   "description": "A personal proactive agent as a DSH (DeepSeek Harness) bundle: cron schedules and a local inbox directory become Triggers, a deterministic gate turns them into authorized Tickets, and each Ticket runs in its own DSH Session and directory, reporting back through a panel and the file system.",

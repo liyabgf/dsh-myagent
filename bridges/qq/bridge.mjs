@@ -123,23 +123,21 @@ const onDispatch = async (event, payload) => {
   const { msgId, msgSeq, openid, groupOpenid, chatId, isDirect, ...message } = mapped.message
   // Download QQ attachments (direct URL — no extra API call)
   const attachments = []
-  if (message.fileRefs?.length) {
-    const { fileRefs, ...msgWithoutRefs } = message
-    message = msgWithoutRefs
-    for (const ref of fileRefs) {
-      try {
-        const localPath = await downloadAttachment(ref.url, directory, ref.fileName)
-        attachments.push(localPath)
-        log.info('attachment-downloaded', { filename: ref.fileName })
-      } catch (error) {
-        log.warn('attachment-download-failed', { fileName: ref.fileName, error: String(error).slice(0, 120) })
-      }
+  // Separate fileRefs from the message body (fileRefs is bridge-internal, not for writeMessage)
+  const { fileRefs = [], ...msgClean } = message
+  for (const ref of fileRefs) {
+    try {
+      const localPath = await downloadAttachment(ref.url, directory, ref.fileName)
+      attachments.push(localPath)
+      log.info('attachment-downloaded', { filename: ref.fileName })
+    } catch (error) {
+      log.warn('attachment-download-failed', { fileName: ref.fileName, error: String(error).slice(0, 120) })
     }
   }
-  await writeMessage({ directory, ...message, ...(attachments.length ? { attachments } : {}) })
+  await writeMessage({ directory, ...msgClean, ...(attachments.length ? { attachments } : {}) })
   const routes = { ...(state.data.replyRoutes ?? {}) }
   // The reply address for this thread: passive (msgId + seq bookkeeping) and active (openid / group_openid).
-  if (message.thread !== undefined) {
+  if (msgClean.thread !== undefined) {
     routes[message.thread] = { msgId, seq: 0, openid, groupOpenid }
   }
   state.data = await saveState(directory, {
