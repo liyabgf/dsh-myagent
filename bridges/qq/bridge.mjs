@@ -35,7 +35,7 @@
  */
 import { createLog } from '../lib/log.mjs'
 import { loadState, saveState } from '../lib/state.mjs'
-import { writeMessage } from '../lib/inbound.mjs'
+import { writeMessage, downloadAttachment } from '../lib/inbound.mjs'
 import { join } from 'node:path'
 import { utimes, writeFile } from 'node:fs/promises'
 import { drainOut } from '../lib/outbound.mjs'
@@ -121,7 +121,22 @@ const onDispatch = async (event, payload) => {
   const mapped = mapEvent(payload, { allowUsers })
   if (mapped.skip !== undefined) { log.debug('skipped', { reason: mapped.skip }); return }
   const { msgId, msgSeq, openid, groupOpenid, chatId, isDirect, ...message } = mapped.message
-  await writeMessage({ directory, ...message })
+  // Download QQ attachments (direct URL — no extra API call)
+  const attachments = []
+  if (message.fileRefs?.length) {
+    const { fileRefs, ...msgWithoutRefs } = message
+    message = msgWithoutRefs
+    for (const ref of fileRefs) {
+      try {
+        const localPath = await downloadAttachment(ref.url, directory, ref.fileName)
+        attachments.push(localPath)
+        log.info('attachment-downloaded', { filename: ref.fileName })
+      } catch (error) {
+        log.warn('attachment-download-failed', { fileName: ref.fileName, error: String(error).slice(0, 120) })
+      }
+    }
+  }
+  await writeMessage({ directory, ...message, ...(attachments.length ? { attachments } : {}) })
   const routes = { ...(state.data.replyRoutes ?? {}) }
   // The reply address for this thread: passive (msgId + seq bookkeeping) and active (openid / group_openid).
   if (message.thread !== undefined) {

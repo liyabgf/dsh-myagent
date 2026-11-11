@@ -1274,6 +1274,7 @@ export class Runtime implements HttpHost {
       this.toolsHost(),
       this.prompts,
       () => this.settings(),
+      this.engine,  // passed so DeskLoop can close triage tickets directly
     )
     await this.deskLoop.init()
     const deskCfg = this.settings().deskLlm

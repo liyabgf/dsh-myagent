@@ -486,6 +486,8 @@ type TicketInput = {
   readonly at: string;
   readonly deliveredAt?: string;
   readonly by?: InputBy;
+  /** Absolute paths of downloaded attachments (images, files) delivered with this input. */
+  readonly attachments?: readonly string[];
 } | {
   readonly id: string;
   readonly kind: 'note';
@@ -493,6 +495,8 @@ type TicketInput = {
   readonly at: string;
   readonly deliveredAt?: string;
   readonly by?: InputBy;
+  /** Absolute paths of downloaded attachments (images, files) delivered with this note. */
+  readonly attachments?: readonly string[];
 };
 type DecisionOutcome = 'accept' | 'ignore' | 'observe' | 'unavailable';
 /** The result of the gate on one Trigger. */
@@ -1209,12 +1213,12 @@ declare class Engine {
    * Give a Ticket's worker a fact from elsewhere as a text Input. It grants nothing: the Mandate is the only
    * authorization, and a note never widens it.
    */
-  note(ticketId: string, text: string): Ticket;
+  note(ticketId: string, text: string, attachments?: readonly string[]): Ticket;
   /**
    * A person's answer to a Ticket that waits: it clears the question, delivers the text, and starts a new Assignment
    * when the previous one ended. The Mandate is unchanged, so the work stays within its scope.
    */
-  answer(ticketId: string, text: string): Ticket;
+  answer(ticketId: string, text: string, attachments?: readonly string[]): Ticket;
   /**
    * Let one Ticket's worker hand a fact to another Ticket, through the Engine and nothing else.
    *

@@ -380,7 +380,7 @@ export function mainTools(host: ToolsHost): Tool[] {
       description: 'List Tickets, newest first. Use it before answering any question about what the system is doing; never guess a state.',
       schema: z.object({
         state: z.enum(['open', 'ended', 'attention', 'all']).default('open').describe('attention means waiting for a person.'),
-        limit: z.number().int().min(1).max(100).default(20),
+        limit: z.number().int().min(1).max(100).default(5).describe('How many to return; default is 5. Use a small number for a quick check.'),
       }).strict(),
       execute: async args => {
         const tickets = host.store.tickets.page(args.state, 0, args.limit)

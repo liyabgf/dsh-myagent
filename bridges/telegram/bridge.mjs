@@ -30,7 +30,7 @@
 import { createLog } from '../lib/log.mjs'
 import { supervise } from '../lib/run.mjs'
 import { loadState, saveState } from '../lib/state.mjs'
-import { writeMessage } from '../lib/inbound.mjs'
+import { writeMessage, downloadAttachment } from '../lib/inbound.mjs'
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
@@ -117,12 +117,30 @@ const MAX_SENT_LEDGER = 500
 const inbound = async update => {
   const mapped = mapUpdate(update, me, { mode, chatAllowList })
   if (mapped.skip !== undefined) return { skipped: mapped.skip }
-  const { chatId, isDirect, replyToMessageId, ...message } = mapped.message
+  const { chatId, isDirect, replyToMessageId, fileRefs, ...message } = mapped.message
   const replyToTicket = replyToMessageId === undefined ? undefined : state.data.sentMessages?.[replyToMessageId]
+  // Download attachments (photos, documents, videos) before writing the message file
+  const attachments = []
+  if (fileRefs?.length) {
+    for (const ref of fileRefs) {
+      try {
+        const fileInfo = await call('getFile', { file_id: ref.fileId })
+        const fileUrl = `${API}/file/bot${token}/${fileInfo.file_path}`
+        const msgId = String(message.id ?? 'unknown').replace(/[^A-Za-z0-9._-]/g, '-')
+        const filename = ref.fileName ?? `${msgId}-${attachments.length + 1}.${ref.ext}`
+        const localPath = await downloadAttachment(fileUrl, directory, filename)
+        attachments.push(localPath)
+        log.info('attachment-downloaded', { filename, bytes: fileInfo.file_size ?? '?' })
+      } catch (error) {
+        log.warn('attachment-download-failed', { fileId: ref.fileId, error: String(error).slice(0, 120) })
+      }
+    }
+  }
   await writeMessage({
     directory,
     ...message,
     ...(replyToTicket === undefined ? {} : { replyToTicket }),
+    ...(attachments.length ? { attachments } : {}),
   })
   const routes = { ...(state.data.replyRoutes ?? {}) }
   if (message.thread !== undefined) routes[message.thread] = chatId

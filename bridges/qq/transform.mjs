@@ -44,15 +44,33 @@ export const nextSeq = (previous = 0) => previous + 1
 export function mapEvent(payload, { allowUsers = [] } = {}) {
   if (payload === undefined || payload === null) return { skip: 'not-a-message' }
   const content = payload.content
-  if (typeof content !== 'string') return { skip: `no-text:${payload.attachments !== undefined ? 'attachment' : 'unknown'}` }
+  // Non-text content: check for attachments before skipping
+  if (typeof content !== 'string') {
+    if (payload.attachments?.length) {
+      // Has attachments but no text — allow through with placeholder body
+      // fileRefs will carry download info; body set below
+    } else {
+      return { skip: 'no-text:unknown' }
+    }
+  }
   const from = payload.author?.id === undefined || payload.author?.id === ''
     ? payload.author?.member_openid
     : payload.author.id
   if (from === undefined || String(from) === '') return { skip: 'no-sender' }
   if (allowUsers.length > 0 && !allowUsers.includes(String(from))) return { skip: 'user-not-allowed' }
   const isDirect = payload.group_openid === undefined
-  const body = cleanText(content, { isDirect })
-  if (body === '') return { skip: 'no-text:empty-after-clean' }
+  const body = typeof content === 'string' ? cleanText(content, { isDirect }) : ''
+  // Build fileRefs from QQ attachments (direct URL download, no extra API call needed)
+  const fileRefs = (payload.attachments ?? []).map((att, i) => ({
+    url: att.url,
+    fileName: att.filename ?? `attachment-${i + 1}.${(att.content_type ?? 'image/jpeg').split('/')[1] ?? 'bin'}`,
+    description: att.filename ?? (att.content_type?.startsWith('image') ? '图片' : '文件'),
+    contentType: att.content_type,
+  })).filter(r => r.url)
+  const effectiveBody = body !== '' ? body
+    : fileRefs.length > 0 ? `[${fileRefs.map(r => r.description).join('，')}]`
+    : ''
+  if (effectiveBody === '') return { skip: 'no-text:empty-after-clean' }
   const chatId = isDirect ? String(from) : String(payload.group_openid)
   const thread = formatRoute({ kind: isDirect ? 'dm' : 'group', chatId })
   return {
@@ -60,8 +78,9 @@ export function mapEvent(payload, { allowUsers = [] } = {}) {
       from: String(from),
       id: String(payload.id),
       thread,
-      title: taskTitle(String(from), body),
-      body,
+      title: taskTitle(String(from), effectiveBody),
+      body: effectiveBody,
+      ...(fileRefs.length ? { fileRefs } : {}),
       chatId,
       isDirect,
       // The reply address: passive first (msgId + seq), active as the fallback (openid / group_openid).

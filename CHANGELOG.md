@@ -38,4 +38,4 @@
 - **0.14.8**（2026-11-11）：Telegram 回复机器人自己消息不再被 mentions 过滤器静默丢掉（实捕：操作者对着答案回话三处无痕）；跳过计数每 5 分钟 info 落痕；等人回答的任务给一次点击的出口；worker 提示词收紧提问门槛
 - **0.15.0**（2026-11-11）：重构进气与协作：Thread/Subscription（同一对话不再劈成多张票）+ 总管分诊两层进气（非请求静默 dropped，triage.sources 默认只 chat）+ 墙钟预算强制（到点提醒、宽限后系统停下）+ 总管工具面（ask_desk/handback/close_ticket，决断队列写入权收归总管）+ 同 Work 只读兄弟目录 + 目录级产物登记（尾斜杠授权整棵树）+ 面板信任层（总管代你决定的、线程可视化）；修掉「等你回答」永久 1 条与 G-5 健康板残留；schema 升到 6
 - **0.16.0**（2026-11-11）：总管独立 LLM API（DeskLoop，ctx.llm，面板「总管」tab）+ 任务结束/失败唤醒总管审视（F1）+ 总管主动巡检（F2）+ Telegram 长轮询自愈（F3）+ 面板全面 UX 改造（提示词折叠抽屉、技能分类、总管 tab 右端独立）+ 27 个技能装入技能池 + relay 摘要截断 / desk_messages 清理 / attention 计数 bug 修复
-- **0.16.0**（2026-11-11）：总管独立 LLM API（DeskLoop，ctx.llm，面板「总管」tab）+ 任务结束/失败唤醒总管审视（F1）+ 总管主动巡检（F2）+ Telegram 长轮询自愈（F3）+ 面板全面 UX 改造（提示词折叠抽屉、技能分类、总管 tab 右端独立）+ 27 个技能装入技能池 + relay 摘要截断 / desk_messages 清理 / attention 计数 bug 修复
+- **0.17.0**（2026-11-11）：附件传送全链路（Telegram/QQ 图片下载→inputs/）+ DeskLoop 真修（engine 注入、超时关 triage 票）+ 面板 UX 全面改造（总管 tab、提示词折叠抽屉、技能分类）+ F1/F2/F3（任务结束唤醒总管、主动巡检、Telegram 长轮询自愈）+ 审核修复（proof 13 条测试、DeskHistory.trim off-by-one、type safety）

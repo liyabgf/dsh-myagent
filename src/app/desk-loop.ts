@@ -28,6 +28,7 @@ import type { Store } from './store.ts'
 import type { ToolsHost } from './tools.ts'
 import type { Prompts } from './prompts.ts'
 import type { Settings } from '../core/policy.ts'
+import type { Engine } from '../core/engine.ts'
 import { DeskHistory } from './desk-history.ts'
 import { deskGenerate } from './desk-llm.ts'
 import { deskToolSchemas, executeDeskToolCalls } from './desk-tools.ts'
@@ -88,6 +89,7 @@ export class DeskLoop {
     private readonly toolsHost: ToolsHost,
     private readonly prompts: Prompts,
     private readonly settings: () => Settings,
+    private readonly engine?: Engine,
   ) {
     this.history = store.deskHistory
   }
@@ -157,12 +159,31 @@ export class DeskLoop {
       try {
         await this.processEntry(entry)
         // Keep desk_messages bounded: trim every processed entry.
-        // trim() is a lightweight indexed DELETE; at 2000 rows it costs < 1ms.
         this.history.trim()
+        // 【修复】成功的 turn 清掉 recentErrors——健康板不应该因为历史错误永远红
+        this.recentErrors = []
         entry.resolve()
       } catch (error) {
         const msg = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
-        this.addError(msg)
+        // 【修复】LLM 超时是运行限制，不是故障——不写进健康板的 recentErrors
+        // 真正的错误（工具失败、API 拒绝等）才写
+        const isTimeout = msg.includes('aborted') || msg.includes('timeout') || msg.includes('Timeout')
+        if (!isTimeout) this.addError(msg)
+        else this.ctx.logger.warn('[DeskLoop] turn timed out for %s: %s', entry.ticketId?.slice(0, 8) ?? '?', msg)
+        // 【E 真修】triage turn 超时后，直接调 engine.report(dropped) 结束 assignment
+        // 不经过模型工具层——engine.report 是领域层唯一写者，这是正确的接口
+        if (isTimeout && entry.ticketId) {
+          try {
+            this.engine?.report(entry.ticketId, {
+              state: 'dropped',
+              summary: 'Triage timed out — desk LLM did not respond in time. Ticket dropped automatically.',
+            })
+            this.ctx.logger.info('[DeskLoop] closed timed-out triage ticket %s via engine.report', entry.ticketId.slice(0, 8))
+          } catch (closeError) {
+            this.ctx.logger.warn('[DeskLoop] could not close timed-out ticket %s: %s',
+              entry.ticketId.slice(0, 8), String(closeError).slice(0, 80))
+          }
+        }
         entry.reject(error)
       }
       this.queue.shift()

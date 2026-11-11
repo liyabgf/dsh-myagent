@@ -128,6 +128,8 @@ interface Message {
   readonly title?: string
   /** Explicit Ticket id when the sender replied to a bot message that reported on a Ticket. */
   readonly replyToTicket?: string
+  /** Absolute paths of downloaded attachments (images, files) placed by the bridge. */
+  readonly attachments?: readonly string[]
   readonly body: string
 }
 
@@ -158,12 +160,15 @@ function parseMessage(text: string, fileName: string): Message {
   const thread = fields.thread ?? ''
   const title = fields.title ?? ''
   const replyToTicket = fields['reply-to-ticket'] ?? fields.replytoticket ?? ''
+  const attachmentsRaw = fields.attachments ?? ''
+  const attachments = attachmentsRaw === '' ? [] : attachmentsRaw.split(',').map(a => a.trim()).filter(a => a !== '')
   return {
     from: fields.from ?? '',
     id: id === '' ? fileName : id,
     ...(thread === '' ? {} : { thread }),
     ...(title === '' ? {} : { title }),
     ...(replyToTicket === '' ? {} : { replyToTicket }),
+    ...(attachments.length > 0 ? { attachments } : {}),
     body,
   }
 }
@@ -511,10 +516,10 @@ export class ChatSource implements TwoWaySource {
           const needsAnswer = waitsForPerson(ticket)
             || ['waiting', 'blocked'].includes(latestReport(ticket)?.state ?? '')
           if (needsAnswer) {
-            this.host.engine.answer(ticket.id, message.body)
+            this.host.engine.answer(ticket.id, message.body, message.attachments)
             await this.take(path, directory, entry.name, 'accepted', `Answered Ticket ${ticket.id} (subscription)`, triggerId, issues)
           } else {
-            this.host.engine.note(ticket.id, message.body)
+            this.host.engine.note(ticket.id, message.body, message.attachments)
             await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${ticket.id} (subscription)`, triggerId, issues)
           }
           // 【W10】Also deliver to context subscribers (read-only context, as note)
@@ -533,9 +538,9 @@ export class ChatSource implements TwoWaySource {
       const continuation = this.findContinuationTarget(channel.id, message, mapped.actor)
       if (continuation !== undefined) {
         if (continuation.mode === 'answer') {
-          this.host.engine.answer(continuation.ticket.id, message.body)
+          this.host.engine.answer(continuation.ticket.id, message.body, message.attachments)
         } else {
-          this.host.engine.note(continuation.ticket.id, message.body)
+          this.host.engine.note(continuation.ticket.id, message.body, message.attachments)
         }
         // 【W12】Subscribe the Ticket to this Thread so subsequent messages go via W9 subscription fan-out,
         // not through this legacy fallback. This replaces the 60-second rapid-coalescing heuristic.
@@ -569,6 +574,9 @@ export class ChatSource implements TwoWaySource {
           // branch): doing it here would create a Work and reclassify a historical Ticket even for a message the gate
           // refuses — including every message in an `observe`-mode deployment, which promises to execute nothing.
           ...(message.replyToTicket === undefined ? {} : { followupTicket: message.replyToTicket }),
+          // 【附件传送】Bridge downloads images/files to channel's attachments/ subdir and writes absolute paths here.
+          // attachmentsOf() in engine.ts derives Attachment records; executor copies them to Ticket's inputs/ dir.
+          ...(message.attachments?.length ? { attachments: message.attachments } : {}),
         },
         // Where the answer goes, written from the MESSAGE's own facts — the channel this file was read from and the
         // thread it names. Never derived from the actor: an actor id says who asked, not where to answer, and an

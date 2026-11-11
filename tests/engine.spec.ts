@@ -1506,4 +1506,71 @@ describe('a schedule’s firings share one Work (S-3)', () => {
     // One Work only: the named one. A second Work created "just in case" is exactly the junk-drawer failure S-3 avoids.
     expect(memory.works.list().map(work => work.name)).toEqual(['我指定的工作'])
   })
+  describe('attachments on note and answer', () => {
+    it('note stores attachment paths in the TicketInput record', () => {
+      const { engine, memory } = harness()
+      const result = engine.receive(trigger())
+      const ticket = memory.tickets.get(result.ticketId!)!
+      const paths = ['/tmp/chan/attachments/img-1.jpg', '/tmp/chan/attachments/img-2.jpg']
+      engine.note(ticket.id, 'Here are the images', paths)
+      const after = memory.tickets.get(ticket.id)!
+      const note = after.inputs.at(-1)!
+      expect(note.kind).toBe('note')
+      expect(note.text).toBe('Here are the images')
+      expect(note.attachments).toEqual(paths)
+    })
+
+    it('answer stores attachment paths in the TicketInput record', () => {
+      const { engine, memory } = harness()
+      const result = engine.receive(trigger())
+      const ticket = memory.tickets.get(result.ticketId!)!
+      // assignmentStarted needed before report
+      const asgn = ticket.assignments.at(-1)!
+      engine.assignmentStarted(ticket.id, asgn.id)
+      engine.report(ticket.id, { state: 'blocked', summary: 'need info', question: 'what?' })
+      const paths = ['/tmp/chan/attachments/doc.pdf']
+      engine.answer(ticket.id, 'Here is the document', paths)
+      const after = memory.tickets.get(ticket.id)!
+      const input = after.inputs.at(-1)!
+      expect(input.kind).toBe('text')
+      expect(input.attachments).toEqual(paths)
+    })
+
+    it('note without attachments does not add the field', () => {
+      const { engine, memory } = harness()
+      const result = engine.receive(trigger())
+      const ticket = memory.tickets.get(result.ticketId!)!
+      engine.note(ticket.id, 'just text')
+      const after = memory.tickets.get(ticket.id)!
+      const note = after.inputs.at(-1)!
+      expect(note.attachments).toBeUndefined()
+    })
+  })
+
+  describe('engine.report with dropped state (DeskLoop timeout path)', () => {
+    it('report dropped ends the ticket when triage assignment is running', () => {
+      const { engine, memory, executor } = harness()
+      const result = engine.receive(trigger())
+      const ticket = memory.tickets.get(result.ticketId!)!
+      const asgn = ticket.assignments.at(-1)!
+      engine.assignmentStarted(ticket.id, asgn.id)
+      // This is the DeskLoop timeout path: engine.report closes the assignment
+      engine.report(ticket.id, { state: 'dropped', summary: 'Triage timed out.' })
+      const after = memory.tickets.get(ticket.id)!
+      expect(after.ended?.outcome).toBe('dropped')
+      expect(after.ended?.reason).toContain('Triage timed out')
+    })
+
+    it('report dropped records the summary in the assignment report', () => {
+      const { engine, memory } = harness()
+      const result = engine.receive(trigger())
+      const ticket = memory.tickets.get(result.ticketId!)!
+      engine.assignmentStarted(ticket.id, ticket.assignments.at(-1)!.id)
+      engine.report(ticket.id, { state: 'dropped', summary: 'LLM timeout' })
+      const after = memory.tickets.get(ticket.id)!
+      const report = after.assignments.at(-1)?.report
+      expect(report?.state).toBe('dropped')
+      expect(report?.summary).toBe('LLM timeout')
+    })
+  })
 })

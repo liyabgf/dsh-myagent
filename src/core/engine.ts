@@ -588,20 +588,20 @@ export class Engine {
    * Give a Ticket's worker a fact from elsewhere as a text Input. It grants nothing: the Mandate is the only
    * authorization, and a note never widens it.
    */
-  note(ticketId: string, text: string): Ticket {
-    return this.addInput(ticketId, { kind: 'note', text })
+  note(ticketId: string, text: string, attachments?: readonly string[]): Ticket {
+    return this.addInput(ticketId, { kind: 'note', text, ...(attachments?.length ? { attachments } : {}) })
   }
 
   /**
    * A person's answer to a Ticket that waits: it clears the question, delivers the text, and starts a new Assignment
    * when the previous one ended. The Mandate is unchanged, so the work stays within its scope.
    */
-  answer(ticketId: string, text: string): Ticket {
+  answer(ticketId: string, text: string, attachments?: readonly string[]): Ticket {
     return this.tx.atomic(() => {
       const ticket = this.require(ticketId)
       if (!liveTicket(ticket)) throw new UserError('ticket_ended')
       const at = this.now()
-      const input: TicketInput = { id: key('input', ticketId, text, at), kind: 'text', text, at }
+      const input: TicketInput = { id: key('input', ticketId, text, at), kind: 'text', text, at, ...(attachments?.length ? { attachments } : {}) }
       let next: Ticket = { ...ticket, attention: undefined, inputs: [...ticket.inputs, input] }
       const current = latestAssignment(next)
       if (current === undefined || current.state === 'ended') {
@@ -653,7 +653,7 @@ export class Engine {
   }
 
   /** Add an Input to an open Ticket and hand it to the running Assignment, or hold it for the next launch. */
-  private addInput(ticketId: string, input: { kind: 'note' | 'text'; text: string; by?: TicketInput['by'] }): Ticket {
+  private addInput(ticketId: string, input: { kind: 'note' | 'text'; text: string; by?: TicketInput['by']; attachments?: readonly string[] }): Ticket {
     return this.tx.atomic(() => {
       const ticket = this.require(ticketId)
       if (!liveTicket(ticket)) throw new UserError('ticket_ended')
@@ -661,6 +661,7 @@ export class Engine {
       const record: TicketInput = {
         id: key('input', ticketId, input.kind, input.text, at), kind: input.kind, text: input.text, at,
         ...(input.by === undefined ? {} : { by: input.by }),
+        ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       }
       this.record(ticketId, 'input', input.by ?? { kind: 'person' }, { input: input.kind })
       const next: Ticket = { ...ticket, inputs: [...ticket.inputs, record] }

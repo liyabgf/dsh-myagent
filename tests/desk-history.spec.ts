@@ -86,3 +86,38 @@ describe('DeskHistory', () => {
     expect(r[0]!.name).toBe('myagent_list_tickets')
   })
 })
+
+describe('DeskHistory.trim is called by DeskLoop on each successful processEntry', () => {
+  it('trim reduces rows above the keep limit', () => {
+    const h = new DeskHistory(makeDb())
+    // Add 5 non-system messages
+    for (let i = 0; i < 5; i++) h.append({ role: 'user', content: `msg ${i}`, at: '2026-01-01T00:00:00Z' })
+    expect(h.since(0).length).toBe(5)
+    // trim(3) should keep only the 3 most recent
+    h.trim(3)
+    expect(h.since(0).length).toBe(3)
+    // The 3 remaining should be the most recent
+    const remaining = h.since(0)
+    expect(remaining[0]!.content).toBe('msg 2')
+    expect(remaining[2]!.content).toBe('msg 4')
+  })
+
+  it('trim does not remove system messages', () => {
+    const h = new DeskHistory(makeDb())
+    h.setSystem('system prompt')
+    for (let i = 0; i < 5; i++) h.append({ role: 'user', content: `msg ${i}`, at: '2026-01-01T00:00:00Z' })
+    h.trim(2)  // keep 2 non-system rows
+    const all = h.recent(100)
+    const system = all.filter(m => m.role === 'system')
+    const nonSystem = all.filter(m => m.role !== 'system')
+    expect(system).toHaveLength(1)  // system always preserved
+    expect(nonSystem).toHaveLength(2)
+  })
+
+  it('trim is idempotent when rows are within the limit', () => {
+    const h = new DeskHistory(makeDb())
+    h.append({ role: 'user', content: 'only one', at: '2026-01-01T00:00:00Z' })
+    h.trim(100)
+    expect(h.since(0).length).toBe(1)
+  })
+})

@@ -460,6 +460,53 @@ describe('the Telegram mapping', () => {
   })
 })
 
+
+describe('Telegram attachment fileRefs extraction', () => {
+  const ME = { id: 123456, username: 'myagent_bot' }
+  const dmBase = { message_id: 50, from: { id: 536, first_name: 'Barne' }, chat: { id: 536, type: 'private' } }
+
+  it('photo message → fileRefs with best quality, body is placeholder', () => {
+    const photoMsg = { ...dmBase, photo: [
+      { file_id: 'small_id', file_unique_id: 'u1', width: 90, height: 68, file_size: 1234 },
+      { file_id: 'best_id', file_unique_id: 'u3', width: 1280, height: 960, file_size: 123456 },
+    ] }
+    const result = mapUpdate({ message: photoMsg }, ME)
+    expect(result.skip).toBeUndefined()
+    expect(result.message.body).toBe('[图片]')
+    expect(result.message.fileRefs).toHaveLength(1)
+    expect(result.message.fileRefs[0].fileId).toBe('best_id')
+    expect(result.message.fileRefs[0].ext).toBe('jpg')
+  })
+
+  it('document message → fileRefs with correct filename and extension', () => {
+    const docMsg = { ...dmBase, document: {
+      file_id: 'doc_id', file_name: 'report.pdf', mime_type: 'application/pdf', file_size: 50000,
+    } }
+    const result = mapUpdate({ message: docMsg }, ME)
+    expect(result.skip).toBeUndefined()
+    expect(result.message.body).toBe('[report.pdf]')  // description uses filename when present
+    expect(result.message.fileRefs).toHaveLength(1)
+    expect(result.message.fileRefs[0].fileName).toBe('report.pdf')
+    expect(result.message.fileRefs[0].ext).toBe('pdf')
+  })
+
+  it('photo with caption uses caption text as body', () => {
+    const captionPhoto = { ...dmBase,
+      photo: [{ file_id: 'fid', file_unique_id: 'u', width: 100, height: 100, file_size: 1000 }],
+      caption: '这是图片说明',
+    }
+    const result = mapUpdate({ message: captionPhoto }, ME)
+    expect(result.message.body).toBe('这是图片说明')
+    expect(result.message.fileRefs).toHaveLength(1)
+  })
+
+  it('message with no text and no attachments is skipped', () => {
+    const emptyMsg = { ...dmBase }
+    const result = mapUpdate({ message: emptyMsg }, ME)
+    expect(result.skip).toBe('no-text')
+  })
+})
+
 /**
  * The Lark/Feishu mapping. Event shapes are the ones the official SDK's normalizer reads
  * (`larksuite/node-sdk`, `channel/normalize/index.ts`): `content` is a JSON STRING, mentions arrive as `@_user_N`
@@ -860,14 +907,42 @@ describe('the QQ mapping (WebSocket dispatch payload)', () => {
 
   it('skips what a bridge must not forward, and filters disallowed users', () => {
     expect(qqMapEvent({ id: 'x', author: {} }).skip).toBe('no-text:unknown')
-    // 附件消息 content 缺席（不是字符串）→ no-text:attachment；带 author 是为了让它不被 no-sender 先挡下。
-    expect(qqMapEvent({ id: 'x', author: { id: 'openid-alice' }, attachments: [{ url: 'u' }] }).skip).toBe('no-text:attachment')
+    // 附件消息 content 缺席但有 attachments → 不再 skip，改为生成占位 body 并返回 fileRefs（附件传送）
+    const withAttach = qqMapEvent({ id: 'x', author: { id: 'openid-alice' }, attachments: [{ url: 'https://example.com/img.jpg', filename: 'img.jpg', content_type: 'image/jpeg' }] })
+    expect(withAttach.skip).toBeUndefined()
+    expect(withAttach.message?.body).toContain('[')
+    expect(withAttach.message?.fileRefs?.length).toBeGreaterThan(0)
+    // content 不是字符串且无 attachments → 仍然 skip
+    expect(qqMapEvent({ id: 'x', author: { id: 'openid-alice' } }).skip).toBe('no-text:unknown')
     expect(qqMapEvent(c2c({ author: { id: '' } })).skip).toBe('no-sender')
     expect(qqMapEvent(undefined).skip).toBe('not-a-message')
     expect(qqMapEvent(c2c(), { allowUsers: ['openid-bob'] }).skip).toBe('user-not-allowed')
     // member_openid 是兜底：author.id 缺席的群消息用它，而不是丢掉。
     const fallback = qqMapEvent(group({ author: { member_openid: 'member-9' } })) as { message: { from: string } }
     expect(fallback.message.from).toBe('member-9')
+  })
+
+  describe('QQ attachment fileRefs extraction and fallback logic', () => {
+    it('attachment with url and content_type produces fileRefs', () => {
+      const withAttach = qqMapEvent({ id: 'x', author: { id: 'openid-alice' },
+        attachments: [{ url: 'https://example.com/img.jpg', filename: 'img.jpg', content_type: 'image/jpeg' }] })
+      expect(withAttach.skip).toBeUndefined()
+      expect(withAttach.message?.fileRefs).toHaveLength(1)
+      expect(withAttach.message?.fileRefs[0].url).toBe('https://example.com/img.jpg')
+      expect(withAttach.message?.fileRefs[0].fileName).toBe('img.jpg')
+    })
+
+    it('attachment without filename falls back to attachment-N.ext from content_type', () => {
+      const noName = qqMapEvent({ id: 'x', author: { id: 'openid-alice' },
+        attachments: [{ url: 'https://example.com/file', content_type: 'image/png' }] })
+      expect(noName.message?.fileRefs[0].fileName).toMatch(/^attachment-1\.png$/)
+    })
+
+    it('attachment without url is filtered out, body becomes empty → skip', () => {
+      const noUrl = qqMapEvent({ id: 'x', author: { id: 'openid-alice' },
+        attachments: [{ filename: 'img.jpg', content_type: 'image/jpeg' }] })
+      expect(noUrl.skip).toBeTruthy()
+    })
   })
 
   it('the reply bookkeeping: seq starts at 1 and counts (up to 5 per inbound is the documented window)', () => {

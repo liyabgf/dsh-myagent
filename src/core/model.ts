@@ -425,8 +425,12 @@ export interface InputBy {
 }
 
 export type TicketInput =
-  | { readonly id: string; readonly kind: 'text'; readonly text: string; readonly at: string; readonly deliveredAt?: string; readonly by?: InputBy }
-  | { readonly id: string; readonly kind: 'note'; readonly text: string; readonly at: string; readonly deliveredAt?: string; readonly by?: InputBy }
+  | { readonly id: string; readonly kind: 'text'; readonly text: string; readonly at: string; readonly deliveredAt?: string; readonly by?: InputBy
+      /** Absolute paths of downloaded attachments (images, files) delivered with this input. */
+      readonly attachments?: readonly string[] }
+  | { readonly id: string; readonly kind: 'note'; readonly text: string; readonly at: string; readonly deliveredAt?: string; readonly by?: InputBy
+      /** Absolute paths of downloaded attachments (images, files) delivered with this note. */
+      readonly attachments?: readonly string[] }
 
 export type DecisionOutcome = 'accept' | 'ignore' | 'observe' | 'unavailable'
 

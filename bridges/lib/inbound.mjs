@@ -61,10 +61,44 @@ export async function writeMessage(message) {
     ...(message.thread === undefined ? {} : { thread: message.thread }),
     ...(message.title === undefined ? {} : { title: message.title }),
     ...(message.replyToTicket === undefined || message.replyToTicket === '' ? {} : { 'reply-to-ticket': message.replyToTicket }),
+    // Comma-separated absolute paths of downloaded attachments (images, files, etc.)
+    ...(message.attachments?.length ? { attachments: message.attachments.join(',') } : {}),
   }, message.body)
   const target = join(message.directory, name)
   const temporary = join(message.directory, `.tmp-${process.pid}-${randomBytes(4).toString('hex')}`)
   await writeFile(temporary, text, 'utf8')
   await rename(temporary, target)
   return target
+}
+
+/**
+ * Download one attachment from a URL into the channel's `attachments/` subdirectory.
+ * Returns the local absolute path, or throws on download failure.
+ *
+ * The file name is derived from `filename` (sanitised to be filesystem-safe).
+ * If a file already exists at that path it is overwritten — same message re-delivered means same bytes.
+ *
+ * @param {string} url         HTTP(S) URL to fetch
+ * @param {string} directory   channel directory (attachments/ will be created inside it)
+ * @param {string} filename    desired filename (will be sanitised; keeps extension)
+ * @returns {Promise<string>}  absolute path of the saved file
+ */
+export async function downloadAttachment(url, directory, filename) {
+  const { mkdir: mkdirFs, writeFile: writeFileFs, rename: renameFs } = await import('node:fs/promises')
+  const { join: joinPath } = await import('node:path')
+  const { randomBytes: rand } = await import('node:crypto')
+
+  const safe = String(filename ?? 'file').replace(/[^A-Za-z0-9._-]/g, '_').replace(/^\.+/, '').slice(0, 120) || 'file'
+  const attachDir = joinPath(directory, 'attachments')
+  await mkdirFs(attachDir, { recursive: true })
+  const dest = joinPath(attachDir, safe)
+
+  const response = await fetch(url, { signal: AbortSignal.timeout(30_000) })
+  if (!response.ok) throw new Error(`attachment download failed: ${response.status} ${url.slice(0, 80)}`)
+  const buf = Buffer.from(await response.arrayBuffer())
+
+  const tmp = joinPath(attachDir, `.tmp-${process.pid}-${rand(4).toString('hex')}`)
+  await writeFileFs(tmp, buf)
+  await renameFs(tmp, dest)
+  return dest
 }

@@ -77,7 +77,28 @@ export function mapUpdate(update, me, { mode = 'mentions', chatAllowList = [] } 
   if (mode === 'dm' && !isDirect) return { skip: 'not-a-dm' }
   if (mode === 'mentions' && !isDirect && !mentionsBot(message, me)) return { skip: 'not-mentioned' }
   const body = cleanText(message, me)
-  if (body === '') return { skip: 'no-text' }
+  // Collect downloadable file references (photo, document, video, audio, voice)
+  // Each ref: { fileId, ext, description } — bridge calls getFile then downloadAttachment
+  const fileRefs = []
+  if (message.photo?.length) {
+    // photo array: last element is highest resolution
+    const best = message.photo.at(-1)
+    fileRefs.push({ fileId: best.file_id, ext: 'jpg', description: '图片' })
+    // If multiple photos in one message (album), Telegram sends separate updates — this handles single photo
+  }
+  if (message.document) {
+    const doc = message.document
+    const ext = doc.file_name?.split('.').pop()?.toLowerCase() ?? (doc.mime_type?.split('/')[1] ?? 'bin')
+    fileRefs.push({ fileId: doc.file_id, ext, description: doc.file_name ?? '文件', fileName: doc.file_name })
+  }
+  if (message.video) fileRefs.push({ fileId: message.video.file_id, ext: 'mp4', description: '视频' })
+  if (message.audio) fileRefs.push({ fileId: message.audio.file_id, ext: message.audio.mime_type?.split('/')[1] ?? 'mp3', description: '音频' })
+  if (message.voice) fileRefs.push({ fileId: message.voice.file_id, ext: 'ogg', description: '语音' })
+
+  const effectiveBody = body !== '' ? body
+    : fileRefs.length > 0 ? `[${fileRefs.map(r => r.description).join('，')}]`
+    : ''
+  if (effectiveBody === '') return { skip: 'no-text' }
   const rawThread = message.message_thread_id === undefined ? undefined : String(message.message_thread_id)
   const thread = formatRoute({
     kind: isDirect ? 'dm' : rawThread !== undefined ? 'topic' : 'group',
@@ -107,8 +128,9 @@ export function mapUpdate(update, me, { mode = 'mentions', chatAllowList = [] } 
       thread,
       ...(replyToMessageId === undefined ? {} : { replyToMessageId }),
       // 标题是「发起者 + 任务内容简要」，不再用群名（匿名管理员用签名或「群名（匿名管理员）」，绝不显示无意义的 "Group"）。
-      title: taskTitle(senderLabel, body),
-      body,
+      title: taskTitle(senderLabel, effectiveBody),
+      body: effectiveBody,
+      ...(fileRefs.length ? { fileRefs } : {}),
       chatId,
       isDirect,
     },

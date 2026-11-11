@@ -133,7 +133,7 @@ export class DeskHistory {
       SELECT seq FROM desk_messages WHERE role != 'system' ORDER BY seq DESC LIMIT 1 OFFSET ?
     `).get(keep - 1) as { seq: number } | undefined
     if (result !== undefined) {
-      this.db.prepare("DELETE FROM desk_messages WHERE role != 'system' AND seq <= ?").run(result.seq)
+      this.db.prepare("DELETE FROM desk_messages WHERE role != 'system' AND seq < ?").run(result.seq)
     }
   }
 }

@@ -723,6 +723,17 @@ export class DshExecutor implements Executor {
       const settings = this.host.settings()
       if (settings.paused) throw new Later(PAUSED_RETRY_MS)
       try {
+        // 【D】Copy any attachments from this input into the Ticket's inputs/ directory before delivering
+        if (input.attachments?.length && ticket.execution?.directory !== undefined) {
+          for (const srcPath of input.attachments) {
+            try {
+              await this.sandbox.deliverAttachment(ticket.execution.directory, basename(srcPath), await readFile(srcPath))
+            } catch (attachErr) {
+              this.host.context.logger.warn('could not copy attachment %s to Ticket %s: %s',
+                srcPath, ticketId.slice(0, 8), String(attachErr).slice(0, 80))
+            }
+          }
+        }
         await this.host.sessions.promptWorker(ticket, `input:${input.id}`,
           `# Added to Ticket ${ticket.id}\n\n${authorOf(input).sentence}:\n\n${input.text}`,
           settings.executor.model)

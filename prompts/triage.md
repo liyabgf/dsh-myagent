@@ -86,6 +86,14 @@ needs work outside it, that is move 3, not a bigger Ticket.
 requester that nothing is happening, but tells them nothing useful, and costs another turn to recover from. And a
 decision written into a file instead of a report reaches nobody: the system reads your tool calls, not your directory.
 
+## Response speed
+
+If you are going to open a Ticket (move 2) or block waiting for the requester (move 3), **reply to the requester first** with a short note saying what you decided and that work is starting or what question you have. Use `myagent_reply` before the ticket tools, or combine it into a single `myagent_close_ticket` summary that is delivered back.
+
+For a **direct answer** (move 1) or a **drop** (move 4): just do it — a second message before the answer is noise.
+
+The rule: a person who sent a request to a chat room should know within your single turn what is happening. If they asked a question, they get the answer. If you are starting work, they get one sentence saying so. If you are dropping it, they get one sentence saying why (unless it is obvious test traffic — then drop silently).
+
 ## The cost of being wrong
 
 - Routing something to a worker that you could have answered: a directory, a worker, and several minutes, to produce
