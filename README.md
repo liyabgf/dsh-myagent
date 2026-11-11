@@ -74,6 +74,13 @@ Source ──Trigger──▶ gate（策略）──Decision──▶ Mandate + 
 - **Report**：worker 用 `myagent_report` 汇报，`state` 是事实分类：`progress / waiting / ready / blocked / failed / dropped`。
   `ready` 和 `dropped` 结束 Ticket；`waiting`、`blocked`、`failed` 让 Ticket 等人——**等人这件事一定会被推到该看到的人面前**
   （送回聊天室、唤醒前台、必要时上健康板），不会只在面板里等着你去发现。
+- **Triage（总管分诊）**：当 `triage.enabled: true` 时，chat/inbox/cron 的请求先到总管（主 Session），
+  而不是直接建 worker 票。总管一眼判断：该自己答的答了（`ready`）、不是请求的丢掉（`dropped`，比如「1」「在吗」）、
+  需要活的开任务。这省掉了「一句话劈成两张票」和「字面 `1` 也建了张票」——分诊票不占 worker 槽，总管答完即关。
+  分诊的来源可配（`triage.sources`，默认只 `chat`）：排期与 inbox 是你自己下的指令，再判一次白花一轮，判错丢掉你要的活。
+- **Thread + Subscription**：同一对话里的后续消息不再各自建票。第一条消息建票后自动订阅 Thread，
+  后续消息经 Subscription fan-out 直接投递给已订阅的票（answer 或 note），不创建新票、不走门禁。
+  这修复了「策划书两句话 65 秒 apart 被劈成两张盲票」的根因。
 - **Delivery**：`ready/failed/dropped` 写进 Ticket 目录的 `RESULT.md`，并送回它来的那条路。
   如果这份结果复用了别的任务的成果或用到了沉淀的手艺，回程末尾会加**一行人话**说明
   （`（这份用上了「上周竞品数据」的成果）`），没有复用时一个字都不加。前台主 Session 收到一条通知
@@ -231,7 +238,9 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
   },
   "triage": {                       // 进气分诊：请求先经一个判断，再决定开不开任务
     "enabled": false,               // 默认关：它每条请求要花一轮 Session
-    "desk": "dedicated"             // dedicated = 分诊自己一个 Session（默认）；main = 复用你的主 Session
+    "desk": "dedicated",            // dedicated = 分诊自己一个 Session（默认）；main = 复用你的主 Session
+    "sources": ["chat"]             // 哪些来路走分诊。默认只有 chat（聊天室的话值得判断）；
+                                   // inbox 和 cron 是你自己下的指令，再判一次等于白花一轮，可选 ["chat","inbox","cron"]
   },
   "sources": {
     "cron": { "enabled": true, "schedules": [

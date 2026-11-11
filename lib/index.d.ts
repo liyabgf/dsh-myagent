@@ -24,6 +24,53 @@ interface Machine {
   readonly mainSessionId: string;
   readonly promptMaxChars: Volatile<number>;
 }
+type DeskRole = 'system' | 'user' | 'assistant' | 'tool';
+/** One tool call inside an assistant message, as returned by the LLM. */
+interface DeskToolCall {
+  id: string;
+  name: string;
+  arguments: string;
+}
+/** A single message row, ready for use as an LLM RequestMessage. */
+interface DeskMessage {
+  seq: number;
+  role: DeskRole;
+  content: string;
+  /** Present on assistant messages that contain tool calls. */
+  tool_calls?: readonly DeskToolCall[];
+  /** Present on tool-result messages. */
+  tool_call_id?: string;
+  /** Tool name on tool-result messages (required by some adapters). */
+  name?: string;
+  ticketId?: string;
+  requestId?: string;
+  at: string;
+}
+declare class DeskHistory {
+  private readonly db;
+  constructor(db: DatabaseSync);
+  /**
+   * Append one message.  Returns the assigned `seq`.
+   * Silently skips if `requestId` is already in the table (dedup).
+   */
+  append(msg: Omit<DeskMessage, 'seq'>): number;
+  /**
+   * Return up to `maxMessages` most-recent non-system messages, plus the latest system
+   * message prepended, oldest first.  Used to build the LLM prompt for each desk turn.
+   */
+  recent(maxMessages?: number): readonly DeskMessage[];
+  /** Return messages after `afterSeq`, oldest first (used for panel paging). */
+  since(afterSeq: number, limit?: number): readonly DeskMessage[];
+  /** Latest seq written, or 0 when the table is empty.  Used for long-polling. */
+  latestSeq(): number;
+  /** Update the system message (replace the latest one). */
+  setSystem(content: string): void;
+  /**
+   * Trim the table to `keep` most-recent non-system rows.  Called after each append so the table
+   * does not grow without bound over months of operation.  System messages are never trimmed.
+   */
+  trim(keep?: number): void;
+}
 /** The domain types of myagent, and the predicates that read a Ticket's state from its own facts. */
 /** The kind of a Source: one reusable implementation. */
 type SourceKindName = 'cron' | 'inbox' | 'session' | 'rule' | 'chat';
@@ -76,6 +123,38 @@ interface Trigger {
    * would post a report to a platform that never asked for one.
    */
   readonly replyTo?: ReplyTo;
+  /**
+   * The Thread key this Trigger belongs to, supplied by the Source.
+   *
+   * Chat sources set this to identify the conversation (channel + topic/DM) so that follow-up messages
+   * in the same thread are delivered to the existing Ticket rather than creating a new one (W9 Subscription fan-out).
+   * Absent for one-way sources (cron, inbox, rule) which have no conversation to track.
+   */
+  readonly threadKey?: string;
+}
+/**
+ * A Thread: an ordered sequence of Triggers from one Source conversation.
+ *
+ * The Thread is the unit within which continuity is tracked. When a Trigger arrives with a `threadKey`,
+ * the Engine stores/updates the Thread and can fan out the Trigger to subscribed Tickets (W9).
+ * At most one Eval runs per Thread at a time (queued Triggers are batched into the next Eval).
+ */
+interface Thread {
+  /** Stable key: typically `<source>:<channelId>:<topicOrDmId>` as written by the Source. */
+  readonly key: string;
+  /** When this Thread was first seen. */
+  readonly createdAt: string;
+  /** Time of the most recent Trigger on this Thread. */
+  readonly lastAt: string;
+  /** Ids of open Tickets that have subscribed to this Thread (receive fan-out of future Triggers). */
+  readonly subscriptions: readonly string[];
+  /**
+   * Ids of Tickets that follow this Thread for read-only context (W10).
+   * Their workers receive fan-out messages but no authorization is granted and no resumption occurs.
+   */
+  readonly contextSubscriptions?: readonly string[];
+  /** Source kind that owns this Thread. */
+  readonly sourceKind: SourceKindName;
 }
 /** What became of a Trigger: the unit of audit, and what makes intake idempotent. */
 type Disposition = {
@@ -717,12 +796,23 @@ declare const SettingsSchema: z.ZodObject<{
   notify: z.ZodPrefault<z.ZodObject<{
     enabled: z.ZodDefault<z.ZodBoolean>;
   }, z.core.$strict>>;
+  deskLlm: z.ZodPrefault<z.ZodObject<{
+    provider: z.ZodDefault<z.ZodString>;
+    model: z.ZodDefault<z.ZodString>;
+    temperature: z.ZodDefault<z.ZodNumber>;
+    maxTokens: z.ZodDefault<z.ZodNumber>;
+  }, z.core.$strict>>;
   triage: z.ZodPrefault<z.ZodObject<{
     enabled: z.ZodDefault<z.ZodBoolean>;
     desk: z.ZodDefault<z.ZodEnum<{
       dedicated: "dedicated";
       main: "main";
     }>>;
+    sources: z.ZodDefault<z.ZodArray<z.ZodEnum<{
+      cron: "cron";
+      inbox: "inbox";
+      chat: "chat";
+    }>>>;
   }, z.core.$strict>>;
 }, z.core.$strict>;
 type Settings = z.infer<typeof SettingsSchema>;
@@ -923,6 +1013,12 @@ interface ArtifactRepository {
   /** A Ticket's artifacts, in the order their registering reports arrived. */
   list(ticketId: string): Artifact[];
 }
+interface ThreadRepository {
+  get(key: string): Thread | undefined;
+  save(thread: Thread): void;
+  /** All threads, for subscriptions resolution and Eval queueing. */
+  list(): Thread[];
+}
 interface Repositories {
   readonly triggers: TriggerRepository;
   readonly tickets: TicketRepository;
@@ -932,6 +1028,7 @@ interface Repositories {
   readonly works: WorkRepository;
   readonly events: EventRepository;
   readonly dependencies: DependencyRepository;
+  readonly threads: ThreadRepository;
 }
 /** The transaction boundary the Engine writes inside, and the hook that runs work only after it commits. */
 interface Transaction {
@@ -1049,6 +1146,35 @@ declare class Engine {
    * and the reason is below.
    */
   receive(trigger: Trigger): ReceiveResult;
+  /**
+   * 【W10 context subscription】Follow a Thread for read-only context — messages arrive as inputs
+   * but grant no authorization and do not resume an ended Ticket.
+   * Used by workers to track related conversations (e.g. a cross-thread reference).
+   */
+  followThreadForContext(ticketId: string, threadKey: string): void;
+  /**
+   * 【W10 context subscription】Stop following a Thread for context.
+   */
+  unfollowThreadForContext(ticketId: string, threadKey: string): void;
+  /**
+   * 【W9 Subscription】Subscribe a Ticket to a Thread so future Triggers on that Thread are
+   * fanned out to it as Inputs (context delivery). Called when a Ticket is accepted from a chat
+   * Trigger that has a threadKey.
+   */
+  subscribeTicketToThread(ticketId: string, threadKey: string, sourceKind?: SourceKindName): void;
+  /**
+   * 【W9 Subscription】Unsubscribe a Ticket from a Thread (called when a Ticket ends).
+   */
+  unsubscribeTicketFromThread(ticketId: string, threadKey: string): void;
+  /**
+   * 【W9 Subscription】Return the Thread for a given key, if it exists.
+   */
+  getThread(threadKey: string): Thread | undefined;
+  /**
+   * 【W9】Whether a Trigger with this id has already been stored (non-lost).
+   * Used by chat source to skip fan-out for duplicate messages.
+   */
+  triggerExists(triggerId: string): boolean;
   /**
    * Create a Ticket from a request the main Session received from a person, bypassing no rule: the Trigger it builds
    * goes through `receive`, so the gate, the accept mode and the allowed list apply exactly as they do to any Source.
@@ -1351,6 +1477,7 @@ declare class Engine {
   authorizeArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): {
     directory: string;
     artifact: Artifact;
+    readPath: string;
   };
   /**
    * Record that one Ticket actually GOT one registered artifact of another: one `artifact_read` event on each side.
@@ -1565,6 +1692,14 @@ declare class Events implements EventRepository {
   append(event: Omit<TicketEvent, 'seq'>): TicketEvent;
   list(ticketId: string): TicketEvent[];
 }
+/** 【W8】Thread repository: stores Thread aggregates for Subscription fan-out. */
+declare class Threads implements ThreadRepository {
+  private readonly db;
+  constructor(db: DatabaseSync);
+  get(key: string): Thread | undefined;
+  save(thread: Thread): void;
+  list(): Thread[];
+}
 declare class Artifacts {
   private readonly db;
   constructor(db: DatabaseSync);
@@ -1680,6 +1815,8 @@ declare class Store implements Transaction {
   readonly works: Works;
   readonly events: Events;
   readonly dependencies: Dependencies;
+  readonly threads: Threads;
+  readonly deskHistory: DeskHistory;
   constructor(path: string);
   /** Pragma, schema and version stamp, in the order that keeps a failed upgrade from half-applying. */
   private open;
@@ -1828,7 +1965,9 @@ declare class Memory implements Repositories, Transaction {
   readonly projects: ProjectRepository;
   readonly works: WorkRepository;
   readonly events: EventRepository;
+  private readonly threadStore;
   readonly dependencies: DependencyRepository;
+  readonly threads: ThreadRepository;
   /**
    * Structurally identical to `Store.atomic`, on purpose: every domain test runs on this class, so a divergence here
    * is a suite that stays green while production behaves differently. `tests/transaction.spec.ts` runs the same
@@ -2069,4 +2208,4 @@ declare const inject: string[];
  * on demand instead, from the panel or from the first Ticket somebody opens in it.
  */
 declare function apply(ctx: Context, config: DeploymentConfig): Promise<void>;
-export { Actor, Artifact, ArtifactRepository, Assignment, AssignmentState, Attachment, Attention, Config, CronSpec, Cursor, Decision, DecisionOutcome, DecisionRecord, DecisionRepository, DeliverOptions, Delivery, Dependency, DependencyRepository, type DeploymentConfig, Disposition, DomainEvent, Engine, EngineOptions, EventRepository, Execution, Executor, GATE_REASONS, GateReason, GateVerdict, InputBy, LostTrigger, type Machine, Mandate, MandateVia, Memory, Policy, PolicyEffect, Project, ProjectRepository, ReceiveResult, ReplyTo, Report, ReportState, Repositories, Schedule, ScheduleSchema, Settings, SettingsSchema, Source, SourceHost, SourceKind, SourceKindName, SourceStatus, Strength, Ticket, TicketEnded, TicketEvent, TicketEventType, TicketInput, TicketNote, TicketOutcome, TicketRepository, TicketResult, TicketStage, Timing, Transaction, Trigger, TriggerRecord, TriggerRepository, TwoWaySource, USER_ERRORS, UserError, UserErrorCode, Work, WorkRepository, ZoneParts, apply, artifactPath, attachmentsOf, canCollaborate, canRetry, describeTiming, gate, inject, key, knownTimeZone, latestAssignment, latestReport, liveTicket, localToUtc, localZone, lostTriggerOf, name, nextCron, nextRun, packageFile, parseCron, parseSettings, parseTime, payloadText, policyEffects, policyVersion, promptFile, released, runningAssignment, settingsPolicy, slug, sourcePolicy, ticketIdOf, ticketStage, undelivered, waitsForPerson, zoneParts };
+export { Actor, Artifact, ArtifactRepository, Assignment, AssignmentState, Attachment, Attention, Config, CronSpec, Cursor, Decision, DecisionOutcome, DecisionRecord, DecisionRepository, DeliverOptions, Delivery, Dependency, DependencyRepository, type DeploymentConfig, Disposition, DomainEvent, Engine, EngineOptions, EventRepository, Execution, Executor, GATE_REASONS, GateReason, GateVerdict, InputBy, LostTrigger, type Machine, Mandate, MandateVia, Memory, Policy, PolicyEffect, Project, ProjectRepository, ReceiveResult, ReplyTo, Report, ReportState, Repositories, Schedule, ScheduleSchema, Settings, SettingsSchema, Source, SourceHost, SourceKind, SourceKindName, SourceStatus, Strength, Thread, ThreadRepository, Ticket, TicketEnded, TicketEvent, TicketEventType, TicketInput, TicketNote, TicketOutcome, TicketRepository, TicketResult, TicketStage, Timing, Transaction, Trigger, TriggerRecord, TriggerRepository, TwoWaySource, USER_ERRORS, UserError, UserErrorCode, Work, WorkRepository, ZoneParts, apply, artifactPath, attachmentsOf, canCollaborate, canRetry, describeTiming, gate, inject, key, knownTimeZone, latestAssignment, latestReport, liveTicket, localToUtc, localZone, lostTriggerOf, name, nextCron, nextRun, packageFile, parseCron, parseSettings, parseTime, payloadText, policyEffects, policyVersion, promptFile, released, runningAssignment, settingsPolicy, slug, sourcePolicy, ticketIdOf, ticketStage, undelivered, waitsForPerson, zoneParts };

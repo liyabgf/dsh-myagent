@@ -107,7 +107,7 @@ describe('what a triage attempt is decorated with (S3b)', () => {
   it('gets the desk’s tools plus the one report a decision is expressed with, and runs under the triage prompt', async () => {
     const { host, runtime, inbox } = await deployment('auto')
     try {
-      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true } })
+      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
       drop(inbox, 'ask.md', '现在有几张在跑？')
       await settle(runtime)
       const ticket = runtime.store.tickets.list()[0]!
@@ -128,7 +128,7 @@ describe('what a triage attempt is decorated with (S3b)', () => {
       const prompt = host.sectionText(id) ?? ''
       expect(prompt).toContain('first stop')
       expect(prompt).toContain('Do not do the work')
-      expect(prompt).not.toContain('You have three tools, and no others')
+      expect(prompt).not.toContain('myagent_handback')  // 【W20】worker-specific tool, absent from non-worker prompts
     } finally { await runtime.stop() }
   })
 
@@ -141,7 +141,7 @@ describe('what a triage attempt is decorated with (S3b)', () => {
       const id = workerId(ticket.id)
       expect(host.toolsOf(id)).toContain('myagent_report')
       expect(host.toolsOf(id)).not.toContain('myagent_create_ticket')
-      expect(host.sectionText(id) ?? '').toContain('You have three tools, and no others')
+      expect(host.sectionText(id) ?? '').toContain('myagent_report')  // 【W20】worker prompt contains myagent_report
     } finally { await runtime.stop() }
   })
 })
@@ -156,7 +156,7 @@ describe('the operator’s own Session as the triage desk (B1)', () => {
     const { host, runtime, inbox } = await deployment('auto')
     try {
       await runtime.createMainSession()
-      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true, desk: 'main' } })
+      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true, desk: 'main', sources: ['chat', 'inbox', 'cron'] } })
       drop(inbox, 'ask.md', '现在有几张在跑？')
       await settle(runtime)
       const ticket = runtime.store.tickets.list()[0]!
@@ -183,7 +183,7 @@ describe('the operator’s own Session as the triage desk (B1)', () => {
   it('still makes a dedicated Session when the desk is the default, so B1 is a switch and not a replacement', async () => {
     const { host, runtime, inbox } = await deployment('auto')
     try {
-      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true } })
+      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
       drop(inbox, 'ask2.md', '现在有几张在跑？')
       await settle(runtime)
       const ticket = runtime.store.tickets.list()[0]!
@@ -202,7 +202,7 @@ describe('the operator’s own Session as the triage desk (B1)', () => {
       // 工具是**注册在 Session 上**的，所以主 Session 必须先存在——否则 host.tool 找不到它，
       // 而报错长得像"工具没注册"，其实是"没人可以持有它"。
       await runtime.createMainSession()
-      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true } })
+      runtime.saveSettings({ acceptMode: 'auto', allowedSenders: ['operator'], triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
       drop(inbox, 'close-me.md', '现在有几张在跑？')
       await settle(runtime)
       const triage = runtime.store.tickets.list()[0]!

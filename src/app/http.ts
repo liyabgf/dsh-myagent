@@ -10,6 +10,7 @@ import { lstat } from 'node:fs/promises'
 import { z } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
+import { ticketStage } from '../core/index.ts'
 import type { Engine } from '../core/index.ts'
 import { UserError } from '../core/errors.ts'
 import { policyVersion, ScheduleSchema, sourcePolicy, type Settings } from '../core/policy.ts'
@@ -35,6 +36,8 @@ import type { DshExecutor } from './executor.ts'
 export const BASE_PATH = '/myagent'
 /** The marker header the panel's own requests carry, which a foreign page cannot set cross-origin. */
 export const REQUEST_HEADER = 'x-myagent-request'
+
+import type { DeskLoop } from './desk-loop.ts'
 
 export interface HttpHost {
   readonly context: Context
@@ -99,6 +102,8 @@ export interface HttpHost {
   mainSession(): { exists: boolean; running: boolean; busy: boolean }
   /** Create the main Session now, which mounting deliberately did not do. */
   createMainSession(): Promise<{ sessionId?: string; error?: string }>
+  /** The DeskLoop for the desk messages/status/providers routes. */
+  readonly deskLoop: DeskLoop | undefined
 }
 
 /** A 400 or 404 raised while parsing a request or looking a record up. */
@@ -389,6 +394,20 @@ function table(host: HttpHost): readonly Route[] {
          * beside the tally, so an operator can see which of their Tickets moved it and why that is not a failure.
          */
         replyTo: host.store.triggers.get(ticket.origin.triggerId)?.trigger.replyTo,
+        // 【W34】Thread the Trigger that created this Ticket belongs to — plus the other Tickets subscribed.
+        // The operator sees "this conversation" at a glance; the panel can show which sister tickets share the thread.
+        threadKey: host.store.triggers.get(ticket.origin.triggerId)?.trigger.threadKey,
+        thread: (() => {
+          const key = host.store.triggers.get(ticket.origin.triggerId)?.trigger.threadKey
+          if (key === undefined) return undefined
+          const t = host.engine.getThread(key)
+          if (t === undefined) return undefined
+          const otherIds = t.subscriptions.filter(id => id !== ticket.id)
+          const others = otherIds.map(id => host.store.tickets.get(id))
+            .filter((t): t is NonNullable<typeof t> => t !== undefined)
+            .map(t => ({ id: t.id, title: t.title, stage: ticketStage(t) }))
+          return { key, subscriptions: t.subscriptions.length, others }
+        })(),
       }
     }),
     route('POST', 'tickets', async ({ body }) => {
@@ -583,6 +602,60 @@ function table(host: HttpHost): readonly Route[] {
         decisions: decisions.map(decision => decisionView(decision, host.store.triggers.get(decision.triggerId)?.trigger.title)),
       }
     }),
+    /**
+     * 【W33】What the desk decided without the operator.
+     *
+     * The operator's queue holds what still needs him. This holds what he was NOT asked about — a triage Ticket the
+     * desk answered or dropped on its own. A judge that acts unattended has to leave a readable trail, or "the system
+     * ignored that message" and "the system decided that message needed nothing" are the same thing from his chair.
+     *
+     * The words are the desk's own (`result.summary`), never a worker's: W22/W24 route worker speech through the desk,
+     * and what lands here is what the desk concluded.
+     */
+    route('GET', 'desk-decisions', ({ query }) => {
+      const limit = number(query, 'limit', 30, 200)
+      const rows = host.store.tickets.list()
+        .filter(ticket => ticket.ended !== undefined && ticket.assignments.some(item => item.role === 'triage'))
+        .sort((a, b) => (b.ended?.at ?? '').localeCompare(a.ended?.at ?? ''))
+        .slice(0, limit)
+        .map(ticket => ({
+          id: ticket.id,
+          title: ticket.title,
+          outcome: ticket.ended?.outcome ?? 'unknown',
+          at: ticket.ended?.at ?? ticket.createdAt,
+          said: ticket.result?.summary ?? '',
+          via: ticket.mandate.via,
+          sender: ticket.mandate.sender.id,
+          // Whether there was anywhere to answer. Absent means the decision was recorded and told to nobody,
+          // which is the one case worth seeing rather than assuming.
+          answerable: host.store.triggers.get(ticket.origin.triggerId)?.trigger.replyTo !== undefined,
+        }))
+      return { count: rows.length, decisions: rows }
+    }),
+    // 【D7】Desk LLM routes ──────────────────────────────────────────────────────────────
+    route('GET', 'desk/status', () => {
+      const loop = host.deskLoop
+      if (loop === undefined) return { state: 'disabled', configured: false, provider: '', model: '', recentErrors: [] }
+      return loop.getStatus()
+    }),
+    route('GET', 'desk/messages', ({ query }) => {
+      const afterRaw = query.get('after'); const after = afterRaw !== null ? Math.max(0, parseInt(afterRaw, 10) || 0) : 0
+      const limit = number(query, 'limit', 50, 200)
+      const messages = host.store.deskHistory.since(after, limit)
+      return { messages, latestSeq: host.store.deskHistory.latestSeq() }
+    }),
+    route('GET', 'desk/providers', async () => {
+      // Forward DSH's provider + model list to the panel so the user can pick.
+      const ctx = host.context
+      const providers = ctx.llm?.listProviders?.() ?? []
+      const result: { id: string; name: string; models: { id: string; name?: string }[] }[] = []
+      for (const p of providers) {
+        const models = await ctx.llm.listModels(p.id).catch(() => [])
+        result.push({ id: p.id, name: p.name, models: models.map(m => ({ id: m.id, name: m.id })) })
+      }
+      return { providers: result }
+    }),
+    // ─────────────────────────────────────────────────────────────────────────────────────
     route('GET', 'triggers', ({ query }) => {
       const limit = number(query, 'limit', 50, 500)
       const records = host.store.triggers.since('', limit)

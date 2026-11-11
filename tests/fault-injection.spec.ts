@@ -103,10 +103,11 @@ describe('a notice the front desk never takes', () => {
 
       // The fault really fired, and on the front desk rather than on the worker whose launch this Ticket also needed.
       // Without this a knob that matched nothing would leave the test green for a reason of its own invention.
+      // 【F1】ready now relays, so the fault fires on 'relay' mode not 'notice'
       expect(host.refusals).toEqual([
-        { session: 'myagent-main', mode: 'notice' }, { session: 'myagent-main', mode: 'notice' },
-        { session: 'myagent-main', mode: 'notice' }, { session: 'myagent-main', mode: 'notice' },
-        { session: 'myagent-main', mode: 'notice' },
+        { session: 'myagent-main', mode: 'relay' }, { session: 'myagent-main', mode: 'relay' },
+        { session: 'myagent-main', mode: 'relay' }, { session: 'myagent-main', mode: 'relay' },
+        { session: 'myagent-main', mode: 'relay' },
       ])
       expect(host.agents.get(workerId(id))!.followups).toHaveLength(1)
       // The queue settled the row when it gave up, so no pass will ever look at this notice again.
@@ -120,7 +121,7 @@ describe('a notice the front desk never takes', () => {
       expect(lost[0]!.detail).toMatchObject({ notice: 'report', state: 'ready', text: owed })
       expect(String(lost[0]!.detail!.error)).toContain('the front desk is not reachable')
       // And the loss is real rather than a duplicate: nothing reached the front desk at all.
-      expect(host.agents.get('myagent-main')!.notices).toEqual([])
+      expect(host.agents.get('myagent-main')!.notices).toEqual([])  // notice path empty; relay goes to followups
       // What was lost is the telling, not the record: `RESULT.md` is written before the notice is attempted
       // (delivery.ts:375-379), so the Ticket's own directory still says the work finished while nobody was told.
       const directory = runtime.store.tickets.get(id)!.execution!.directory
@@ -197,8 +198,8 @@ describe('a notice the front desk never takes', () => {
       // duplicate of the two that failed: `AgentDelivery` marks a request id seen only once the agent took it.
       expect(host.refusals).toHaveLength(2)
       const main = host.agents.get('myagent-main')!
-      expect(main.notices).toHaveLength(1)
-      expect(main.notices[0]!.text).toContain(owed)
+      expect(main.followups).toHaveLength(1)  // 【F1】ready → relay
+      expect(main.followups[0]!.text).toContain(owed)
       expect(runtime.store.effectCounts()).toEqual({})
       // The other half of the debt, and the assertion that keeps the test above honest: a transient failure must not
       // read as a lost message. Without it a system that recorded a loss on every failure would pass both tests.
@@ -511,7 +512,7 @@ describe('a launch that never starts', () => {
       // A failed Report is one of the states Delivery tells about, so the give-up also reaches the operator through
       // the very notify path this file's first tests break — the trace is not only on the Ticket.
       await settle(runtime)
-      expect(host.agents.get('myagent-main')!.notices.at(-1)!.text).toContain('failed')
+      expect(host.agents.get('myagent-main')!.followups.at(-1)!.text).toContain('failed')  // 【F1】failed → relay
     } finally { await runtime.stop() }
   })
 })

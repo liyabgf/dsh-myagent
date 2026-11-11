@@ -246,6 +246,12 @@ const routes = (over: Routes = {}): Routes => ({
   // 0.11.0 的决断队列：总览落地就会读它，所以基础夹具里给一个空队列——
   // 否则每条无关测试都会红在一个与本包行为无关的 404 上（U14 给 decisions 的同一条理由）。
   'GET operator-queue': { items: [] },
+  // 【U1】总览现在会读 desk-decisions，基础夹具给一个空列表
+  'GET desk-decisions': { count: 0, decisions: [] },
+  // 【D8】总管标签页路由
+  'GET desk/status': { state: 'idle', configured: false, provider: '', model: '', recentErrors: [] },
+  'GET desk/messages': { messages: [], latestSeq: 0 },
+  'GET desk/providers': { providers: [] },
   // 【A-1→操作者决定】说明页退役为「更新」页：夹具供给 GET changes（遍历测试会真的点到它）。
   'GET changes': { changes: changeEntries() },
   ...over,
@@ -646,7 +652,7 @@ describe('the tabs', () => {
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
       // 【U1】总览是新增的第一项；其余顺序未动。
       // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
-      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts', 'about'])
+      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts', 'about', 'desk'])  // 【D8】desk tab 右端
 
     click(button('记录'))
     await settle()
@@ -820,7 +826,7 @@ describe('one Ticket', () => {
     await settle()
     expect(sent('POST tickets/ticket-1/answer')).toHaveLength(1)
     expect(last('POST tickets/ticket-1/answer')?.body).toEqual({ text: '用第二个口径，理由写在 report.md 里' })
-    expect(toastText()).toBe('已提交')
+    expect(toastText()).toBe('已提交')  // 非 U2：answer/stop/dependency 用通用 act() toast
   })
 
   it('adds a fact without widening the scope, and says so when there is nothing to add', async () => {
@@ -1142,7 +1148,7 @@ describe('stopping a Ticket', () => {
     click(button('确认停止'))
     await settle()
     expect(last('POST tickets/ticket-1/stop')?.body).toEqual({ reason: '数据源今天不可用' })
-    expect(toastText()).toBe('已提交')
+    expect(toastText()).toBe('已提交')  // 非 U2：answer/stop/dependency 用通用 act() toast
     // The row on the left is read again, so the list does not keep showing a stage that is no longer true.
     expect(sent('GET tickets').length).toBeGreaterThan(1)
     expect(byId('d-stop').classList.contains('hidden')).toBe(true)
@@ -1445,7 +1451,7 @@ describe('the Work a Ticket belongs to', () => {
     click(button('归入'))
     await settle()
     expect(last('POST tickets/ticket-1/work')?.body).toEqual({ workId: 'work-1' })
-    expect(toastText()).toBe('已提交')
+    expect(toastText()).toContain('已归入')  // 【U2】归入工作 toast 现在显示具体 Work 名字
     // The answer comes back through the same read, so the detail says what was just done.
     expect(detailValue('归属')).toBe('周报（work-1）· 第 1 位')
     expect(sent('GET works').length).toBeGreaterThan(1)
@@ -1556,7 +1562,7 @@ describe('依赖，why it has not started', () => {
     click(button('添加依赖'))
     await settle()
     expect(last('POST tickets/ticket-1/dependencies')?.body).toEqual({ upstream: 'ticket-2', on: 'ended' })
-    expect(toastText()).toBe('已提交')
+    expect(toastText()).toBe('已提交')  // 非 U2：answer/stop/dependency 用通用 act() toast
   })
 
   it('surfaces the cycle refusal in the server\'s own words, not a generic failure', async () => {
@@ -1586,7 +1592,7 @@ describe('依赖，why it has not started', () => {
     click(button('确认删除', row()))
     await settle()
     expect(last('POST tickets/ticket-1/dependencies/drop')?.body).toEqual({ upstream: 'ticket-2' })
-    expect(toastText()).toBe('已提交')
+    expect(toastText()).toBe('已提交')  // 非 U2：answer/stop/dependency 用通用 act() toast
   })
 
   it('keeps a half-drawn edge when the three-second refresh lands', async () => {
@@ -2346,13 +2352,13 @@ describe('settings and prompts', () => {
     const { sent, last } = await mount(routes({ 'GET prompts': PROMPTS, 'PUT prompts': { revision: 3 } }))
     await openPrompts()
     type('p-worker', '别写别处')
-    click(button('保存', byId('tab-prompts')))
+    click(button('保存所有改动', byId('tab-prompts')))
     await settle()
     expect(last('PUT prompts')?.body).toEqual({ worker: '别写别处', orchestrator: '' })
     expect(toastText()).toBe('提示词已保存（修订 3）')
     // 【U6 产品变更】旧文案 '恢复内置'。现在每个角色卡里有「只恢复这个角色」，
     // 全局那颗若仍叫「恢复内置」，"点哪一个"就得靠位置猜——所以它改叫「两个都恢复内置」。断言的事实没变。
-    click(button('两个都恢复内置'))
+    click(button('全部恢复内置'))
     await settle()
     expect(last('PUT prompts')?.body).toEqual({ worker: '', orchestrator: '' })
     expect(toastText()).toBe('已恢复内置提示词')
@@ -2364,7 +2370,7 @@ describe('settings and prompts', () => {
     await mount(routes({ 'GET prompts': PROMPTS, 'PUT prompts': refuse(409, 'Another change landed first; reload and try again') }))
     await openPrompts()
     type('p-worker', '别写别处')
-    click(button('保存', byId('tab-prompts')))
+    click(button('保存所有改动', byId('tab-prompts')))
     await settle()
     expect(text('prompt-error')).toBe('Another change landed first; reload and try again')
   })
@@ -2569,6 +2575,10 @@ describe('the contract with the API', () => {
     'GET operator-queue', 'POST operator-queue/:id/dismiss',
     // 【操作者决定】说明页退役为「更新」页：遍历必须真的进一次，否则 GET changes 就成了表里没人问的路由。
     'GET changes',
+    // 【U1 W33】总览读 desk-decisions：总览页现在会读它
+    'GET desk-decisions',
+    // 【D8】总管标签页
+    'GET desk/status', 'GET desk/messages', 'GET desk/providers',
   ]
   /** One call as a route of that table, with the record ids it carried turned back into parameters. */
   const routeOf = (call: Call): string => `${call.method} ${call.path
@@ -2631,6 +2641,11 @@ describe('the contract with the API', () => {
       'POST works/work-1/unarchive': () => { workArchived = false; return work() },
       'POST works/work-1/delete': { deleted: 'work-1', detachedTickets: 1 },
       'POST tickets/ticket-1/work': ticket({ workId: 'work-1', workSeq: 1 }),
+      'GET desk/status': { state: 'idle', configured: false, provider: '', model: '', recentErrors: [] },
+      'GET desk/messages': { messages: [], latestSeq: 0 },
+      'GET desk/providers': { providers: [] },
+      // 【U1 W33】总览现在读 desk-decisions
+      'GET desk-decisions': { count: 0, decisions: [] },
       'GET tickets/ticket-1/events': { count: 1, returned: 1, events: [event()] },
       'GET tickets/ticket-1/dependencies': { waitsFor: [dep()], waitedOnBy: [] },
       'POST tickets/ticket-1/dependencies': dep(),
@@ -2643,7 +2658,7 @@ describe('the contract with the API', () => {
     click(button('更新'))
     await settle()
     // Every page, and the writes on them: the routes a person can reach by clicking around.
-    for (const tab of ['工作', '派活', '记录', '聊天', '设置', '提示词']) {  // 【U7】门禁记录→记录；【U13】排期并入派活；【U14】来源→聊天
+    for (const tab of ['工作', '派活', '记录', '聊天', '设置', '总管', '提示词']) {  // 【U7】门禁记录→记录；【U13】排期并入派活；【U14】来源→聊天
       click(button(tab))
       await settle()
     }
@@ -2651,7 +2666,7 @@ describe('the contract with the API', () => {
     // 而这条测试的一半职责正是"表里的路由不能悄悄丢掉"。抽屉不是页面，但它是操作者能点到的地方。
     click(byId('health'))
     await settle()
-    // The 工作 page: drill into a Project, make both records, then follow a Work down to one of its Tickets.
+// The 工作 page: drill into a Project, make both records, then follow a Work down to one of its Tickets.
     click(one('#projects li'))
     await settle()
     click(button('新建项目'))   // 【U20】先唤出表单
@@ -2769,8 +2784,8 @@ describe('the contract with the API', () => {
     await settle()
     click(button('提示词'))
     await settle()
-    click(button('保存', byId('tab-prompts')))
-    click(button('两个都恢复内置'))  // 【U6】同上，旧文案 '恢复内置'
+    click(button('保存所有改动', byId('tab-prompts')))
+    click(button('全部恢复内置'))  // 【U6】同上，旧文案 '恢复内置'
     await settle()
     click(button('立即执行一轮'))
     click(button('创建主 Session'))
@@ -3616,7 +3631,7 @@ describe('总览：落地页回答"有什么需要我"（U1）', () => {
     await mount(routes({
       'GET tickets': { offset: 0, limit: 80, count: 0, tickets: [] },
     }))
-    expect(text('ov-attention')).toContain('系统安静，没有需要你处理的事')
+    expect(text('ov-attention')).toContain('系统安静，没有需要你操作的事')  // 【U4】标题改名
   })
 
   it('把停着的决断放在总览，并且「知道了」只走那一条 dismiss 路由', async () => {
@@ -4202,6 +4217,41 @@ describe('记录页分区、被拒筛选、看过了（U23）', () => {
     expect(byId('card-decisions').classList.contains('hidden')).toBe(false)
     expect(byId('badge-decisions').classList.contains('hidden')).toBe(true)
     expect(all('#records-nav .chip-btn')[1]!.getAttribute('aria-pressed')).toBe('false')
+    // 【W33】第二个 chip 现在是「总管代你决定的」，第三个才是「丢失的请求」
+    expect(all('#records-nav .chip-btn')[2]!.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('【W33】「总管代你决定的」分区显示 desk-decisions 并按结局着色', async () => {
+    const { sent } = await mount(routes({
+      'GET decisions': { count: 0, decisions: [] },
+      'GET desk-decisions': { count: 2, decisions: [
+        { id: 'd1', title: '验收探针：1', outcome: 'dropped', at: '2026-11-11T01:00:00.000Z',
+          said: '正文只有「1」，非请求', via: 'inbox', sender: 'alice', answerable: false },
+        { id: 'd2', title: '现在有几张在跑', outcome: 'done', at: '2026-11-11T01:05:00.000Z',
+          said: '当前 2 张在跑', via: 'chat', sender: 'alice', answerable: true },
+      ] },
+    }))
+    click(button('记录'))
+    await settle()
+    // 切到「总管代你决定的」
+    click(all('#records-nav .chip-btn')[1]!)
+    await settle()
+    expect(byId('card-desk').classList.contains('hidden')).toBe(false)
+    expect(byId('card-decisions').classList.contains('hidden')).toBe(true)
+    expect(byId('card-lost').classList.contains('hidden')).toBe(true)
+    // 请求发出去了
+    expect(sent('GET desk-decisions').length).toBeGreaterThan(0)
+    // 两条条目，按结局着色
+    const items = all('#desk-decisions li')
+    expect(items).toHaveLength(2)
+    // dropped = "无需处理" 着色 muted；done = "总管自己答了" 着色 ok
+    const dropped = items[0]!.querySelector('span')!
+    expect(read(dropped)).toContain('无需处理')
+    const done = items[1]!.querySelector('span')!
+    expect(read(done)).toContain('总管自己答了')
+    // 总管的原话也作为数据呈现
+    expect(text('desk-decisions')).toContain('正文只有')
+    expect(text('desk-decisions')).toContain('当前 2 张')
   })
 
   it('「只看被拒」筛出 ignore 与 unavailable，留档那一档筛出 observe——计数写在标签上', async () => {
@@ -4833,7 +4883,7 @@ describe('排期并入派活（U13）', () => {
     type('search', 'digest')
     await tick(250)
     const rows = all('#search-results .sr')
-    expect(read(rows[0]!)).toContain('排期')
+    expect(read(rows[0]!).includes('排期')).toBe(true)  // 【U7】kind 标签前面加了 emoji 前缀  // 【U7】搜索结果现在带 emoji 前缀，但文字仍在
     click(rows[0]!)
     await settle()
     expect(byId('tab-new').classList.contains('hidden')).toBe(false)
@@ -5059,7 +5109,7 @@ describe('全局搜索（U9）', () => {
     type('search', '周报')
     await tick(250)
     const kinds = all('#search-results .sr .kind').map(node => read(node))
-    expect(kinds).toContain('工作')
+    expect(kinds.some(k => k.includes('工作'))).toBe(true)  // 【U7】kind 标签前面加了 emoji 前缀
 
     type('search', '不存在的字')
     await tick(250)
@@ -5085,7 +5135,7 @@ describe('全局搜索（U9）', () => {
     // 变异检验（去掉 id 匹配）当场量出这条断言是空的。断言内容，不断言条数。
     const row = one('#search-results .sr')
     expect(read(row)).toContain('整理本周竞品动态')
-    expect(read(one('.kind', row))).toBe('任务')
+    expect(read(one('.kind', row)).includes('任务')).toBe(true)  // 【U7】kind 加了 emoji 前缀
     expect(read(row)).not.toContain('没有匹配')
   })
 })
@@ -5186,11 +5236,11 @@ describe('改名、筛选 chips 与导航徽标（U7）', () => {
     // 【A-1】说明页插在总览之后：新用户进来第一个问题是"这是什么"，第一站就该回答它。旧值是 8 项。
     // 【U14】来源页解散：留下的只有聊天，所以这一项改叫「聊天」。旧值含 '来源'。
     // 【操作者决定产品变更】「说明」退役为「更新」并挪到最后：旧值 ['总览', '说明', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词']。
-    expect(labels).toEqual(['总览', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词', '更新'])
+    expect(labels).toEqual(['总览', '任务', '工作', '派活', '记录', '聊天', '设置', '提示词', '更新', '总管'])  // 【D8】总管 tab 右端
     // data-tab 没跟着改：它是路由与深链的键，改它等于改协议，而改名只该改给人看的那一层。
     expect([...byId('tabs').children].map(node => (node as HTMLElement).dataset.tab))
       // 【U13】排期并入派活，一级菜单 9 → 8。旧值含 'schedules'。
-      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts', 'about'])
+      .toEqual(['overview', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts', 'about', 'desk'])  // 【D8】desk tab 右端
   })
 })
 
@@ -5271,7 +5321,7 @@ describe('创建结果卡片与提示词分角色卡（U5 / U6）', () => {
     click(button('提示词'))
     await settle()
     type('p-orchestrator', '我自己写的前台提示词')
-    click(button('只恢复这个角色', byId('prompt-card-worker')))
+    click(button('恢复内置', byId('prompt-card-worker')))
     await settle()
     // PUT 的仍是整份文档，所以"只恢复 worker"必须把 orchestrator 的当前值一起送回去。
     expect(last('PUT prompts')?.body).toEqual({ worker: '', orchestrator: '我自己写的前台提示词' })

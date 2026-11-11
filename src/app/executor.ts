@@ -13,7 +13,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import {
-  key, latestAssignment, liveTicket, runningAssignment, slug, undelivered,
+  key, latestAssignment, liveTicket, runningAssignment, slug, ticketStage, undelivered,
   type Assignment, type Engine, type Executor, type Ticket,
 } from '../core/index.ts'
 import type { Settings } from '../core/policy.ts'
@@ -504,7 +504,7 @@ export class DshExecutor implements Executor {
         // is what a launch that cannot even reach the desk would then lie about — three existing tests assert that a
         // failed launch leaves the Ticket `pending`, "without pretending the Ticket started".
         await this.host.sessions.relay(`triage:${assignmentId}`,
-          `${TRIAGE_BRIEF}\n\n${this.taskText(prepared)}`)
+          `${TRIAGE_BRIEF}\n\n${this.taskText(prepared)}${this.threadContext(prepared)}`)
         this.host.engine.assignmentStarted(ticketId, assignmentId)
       } else {
         await this.host.sessions.ensure(prepared, settings.executor.model)
@@ -676,6 +676,29 @@ export class DshExecutor implements Executor {
         `- ${authorOf(input).short} at ${input.at}: ${input.text}`))
     }
     lines.push('', 'Work until it is done or you are blocked, then call `myagent_report` before your turn ends.')
+    return lines.join('\n')
+  }
+
+  /**
+   * 【W13】Thread context for triage: shows the desk what other tickets are on the same conversation thread.
+   * This gives the main Session enough context to recognize a follow-up, a duplicate, or a "not a request"
+   * without searching — the superagent Eval gets a thread snapshot; this is its simplified equivalent.
+   */
+  private threadContext(ticket: Ticket): string {
+    const trigger = this.host.store.triggers.get(ticket.origin.triggerId)?.trigger
+    const threadKey = trigger?.threadKey
+    if (threadKey === undefined) return ''
+    const thread = this.host.engine.getThread(threadKey)
+    if (thread === undefined) return ''
+    const others = thread.subscriptions
+      .filter(id => id !== ticket.id)
+      .map(id => this.host.store.tickets.get(id))
+      .filter((t): t is Ticket => t !== undefined && t.ended === undefined)
+    if (others.length === 0) return ''
+    const lines = ['', '## Other open tickets on this conversation', '(Use this to recognize follow-ups, duplicates, or related work.)']
+    for (const t of others.slice(0, 5)) {
+      lines.push(`- Ticket ${t.id} 「${t.title}」 — stage: ${ticketStage(t)}`)
+    }
     return lines.join('\n')
   }
 

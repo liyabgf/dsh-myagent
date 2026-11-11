@@ -24,6 +24,8 @@ export const inject = [
   // object that answers any property. This is the reason "key paths must be verified on a real host" is a hard rule.
   // The DSH plugins that use the registry declare it the same way (`skill-badge/src/index.ts:55`).
   'skills',
+  // 【D2】DeskLoop 通过 ctx.llm.stream() 调模型；listProviders/listModels 给面板「总管」tab 拉 provider 列表。
+  'llm',
 ]
 
 export { Config }

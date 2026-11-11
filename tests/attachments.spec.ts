@@ -125,6 +125,7 @@ describe('the tool a person drives it with', () => {
       returnAddressOf: () => undefined,
       replyToRequester: () => ({ sent: false, reason: 'stubbed: this suite does not exercise replies' }),
     raiseDecision: () => 'decision-1',
+      askDesk: () => ({ sent: false }),  // stubbed
       promoteSkill: async () => ({ ok: false, error: 'stubbed' }),
       // Faithful where it matters: the authorization is the real Engine's, so a refusal the tool surfaces is a refusal
       // the Engine actually made. Only the IO is stubbed.

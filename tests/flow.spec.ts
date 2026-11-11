@@ -6,7 +6,7 @@
  * Nothing here touches a live host. A bundle earns an installation by passing this, not by being installed.
  */
 import { mkdirSync, existsSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Config } from '../src/deployment.ts'
 import { createRuntime, usageOf, type Runtime } from '../src/app/runtime.ts'
@@ -102,11 +102,12 @@ describe('a request from the inbox to a finished Ticket', () => {
       expect(document).toContain('- State: ready')
       expect(document).toContain('两个文件都写好了。')
       expect(document).toContain('- data/numbers.txt')
-      // The front desk hears about it as a notice, which costs no model turn.
+      // 【F1】The front desk now hears about ready/failed/dropped as a relay (wakes a turn to let it decide).
+      // Before F1 it was a notice (inject-only, no model turn).
       const main = host.agents.get('myagent-main')!
-      expect(main.followups).toEqual([])
-      expect(main.notices.at(-1)!.text).toContain('done')
-      expect(main.notices.at(-1)!.text).toContain(directory)
+      expect(main.followups.length).toBeGreaterThanOrEqual(1)
+      expect(main.followups.at(-1)!.text).toContain('done')
+      expect(main.followups.at(-1)!.text).toContain(directory)
       // The queue drained, and a second report is refused because the authorization ended.
       expect(runtime.store.effectCounts()).toEqual({})
       // 【产品变更】旧断言：await expect(report.definition.execute({ state: 'ready', summary: 'again' }, { signal: signal() }))
@@ -265,13 +266,12 @@ describe('the identities and bounds DSH insists on', () => {
       await host.tool(workerId(ticket.id), 'myagent_report')!.definition.execute(
         { state: 'ready', summary: '很长'.repeat(400) }, { signal: signal() })
       await settle(runtime)
-      const notice = host.agents.get('myagent-main')!.notices.at(-1)!
-      const summary = (notice.source as { form: string; summary: string }).summary
-      expect((notice.source as { form: string }).form).toBe('notice')
-      expect(summary.length).toBeLessThanOrEqual(120)
-      // The full text still reaches the Session; only the one-line account is bounded.
+      // 【F1】ready now relays (followups), not injects (notices).
+      // The 120-char summary limit was for DSH's inject/notice mode; relay carries the full text.
+      const notice = host.agents.get('myagent-main')!.followups.at(-1)!
+      expect((notice.source as { form: string }).form).toBe('relay')
+      // Full text reaches the desk so it can decide what to relay back to the operator.
       expect(notice.text).toContain('很长')
-      expect(notice.text.length).toBeGreaterThan(120)
     } finally { await runtime.stop() }
   })
 })
@@ -460,8 +460,8 @@ describe('the front desk\'s identity', () => {
       await host.tool(workerId(ticket.id), 'myagent_report')!.definition
         .execute({ state: 'ready', summary: '做完了。' }, { signal: signal() })
       await settle(runtime)
-      // The notice landed on the Session that exists, which is the whole point of recording it.
-      expect(host.agents.get('session-blank-9')!.notices.at(-1)!.text).toContain('做完了。')
+      // 【F1】ready now relays (followups) to the desk — still landed on the right Session.
+      expect(host.agents.get('session-blank-9')!.followups.at(-1)!.text).toContain('做完了。')
       // And it survives a restart, because the id is in the Store rather than in memory.
       expect(runtime.store.get('main-session:id')).toBe('session-blank-9')
     } finally { await runtime.stop() }
@@ -554,6 +554,50 @@ describe('cross-Ticket workspace isolation guard (Pkg 1)', () => {
       expect(guard({ name: 'glob', arguments: { path: '..' } })).toContain('outside this Ticket\'s own directory')
       expect(guard({ name: 'bash', arguments: { command: 'ln -s ../group-68172c09/raw raw' } })).toContain('symbolic links')
       expect(guard({ name: 'bash', arguments: { command: 'ls -la ..' } })).toContain('outside this Ticket\'s directory')
+    } finally { await runtime.stop() }
+  })
+
+  // 【W30】The operator's decision: grouping two Tickets into one Work is a person saying "these belong together",
+  // and that is the authorization to read each other's files. Writing stays inside your own directory, because a
+  // Ticket's Report claims its own directory and its audit trail describes it.
+  it('lets a worker read a Ticket in the same Work, and refuses to write there or to read a Ticket outside it', async () => {
+    const { host, runtime, inbox } = await deployment()
+    try {
+      drop(inbox, 'peer-a.md', '第一件。')
+      drop(inbox, 'peer-b.md', '第二件。')
+      drop(inbox, 'stranger.md', '不相干的一件。')
+      await settle(runtime)
+      // An inbox file's title is its filename stem (that is what `inbox.ts` writes), so look them up by that.
+      const byTitle = (t: string) => runtime.store.tickets.list().find(item => item.title === t)!
+      const a = byTitle('peer-a')
+      const b = byTitle('peer-b')
+      const stranger = byTitle('stranger')
+
+      // Group a and b into one Work; leave the stranger ungrouped (and therefore not a peer of anything).
+      const work = runtime.engine.createWork({ name: '同一摊事' })
+      runtime.engine.attachWork(a.id, work.id, { kind: 'system', id: 'test' })
+      runtime.engine.attachWork(b.id, work.id, { kind: 'system', id: 'test' })
+      const guard = host.guardOf(workerId(a.id))!
+      const peer = `../${basename(b.execution!.directory)}`
+
+      // A same-Work peer's directory is readable by the read-only tools…
+      expect(guard({ name: 'read', arguments: { file_path: `${peer}/RESULT.md` } })).toBeUndefined()
+      expect(guard({ name: 'glob', arguments: { path: peer } })).toBeUndefined()
+      expect(guard({ name: 'grep', arguments: { path: peer, pattern: 'x' } })).toBeUndefined()
+
+      // …but not writable: a peer's files belong to the peer's Report.
+      expect(guard({ name: 'write', arguments: { file_path: `${peer}/RESULT.md`, content: 'x' } }))
+        .toContain('may READ it with')
+      expect(guard({ name: 'edit', arguments: { file_path: `${peer}/notes.md`, old_string: 'a', new_string: 'b' } }))
+        .toContain('may READ it with')
+
+      // A Ticket outside the Work stays closed, and the message says so.
+      const outsider = `../${basename(stranger.execution!.directory)}`
+      expect(guard({ name: 'read', arguments: { file_path: `${outsider}/RESULT.md` } }))
+        .toContain('outside its own Work')
+
+      // Shell is neither a read nor a write the guard can scope, so it stays inside the Ticket's own directory.
+      expect(guard({ name: 'bash', arguments: { command: `cat ${peer}/RESULT.md` } })).toContain('outside this Ticket\'s directory')
     } finally { await runtime.stop() }
   })
 })

@@ -4,9 +4,9 @@
  * and drops the work the command registered, exactly as a database rollback would.
  */
 import type { Decision } from './model.ts'
-import type { Artifact, Dependency, Project, Ticket, TicketEvent, Trigger, Work } from './model.ts'
+import type { Artifact, Dependency, Project, Thread, Ticket, TicketEvent, Trigger, Work } from './model.ts'
 import type { DecisionRecord, Repositories, TicketRepository, Transaction, TriggerRecord, TriggerRepository } from './engine.ts'
-import type { ArtifactRepository, DecisionRepository, DependencyRepository, EventRepository, ProjectRepository, WorkRepository } from './engine.ts'
+import type { ArtifactRepository, DecisionRepository, DependencyRepository, EventRepository, ProjectRepository, ThreadRepository, WorkRepository } from './engine.ts'
 
 class TriggerStore implements TriggerRepository {
   readonly records = new Map<string, TriggerRecord>()
@@ -107,6 +107,14 @@ class ArtifactStore {
   restore(snapshot: Map<string, Artifact>): void { this.records.clear(); for (const [key, value] of snapshot) this.records.set(key, value) }
 }
 
+/** In-memory Thread store for tests. */
+class ThreadStore implements ThreadRepository {
+  private readonly records = new Map<string, Thread>()
+  get(key: string): Thread | undefined { return this.records.get(key) }
+  save(thread: Thread): void { this.records.set(thread.key, thread) }
+  list(): Thread[] { return [...this.records.values()] }
+}
+
 /** In-memory {@link Repositories} and {@link Transaction} with the same commit and rollback behaviour as the Store. */
 export class Memory implements Repositories, Transaction {
   private readonly triggerStore = new TriggerStore()
@@ -130,7 +138,9 @@ export class Memory implements Repositories, Transaction {
   readonly projects: ProjectRepository = this.projectStore
   readonly works: WorkRepository = this.workStore
   readonly events: EventRepository = this.eventStore
+  private readonly threadStore = new ThreadStore()
   readonly dependencies: DependencyRepository = this.dependencyStore
+  readonly threads: ThreadRepository = this.threadStore
 
   /**
    * Structurally identical to `Store.atomic`, on purpose: every domain test runs on this class, so a divergence here

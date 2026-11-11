@@ -4,6 +4,12 @@
 行号截至 **2026-11-04 07:22（Asia/Shanghai）** 的工作副本；`pnpm typecheck` 退出码 0。构建产物 `lib/index.js` 是钉住的，本文没有重建它。
 **注意**：这棵树正被并行编辑。写作期间 `src/sources/rule.ts` 就被改过一次（07:17），本文的 rule.ts 行号已按改后的版本重新核对；其余源文件在同一窗口内未变动。
 
+> **⚠️ 行号已陈旧（2026-11-11 标注）**：本文 §1–§6 的 `file:line` 引用**全部**早于 W1–W39 重构
+> （Thread/Subscription 进气、triage 双层、总管工具面、同 Work 只读、目录级产物登记）。
+> 那些行号现在会指向错的位置，**不要**拿它们当索引用；组件职责与不变量的描述仍然成立。
+> 重构带来的结构性变化写在下面 **§7**，它是本文当前唯一按现行代码校对过的一节。
+> 已修正的事实性错误：§5.2（预算天花板）、§6 的 D4 与 D11 两行。
+
 ---
 
 ## 0. 一句话
@@ -228,11 +234,21 @@ DSH 宿主（cordis Context）：agents / sessionController / webServer / subpro
 
 DSH 的 `approval:'ask'` 不是替代品：配上无人值守 worker，turn 会以 blocked 结束，而现有代码把 blocked 判定成"不可运行的 Session"并记成 `failed`（runtime.ts:741-750），于是每次重试都以同样方式结束（00-audit:350-351 记了这条张力）。要真隔离得改部署层——受限用户、容器、只读挂载——不是在 myagent 代码里加一个检查。
 
-### 5.2 没有预算天花板
+### 5.2 没有**token** 预算天花板（墙钟预算已有）
 
 真实 token 计量**已经有了**：`usageOf`（runtime.ts:134-154）从 DSH 的 `assistant/message.data.usage` 求和，三个桶互斥相加，并用 `windowed` 标明这个和覆盖的是整个 Session 还是最近 `PROGRESS_SCAN=400` 条事件（:157、:152）。这是 D4 的口径要求：只用 token，绝不用"成本"，因为 DSH 里没有任何价格表（00-audit:318-328）。
 
-但**没有任何上限，也没有任何超限处置**——06-security-risk-register §2 的表里"预算上限"那一行写的就是"不存在"。现存的数量限制只有 `maxWorkers` 槽位（executor.ts:228，计数 :190-195）和几个字节上限（worker 拿到的产物 256KB，runtime.ts:50；请求文件 512KB，inbox.ts:21；面板读文件 16MB）。它们限的是并发与单次读取大小，不是花费。
+**token 维度上仍然没有任何上限**——计量只用来显示与报告，不用来强制。现存的数量限制是 `maxWorkers` 槽位（executor.ts:228，计数 :190-195）和几个字节上限（worker 拿到的产物 256KB，runtime.ts:50；请求文件 512KB，inbox.ts:21；面板读文件 16MB）。它们限的是并发与单次读取大小，不是花费。
+
+> **【W6 修正，2026-11-11】墙钟预算现在存在，而且是强制的。** 原文这里写"没有任何上限，也没有任何超限处置"，
+> 对 token 仍然成立，对**时间**已不成立：`enforceRuntimeBudgets` 取"排期自带的 `meta.runtimeBudgetMs`，
+> 否则 `watchdog.maxRuntimeMs`"，到点先给 worker 发一条收尾提醒（`note`），再过 10 分钟仍未结束就
+> `assignmentInterrupted(..., 'budget')` 停下，并在操作者的决断队列里停一条。计的是这张 Ticket 的墙钟，
+> 所以子代理与后台作业都在预算内，绕不过去。
+>
+> 活体证据（2026-11-11）：排期票 `233e7679` 因分诊台工具故障卡死，`01:00` 启动 → `02:00` 收到收尾提醒
+> → `02:10` 被系统停下，理由原文「超出时间预算：预算 60 分钟，宽限 10 分钟后仍在运行，已被系统停下」。
+> 全局 `maxRuntimeMs` 目前仍是 0（不限），要不要设是操作者的取舍（决断队列里有一条）。
 
 ### 5.3 没有多租户
 
@@ -255,11 +271,98 @@ Project 完全不承重：它只是 Work 的一个可选归属（engine.ts:541-5
 | D1 来源种类是数据声明 | `Settings.sources` 按 kind 声明；`sourcePolicy(kind, settings)`（policy.ts:269）在**产出侧**被三个来源调用（cron.ts:162、inbox.ts:200、rule.ts:65） | 落地（00-audit §4.12） |
 | D2 pause 不是门禁裁决 | paused/deny → 什么都不产（cron.ts:163、inbox.ts:201、rule.ts:66）；全局 paused → `Later` 挂住启动（executor.ts:223） | 落地 |
 | D3 一个 kind 只能有一个实例 | `SourceRegistry` 仍以 `kind.name` 为键（registry.ts:45-48，两个 Map 都是） | **未落地**。四个来源恰好 `id === kind.name`（cron.ts:32、inbox.ts:84、session.ts:12、rule.ts:24），所以还没出事 |
-| D4 预算只用真实 token | `usageOf` + `windowed`（runtime.ts:134-154） | 计量落地，**强制不存在**（§5.2） |
+| D4 预算只用真实 token | `usageOf` + `windowed`（runtime.ts:134-154） | token 计量落地、**token 强制仍不存在**；但**墙钟强制已落地**（W6，见 §5.2 修正框：到点提醒 → 宽限 10 分钟 → 系统停下 → 停一条决断） |
 | D5 日志在事务内写，emit 降级为投影 | `record()` 事务内 append（engine.ts:824）；`emit` 包 afterCommit（engine.ts:196-197） | 落地（00-audit §4.7） |
 | D6 四种权限的分离点 | `prepare` 是事务内同步端口（engine.ts:245 → executor.ts:94-97，纯算目录名）；`start` 是 afterCommit 的持久 effect（engine.ts:275） | 分离点存在；discover/prepare/execute/affect 四级阶梯**未落地**（现状是 acceptMode 两级 + 按来源 deny/pause） |
 | D7 任务完成事件当 Trigger | `SourceHost.subscribe`（kind.ts:47）+ `Runtime.subscribe` 多路复用（runtime.ts:439-442）；rule **入队**而非内联 receive（rule.ts:99 → runtime.ts:324）；深度守卫（rule.ts:71-80 + engine.ts:250-252）；system actor 变成设置决定（policy.ts:299-300） | 落地（00-audit §4.14/§4.15） |
 | D8 血缘图 + 依赖边建表 | `ticket_deps`（store.ts:91）+ `DependencyRepository`（engine.ts:42-51）+ `origin.triggerId` | 落地 |
 | D9 Webhook | 无代码 | 未落地。障碍是 DSH 的 web server 拒绑通配地址，加上 myagent 自己的同源围栏（http.ts:121） |
 | D10 文件变化监听 | 无代码 | 未落地。两个真问题：trigger id 没有自然答案（会自激）、DSH 没有 watcher 服务 |
-| D11 聊天 Source 回不了话 | `Delivery` 端口只有 `report` 与 `policyChanged?`（engine.ts:126-130），**没有 `send`** | 未落地。kind.ts:4-5 与 README 都还在承诺"加一个 kind 再加一个 `Delivery.send`"，而那个 `send` 不存在 |
+| D11 聊天 Source 回不了话 | `Delivery.send` + `effects.enqueue('send', …)`（delivery.ts），由聊天 Source 落地执行 | **已落地**（0.12–0.14：Telegram/飞书/QQ/钉钉/企业微信五桥）。回程地址只从 Trigger 的 `replyTo` 读，绝不从 actor 推（contract §3.3）；没有地址的报告计入 `sends.nowhere` 而不是静默丢弃 |
+
+---
+
+## 7. W1–W39 重构后的进气与协作架构（2026-11-11，本节按现行代码校对）
+
+§1–§6 描述的是重构前的形状。本节是**增量**，只讲新出现的结构，不重述上面仍然成立的部分。
+
+### 7.1 进气从一层变两层：门禁 + 分诊台
+
+重构前：`Source → gate（纯函数） → Decision → Ticket → worker`。gate 只判"这个人能不能在这里发起工作"，
+判不了"这句话是不是一件活"。后果是活体上一天 12 张票里出现了一张为字面消息「1」建的票。
+
+重构后多了一层**判断者**：
+
+```
+Source → gate（确定性，纯函数） ─┬─ ignore / observe：留档，不执行
+                                 └─ accept ─→ triage.sources 命中？
+                                                ├─ 否：直接建 worker 票（老路径）
+                                                └─ 是：建 role='triage' 的分诊票 → 交总管
+                                                         总管四选一：自己答 / 开票 / 问人 / 判无需处理
+```
+
+- **门禁保持是纯函数**，没有被削弱：它仍然只回答"这个人被允许吗"，理由仍固定为那八种。
+- **分诊是模型判断**，由 `settings.triage` 三个旋钮控制：`enabled`、`desk`（`dedicated`｜`main`）、
+  `sources`（默认只有 `chat`）。三者都**不进** `authorizationShape`，所以拨动它们不移动 `policyVersion`
+  ——路由未来的请求，不撤销已经给出的授权。
+- 活体取值：`{enabled: true, desk: 'main', sources: ['chat']}`。选 `main` 是因为总管手里有操作者的
+  对话上下文（这是判断"这句话是什么意思"的关键材料），代价是它与操作者共用一个会话。
+
+### 7.2 Thread 与 Subscription：同一对话不再劈成多张票
+
+重构前靠 `findContinuationTarget` 的 **60 秒启发式**猜"这条消息是不是在追问某张票"。活体上它猜错了：
+两句话隔 65 秒（策划书 + "给大一做PPT"）被劈成两张互不知情的票，其中一张凭空发明了主题。
+
+重构后是显式的聚合：
+
+- **`Thread`**（`model.ts`）：`{ key, createdAt, lastAt, subscriptions[], contextSubscriptions?[], sourceKind }`，
+  存 `threads` 表（**schema 版本升到 6**，`MIGRATIONS[6]` 负责从 v5 建表）。
+- **`Trigger.threadKey`**：聊天来源写它，格式 `chat:<频道>:<话题>` 或 `chat:<频道>:dm:<发件人>`；
+  cron/inbox/rule 不写（它们不是对话）。
+- **`Engine.receive`** 在门禁**之前**做 Thread 的 upsert（只更新 lastAt，不判任何事）。
+- **Subscription fan-out**（`chat.ts`）：Thread 已有订阅票且这条消息不是重复 → 直接投给那张票
+  （票在等人就 `answer`，否则 `note`），**不建新票、不走门禁**。
+- 票结束时自动退订（`runtime.ts` 的 `ticket.ended` 分支遍历 Thread）。
+
+`findContinuationTarget` **没有全删**，收窄成两种情况：显式 `reply-to-ticket`（桥写的 front matter），
+以及 DM→群里那张票的首条回答。后者命中时会**顺手把票订阅到这条 DM Thread**，于是第二条起走 fan-out——
+这就是 60 秒启发式的替代品。60 秒那段已删。
+
+`triggerExists(triggerId)` 是 fan-out 的前置查重：同一文件被扫两次时，第二次交给 `receive` 去判重复，
+而不是被当成新消息再投一遍。
+
+### 7.3 总管（desk）的工具面
+
+重构前 worker 有三个工具；总管有一批管理工具。重构后新增/改变：
+
+| 工具 | 归属 | 作用 |
+| --- | --- | --- |
+| `myagent_ask_desk` | worker | **非阻塞**提问总管，问完继续跑；总管用 `myagent_note_ticket` 回。替代"什么都 blocked" |
+| `myagent_handback` | worker | 超出本票授权范围时交回总管重路由，本票以 `dropped` 结束 |
+| `myagent_raise_decision` | worker（**已弃用**） | 描述里明写"改用 ask_desk"。写决断队列的权限收归总管 |
+| `myagent_close_ticket` | 总管 | 分诊的落点：`ready`（自己答了）/`dropped`（无需处理）/`blocked`（要问人） |
+
+两级决断规则写在 `prompts/triage.md`：**能自己答的自答**（系统状态、历史检索、能力问题），
+**只有操作者能定的才上升**（花钱、不可逆、超出授权、真正的取舍分叉）。队列的写入权只有总管有。
+
+### 7.4 协作边界的两处放宽（都有明确的窄法）
+
+- **同 Work 只读兄弟目录**（`sessions.ts` 的 `guardWorkerCall`）：`read`/`read_image`/`glob`/`grep`
+  可以进**同一 Work** 的票目录；`write`/`edit`/`bash` 不行。未归组的票**没有** peer（`peerDirs` 返回空）。
+  词法与 realpath 两条检查都对齐了，且 guard 闭包**每次重读** ticket——票可能在 worker 起来之后才被归组。
+  与 `SECURITY.md` §4 的关系：那里"未归组是开放不是隔离"只适用于**经引擎的已登记产物**，
+  不适用于裸文件系统遍历（目录里还有草稿与凭据）。
+- **目录级产物登记**（`engine.ts`）：`report.files` 里以 `/` 结尾的路径登记**整棵树**，
+  `authorizeArtifactRead` 让该目录覆盖其下任意路径。标记必须显式——Engine 不做 IO，
+  猜"它是目录"会让一个陈旧名字悄悄放大权限。授权返回 `readPath`（真要开的文件）与
+  `artifact`（授权它的那条登记）两样，血缘记 `readPath`。
+  防前缀混淆：比较的是**带斜杠**的目录名，所以 `out/` 不会覆盖 `output/x`。
+
+### 7.5 这一节没解决的
+
+- **总管出口没有收归**（W21/W25 未完成）：worker 的 `blocked`/`waiting` 仍然同时发给总管**和**请求者，
+  没有"总管先看一眼再决定要不要打扰你"。原因见 `00-audit-and-plan.md` §4.166：给消息文本加署名前缀
+  会打红 22 个测试文件，正确做法是用独立元数据字段，那要和 W21 的路由改造一起做。
+- **总管只读工具面做不到**（W32 有意不做）：`desk: 'main'` 时评估发生在操作者自己的主会话里，
+  收窄它的工具就是收窄操作者日常在用的会话；宿主没有"按轮次限定工具面"的机制。
+  所以"总管不自己干重活"是**提示词约束**，不是控制。兜住它的是 W6 的墙钟预算——可重不可长。

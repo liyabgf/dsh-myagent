@@ -72,12 +72,11 @@ function harness(options: HarnessOptions = {}): Harness {
   // The queue shares the board the delivery writes to, so a failure that escaped the notification's own catch would
   // be recorded here and the assertions below would see it.
   const effects = new Effects(store, { health: health.entry('effects'), lifetime })
+  // 【F1】ready/failed/dropped now relay (wake the desk). Both relay and notify fill the same notices array.
   const notices: { text: string; requestId: string }[] = []
   const sessions = {
     notify: async (text: string, requestId: string) => { notices.push({ text, requestId }) },
-    // An ending leaves a notice in the history; waking the front desk for one would cost the operator a model turn.
-    // Refusing it here means a delivery that did wake somebody fails the assertions below instead of passing quietly.
-    relay: async (): Promise<boolean> => { throw new Error('an ending must not wake the main Session') },
+    relay: async (requestId: string, text: string): Promise<boolean> => { notices.push({ text, requestId }); return true },
   } as unknown as Sessions
   const debugs: string[] = []
   const ctx = {

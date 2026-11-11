@@ -11,7 +11,7 @@ import {
   type Artifact, type Dependency, type Project, type TicketEvent, type TicketEventType, type Work,
   canRetry, latestAssignment, liveTicket, released, runningAssignment, type Assignment, type Attachment, type Decision,
   type Disposition,
-  type Mandate, type ReplyTo, type Report, type Ticket, type TicketInput, type TicketOutcome, type Trigger,
+  type Mandate, type ReplyTo, type Report, type SourceKindName, type Thread, type Ticket, type TicketInput, type TicketOutcome, type Trigger,
 } from './model.ts'
 import { GATE_REASONS, policyEffects, type Policy, type PolicyEffect } from './policy.ts'
 import type { Settings } from './policy.ts'
@@ -138,6 +138,13 @@ export interface ArtifactRepository {
   list(ticketId: string): Artifact[]
 }
 
+export interface ThreadRepository {
+  get(key: string): Thread | undefined
+  save(thread: Thread): void
+  /** All threads, for subscriptions resolution and Eval queueing. */
+  list(): Thread[]
+}
+
 export interface Repositories {
   readonly triggers: TriggerRepository
   readonly tickets: TicketRepository
@@ -147,6 +154,7 @@ export interface Repositories {
   readonly works: WorkRepository
   readonly events: EventRepository
   readonly dependencies: DependencyRepository
+  readonly threads: ThreadRepository
 }
 
 /** The transaction boundary the Engine writes inside, and the hook that runs work only after it commits. */
@@ -302,6 +310,18 @@ export class Engine {
     return this.tx.atomic(() => {
       const policy = this.policyOf()
       const at = this.now()
+      // 【W8】Thread upsert: if this Trigger belongs to a Thread, store/update it.
+      // This runs before the gate so even observed/ignored Triggers update the Thread's lastAt.
+      if (trigger.threadKey !== undefined) {
+        const existing = this.repos.threads.get(trigger.threadKey)
+        this.repos.threads.save({
+          key: trigger.threadKey,
+          createdAt: existing?.createdAt ?? at,
+          lastAt: at,
+          subscriptions: existing?.subscriptions ?? [],
+          sourceKind: trigger.kind,
+        })
+      }
       const verdict = policy.gate(trigger)
       const decisionId = key('decision', trigger.id)
       if (!verdict.allow || verdict.observe) {
@@ -387,6 +407,80 @@ export class Engine {
       if (first !== undefined) this.tx.afterCommit(() => this.executor.start(prepared, first))
       return { stored: 'stored' as const, disposition, ticketId }
     })
+  }
+
+  /**
+   * 【W10 context subscription】Follow a Thread for read-only context — messages arrive as inputs
+   * but grant no authorization and do not resume an ended Ticket.
+   * Used by workers to track related conversations (e.g. a cross-thread reference).
+   */
+  followThreadForContext(ticketId: string, threadKey: string): void {
+    this.tx.atomic(() => {
+      const thread = this.repos.threads.get(threadKey)
+      if (thread === undefined) return
+      const current = thread.contextSubscriptions ?? []
+      if (current.includes(ticketId)) return
+      this.repos.threads.save({ ...thread, contextSubscriptions: [...current, ticketId] })
+    })
+  }
+
+  /**
+   * 【W10 context subscription】Stop following a Thread for context.
+   */
+  unfollowThreadForContext(ticketId: string, threadKey: string): void {
+    this.tx.atomic(() => {
+      const thread = this.repos.threads.get(threadKey)
+      if (thread === undefined) return
+      const updated = (thread.contextSubscriptions ?? []).filter(id => id !== ticketId)
+      this.repos.threads.save({ ...thread, contextSubscriptions: updated })
+    })
+  }
+
+  /**
+   * 【W9 Subscription】Subscribe a Ticket to a Thread so future Triggers on that Thread are
+   * fanned out to it as Inputs (context delivery). Called when a Ticket is accepted from a chat
+   * Trigger that has a threadKey.
+   */
+  subscribeTicketToThread(ticketId: string, threadKey: string, sourceKind?: SourceKindName): void {
+    this.tx.atomic(() => {
+      const thread = this.repos.threads.get(threadKey)
+      if (thread === undefined) {
+        // Thread doesn't exist yet — create it with this subscription (e.g. continuation before receive()).
+        this.repos.threads.save({ key: threadKey, createdAt: this.now(), lastAt: this.now(), subscriptions: [ticketId], sourceKind: sourceKind ?? 'chat' })
+        return
+      }
+      if (thread.subscriptions.includes(ticketId)) return
+      this.repos.threads.save({ ...thread, subscriptions: [...thread.subscriptions, ticketId] })
+    })
+  }
+
+  /**
+   * 【W9 Subscription】Unsubscribe a Ticket from a Thread (called when a Ticket ends).
+   */
+  unsubscribeTicketFromThread(ticketId: string, threadKey: string): void {
+    this.tx.atomic(() => {
+      const thread = this.repos.threads.get(threadKey)
+      if (thread === undefined) return
+      const updated = thread.subscriptions.filter(id => id !== ticketId)
+      if (updated.length === thread.subscriptions.length) return
+      this.repos.threads.save({ ...thread, subscriptions: updated })
+    })
+  }
+
+  /**
+   * 【W9 Subscription】Return the Thread for a given key, if it exists.
+   */
+  getThread(threadKey: string): Thread | undefined {
+    return this.repos.threads.get(threadKey)
+  }
+
+  /**
+   * 【W9】Whether a Trigger with this id has already been stored (non-lost).
+   * Used by chat source to skip fan-out for duplicate messages.
+   */
+  triggerExists(triggerId: string): boolean {
+    const record = this.repos.triggers.get(triggerId)
+    return record !== undefined && record.disposition.state !== 'lost'
   }
 
   // ------------------------------------------------------- The main Session
@@ -1043,9 +1137,15 @@ export class Engine {
       const recorded: Report = { ...report, at }
       let next = withAssignment(ticket, { ...assignment, report: recorded })
       const question = report.question?.trim()
-      next = report.state === 'blocked' || report.state === 'failed' || (question !== undefined && question !== '')
-        ? { ...next, attention: { question: question || report.summary, at } }
-        : { ...next, attention: undefined }
+      // 【排障修复】ready/dropped 结束票时无条件清掉 attention：worker 带 question 的 ready
+      // 会让 `attention` 留在票上，count() 把它算进"等你回答"，但票已经 done 了——
+      // 一个已结束票带 attention 是矛盾的，且只有 blocked/failed/waiting 需要人介入。
+      const endsTicket = report.state === 'ready' || report.state === 'dropped'
+      next = endsTicket
+        ? { ...next, attention: undefined }
+        : report.state === 'blocked' || report.state === 'failed' || (question !== undefined && question !== '')
+          ? { ...next, attention: { question: question || report.summary, at } }
+          : { ...next, attention: undefined }
       if (report.state === 'ready') {
         next = {
           ...next,
@@ -1331,18 +1431,24 @@ export class Engine {
    * path against the directory with the same traversal guard the panel uses, does the reading itself, and then calls
    * `recordArtifactRead` on the success path — a caller that only wants to pre-check may call this freely.
    */
-  authorizeArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): { directory: string; artifact: Artifact } {
+  authorizeArtifactRead(sourceTicketId: string, targetTicketId: string, path: string): { directory: string; artifact: Artifact; readPath: string } {
     return this.tx.atomic(() => {
       const source = this.require(sourceTicketId)
       const target = this.require(targetTicketId)
       if (sourceTicketId === targetTicketId || target.deleted !== undefined) throw new UserError('artifact_missing')
       if (!canCollaborate(source, target)) throw new UserError('collaboration_refused')
       const wanted = path.trim().replace(/^\.\//, '')
-      const artifact = this.repos.artifacts.list(targetTicketId).find(item => item.path === wanted)
-      if (artifact === undefined) throw new UserError('artifact_missing')
+      const registered = this.repos.artifacts.list(targetTicketId)
+      const exact = registered.find(item => item.path === wanted)
+      // 【W31】A directory artifact (`dir/`) authorizes every path beneath it. The exact match wins when both
+      // exist, so a file registered on its own keeps its own note and lineage.
+      const covering = exact ?? registered.find(item => item.path.endsWith('/')
+        && (wanted === item.path.slice(0, -1) || wanted.startsWith(item.path)))
+      if (covering === undefined) throw new UserError('artifact_missing')
       const directory = target.execution?.directory
       if (directory === undefined) throw new UserError('artifact_unreachable')
-      return { directory, artifact }
+      // `readPath` is what the caller actually opens: the requested file, not the directory that authorized it.
+      return { directory, artifact: covering, readPath: wanted }
     })
   }
 
@@ -1647,6 +1753,7 @@ export function artifactPath(candidate: string): string | undefined {
   if (trimmed === '') return undefined
   // An absolute path names a file by where it happens to live, not by what this Ticket produced.
   if (trimmed.startsWith('/') || /^[A-Za-z]:[\\/]/.test(trimmed)) return undefined
+  const trailing = /[\\/]$/.test(trimmed)
   const parts: string[] = []
   for (const part of trimmed.split(/[\\/]+/)) {
     if (part === '' || part === '.') continue
@@ -1658,7 +1765,14 @@ export function artifactPath(candidate: string): string | undefined {
     }
     parts.push(part)
   }
-  return parts.length === 0 ? undefined : parts.join('/')
+  if (parts.length === 0) return undefined
+  // 【W31】A trailing slash means "this whole directory", registered as one artifact that authorizes every path
+  // under it. Before this, a worker that produced a tree (`skills-pack/` with 27 subdirectories) could only
+  // register the handful of files it thought to name — so the next Ticket could not reach the 27 it needed, and
+  // a production run answered that by re-downloading the upstream repositories and reading this project's own
+  // source to work out where things live (102 万 token). The marker is explicit rather than inferred: the Engine
+  // does no I/O, so it cannot tell a file from a directory, and guessing would let a stale name widen access.
+  return trailing ? `${parts.join('/')}/` : parts.join('/')
 }
 
 function attachmentName(source: string, taken: Set<string>): string {

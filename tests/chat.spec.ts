@@ -171,15 +171,20 @@ describe('a message from a mapped identity', () => {
       await source.poll()
       expect(context.tickets()).toHaveLength(1)
       const original = context.tickets()[0]!
-      // `Group：` placeholder is replaced with the mapped actor name (`alice`)
       expect(original.title).toBe('alice：研究中国 AI 资本布局')
 
       // 2. Worker turn ends waiting for a push
-      context.host.engine.turnEnded(original.id, original.assignments[0]!.id, '已完成抓取，等待下一步指令')
+      // Need to call inputsDelivered first so turnEnded can create waiting report
+      // (turnEnded only creates waiting when deliveredAt is set - indicates proper assignment lifecycle)
+      const liveTicket = context.host.engine.ticket(original.id)!
+      const assignmentId = liveTicket.assignments[0]!.id
+      context.host.engine.inputsDelivered(original.id, assignmentId, [])
+      context.host.engine.turnEnded(original.id, assignmentId, '已完成抓取，等待下一步指令')
 
-      // 3. Operator sends two rapid follow-up messages (just like 2618fe25 and 6faeb2e9 in the live run)
+      // 3. Operator sends a follow-up message from DM thread (DM→group answer)
       drop(ops, 'msg-2.md', message({ from: 'U01ABCDEF', id: 'm-2', thread: 'dm:<telegram-user-id>' }, '按照你的理解继续推进，直到完成'))
       await source.poll()
+      // 4. Second message on the same DM thread (now subscribed via W12 auto-subscribe on continuation)
       drop(ops, 'msg-3.md', message({ from: 'U01ABCDEF', id: 'm-3', thread: 'dm:<telegram-user-id>' }, '补充一句：重点看中间层'))
       await source.poll()
 
@@ -389,12 +394,12 @@ describe('paused or denied on the produce side', () => {
       drop(ops, 'next.md', message({ from: 'U01ABCDEF', id: 'msg-2' }, 'Second.'))
       await source.poll()
 
-      expect(context.tickets()).toHaveLength(2)
-      expect(context.triggers().map(record => record.trigger.id).sort())
-        .toEqual([key('chat', 'ops', 'msg-1'), key('chat', 'ops', 'msg-2')].sort())
-      expect(context.decisions().map(decision => decision.outcome)).toEqual(['accept', 'accept'])
+      // 【W9 Subscription fan-out】With Thread+Subscription, msg-2 arrives on the same Thread as msg-1.
+      // msg-1 created a Ticket (accepted) and subscribed to the Thread.
+      // msg-2 is delivered as a note to that Ticket via subscription fan-out — no new Ticket is created.
+      expect(context.tickets()).toHaveLength(1) // msg-2 went to existing Ticket as a note
       expect(readdirSync(ops).filter(name => name.endsWith('.md'))).toEqual([])
-      expect(readdirSync(join(ops, 'accepted'))).toHaveLength(2)
+      expect(readdirSync(join(ops, 'accepted'))).toHaveLength(2) // both messages archived as accepted
     } finally { await source.stop() }
   })
 })

@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS tickets (
 
 ---
 
-## 2. 十一张表
+## 2. 十二张表
 
 | 表 | 主键 | 可查询列 | 存的是什么 |
 | --- | --- | --- | --- |
@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS tickets (
 | `events` | **(`ticketId`, `seq`)** | `at`、`type` | 一张 Ticket 的生命日志。复合主键保证 `seq` 在 Ticket 内唯一且单调 |
 | `ticket_deps` | **(`upstream`, `downstream`)** | — | 依赖边。复合主键 = **一条边只有一条**，重复 `dependOn` 是幂等的 |
 | `effects` | (`kind`, `key`) | `dueAt`、`running`、`failures` | 持久化的副作用队列。索引 `effects_due ON effects (dueAt, kind)`。**列名是 `running` 而不是 `claimed`**——「claimed」是代码里的概念名，写进数据模型文档就会让人去查一个不存在的列 |
+| `threads` | `key` | — | **【schema 6 新增】** 一条对话线（W8）。`key` 形如 `chat:<频道>:<话题>` 或 `chat:<频道>:dm:<发件人>`；record 里存 `subscriptions[]`（订阅这条线的票）与 `contextSubscriptions?[]`（只读跟随）。`WITHOUT ROWID`（见 §4） |
 | `kv` | `key` | — | 设置文档（`settings:document`）、提示词覆盖等。只有 `key`/`value` 两列 |
 
 ✳ = 生成列（见 §3）。
@@ -100,7 +101,7 @@ SQLite 允许 `ADD COLUMN ... GENERATED ALWAYS AS (...) VIRTUAL`，但**不允�
 
 ---
 
-## 5. 迁移阶梯：1 → 5
+## 5. 迁移阶梯：1 → 6
 
 | 版本 | 加了什么 | 为什么是这一步 |
 | --- | --- | --- |
@@ -109,6 +110,7 @@ SQLite 允许 `ADD COLUMN ... GENERATED ALWAYS AS (...) VIRTUAL`，但**不允�
 | 3 | `projects`、`works`；`tickets` 加 `workId`/`workSeq` 生成列与 `tickets_work` 索引 | 分组（P1）。**用 `table_xinfo` 做幂等检查**（§3 陷阱一） |
 | 4 | `events` | 生命日志（P2/P4）。Watchdog 的计数器必须跨重启存活，所以它进库而不是进内存 |
 | 5 | `ticket_deps` 与 `deps_downstream` 索引 | 依赖图（P2） |
+| 6 | `threads` | Thread/Subscription 进气（W8）。仍是纯加法：新表，既存数据一行未动 |
 
 **每一步都是纯加法**（唯一的删除是第 2 步那张空表）。这一点**是回滚方案成立的前提**：
 因为没有任何一步改写或丢弃既存数据，所以"把 `schema_version` 改回 1"对旧构建是安全的——
@@ -183,6 +185,7 @@ SQLite 允许 `ADD COLUMN ... GENERATED ALWAYS AS (...) VIRTUAL`，但**不允�
 | 能力 | 状态 |
 | --- | --- |
 | 11 张表与迁移阶梯 1→5 | **真宿主验证**（日常库已在 05:33:53 的那次挂载中由 1 迁到 5，既存数据计数与副本演练一致、`integrity_check ok`；见 S37） |
+| 第 12 张表 `threads` 与迁移阶梯 5→6 | **真宿主验证**（2026-11-11：日常库已迁到 6，闸门断言"产物盖的 schema 版本是 6"通过；`threads` 表可查、fan-out 在活体生效） |
 | 迁移的事务性、幂等、既存数据不动 | **离线验证**（`tests/store.spec.ts` 24 条，含 v1→当前、v2→当前、迁移中途抛错、新装 upsert） |
 | `verify-migration.sh` 的副本演练与回滚演练 | **真宿主验证**（跑在日常库的 `VACUUM INTO` 副本上） |
 | 生成列可被索引、`workSeq` 排序正确 | **离线验证** |

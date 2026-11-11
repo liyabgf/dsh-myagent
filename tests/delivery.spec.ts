@@ -232,7 +232,7 @@ describe('the borrowed-work line on the way back to whoever asked', () => {
       settings: () => store.settings(), panelPath: () => '', source: () => undefined,
       sessions: {
         notify: async (text: string) => { notices.push(text) },
-        relay: async (text: string) => { notices.push(text) },
+        relay: async (_requestId: string, text: string) => { notices.push(text) },
       } as unknown as Sessions,
       replyLost: () => {},
       // 【G-3 站点 2】镜像生产的写路径（LocalHostSandbox.writeWorkspaceFile）：测试断的是盘上的文件。

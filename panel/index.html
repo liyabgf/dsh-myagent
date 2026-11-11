@@ -41,6 +41,7 @@
   .bad { color: var(--bad) } .ok { color: var(--ok) } .warn { color: var(--warn) }
   nav { display: inline-flex; gap: 4px; flex-wrap: wrap; margin: 0 0 18px; padding: 4px;
         background: var(--subtle); border: 1px solid var(--line); border-radius: 10px }
+  #tabs { display: flex; width: 100%; box-sizing: border-box }
   nav button { background: transparent; color: var(--muted); border: 1px solid transparent; border-radius: 7px;
                padding: 6px 14px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s }
   nav button:hover { color: var(--fg); background: rgba(148, 163, 184, 0.12) }
@@ -226,6 +227,9 @@
   <!-- 可点：健康详情以前只有 hover tooltip，触屏上等于不存在（§6.1）。点开是抽屉，任何页面 1 步可达。 -->
   <span class="pill clickable" id="health" role="button" tabindex="0" title="点开看每个部件的健康详情">状态 <b>—</b></span>
   <span class="pill" id="main-session" title="主 Session 是你的前台：报告的通知会留在它的历史里，派活也从它开始。挂载时不创建，按需创建。">主 Session <b>—</b></span>
+  <span class="pill hidden" id="pill-desk" role="button" tabindex="0"
+    title="总管最近自动决定的事（无需处理/自己答了/超时停），点击查看"
+    onclick="show('decisions');setTimeout(()=>{const b=document.querySelector('#records-nav .chip-btn:nth-child(2)');if(b)b.click()},100)">总管决定 <b id="pill-desk-n">—</b></span>
   <span class="pill" id="paths" title="状态目录 / 工作根 / 收件目录">路径 <b>—</b></span>
   <!-- Shown from every page, and only when it is non-zero: a message from an unmapped identity is HELD, not refused,
        so nothing else on this panel will ever bring it up again — no Decision, no Ticket, no toast. Its remedy is a
@@ -283,6 +287,7 @@
     <!-- 【操作者决定】「说明」退役：说明不该住在面板里（README 对评估者说话就够了），页签挪到
          最后、换成版本更新内容——站在面板前的人要的是"这版装了什么"，不是"这是什么系统"。 -->
     <button data-tab="about">更新</button>
+    <button data-tab="desk" style="margin-left:auto">总管<span class="badge muted-badge hidden" id="badge-desk-status"></span></button>
   </nav>
 
   <!-- 【操作者决定】更新内容页：正文由服务端 about.ts（changesView）单一所有——数据源是
@@ -297,20 +302,28 @@
   <div id="tab-overview">
     <!-- KPI 一排：只放"一眼要知道"的数，不放机器路径这类排障时才看的东西。 -->
     <div class="ov-kpis" id="ov-kpis"></div>
-    <section class="card">
-      <h2>需要你处理</h2>
+    <section class="card" style="border-left:3px solid var(--bad,#c0392b)">
+      <h2>等你操作</h2>
       <details class="why"><summary>这三样为什么放在一起</summary><div class="why-body"><p class="muted">
         它们以前散在三个页面：等你回答的任务、等你映射身份的聊天消息、队列彻底放弃的请求。
         它们是同一个问题的三种形态——<b>无人值守的系统里，只有你能推进的事</b>。</p></div></details>
       <div id="ov-attention"><span class="muted">读取中…</span></div>
     </section>
-    <section class="card">
-      <h2>需要你决断的事</h2>
-      <details class="why"><summary>这和上面「需要你处理」有什么区别</summary><div class="why-body"><p class="muted">
-        「需要你处理」是停下来的活：等你回答、等你映射身份、队列放弃的请求。<br>
+    <section class="card" style="border-left:3px solid var(--warn,#e67e22)">
+      <h2>系统请示</h2>
+      <details class="why"><summary>「等你操作」和「系统请示」有什么区别</summary><div class="why-body"><p class="muted">
+        「等你操作」是停下来的活：等你回答、等你映射身份、队列放弃的请求。<br>
         这一张是<b>没有停任何事、但只有你能拍板的事</b>：worker 遇到值得扩展却不该它自决的东西、
         或系统自动重试到上限之后，会把决断停在这里等你。它不催你，也不阻塞任何任务。</p></div></details>
       <div id="ov-decisions"><span class="muted">读取中…</span></div>
+    </section>
+    <!-- 【U1 W33】总管最近的自动决定：desk 自主裁定（无需处理/自答/超时停）的分诊票，
+         让操作者知道"系统替你决定了哪些事"，不用自己去记录页找第二个 chip -->
+    <section class="card" id="ov-desk-card">
+      <h2>总管最近的自动决定</h2>
+      <div class="why" style="margin-bottom:8px"><p class="muted" style="font-size:12px">
+        来自聊天的请求总管已经判断过。这里是最近 3 条——全部在「记录」→「总管代你决定的」。</p></div>
+      <div id="ov-desk"><span class="muted">读取中…</span></div>
     </section>
     <section class="card">
       <h2>活从哪来</h2>
@@ -335,9 +348,9 @@
       <!-- 【U7】下拉改 chips：四档一次摊开，当前档看得见，少一次点击。语义与原来逐档相同。 -->
       <div class="chips" id="filter" role="group" aria-label="筛选任务">
         <button class="chip-btn" data-filter="open" aria-pressed="true">进行中</button>
-        <button class="chip-btn" data-filter="attention" aria-pressed="false">等你回答</button>
+        <button class="chip-btn" data-filter="attention" aria-pressed="false" style="color:var(--bad,#c0392b)" title="需要你回答问题才能继续的任务">等你回答</button>
         <button class="chip-btn" data-filter="ended" aria-pressed="false">已结束</button>
-        <button class="chip-btn" data-filter="all" aria-pressed="false">全部</button>
+        <button class="chip-btn" data-filter="all" aria-pressed="false" title="进行中与已结束两段并列显示">全部</button>
         <!-- 墓碑要读得到才是审计痕迹（S4）：list 一律隐藏已删任务，所以只有这个过滤器能列出它们。 -->
         <button class="chip-btn" data-filter="deleted" aria-pressed="false">已删除</button>
       </div>
@@ -438,6 +451,7 @@
       <div id="n-attachments" class="stack" style="margin-top:0"></div>
       <div class="row" style="margin-top:6px">
         <button class="btn small" id="add-attachment">加一个文件</button>
+        <button class="btn small" id="clear-attachments" style="display:none">清空所有</button>
         <details class="why"><summary>这些文件会怎样</summary><div class="why-body"><span class="muted">
           起跑前会被复制进这张任务自己的目录；路径读不到就让它失败，不会硬跑。</span></div></details>
       </div>
@@ -494,6 +508,7 @@
          一次只看一件；两个数字都在标签上，不用进去才知道有没有事。 -->
     <div class="chips" id="records-nav" role="group" aria-label="记录分区" style="margin-bottom:12px">
       <button class="chip-btn" data-rec="decisions" aria-pressed="true">判定</button>
+      <button class="chip-btn" data-rec="desk" aria-pressed="false">总管代你决定的</button>
       <button class="chip-btn" data-rec="lost" aria-pressed="false">丢失的请求</button>
     </div>
     <section class="card" id="card-decisions">
@@ -503,6 +518,20 @@
       <details class="why"><summary>这三种结局分别是什么意思</summary><div class="why-body"><p class="muted">
         每条请求门禁怎么判的：<b>已受理</b>的会开一张任务，<b>只记录</b>的仅留档不执行，<b>已拒绝</b>的附上原因。</p></div></details>
       <ul class="list" id="decisions"></ul>
+    </section>
+    <!-- 【W33】总管代你决定的事。判定那一节是"门禁怎么判的"，需要你看的那一节在状态抽屉的队列里；
+         这一节是第三件：**没有人问你就已经被决定掉的事**。一个能自行判断的总管必须留下可读的痕迹，
+         否则"系统把那条消息忽略了"和"系统判断那条消息不需要做事"从操作者的椅子上看是同一件事。 -->
+    <section class="card hidden" id="card-desk">
+      <h2>总管代你决定的</h2>
+      <div class="why" style="margin-bottom:8px"><p class="muted">
+        每条从聊天进来的消息都先经总管判断：该自己答的它答了，不需要做事的它按「无需处理」关掉，
+        需要干活的才开任务。<b>这里列的是它没有来问你的那些</b>——话是总管自己说的，不是 worker 的原话。</p></div>
+      <ul class="list" id="desk-decisions"><li><span class="muted">读取中…</span></li></ul>
+      <details class="why"><summary>为什么这些不用问我</summary><div class="why-body"><p class="muted">
+        问你的成本是打断你。一条「1」、一句「收到」、一个招呼，判断它不需要做事并不需要你参与；
+        真需要决断的（花钱、不可逆、超出授权）总管会停进<b>系统请示</b>队列，那一节在顶栏「状态」抽屉里。
+        这一节的存在是为了让"它替你判断过"这件事本身可查——不是让你来批准，是让你随时能推翻。</p></div></details>
     </section>
     <!-- U14/U15：丢失的请求搬到这里。它与判定是同一类东西——"门与队列对一个请求做了什么"——
          而以前它被埋在「来源」页的第四个分区里。 -->
@@ -627,47 +656,103 @@
     </section>
   </div>
 
-  <div id="tab-prompts" class="hidden">
-    <section class="card" id="skills-card" style="margin-bottom:14px">
-      <h2>已掌握的手艺（Skills）</h2>
-      <p class="muted">智能体在实战任务中沉淀并验证通过的通用本事。新任务启动时会自动装配启用中的手艺，无需手动配置路径。</p>
-      <div id="skills-list" class="stack"></div>
+  <!-- 【D8】总管标签页：对话历史 + provider/model 选择器 + 状态 -->
+  <div id="tab-desk" class="hidden">
+    <section class="card">
+      <details id="desk-config-details" open>
+        <summary style="cursor:pointer;font-size:16px;font-weight:600;padding:4px 0;list-style:none;display:flex;align-items:center;gap:8px">
+          <span>总管配置</span>
+          <span class="chip muted" id="desk-config-summary-hint" style="font-size:11px"></span>
+        </summary>
+        <p class="muted" style="font-size:12px;margin-top:8px">
+          总管直接用 LLM API（不经过 DSH Session），你在 DSH 里配好的 provider 这里都能选。
+          选好 provider 和 model，保存后立即生效。
+        </p>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="desk-provider" style="flex:1;min-width:140px">
+          <option value="">— 选 provider —</option>
+        </select>
+        <select id="desk-model" style="flex:1;min-width:160px">
+          <option value="">— 先选 provider —</option>
+        </select>
+        <div style="display:flex;gap:6px;align-items:center">
+          <label style="font-size:12px;white-space:nowrap">温度</label>
+          <input type="number" id="desk-temperature" min="0" max="2" step="0.05" value="0.2" style="width:64px">
+        </div>
+        <button class="btn" id="desk-save-config">保存</button>
+      </div>
+        <p class="muted" id="desk-config-hint" style="font-size:12px;margin-top:4px"></p>
+      </details>
     </section>
     <section class="card">
-      <h2>提示词</h2>
-      <p class="muted">留空即用内置文本。保存后，下一轮就绑定到在跑的 Session，不需要重启。</p>
-      <!-- U6：分角色成卡。以前是两个光秃秃的大文本框，既不说这个角色是干什么的，也不说改了多少、
-           与内置差在哪——而"覆盖文本恰好等于内置"会把角色钉死在当前版本（这条系统在 revision 行里警告过）。 -->
-      <div class="prompt-card" id="prompt-card-worker">
-        <div class="row">
-          <b>worker</b><span class="muted" style="font-size:12px">任务工作者：每张任务的 Session 拿到的那一份</span>
-          <span class="muted" id="p-worker-count" style="margin-left:auto;font-size:12px"></span>
-        </div>
-        <p class="muted" style="font-size:12px;margin:4px 0 0">职责：在自己的目录里干活、用 myagent_report 汇报、不越出范围。</p>
-        <textarea id="p-worker" style="min-height:220px"></textarea>
-        <div class="row" style="margin-top:6px">
-          <span class="chip" id="p-worker-state">读内置</span>
-          <button class="btn small" id="p-worker-reset">只恢复这个角色</button>
+      <h2>总管对话历史
+        <span class="chip muted" id="desk-state-chip" style="font-size:11px;vertical-align:middle">—</span>
+      </h2>
+      <p class="muted" style="font-size:12px">每一轮总管收到消息、判断、调工具的完整记录。</p>
+      <div id="desk-messages" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;padding:4px 0">
+        <span class="muted">读取中…</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" id="desk-load-more" style="display:none">加载更多</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-prompts" class="hidden">
+    <!-- 【提示词页重设计】三个折叠卡 + 手艺列表折叠 -->
+    <section class="card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">提示词</h2>
+        <div class="row" style="gap:8px">
+          <button class="btn" id="save-prompts">保存所有改动</button>
+          <button class="btn small" id="reset-prompts">全部恢复内置</button>
+          <span class="muted" id="prompt-revision" style="font-size:12px"></span>
         </div>
       </div>
-      <div class="prompt-card" id="prompt-card-orchestrator">
-        <div class="row">
-          <b>orchestrator</b><span class="muted" style="font-size:12px">主 Session（前台）拿到的那一份</span>
-          <span class="muted" id="p-orchestrator-count" style="margin-left:auto;font-size:12px"></span>
-        </div>
-        <p class="muted" style="font-size:12px;margin:4px 0 0">职责：派活、回答任务的问题、看健康与队列。</p>
-        <textarea id="p-orchestrator" style="min-height:220px"></textarea>
-        <div class="row" style="margin-top:6px">
-          <span class="chip" id="p-orchestrator-state">读内置</span>
-          <button class="btn small" id="p-orchestrator-reset">只恢复这个角色</button>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn" id="save-prompts">保存</button>
-        <button class="btn" id="reset-prompts">两个都恢复内置</button>
-        <span class="muted" id="prompt-revision"></span>
-      </div>
+      <p class="muted" style="font-size:12px;margin:6px 0 12px">留空即用内置文本。保存后下一轮生效，不需要重启。</p>
       <pre id="prompt-error" class="bad"></pre>
+
+      <!-- worker 折叠卡 -->
+      <details class="card" style="margin-bottom:8px;padding:10px 14px" id="prompt-card-worker">
+        <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+          <b>worker</b>
+          <span class="muted" style="font-size:12px">任务工作者 · 每张任务的 Session</span>
+          <span class="chip" id="p-worker-state" style="margin-left:auto;font-size:11px">读内置</span>
+          <span class="muted" id="p-worker-count" style="font-size:11px"></span>
+        </summary>
+        <p class="muted" style="font-size:12px;margin:8px 0 4px">职责：在自己的目录里干活、用 myagent_report 汇报、不越出范围。</p>
+        <textarea id="p-worker" style="min-height:220px;margin-top:4px"></textarea>
+        <div class="row" style="margin-top:6px">
+          <button class="btn small" id="p-worker-reset">恢复内置</button>
+        </div>
+      </details>
+
+      <!-- orchestrator 折叠卡 -->
+      <details class="card" style="margin-bottom:8px;padding:10px 14px" id="prompt-card-orchestrator">
+        <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+          <b>orchestrator</b>
+          <span class="muted" style="font-size:12px">总管 · 主 Session（前台）</span>
+          <span class="chip" id="p-orchestrator-state" style="margin-left:auto;font-size:11px">读内置</span>
+          <span class="muted" id="p-orchestrator-count" style="font-size:11px"></span>
+        </summary>
+        <p class="muted" style="font-size:12px;margin:8px 0 4px">职责：派活、回答任务的问题、看健康与队列。</p>
+        <textarea id="p-orchestrator" style="min-height:220px;margin-top:4px"></textarea>
+        <div class="row" style="margin-top:6px">
+          <button class="btn small" id="p-orchestrator-reset">恢复内置</button>
+        </div>
+      </details>
+    </section>
+
+    <!-- 手艺区：折叠，内部按分类分组 -->
+    <section class="card" id="skills-card">
+      <details id="skills-details" open>
+        <summary style="cursor:pointer;display:flex;align-items:center;gap:8px;list-style:none">
+          <h2 style="margin:0">已掌握的手艺（Skills）</h2>
+          <span class="chip muted" id="skills-count-chip" style="font-size:11px"></span>
+        </summary>
+        <p class="muted" style="font-size:12px;margin:6px 0 10px">智能体在实战任务中沉淀并验证通过的通用本事。新任务启动时会自动装配启用中的手艺，无需手动配置路径。</p>
+        <div id="skills-list" class="stack"></div>
+      </details>
     </section>
   </div>
 </main>
@@ -688,7 +773,13 @@
   <div class="body" id="health-drawer-body">
     <!-- U14：健康与队列从「来源」页搬到这里，容器 id 沿用（health-detail / effects / effects-note）。
          抽屉是"任何页面 1 步可达"的地方，而这两样正是排障时要一起看的。 -->
-    <h2 style="margin-top:0">部件</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">部件</h2>
+      <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="health-problems-only"> 只看有问题的
+      </label>
+    </div>
+    <p class="muted" id="health-paths-line" style="font-size:11px;margin:0 0 8px"></p>
     <div id="health-detail"></div>
     <h2>队列</h2>
     <div id="effects"></div>
@@ -736,7 +827,23 @@
   const api = async (path, init) => {
     const response = await fetch(`/myagent/api/${path}`, { ...init, headers: HEADER })
     const body = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(body.error || `${response.status} ${response.statusText}`)
+    if (!response.ok) {
+      const raw = body.error || `${response.status} ${response.statusText}`
+      // 【U3】常见错误中文化：不是翻译，是在原文前面加一句中文上下文，
+      // 让操作者知道"这是哪类问题"而不用读完一整句英文。
+      const zhMap = [
+        [/No route for/, '后端缺少这个接口，可能是插件版本旧——重载插件后刷新'],
+        [/Database locked/, '数据库被锁，稍后重试'],
+        [/Forbidden/, '权限不足'],
+        [/ticket_missing|No Ticket has this id/, '任务不存在（可能已结束并被清理）'],
+        [/ticket_ended/, '任务已结束，不能重复操作'],
+        [/collaboration_refused/, '两张任务不在同一个 Work 里，不能互读'],
+        [/artifact_missing/, '这个文件没有登记为产物，读不了'],
+        [/NetworkError|Failed to fetch/, '网络连接失败，检查宿主是否在运行'],
+      ]
+      const zh = zhMap.find(([re]) => re.test(raw))
+      throw new Error(zh ? `${zh[1]}（${raw}）` : raw)
+    }
     return body
   }
   const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body ?? {}) })
@@ -873,10 +980,26 @@
     $('main-session').innerHTML = main.exists
       ? `主 Session <b class="ok">${escapeText(main.id || m0(state).mainSessionId)}</b>${main.busy ? ' · <b>运行中</b>' : ''}`
       : '主 Session <b class="warn">未创建</b>'
+    // 【U1c】顶栏「总管决定」胶囊：每次刷新时更新数量
+    // 只在首次刷新时读一次（避免每 5s 额外请求），总览页刷新时会更准确地更新
+    // 【P1b】总管决定 pill 实时刷新
+    api('desk-decisions?limit=99').catch(() => ({ decisions: [] })).then(b => {
+      const n = (b.decisions || []).length
+      const pill = $('pill-desk'); const nEl = $('pill-desk-n')
+      if (!pill || !nEl) return
+      nEl.textContent = String(n)
+      n > 0 ? pill.classList.remove('hidden') : pill.classList.add('hidden')
+    })
     $('create-main').classList.toggle('hidden', Boolean(main.exists))
     const m = state.machine || {}
-    $('paths').innerHTML = `状态 <b>${escapeText(m.stateDir || '')}</b>`
-    $('paths').title = `state: ${m.stateDir}\nwork: ${m.workRoot}\ninbox: ${m.inboxDir}\nmain session: ${m.mainSessionId}`
+    // 【P1】paths pill removed; show path in health drawer paths line
+    const paths_el = $('paths')
+    if (paths_el) {
+      paths_el.innerHTML = `状态 <b>${escapeText(m.stateDir || '')}</b>`
+      paths_el.title = `state: ${m.stateDir}\nwork: ${m.workRoot}\ninbox: ${m.inboxDir}\nmain session: ${m.mainSessionId}`
+    }
+    const pathsLine = $('health-paths-line')
+    if (pathsLine) pathsLine.textContent = m.stateDir || ''
     const pill = $('chat-waiting')
     if (pill !== null) {
       const waiting = chatStale ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
@@ -1001,6 +1124,13 @@
           class: 'chip', id: `triage-chip-${ticket.id}`,
           title: '这是一张分诊任务：它决定这个请求变成什么（直接回答／开 1..N 张任务／问操作者），而不是做那件活。它通常一轮就结束。',
         }, '分诊') : null,
+        // 【U6 W34】线程标记：同一对话里的票共享一个 Thread，这里让操作者能一眼看出哪些票是关联的
+        ticket.thread ? el('span', {
+          class: 'chip',
+          title: `对话线程 ${ticket.thread.key.slice(-8)}（${ticket.thread.subscriptions} 张票）${ticket.thread.others.length > 0 ? '\n同线程：' + ticket.thread.others.map(o => o.title).slice(0, 3).join('、') : ''}\n点击复制线程键`,
+          style: 'background:var(--ok-bg,#e6f4ea);color:var(--ok,#1a7f37);font-size:11px',
+          onclick: e => { e.stopPropagation(); navigator.clipboard.writeText(ticket.thread.key).then(() => toast('线程键已复制')).catch(() => {}); },
+        }, `💬 ${ticket.thread.subscriptions}`) : null,
         el('span', { class: `stage ${ticket.deleted !== undefined ? 'stopped' : stageClass(ticket.stage)}`, title: ticket.stage }, stageLabel(ticket))),
       el('div', { class: 'meta' },
         el('span', {}, `${ticket.via} · ${ticket.sender}`),
@@ -1330,6 +1460,16 @@
     // Where the answer went back to, for a Ticket whose Trigger carried an address. Rendered only when there is one:
     // a row reading "nowhere" on every cron and inbox Ticket would be noise, and the tally in 来源 · 聊天 already
     // explains that case — which is the case that would otherwise be invisible.
+    if (ticket.thread) {
+      // 【W34】Thread 可视化：这张票属于哪条对话线，以及同线程还有哪些票。
+      const { key, subscriptions, others } = ticket.thread
+      const shortKey = key.replace(/^chat:[^:]+:/, '')  // 去掉 "chat:<channel>:" 前缀，只留 thread 标识
+      let threadText = `${shortKey}（${subscriptions} 张票订阅）`
+      if (others.length > 0) {
+        threadText += '，同线程：' + others.map(o => `${o.id.slice(0,8)} ${o.title.slice(0,20)} [${o.stage}]`).join('；')
+      }
+      rows.push(['线程', threadText])
+    }
     if (ticket.replyTo) {
       rows.push(['回复地址', `${ticket.replyTo.kind}/${ticket.replyTo.channel}`
         + (ticket.replyTo.thread === undefined ? '' : `（thread ${ticket.replyTo.thread}）`)
@@ -1379,6 +1519,7 @@
             // 【B-7】归入成功后重读详情：旧的写法把 POST 的结果就地画回，详情里的「归属」行
             // 仍是归组前的名字——操作者刚做完的事页面不认账，正是"入口藏得深"之外的第二层负担。
             await act(`tickets/${encodeURIComponent(ticket.id)}/work`, { workId })
+            toast('已归入 ' + (worksIndex.get(workId)?.name || workId.slice(0, 8)))
             draft.work = workId
             await showDetail()
           },
@@ -1870,7 +2011,7 @@
     out.replaceChildren(...(top.length === 0
       ? [el('div', { class: 'sr', style: 'cursor:default' }, el('span', { class: 'muted' }, '没有匹配的。'))]
       : top.map(([kind, name, id, go]) => el('div', { class: 'sr', onclick: () => { clearSearch(); go() } },
-        el('span', { class: 'kind' }, kind), el('span', { class: 'title' }, name), el('span', { class: 'muted', style: 'font-size:12px' }, id.slice(0, 8))))))
+        el('span', { class: 'kind' }, (kind === '任务' ? '📋 ' : kind === '工作' ? '📂 ' : kind === '排期' ? '🕐 ' : '') + kind), el('span', { class: 'title' }, name), el('span', { class: 'muted', style: 'font-size:12px' }, id.slice(0, 8))))))
     out.classList.remove('hidden')
   }
 
@@ -1918,6 +2059,29 @@
     if (decisionsNode !== null) {
       const queue = await api('operator-queue').catch(() => null)
       renderDecisions(decisionsNode, queue === null ? null : (queue.items || []))
+    }
+    // 【U1 W33】填充总管最近自动决定的摘要
+    const ovDesk = $('ov-desk')
+    if (ovDesk !== null) {
+      const deskBody = await api('desk-decisions?limit=3').catch(() => null)
+      const OUTCOME_ZH = { dropped: '无需处理', done: '自己答了', stopped: '超时停', failed: '失败' }
+      if (deskBody === null) {
+        ovDesk.replaceChildren(el('span', { class: 'warn' }, '读取失败，重载插件后刷新'))
+      } else {
+        const rows = (deskBody.decisions || []).slice(0, 3)
+        ovDesk.replaceChildren(rows.length === 0
+          ? el('div', { class: 'muted' }, '还没有——开启分诊后，总管自动决定的事会出现在这里')
+          : el('ul', { class: 'list', style: 'margin:0' },
+            ...rows.map(row => el('li', {
+              style: 'cursor:pointer',
+              onclick: () => { show('decisions'); setTimeout(() => { const btn = $('records-nav')?.children?.[1]; if (btn) btn.click() }, 100) },
+            },
+              el('div', { style: 'display:flex;gap:8px;align-items:baseline;flex-wrap:wrap' },
+                el('span', { style: 'color:var(--muted);font-size:12px' }, OUTCOME_ZH[row.outcome] || row.outcome),
+                el('span', {}, row.title.slice(0, 40)),
+                el('span', { class: 'muted', style: 'font-size:11px' }, row.sender)),
+              row.said ? el('div', { class: 'muted', style: 'font-size:12px;white-space:pre-wrap' }, row.said.slice(0, 80)) : null))))
+      }
     }
   }
 
@@ -1971,7 +2135,7 @@
   }
 
   /**
-   * 「需要你决断的事」：停在这里的每一项都不阻塞任何任务，所以它的文案不催；
+   * 「系统请示」：停在这里的每一项都不阻塞任何任务，所以它的文案不催；
    * 「知道了」是唯一的动作——决断本身发生在你的脑子里，面板只负责把它从视线里拿走并留下记录已被读过的痕迹。
    */
   const renderDecisions = (node, items) => {
@@ -2154,7 +2318,7 @@
     // 展开而不是直接传数组：`replaceChildren` 只接受节点或字符串，传数组会被 String() 成
     // 「[object HTMLDivElement]」原样画到页面上——这条是新测试当场抓到的，不是评审看出来的。
     node.replaceChildren(...(items.length === 0
-      ? [el('div', { class: 'ov-quiet' }, '系统安静，没有需要你处理的事。')]
+      ? [el('div', { class: 'ov-quiet' }, '系统安静，没有需要你操作的事。'), el('span', { class: 'muted', style: 'font-size:12px;display:block;margin-top:4px' }, '等你回答的任务、未映射的聊天消息、丢失的请求会出现在这里。')]
       : items))
   }
 
@@ -2500,7 +2664,10 @@
     recordsSection = which
     for (const chip of $('records-nav').children) chip.setAttribute('aria-pressed', String(chip.dataset.rec === which))
     $('card-decisions').classList.toggle('hidden', which !== 'decisions')
+    $('card-desk').classList.toggle('hidden', which !== 'desk')
     $('card-lost').classList.toggle('hidden', which !== 'lost')
+    // 切到这一节才读：它是一次网络往返，而记录页默认停在「判定」上。
+    if (which === 'desk') void loadDeskDecisions()
   }
 
   /** "被拒"＝既不是受理也不是留档：ignore 与 unavailable 都是门禁没放行。 */
@@ -2531,6 +2698,40 @@
     decisionFilter = null
     if (/^#trigger=/.test(location.hash)) history.replaceState(null, '', location.pathname)
     void loadDecisions()
+  }
+
+  /**
+   * 【W33】Read and draw the desk's own decisions. Kept beside loadDecisions because the two answer adjacent
+   * questions ("what did the gate say" / "what did the judge decide without me") and live on one tab.
+   */
+  const DESK_OUTCOME = {
+    dropped: ['无需处理', 'var(--muted)'],
+    done: ['总管自己答了', 'var(--ok)'],
+    stopped: ['被停止', 'var(--bad)'],
+    failed: ['失败', 'var(--bad)'],
+  }
+  const loadDeskDecisions = async () => {
+    const node = $('desk-decisions')
+    let body
+    try { body = await api('desk-decisions?limit=40') }
+    catch (error) { node.replaceChildren(el('li', {}, el('span', { class: 'warn' }, '读取失败——后端可能是旧版本，重载插件后刷新页面'))); return }
+    const rows = body.decisions || []
+    if (rows.length === 0) {
+      node.replaceChildren(el('li', { style: 'cursor:default' }, el('span', { class: 'muted' },
+        '还没有。开了分诊（triage.enabled）之后，总管自己答掉或判定无需处理的请求会出现在这里。')))
+      return
+    }
+    node.replaceChildren(...rows.map(row => {
+      const [label, color] = DESK_OUTCOME[row.outcome] || [row.outcome, 'var(--muted)']
+      return el('li', { onclick: () => { show('tickets'); void open(row.id) } },
+        el('div', { style: 'display:flex;gap:8px;align-items:baseline;flex-wrap:wrap' },
+          el('span', { style: `color:${color};font-weight:600` }, label),
+          el('span', {}, row.title),
+          el('span', { class: 'muted', style: 'font-size:12px' },
+            `${when(row.at)} · ${row.sender} · ${row.via}${row.answerable ? '' : ' · 无处可答（只留了记录）'}`)),
+        // The desk's own words, as data — quoted, attributed, and never rendered as markup.
+        row.said ? el('div', { class: 'muted', style: 'margin-top:4px;white-space:pre-wrap' }, row.said) : null)
+    }))
   }
 
   const loadDecisions = async () => {
@@ -2625,8 +2826,12 @@
     const health = $('health-detail')
     if (health === null) return
     health.replaceChildren()
-    const entries = Object.entries(state?.health || {})
-    health.append(entries.length === 0 ? el('span', { class: 'muted' }, '没有健康记录。') : table(['部件', '状态', '详情', '时间'],
+    const problemsOnly = $('health-problems-only')?.checked ?? false
+    let entries = Object.entries(state?.health || {})
+    if (problemsOnly) entries = entries.filter(([, e]) => !e.ok)
+    health.append(entries.length === 0
+      ? el('span', { class: 'muted' }, problemsOnly ? '没有问题。' : '没有健康记录。')
+      : table(['部件', '状态', '详情', '时间'],
       entries.map(([name, entry]) => [
         name, el('span', { class: entry.ok ? 'ok' : 'bad' }, entry.ok ? '正常' : '有问题'),
         // 详情里的任务 id 是可点的：从"哪里不对"直接走到"哪个任务不对"（U2）。
@@ -3788,11 +3993,35 @@ WantedBy=default.target
     const box = $('skills-list')
     if (box === null) return
     box.replaceChildren()
+    // Update count chip
+    const countChip = $('skills-count-chip')
     const items = [
       ...lastBuiltInSkills.map(item => ({ ...item, useCount: undefined })),
       ...lastSavedSkills.map(item => ({ ...item, builtIn: false })),
     ]
-    for (const skill of items) {
+    // 【技能分类】27 个外来技能按用途分组，方便操作者一眼找到
+    const SKILL_CATEGORIES = [
+      { label: '代码工程', names: ['systematic-debugging','test-driven-development','verification-before-completion','requesting-code-review','receiving-code-review','gh-address-comments','gh-fix-ci','using-git-worktrees'] },
+      { label: '写作与文档', names: ['writing-skills','writing-plans','doc-coauthoring','docx','pdf','pptx','xlsx','jupyter-notebook'] },
+      { label: '规划与协作', names: ['brainstorming','executing-plans','dispatching-parallel-agents','subagent-driven-development','skill-creator'] },
+      { label: '工具与集成', names: ['mcp-builder','webapp-testing','screenshot','transcribe'] },
+      { label: '安全', names: ['security-best-practices','security-threat-model'] },
+    ]
+    // 把 items 按分类重排，未在列表里的放最后（内置技能 + myagent 专属）
+    const categoryOrder = SKILL_CATEGORIES.flatMap(c => c.names)
+    const sortedItems = [
+      ...items.filter(s => !categoryOrder.includes(s.name)),   // 内置先
+      ...SKILL_CATEGORIES.flatMap(cat => items.filter(s => cat.names.includes(s.name))),
+    ]
+    if (countChip) countChip.textContent = `${sortedItems.filter(s => s.enabled !== false).length} 个启用 / ${sortedItems.length} 个`
+    let lastCat = null
+    for (const skill of sortedItems) {
+      // 插分类标题
+      const cat = SKILL_CATEGORIES.find(c => c.names.includes(skill.name))
+      if (cat && cat.label !== lastCat) {
+        lastCat = cat.label
+        box.append(el('div', { style: 'font-size:12px;font-weight:600;color:var(--muted);padding:8px 0 2px;border-top:1px solid var(--line);margin-top:8px' }, cat.label))
+      }
       const originEntry = skill.fromTicketId ? ticketIndex.get(skill.fromTicketId) : undefined
       const rowActions = []
       if (skill.fromTicketId) {
@@ -4072,7 +4301,7 @@ WantedBy=default.target
       else if (tab === 'works') await loadWorksTab()
       // U14：记录页现在同时住着判定与丢失。刷新时两份都要重画——
       // 丢失那半只重画不重读（详情是人来看时才读的，见 loadLost 的注释）。
-      else if (tab === 'decisions') { await loadDecisions(); renderLost() }
+      else if (tab === 'decisions') { await loadDecisions(); renderLost(); if (recordsSection === 'desk') await loadDeskDecisions() }
       else if (tab === 'chat') renderChat()
       else if (tab === 'new' && dispatchMode === 'timed') await loadSchedules()
     } catch (error) { shout(error) }
@@ -4081,7 +4310,11 @@ WantedBy=default.target
   const show = name => {
     tab = name
     for (const button of $('tabs').children) button.setAttribute('aria-selected', String(button.dataset.tab === name))
-    for (const panel of ['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'prompts']) {
+    for (const panel of ['overview', 'about', 'tickets', 'works', 'new', 'decisions', 'chat', 'settings', 'desk', 'prompts']) {
+      // 【D8】lazy-init desk tab on first show
+      if (panel === 'desk' && name === 'desk') {
+        if (!window.__deskInited) { window.__deskInited = true; void window.__loadDeskStatus?.(); void window.__loadDeskMessages?.(true); void window.__loadDeskProviders?.(); window.__initDeskTab?.() }
+      }
       $(`tab-${panel}`).classList.toggle('hidden', panel !== name)
     }
     // 【A-4】记住上次的页：下次打开面板直接回到你在的地方。深链（#ticket=…）仍优先——
@@ -4200,6 +4433,7 @@ WantedBy=default.target
     })
   }
   $('drawer-close').addEventListener('click', closeHealthDrawer)
+  $('health-problems-only')?.addEventListener('change', () => renderHealth())
   $('drawer-backdrop').addEventListener('click', () => {
     // 共享 backdrop：谁开着关谁；都开着（理论上不可能）按视线挡得多的先关。一次只关一层。
     if ($('skill-drawer')?.classList.contains('hidden') === false) { closeSkillDrawer(); return }
@@ -4344,7 +4578,11 @@ WantedBy=default.target
       el('button', { class: 'btn small', onclick: event => event.target.closest('.row').remove() }, '去掉')))
   }
 
-  $('add-attachment').addEventListener('click', () => addAttachmentField(''))
+  $('add-attachment').addEventListener('click', () => { addAttachmentField(''); $('clear-attachments').style.display = '' })
+  $('clear-attachments')?.addEventListener('click', () => {
+    $('n-attachments').replaceChildren()
+    $('clear-attachments').style.display = 'none'
+  })
 
   /** The shipped recipes, so a request is edited rather than written from nothing. */
   const loadRecipes = async () => {
@@ -4363,6 +4601,12 @@ WantedBy=default.target
           $('n-title').value = recipe.title || ''
           $('n-request').value = recipe.text || ''
           $('n-scope').value = recipe.scope || ''
+          // 【P5b】Flash filled fields
+          for (const id of ['n-title', 'n-request', 'n-scope']) {
+            const el2 = $(id); if (!el2 || !el2.value) continue
+            el2.style.boxShadow = '0 0 0 2px var(--accent,#3498db)'
+            setTimeout(() => { el2.style.boxShadow = '' }, 2000)
+          }
           $('n-recipe-hint').textContent = `已填入 ${recipe.name}，改完再创建。`
         } else {
           // A settings recipe is a schedule, not a request: the schedule editor is where it belongs.
@@ -4489,7 +4733,193 @@ WantedBy=default.target
     if (document.hidden) return
     if (tab !== 'settings' && tab !== 'prompts' && tab !== 'new') void load()
   }, 5000)
+  // ── 【D8】总管标签页逻辑 ──────────────────────────────────────────────────────
+  let deskSeq = 0
+  let deskPollTimer = null
+
+  window.__loadDeskStatus = loadDeskStatus
+  async function loadDeskStatus() {
+    try {
+      const st = await api('desk/status').catch(e => { console.log('[desk] api error:', String(e)); return null })
+      if (!st) { console.log('[desk] api returned null'); return null }
+      const chip = $('desk-state-chip')
+      const badge = $('badge-desk-status')
+      if (chip) {
+        const label = st.state === 'idle' ? '空闲' : st.state === 'thinking' ? '思考中' : '执行工具'
+        chip.textContent = label
+        chip.className = 'chip ' + (st.state === 'idle' ? 'muted' : st.state === 'thinking' ? '' : 'ok')
+        if (st.currentTool) chip.textContent += ' · ' + st.currentTool
+      }
+      if (badge) {
+        if (st.configured && st.state !== 'idle') { badge.textContent = '●'; badge.classList.remove('hidden') }
+        else { badge.classList.add('hidden') }
+      }
+      const hint = $('desk-config-hint')
+      if (hint) {
+        if (st.configured) {
+          hint.textContent = `✓ 已配置：${st.provider} / ${st.model} · 状态：${st.state === 'idle' ? '空闲' : st.state === 'thinking' ? '思考中' : '执行工具'}`
+          hint.style.color = 'var(--ok,#1a7f37)'
+          const ch = $('desk-config-summary-hint')
+          if (ch) { ch.textContent = `${st.provider} / ${st.model}`; ch.className = 'chip ok'; ch.style.fontSize = '11px' }
+        } else {
+          hint.textContent = '未配置 — 在下面选 provider 和 model，保存后立即生效'
+          hint.style.color = ''
+        }
+      }
+      return st
+    } catch (e) { return null }
+  }
+
+  let deskPrevMsgAt = null
+  const renderDeskMessage = msg => {
+    const wrap = el('div', {})
+    // 【P7a】时间分隔线：>2分钟才显示
+    const msgTime = new Date(msg.at).getTime()
+    if (deskPrevMsgAt !== null) {
+      const gap = msgTime - deskPrevMsgAt
+      if (gap > 2 * 60_000) {
+        const mins = Math.round(gap / 60_000)
+        const sep = el('div', { style: 'text-align:center;font-size:11px;color:#999;margin:4px 0' },
+          `—— ${mins < 60 ? mins + ' 分钟后' : (mins/60).toFixed(1) + ' 小时后'} ——`)
+        wrap.append(sep)
+      }
+    }
+    deskPrevMsgAt = msgTime
+    // 【P7b】系统提示默认折叠
+    if (msg.role === 'system') {
+      const det = document.createElement('details')
+      det.style.cssText = 'background:#f0f0f0;border-radius:6px;padding:6px 12px;font-size:12px;margin:2px 0'
+      const summ = document.createElement('summary')
+      summ.style.cssText = 'cursor:pointer;color:#666;font-size:11px;font-weight:600'
+      summ.textContent = `系统提示 · ${msg.at.slice(11,19)}`
+      const pre = document.createElement('div')
+      pre.style.cssText = 'margin-top:6px;white-space:pre-wrap;word-break:break-word;font-size:11px;color:#555'
+      pre.textContent = msg.content
+      det.append(summ, pre)
+      wrap.append(det)
+      return wrap
+    }
+    let bg, label
+    if (msg.role === 'user') { bg = '#e3f2fd'; label = '消息' }
+    else if (msg.role === 'assistant') { bg = '#e8f5e9'; label = '总管' }
+    else if (msg.role === 'tool') { bg = '#fff8e1'; label = `工具结果 ${msg.name ?? ''}` }
+    else { bg = '#fafafa'; label = msg.role }
+    const inner = el('div', { style: `padding:8px 12px;border-radius:6px;font-size:13px;white-space:pre-wrap;word-break:break-word;background:${bg}` })
+    inner.append(el('span', { style: 'font-weight:600;font-size:11px;color:#666;display:block;margin-bottom:2px' }, `${label} · #${msg.seq} · ${msg.at.slice(11,19)}`))
+    if (msg.content) inner.append(el('div', {}, msg.content))
+    if (msg.tool_calls) {
+      for (const tc of msg.tool_calls) {
+        inner.append(el('div', { style: 'font-size:11px;color:#555;margin-top:4px;border-left:2px solid #999;padding-left:8px' },
+          `🔧 ${tc.name}(${tc.arguments.slice(0, 120)}${tc.arguments.length > 120 ? '…' : ''})`))
+      }
+    }
+    wrap.append(inner)
+    return wrap
+  }
+
+  window.__loadDeskMessages = loadDeskMessages
+  async function loadDeskMessages(initial = false) {
+    try {
+      const body = await api(`desk/messages?after=${deskSeq}&limit=50`)
+      const node = $('desk-messages')
+      if (node === null) return
+      if (initial) { node.replaceChildren(); deskPrevMsgAt = null }
+      const msgs = body.messages || []
+      if (msgs.length > 0) {
+        for (const m of msgs) node.append(renderDeskMessage(m))
+        deskSeq = body.latestSeq
+        node.scrollTop = node.scrollHeight
+      } else if (initial) {
+        node.replaceChildren(el('span', { class: 'muted' }, '总管还没有对话。'))
+      }
+      $('desk-load-more').style.display = msgs.length === 50 ? '' : 'none'
+    } catch (e) { /* ignore */ }
+  }
+
+  window.__loadDeskProviders = loadDeskProviders
+  async function loadDeskProviders() {
+    try {
+      const body = await api('desk/providers')
+      const sel = $('desk-provider')
+      if (sel === null) return
+      sel.replaceChildren(el('option', { value: '' }, '— 选 provider —'),
+        ...(body.providers || []).map(p => el('option', { value: p.id }, `${p.name} (${p.id})`)))
+      // Restore current selection
+      const st = await api('desk/status').catch(() => null)
+      if (st && st.provider) {
+        sel.value = st.provider
+        loadDeskModels(st.provider, st.model)
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  const loadDeskModels = async (provider, selected) => {
+    const body = await api('desk/providers').catch(() => ({ providers: [] }))
+    const prov = (body.providers || []).find(p => p.id === provider)
+    const sel = $('desk-model')
+    if (sel === null) return
+    sel.replaceChildren(el('option', { value: '' }, '— 选 model —'),
+      ...(prov?.models || []).map(m => el('option', { value: m.id }, m.id)))
+    if (selected) sel.value = selected
+  }
+
+  window.__initDeskTab = initDeskTab
+  function initDeskTab() {
+    // Poll for new messages when tab is visible
+    const startPoll = () => {
+      if (deskPollTimer) return
+      deskPollTimer = setInterval(() => {
+        if (!document.hidden && document.querySelector('#tab-desk:not(.hidden)')) {
+          loadDeskMessages()
+          loadDeskStatus()
+        }
+      }, 3000)
+    }
+    startPoll()
+    // Load on first show
+    loadDeskMessages(true)
+    loadDeskStatus()
+    loadDeskProviders()
+    // Provider change → load models
+    const prov = $('desk-provider')
+    if (prov) prov.onchange = () => loadDeskModels(prov.value)
+    // Save button
+    const saveBtn = $('desk-save-config')
+    if (saveBtn) saveBtn.onclick = async () => {
+      const provider = $('desk-provider')?.value || ''
+      const model = $('desk-model')?.value || ''
+      const temperature = parseFloat($('desk-temperature')?.value || '0.2')
+      if (!provider || !model) return toast('先选 provider 和 model')
+      // Read current settings, update deskLlm, save
+      const cur = await api('state')
+      const settings = cur.settings
+      settings.deskLlm = { provider, model, temperature, maxTokens: settings.deskLlm?.maxTokens ?? 4096 }
+      saveBtn.disabled = true
+      saveBtn.textContent = '保存中…'
+      try {
+        await api('settings', { method: 'PUT', body: JSON.stringify(settings) })
+        saveBtn.textContent = '✓ 已保存'
+        saveBtn.style.background = 'var(--ok-bg,#e6f4ea)'
+        saveBtn.style.color = 'var(--ok,#1a7f37)'
+        toast('总管配置已保存，DeskLoop 立即生效')
+        const cfg_det = $('desk-config-details')
+        if (cfg_det) cfg_det.removeAttribute('open')
+        await loadDeskStatus()
+        setTimeout(() => { saveBtn.disabled = false; saveBtn.textContent = '保存'; saveBtn.style.background = ''; saveBtn.style.color = '' }, 2000)
+      } catch (e) {
+        saveBtn.textContent = '✗ 保存失败'
+        saveBtn.style.background = '#fdecea'
+        saveBtn.style.color = '#c62828'
+        toast(e.message || '保存失败')
+        setTimeout(() => { saveBtn.disabled = false; saveBtn.textContent = '保存'; saveBtn.style.background = ''; saveBtn.style.color = '' }, 3000)
+      }
+    }
+  }
+  // 【D8】desk tab is initialized by show() above when desk is first shown
+  // ── D8 结束 ───────────────────────────────────────────────────────────────────
+
 })()
+
 </script>
 </body>
 </html>

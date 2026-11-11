@@ -495,18 +495,54 @@ export class ChatSource implements TwoWaySource {
         continue
       }
       const normalizedTitle = normalizeChatTitle(message.title, mapped.actor, message.body, entry.name)
+      const triggerId = key('chat', channel.id, message.id)
+      const threadKey = `chat:${channel.id}:${message.thread ?? `dm:${message.from}`}`
+      // 【W9+W10 Subscription fan-out】If the Thread has subscribed Tickets AND this is a new message
+      // (not a duplicate), deliver to them directly without creating a new Ticket or evaluating the gate.
+      const thread = this.host.engine.getThread(threadKey)
+      if (thread !== undefined && thread.subscriptions.length > 0) {
+        const existing = this.host.engine.triggerExists(triggerId)
+        if (!existing) {
+          const subscribed = thread.subscriptions
+            .map(id => this.host.engine.open().find(t => t.id === id))
+            .filter((t): t is NonNullable<typeof t> => t !== undefined)
+          if (subscribed.length > 0) {
+          const ticket = subscribed[0]!
+          const needsAnswer = waitsForPerson(ticket)
+            || ['waiting', 'blocked'].includes(latestReport(ticket)?.state ?? '')
+          if (needsAnswer) {
+            this.host.engine.answer(ticket.id, message.body)
+            await this.take(path, directory, entry.name, 'accepted', `Answered Ticket ${ticket.id} (subscription)`, triggerId, issues)
+          } else {
+            this.host.engine.note(ticket.id, message.body)
+            await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${ticket.id} (subscription)`, triggerId, issues)
+          }
+          // 【W10】Also deliver to context subscribers (read-only context, as note)
+          for (const ctxTicketId of thread.contextSubscriptions ?? []) {
+            if (ctxTicketId !== ticket.id) {
+              this.host.engine.note(ctxTicketId, message.body)
+            }
+          }
+          this.counts.accepted++
+          this.host.requestPass()
+          continue
+        }
+        } // end if (!existing)
+      }
+      // Fall back to the legacy heuristic (W12 will retire this)
       const continuation = this.findContinuationTarget(channel.id, message, mapped.actor)
       if (continuation !== undefined) {
-        const triggerId = key('chat', channel.id, message.id)
         if (continuation.mode === 'answer') {
           this.host.engine.answer(continuation.ticket.id, message.body)
-          this.counts.accepted++
-          await this.take(path, directory, entry.name, 'accepted', `Answered Ticket ${continuation.ticket.id}`, triggerId, issues)
         } else {
           this.host.engine.note(continuation.ticket.id, message.body)
-          this.counts.accepted++
-          await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${continuation.ticket.id}`, triggerId, issues)
         }
+        // 【W12】Subscribe the Ticket to this Thread so subsequent messages go via W9 subscription fan-out,
+        // not through this legacy fallback. This replaces the 60-second rapid-coalescing heuristic.
+        this.host.engine.subscribeTicketToThread(continuation.ticket.id, threadKey)
+        this.counts.accepted++
+        await this.take(path, directory, entry.name, 'accepted',
+          `${continuation.mode === 'answer' ? 'Answered' : 'Noted on'} Ticket ${continuation.ticket.id}`, triggerId, issues)
         this.host.requestPass()
         continue
       }
@@ -522,6 +558,9 @@ export class ChatSource implements TwoWaySource {
         actor: { id: mapped.actor, kind: 'person' },
         text: message.body,
         title: normalizedTitle.slice(0, 200),
+        // 【W8】threadKey identifies the conversation for Thread+Subscription.
+        // Format: chat:<channelId>:<thread> (for group/topic threads) or chat:<channelId>:dm:<from> (for DMs).
+        threadKey: `chat:${channel.id}:${message.thread ?? `dm:${message.from}`}`,
         meta: {
           channel: channel.id, file: entry.name, from: message.from,
           ...(message.thread === undefined ? {} : { thread: message.thread }),
@@ -558,6 +597,11 @@ export class ChatSource implements TwoWaySource {
         await this.take(path, directory, entry.name, folder, `Already taken as Trigger ${trigger.id}`, trigger.id, issues)
       } else if (disposition.state === 'accepted') {
         this.counts.accepted++
+        // 【W9 Subscription】Subscribe the new Ticket to its Thread so future Triggers on this
+        // conversation are delivered to it rather than creating a new Ticket.
+        if (trigger.threadKey !== undefined) {
+          this.host.engine.subscribeTicketToThread(disposition.ticketId, trigger.threadKey)
+        }
         await this.take(path, directory, entry.name, 'accepted', `Ticket ${disposition.ticketId}`, trigger.id, issues)
       } else if (disposition.state === 'observed') {
         this.counts.observed++
@@ -640,13 +684,12 @@ export class ChatSource implements TwoWaySource {
    * the exact fact `reply_unroutable` names.
    */
   /**
-   * Decide whether an inbound message is a continuation of an existing open Ticket rather than a brand-new task:
-   * 1. Explicit `reply-to-ticket` header (the sender replied directly to a bot notification for that Ticket): answers
-   *    it when waiting/blocked, or adds a note when running.
-   * 2. Same conversation route (`channel` + `thread`, or same `actor` on the channel when a Ticket is waiting for a
-   *    person): if an open Ticket is waiting for a person (`waitsForPerson` or latest report is `waiting`/`blocked`),
-   *    route as `answer`; if that Ticket was just answered within the last 60s (`inputs.at(-1)`), coalesce a rapid
-   *    double-reply as a `note` instead of spawning a duplicate orphan Ticket.
+   * 【W12】Explicit ticket targeting via bridge-provided `reply-to-ticket:` frontmatter,
+   * OR a DM reply to a group Ticket when no Thread subscription is active on the DM thread yet.
+   *
+   * The 60-second rapid-coalescing heuristic has been retired — Thread+Subscription (W9) handles
+   * ongoing same-thread conversations. DM-to-group answers are kept because Thread+Subscription
+   * does not yet bridge cross-thread actor matching (the sender DMs the bot to answer a group Ticket).
    */
   private findContinuationTarget(
     channelId: string,
@@ -654,6 +697,7 @@ export class ChatSource implements TwoWaySource {
     actorId: string,
   ): { ticket: Ticket; mode: 'answer' | 'note' } | undefined {
     const open = this.host.engine.open()
+    // Explicit reply-to-ticket from bridge frontmatter.
     if (message.replyToTicket !== undefined) {
       const explicit = open.find(t => t.id === message.replyToTicket || t.id.startsWith(message.replyToTicket!))
       if (explicit !== undefined) {
@@ -661,45 +705,23 @@ export class ChatSource implements TwoWaySource {
         return { ticket: explicit, mode: needsAnswer ? 'answer' : 'note' }
       }
     }
-    // Match open Tickets originated from this chat channel by the same actor.
+    // DM-to-group answer: a person DMs the bot to answer a group Ticket they started.
+    // This is only reached when Thread+Subscription didn't find a match (no active subscription on this DM thread).
     const candidates = open.filter(t => {
       if (t.mandate.via !== 'chat' || t.mandate.sender.id !== actorId) return false
       try {
         const trig = this.host.engine.trigger(t.origin.triggerId)
         if (trig.replyTo?.channel !== channelId) return false
+        // Only allow cross-thread (DM→group) when this message is a DM.
         if (message.thread !== undefined && trig.replyTo?.thread !== undefined && trig.replyTo.thread !== message.thread) {
-          // Allow a DM reply (`dm:<userId>`) to answer a group Ticket by the same actor only when there is no other
-          // waiting Ticket on that DM thread.
           if (!message.thread.startsWith('dm:')) return false
         }
         return true
-      } catch {
-        return false
-      }
-    })
-    // Prefer exact thread match first.
-    const exactThread = candidates.filter(t => {
-      try {
-        return this.host.engine.trigger(t.origin.triggerId).replyTo?.thread === message.thread
       } catch { return false }
     })
-    const pool = exactThread.length > 0 ? exactThread : candidates
-    const waiting = pool.filter(t => waitsForPerson(t) || ['waiting', 'blocked'].includes(latestReport(t)?.state ?? ''))
-    if (waiting.length === 1) {
-      return { ticket: waiting[0]!, mode: 'answer' }
-    }
-    // Rapid follow-up coalescing: if a Ticket in `pool` was just answered by this person within the last 60 seconds,
-    // attach the second message as a note rather than spawning a duplicate Ticket.
-    const nowMs = Date.now()
-    const recentlyAnswered = pool.filter(t => {
-      const lastInput = t.inputs.at(-1)
-      if (lastInput === undefined || lastInput.kind !== 'text') return false
-      const ageMs = nowMs - Date.parse(lastInput.at)
-      return Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= 60_000
-    })
-    if (recentlyAnswered.length === 1) {
-      return { ticket: recentlyAnswered[0]!, mode: 'note' }
-    }
+    const pool = candidates.filter(t => waitsForPerson(t) || ['waiting', 'blocked'].includes(latestReport(t)?.state ?? ''))
+    if (pool.length === 1) return { ticket: pool[0]!, mode: 'answer' }
+    // Note: 60-second rapid-coalescing heuristic retired (W12). Thread+Subscription handles same-thread follow-ups.
     return undefined
   }
 

@@ -356,11 +356,16 @@ export function headline(ticket: Ticket, state: ReportState): string {
 }
 
 /** The text the main Session receives: enough to act, short enough to read. */
+/** Max chars of a report summary the desk relay carries; beyond this the desk can ask `myagent_ticket_status`. */
+const RELAY_SUMMARY_MAX = 2000
 export function relayText(ticket: Ticket, payload: Extract<NotifyPayload, { kind: 'report' }>): string {
+  const summary = payload.summary.length > RELAY_SUMMARY_MAX
+    ? `${payload.summary.slice(0, RELAY_SUMMARY_MAX)}… (${payload.summary.length - RELAY_SUMMARY_MAX} chars omitted; use myagent_ticket_status to read the full report)`
+    : payload.summary
   const lines = [
     `Ticket ${ticket.id} (${headline(ticket, payload.state)})`,
     '',
-    payload.summary,
+    summary,
   ]
   if (payload.state === 'blocked' && payload.question !== undefined) {
     lines.push('', `The worker asks: ${payload.question}`, '', 'Answer with `myagent_answer_ticket`.')
@@ -799,7 +804,14 @@ export class OutcomeDelivery implements Delivery {
     // `waiting` wakes it too, and for the same reason as `blocked`: both mean nothing moves until a person acts, and
     // the front desk is the one place that can act without the operator (retry, stop, or answer). Leaving `waiting`
     // on the notify path filed it in a history nobody reads while the Ticket sat stalled.
-    if (payload.state === 'blocked' || payload.state === 'waiting') await this.host.sessions.relay(requestId, text)
+    //
+    // 【F1】`ready`/`failed`/`dropped` now also wake the front desk (relay) instead of only leaving a notice:
+    // the desk is the one place that can decide whether to escalate a failure, add context to a result, or
+    // send a summary to the requester — and it can only decide in a turn, not by accumulating injected history.
+    // `progress` is the only state that stays on the inject path: one progress line per turn is not a decision point.
+    const wakesDesk = payload.state === 'blocked' || payload.state === 'waiting'
+      || payload.state === 'ready' || payload.state === 'failed' || payload.state === 'dropped'
+    if (wakesDesk) await this.host.sessions.relay(requestId, text)
     else await this.host.sessions.notify(text, requestId)
     if (settings.notify.enabled) {
       await this.machineNotification({

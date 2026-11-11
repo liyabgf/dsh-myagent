@@ -108,8 +108,8 @@ const SourcePolicyFields = {
   allowSystemActors: z.boolean().optional(),
 }
 
-/** The Sources whose requests are worth a judge: a person's words, arriving from outside this machine. */
-const TRIAGED_SOURCES: readonly string[] = ['chat', 'inbox', 'cron']
+/** The Source kinds that CAN be put in front of a judge; which ones are is `settings.triage.sources`. */
+const TRIAGEABLE_KINDS = ['chat', 'inbox', 'cron'] as const satisfies readonly SourceKindName[]
 
 export const SettingsSchema = z.object({
   /**
@@ -310,9 +310,43 @@ export const SettingsSchema = z.object({
    * knob could not ship before that tool existed — a setting whose other value silently behaves like the first is
    * worse than no setting at all.
    */
+  /**
+   * Direct LLM configuration for the desk (总管) when it uses myagent's own LLM loop
+   * rather than a DSH Session/PTC turn.
+   *
+   * `provider` and `model` are route keys from DSH's `ctx.llm` registry — the same values
+   * you would pass to `ctx.llm.stream({ provider, model, ... })`. Empty strings mean
+   * "not configured yet"; the DeskLoop will stay paused and report a health problem.
+   *
+   * `temperature` and `maxTokens` are passed through to every generation call unchanged.
+   * The desk is a router and judge, not a creative writer: low temperature (0.1–0.3) is
+   * appropriate. `maxTokens` caps the response; 4096 is enough for a triage turn.
+   *
+   * This block does NOT move `policyVersion`: the model the desk uses is an infrastructure
+   * choice, not an authorization decision.
+   */
+  deskLlm: z.object({
+    provider: z.string().max(200).default(''),
+    model: z.string().max(200).default(''),
+    temperature: z.number().min(0).max(2).default(0.2),
+    maxTokens: z.number().int().min(256).max(32000).default(4096),
+  }).strict().prefault({}),
+
   triage: z.object({
     enabled: z.boolean().default(false),
     desk: z.enum(['dedicated', 'main']).default('dedicated'),
+    /**
+     * Which Source KINDS get a judge in front of them. Default is `chat` alone.
+     *
+     * Chat is where the waste actually happened: two QQ messages 65 seconds apart became two blind Tickets, and a
+     * literal `1` became one. A schedule is the operator's own standing instruction and an inbox file is a request he
+     * wrote deliberately — judging those costs a desk turn to re-decide something already decided, and a wrong drop
+     * loses work he asked for. Turning them on is one setting away once the desk has been watched behaving.
+     *
+     * Like `enabled` and `desk`, this does NOT move the policy version: it routes future requests, and an
+     * authorization already granted is untouched by how the next one is judged.
+     */
+    sources: z.array(z.enum(TRIAGEABLE_KINDS)).default(['chat']),
   }).strict().prefault({}),
 }).strict()
 
@@ -524,9 +558,11 @@ export function settingsPolicy(settings: Settings): Policy {
     paused: settings.paused,
     acceptMode: settings.acceptMode,
     gate: trigger => gate(trigger, settings),
+    // `trigger.kind`, not `trigger.source`: `source` is an instance id, which happens to equal the kind for the
+    // built-ins and would silently stop matching for a second instance of one kind.
     triage: trigger => settings.triage.enabled
       && (typeof trigger.meta?.depth === 'number' ? trigger.meta.depth : 0) === 0
-      && TRIAGED_SOURCES.includes(trigger.source),
+      && settings.triage.sources.includes(trigger.kind as (typeof TRIAGEABLE_KINDS)[number]),
     revalidate(mandate) {
       // Pausing is deliberately not here: it holds execution rather than withdrawing an authorization, so a paused
       // Ticket keeps its Mandate and resumes under it. That is also why `paused` is not part of the policy version.

@@ -1,12 +1,19 @@
 /**
  * The tools this system registers on its two kinds of Session.
  *
- * A worker gets three tools — `myagent_report`, plus `myagent_note_ticket` and `myagent_read_artifact` for crossing to
- * another Ticket inside the same Work. Reporting is the one it must always use; the other two are optional and narrow,
- * and this header used to say "one tool", which was true for eleven rounds and then quietly stopped being true.
- * Reporting is the only thing a worker needs from the system; everything
- * else it does with the profile's own work tools. The main Session gets the management tools, so the operator can
- * send work, read state and answer a question in the conversation they are already in.
+ * A worker's tools, named rather than counted: `myagent_report` (the one it must always use), then
+ * `myagent_note_ticket` and `myagent_read_artifact` for crossing to another Ticket inside the same Work,
+ * `myagent_ask_desk` for a non-blocking question to the desk, `myagent_handback` for returning work that turns out
+ * to be outside its mandate, and `myagent_raise_decision` (deprecated — the description routes callers to ask_desk).
+ *
+ * **This header deliberately does not say how many there are.** It said "one tool" for eleven rounds after that
+ * stopped being true, then said "three" for another stretch after the same thing happened again. A count in prose is
+ * a claim nobody re-checks, and `workerTools` below is the only authoritative list; `docs/v2/07-modules-and-
+ * capabilities.md` C125/C214 carry the same lesson from the documentation side.
+ *
+ * Reporting is the only thing a worker NEEDS from the system; everything else it does with the profile's own work
+ * tools. The main Session gets the management tools, so the operator can send work, read state and answer a question
+ * in the conversation they are already in.
  */
 import { z } from 'zod'
 import { latestAssignment, latestReport, ticketStage, type Engine, type Ticket } from '../core/index.ts'
@@ -61,6 +68,12 @@ export interface ToolsHost {
    * the very question a turn which outlived its attempt answers wrongly.
    */
   attempt(ticketId: string): string | undefined
+  /**
+   * 【W19】Send a question to the main Session (desk) on behalf of a worker, without stopping the worker's turn.
+   * The desk receives the question as a message and can answer it using its own context and memory.
+   * This is the non-blocking alternative to `blocked`: the worker asks, then continues working.
+   */
+  askDesk(ticketId: string, question: string): { sent: boolean }
   /**
    * Read one registered artifact of another Ticket for a worker, or answer why it may not.
    *
@@ -162,7 +175,11 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
       state: z.enum(['progress', 'waiting', 'ready', 'blocked', 'failed', 'dropped']),
       summary: z.string().trim().min(1).max(20000).describe('What you did and what came of it, in plain sentences. Name the files that matter.'),
       question: z.string().trim().max(2000).optional().describe('One concrete question for a person, with the options you see and the one you would pick. Required for blocked.'),
-      files: z.array(z.string().trim().max(500)).max(200).optional().describe('Files you produced, relative to your directory. For ready.'),
+      files: z.array(z.string().trim().max(500)).max(200).optional().describe(
+        'Files you produced, relative to your directory. For ready. '
+        + 'A path ending in `/` registers the WHOLE directory: the next Ticket may then read any file under it, '
+        + 'so use `skills-pack/` rather than naming 27 files one by one. Registering a directory is how a produced '
+        + 'tree stays reachable — a file you forget to name is a file the next Ticket cannot see.'),
       promote_skill: z.object({
         name: z.string().trim().min(1).max(64).describe('Kebab-case identifier for the reusable tool/craft (e.g. `entity-dedup-merger`).'),
         title: z.string().trim().min(1).max(80).describe('Plain-language title for non-engineer users on the panel (e.g. `多源实体归一化去重器`).'),
@@ -233,12 +250,43 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
       }
     },
   }), tool({
+    name: 'myagent_ask_desk',
+    description: 'Ask the desk (main Session) a question WITHOUT stopping your work. The desk has the operator\'s '
+      + 'conversation context and system memory — it can answer questions about what the operator meant, what other '
+      + 'tickets exist, or what the system can do. Use this instead of `blocked` when the answer is something the desk '
+      + 'already knows (the operator\'s intent, a fact from another ticket, a system capability question). '
+      + 'Your turn continues after calling this — do not wait for the answer; check `note` inputs later. '
+      + 'For questions ONLY the operator can answer (scope changes, authorization, irreversible decisions), use '
+      + '`myagent_report` with `state: blocked` instead.',
+    schema: z.object({
+      question: z.string().trim().min(1).max(2000).describe('One concrete question for the desk. Include enough context for the desk to answer without seeing your directory.'),
+    }).strict(),
+    execute: async args => {
+      const result = host.askDesk(ticketId, args.question)
+      return { sent: result.sent, note: 'The desk will answer via a note input. Continue working; check inputs later.' }
+    },
+  }), tool({
+    name: 'myagent_handback',
+    description: 'Hand back a request that is beyond this Ticket\'s scope, returning it to the desk for re-routing. '
+      + 'Use this when the work turns out to need something outside what your mandate covers — a different capability, '
+      + 'a scope change, or work that belongs to a different Ticket. '
+      + 'Your Ticket ends as dropped after handback. '
+      + 'Do NOT use this to pass routine questions — use myagent_ask_desk for those.',
+    schema: z.object({
+      reason: z.string().trim().min(1).max(2000).describe('Why this request is beyond your scope, and what would need to change to handle it. Be concrete.'),
+    }).strict(),
+    execute: async args => {
+      try {
+        const updated = host.engine.report(ticketId, { state: 'dropped', summary: `[Handed back] ${args.reason}` }, host.attempt(ticketId))
+        return { handed_back: true, ticket_id: ticketId, reason: args.reason, ticket_ended: updated.ended !== undefined }
+      } catch (error) { return refusal(error) }
+    },
+  }), tool({
     name: 'myagent_raise_decision',
-    description: 'Park a decision in front of the operator without stopping your work: use it when you meet something '
-      + 'worth expanding or changing that is NOT yours to decide — a new capability, an architecture question, a cost '
-      + 'trade-off. It appears on the panel as 「需要你决断的事」 and waits there; it does not interrupt anyone and it '
-      + 'does not end your turn. Do NOT use it for facts another Ticket needs (that is myagent_note_ticket) or for '
-      + 'answers the requester is waiting for (that is myagent_report).',
+    description: '[DEPRECATED for workers — use myagent_ask_desk instead] '
+      + 'If you need a decision from the operator, ask the desk with myagent_ask_desk: the desk has the full context '
+      + 'and will raise a decision item only if it determines one is truly needed. '
+      + 'Direct use by workers bypasses the desk (the system\'s single point of judgment) and should be avoided.',
     schema: z.object({
       title: z.string().trim().min(1).max(120).describe('One sentence: the decision, phrased as a question or a choice.'),
       detail: z.string().trim().min(1).max(8000).describe('What you found, why it matters, and what you would do. Evidence over adjectives.'),

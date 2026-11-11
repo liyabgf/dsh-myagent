@@ -27,7 +27,17 @@ const KILL_WAIT_MS = 10_000
 const DRAIN_LIMIT_MS = 10_000
 
 const jobsOf = (ctx: Context): Jobs | undefined => ctx.get('jobs') as Jobs | undefined
-const subagentsOf = (ctx: Context): Subagents | undefined => ctx.get('subagents') as Subagents | undefined
+// 【DSH 兼容性修正】新版 DSH 重构了 subagents 服务，ctx.get('subagents') 返回的对象可能没有
+// listChildren 方法（该方法已改为独立函数，从 '@deepseek-ai/dsh-subagent' 导入）。
+// 检查方法是否存在，不存在就当作 undefined（优雅降级：没有子代理功能时不抛错）。
+const subagentsOf = (ctx: Context): Subagents | undefined => {
+  const raw = ctx.get('subagents')
+  if (raw === undefined || raw === null) return undefined
+  const candidate = raw as Record<string, unknown>
+  // Guard: listChildren must be a function. Without it, drainChildren is unusable anyway.
+  if (typeof candidate['listChildren'] !== 'function') return undefined
+  return raw as Subagents
+}
 const live = (status: string): boolean => status === 'running' || status === 'stopping'
 /** The jobs this Session owns that still run. */
 const owned = (jobs: Jobs, sessionId: string) =>

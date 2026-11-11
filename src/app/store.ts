@@ -7,16 +7,17 @@
  * position through `kv`; Settings and Prompts write their revisions; Effects writes its rows.
  */
 import { DatabaseSync, type StatementResultingChanges } from 'node:sqlite'
+import { DeskHistory } from './desk-history.ts'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { waitsForPerson, type Decision, type Ticket, type Trigger } from '../core/model.ts'
-import type { Artifact, Dependency, Disposition, Project, TicketEvent, Work } from '../core/model.ts'
-import type { DecisionRepository, DependencyRepository, EventRepository, LostTrigger, ProjectRepository, TicketRepository, TriggerRecord, TriggerRepository, WorkRepository } from '../core/engine.ts'
+import type { Artifact, Dependency, Disposition, Project, Thread, TicketEvent, Work } from '../core/model.ts'
+import type { DecisionRepository, DependencyRepository, EventRepository, LostTrigger, ProjectRepository, TicketRepository, TriggerRecord, TriggerRepository, WorkRepository, ThreadRepository } from '../core/engine.ts'
 import type { Transaction } from '../core/engine.ts'
 import { parseSettings, type Settings } from '../core/policy.ts'
 
 /** The schema this build writes; a database of a newer schema is refused rather than misread. */
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 7
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
@@ -29,6 +30,10 @@ CREATE TABLE IF NOT EXISTS triggers (
   record TEXT NOT NULL
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS triggers_at ON triggers (at);
+CREATE TABLE IF NOT EXISTS threads (
+  key TEXT PRIMARY KEY,
+  record TEXT NOT NULL
+) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS tickets (
   id TEXT PRIMARY KEY,
   createdAt TEXT NOT NULL,
@@ -234,6 +239,34 @@ const MIGRATIONS: Record<number, (db: DatabaseSync) => void> = {
 ) WITHOUT ROWID`)
     db.exec('CREATE INDEX IF NOT EXISTS deps_downstream ON ticket_deps (downstream)')
   },
+  // 【W8】Version 6 adds the threads table for Thread+Subscription (W8-W12).
+  6: db => {
+    db.exec(`CREATE TABLE IF NOT EXISTS threads (
+  key TEXT PRIMARY KEY,
+  record TEXT NOT NULL
+) WITHOUT ROWID`)
+  },
+  // 【D3】Version 7 adds the desk conversation history (DeskLoop messages).
+  // Additive: one new table. Each row is one message in the desk's conversation with the LLM,
+  // in insertion order (seq). role ∈ {'system','user','assistant','tool'}. tool_calls and
+  // tool_call_id support function-calling turns. ticketId ties each message to the Ticket that
+  // triggered this desk turn (null for system messages). requestId deduplicates relay/notify
+  // entries so an effect that is retried does not add a second row.
+  7: db => {
+    db.exec(`CREATE TABLE IF NOT EXISTS desk_messages (
+  seq INTEGER PRIMARY KEY AUTOINCREMENT,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  tool_calls TEXT,
+  tool_call_id TEXT,
+  name TEXT,
+  ticketId TEXT,
+  requestId TEXT,
+  at TEXT NOT NULL
+)`)
+    db.exec('CREATE INDEX IF NOT EXISTS desk_messages_at ON desk_messages (at)')
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS desk_messages_request ON desk_messages (requestId) WHERE requestId IS NOT NULL')
+  },
 }
 
 export class SchemaTooNew extends Error {
@@ -291,6 +324,27 @@ class Events implements EventRepository {
   list(ticketId: string): TicketEvent[] {
     return (this.db.prepare('SELECT record FROM events WHERE ticketId = ? ORDER BY seq').all(ticketId) as { record: string }[])
       .map(row => read<TicketEvent>(row.record))
+  }
+}
+
+/** 【W8】Thread repository: stores Thread aggregates for Subscription fan-out. */
+class Threads implements ThreadRepository {
+  constructor(private readonly db: DatabaseSync) {}
+
+  get(key: string): Thread | undefined {
+    const row = this.db.prepare('SELECT record FROM threads WHERE key = ?').get(key) as { record: string } | undefined
+    return row === undefined ? undefined : read<Thread>(row.record)
+  }
+
+  save(thread: Thread): void {
+    this.db.prepare('INSERT INTO threads (key, record) VALUES (?, ?) '
+      + 'ON CONFLICT(key) DO UPDATE SET record = excluded.record')
+      .run(thread.key, written(thread))
+  }
+
+  list(): Thread[] {
+    return (this.db.prepare('SELECT record FROM threads').all() as { record: string }[])
+      .map(row => read<Thread>(row.record))
   }
 }
 
@@ -454,7 +508,10 @@ class Tickets implements TicketRepository {
     return {
       open: rows.filter(ticket => ticket.ended === undefined).length,
       ended: rows.filter(ticket => ticket.ended !== undefined).length,
-      attention: rows.filter(ticket => ticket.attention !== undefined).length,
+      // 【排障修复】已结束的票即使有 attention 字段也不再需要操作者介入，
+      // 不应计入 attention 数——否则 worker 以 ready+question 结束时，
+      // 面板会一直显示"等你回答1条"但列表里查不到任何票。
+      attention: rows.filter(ticket => ticket.ended === undefined && ticket.attention !== undefined).length,
     }
   }
   /** Take the row away entirely: the `record: 'nothing'` half of a deletion (S4). */
@@ -520,6 +577,8 @@ export class Store implements Transaction {
   readonly works: Works
   readonly events: Events
   readonly dependencies: Dependencies
+  readonly threads: Threads
+  readonly deskHistory: DeskHistory
 
   constructor(path: string) {
     mkdirSync(dirname(path), { recursive: true })
@@ -527,9 +586,7 @@ export class Store implements Transaction {
     try {
       this.open()
     } catch (error) {
-      // A Store that refused the file must not keep it open: the caller cannot close what it never received, and a
-      // leaked handle is the difference between "this directory is unusable" and "this directory is locked".
-      try { this.db.close() } catch { /* the reason for refusing is the error worth reporting */ }
+      try { this.db.close() } catch {}
       throw error
     }
     this.triggers = new Triggers(this.db)
@@ -540,6 +597,8 @@ export class Store implements Transaction {
     this.works = new Works(this.db)
     this.events = new Events(this.db)
     this.dependencies = new Dependencies(this.db)
+    this.threads = new Threads(this.db)
+    this.deskHistory = new DeskHistory(this.db)
   }
 
   /** Pragma, schema and version stamp, in the order that keeps a failed upgrade from half-applying. */

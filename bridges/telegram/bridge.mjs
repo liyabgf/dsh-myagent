@@ -226,6 +226,25 @@ const poll = async () => {
     lastSkipReport = now
   }
   const replies = await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
+
+  // 【F3 自愈】长轮询静默停止检测：如果我们曾经收过消息（lastInboundAt 存在），但距
+  // 上次收到消息已超过 30 分钟，说明长轮询可能进入了"活着但不收消息"的状态。
+  // 直接退出——launchd 的 KeepAlive:true 会立即重启，重启后 offset 从持久化继续，
+  // 不丢消息（Telegram Bot API 在 offset 之前的消息仍然保留 24 小时）。
+  // 阈值选 30 分钟而不是更短：排期侦察等长活一跑就是 60 分钟，重启会打断它的回复。
+  const STALE_INBOUND_MS = 30 * 60_000
+  if (state.data.lastInboundAt !== undefined) {
+    const staleness = Date.now() - new Date(state.data.lastInboundAt).getTime()
+    if (staleness > STALE_INBOUND_MS) {
+      log.warn('stale-inbound-exit', {
+        lastInboundAt: state.data.lastInboundAt,
+        staleMinutes: Math.round(staleness / 60_000),
+        note: 'long polling appears stuck; exiting so launchd can restart cleanly',
+      })
+      process.exit(0)
+    }
+  }
+
   return { updates: (updates ?? []).length, written, replies }
 }
 

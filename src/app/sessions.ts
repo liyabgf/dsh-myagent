@@ -16,7 +16,8 @@ import type {} from '@deepseek-ai/dsh-permission-presets'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-tools'
 import { lstatSync, realpathSync } from 'node:fs'
-import { dirname, resolve, sep } from 'node:path'
+import { dirname, join, resolve, sep } from 'node:path'
+import { homedir } from 'node:os'
 import { latestReport, ticketStage, type Ticket } from '../core/model.ts'
 import { AgentDelivery } from './agent-delivery.ts'
 import type { Prompts, PromptRole, SavedSkill } from './prompts.ts'
@@ -57,6 +58,8 @@ export interface MainState {
   readonly openTickets: number
   readonly waiting: number
 }
+
+import type { DeskLoop } from './desk-loop.ts'
 
 export interface SessionsHost {
   readonly context: Context
@@ -125,6 +128,14 @@ export interface SessionsHost {
   impostorRefused(sessionId: string, claimedTicketId: string): void
   /** Environment variables a worker's directory and prompt carry. */
   environment(ticket: Ticket): Record<string, string>
+  /**
+   * 【W30】Directories of the Tickets that share this Ticket's Work — the only sibling directories its worker may read.
+   *
+   * Empty when the Ticket belongs to no Work, which is the isolation the guard had before: grouping is a person's
+   * decision, and a person who did not group two Tickets did not authorize one to read the other's files.
+   * Asked of the host (and not read off the Ticket) because answering it needs the Store, which this class cannot reach.
+   */
+  peerDirs(ticket: Ticket): readonly string[]
   /** The tools to register on the main Session (`ticket` absent) or on `ticket`'s worker. */
   tools(agent: Agent, ticket?: Ticket): Tool[]
   /** What the main Session's section reports about the system now. */
@@ -184,6 +195,7 @@ export function guardWorkerCall(
   ticket: Ticket,
   workRoot: string,
   execution?: { readonly name?: string; readonly arguments?: unknown },
+  peerDirs: readonly string[] = [],
 ): string | undefined {
   const ownDir = ticket.execution?.directory
   if (ownDir === undefined || execution === undefined) return undefined
@@ -193,6 +205,18 @@ export function guardWorkerCall(
   let ownReal = ownLex
   try { rootReal = realpathSync(rootLex) } catch { /* use lexical if not created yet */ }
   try { ownReal = realpathSync(ownLex) } catch { /* use lexical if not created yet */ }
+  // 【W30】Peers: directories of Tickets in the SAME Work. Reading them is allowed (that is the point of a Work —
+  // a group of Tickets one person decided belong together); writing them is not, because a Ticket's own directory is
+  // what its Report claims and what its audit trail describes. Tickets with no Work have no peers, which keeps the
+  // old isolation for work nobody grouped: SECURITY.md §4's "ungrouped is open, not isolated" applies to registered
+  // artifacts through the Engine, not to a raw filesystem walk.
+  const peerLex = peerDirs.map(dir => resolve(dir)).filter(dir => dir !== ownLex)
+  const peerReal = peerLex.map(dir => { try { return realpathSync(dir) } catch { return dir } })
+  const inAny = (target: string, roots: readonly string[]): boolean =>
+    roots.some(root => target === root || target.startsWith(root + sep))
+  // Only these tools read: the rest either write or execute, and both stay inside the Ticket's own directory.
+  const isReadTool = execution.name === 'read' || execution.name === 'read_image'
+    || execution.name === 'glob' || execution.name === 'grep'
 
   const checkCandidate = (rawPath: string): string | undefined => {
     const trimmed = rawPath.trim()
@@ -201,8 +225,13 @@ export function guardWorkerCall(
     const inOwnLex = targetLex === ownLex || targetLex.startsWith(ownLex + sep)
     const inRootLex = targetLex === rootLex || targetLex.startsWith(rootLex + sep)
     if (inRootLex && !inOwnLex) {
+      const inPeerLex = inAny(targetLex, peerLex)
+      if (inPeerLex && isReadTool) return undefined   // 【W30】same-Work peer, read-only: allowed
       return `Refused: ${rawPath} is in myagent's work root outside this Ticket's own directory (${ownLex}). `
-        + 'A worker may not inspect or read `..` or sibling Ticket directories; use `myagent_read_artifact` when Tickets share a Work, or report `blocked` if your prompt lacks context.'
+        + (inPeerLex
+          ? 'That directory belongs to a Ticket in the same Work: you may READ it with `read`/`glob`/`grep`, but not write to it.'
+          : 'A worker may not inspect or read `..` or a Ticket outside its own Work; use `myagent_read_artifact` '
+            + 'when Tickets share a Work, or report `blocked` if your prompt lacks context.')
     }
     // Also check physical path when the target (or its parent) exists on disk, so an existing symlink inside ownDir
     // pointing at another Ticket's directory cannot be read through `read`/`edit`/`glob`/`grep`.
@@ -212,14 +241,19 @@ export function guardWorkerCall(
         const real = realpathSync(targetLex)
         const inOwnReal = real === ownReal || real.startsWith(ownReal + sep)
         if (!inOwnReal) {
-          return `Refused: ${rawPath} is a symbolic link pointing outside this Ticket's directory (${real}).`
+          // 【W30】A symlink into a same-Work peer is as readable as the peer itself.
+          if (!(isReadTool && inAny(real, peerReal))) {
+            return `Refused: ${rawPath} is a symbolic link pointing outside this Ticket's directory (${real}).`
+          }
         }
       }
       const real = realpathSync(targetLex)
       const inOwnReal = real === ownReal || real.startsWith(ownReal + sep)
       const inRootReal = real === rootReal || real.startsWith(rootReal + sep)
       if (inRootReal && !inOwnReal) {
-        return `Refused: ${rawPath} resolves to another Ticket's directory (${real}).`
+        if (!(isReadTool && inAny(real, peerReal))) {
+          return `Refused: ${rawPath} resolves to another Ticket's directory (${real}).`
+        }
       }
     } catch {
       // Target does not exist yet (e.g. write): check parent's realpath if it exists.
@@ -254,17 +288,36 @@ export function guardWorkerCall(
       return `Refused: shell command references the parent work root or ` + '`..`' + ` outside this Ticket's directory (${ownLex}). `
         + 'Stay inside your own directory; if your prompt is a follow-up that lacks context, report `blocked` with `myagent_report`.'
     }
+    // 【W4】防止 worker 翻宿主/插件源码。worker 拿到的是完全访问，这里的防护是合理使用提示，
+    // 而不是安全边界（SECURITY.md §1 已说明 worker 无 OS 级沙箱）。
+    // 目的：防止误用（如逆向 myagent 源码烧百万 token），遇到这类需求应交回总管。
+    const home = homedir()
+    const dshHome = process.env.DSH_HOME?.trim() || join(home, '.dsh')
+    const sensitivePatterns = [
+      { path: join(dshHome, 'profiles'), label: 'DSH profile directory' },
+      { path: join(dshHome, 'storages'), label: 'DSH session storage' },
+    ]
+    // 检测 grep/find/cat/ls/read 访问插件源码目录（非 workRoot 内）
+    for (const { path: sensitivePath, label } of sensitivePatterns) {
+      if (cmd.includes(sensitivePath)) {
+        return `Refused: shell command accesses ${label} (${sensitivePath}). `
+          + 'If you need system capability information, ask the desk via `myagent_ask_desk` instead of reading internal paths directly.'
+      }
+    }
   }
   return undefined
 }
 
 function workerSection(ticket: Ticket, environment: Record<string, string>): string {
   const report = latestReport(ticket)
+  const dir = ticket.execution?.directory ?? '(not prepared yet)'
   const lines = [
     '## Your Ticket',
     `- Ticket: ${ticket.id}`,
     `- Title: ${ticket.title}`,
-    `- Directory: ${ticket.execution?.directory ?? '(not prepared yet)'}`,
+    `- Directory: ${dir}`,
+    `  (This is your working directory, already prepared. Use absolute paths like \`${dir}/output.md\`.`,
+    `   The shell does **not** have a \`$MYAGENT_DIRECTORY\` variable — use the literal path above.)`,
     `- Authorized by: ${ticket.mandate.sender.id} (${ticket.mandate.via}) at ${ticket.mandate.at}`,
     `- Policy version: ${ticket.mandate.policyVersion}`,
     `- Stage: ${ticketStage(ticket)}`,
@@ -272,9 +325,12 @@ function workerSection(ticket: Ticket, environment: Record<string, string>): str
     '### Scope',
     ticket.mandate.scope,
   ]
+  // Note: environment variables listed here are only available in the `prepare` shell command,
+  // NOT in worker bash tool calls. Workers must use the literal Directory path above.
   const variables = Object.entries(environment)
   if (variables.length > 0) {
-    lines.push('', '### Environment', ...variables.map(([name, value]) => `- \`${name}\` = \`${value}\``))
+    lines.push('', '### Prepare-command environment (prepare command only, not available in bash tool)',
+      ...variables.map(([name, value]) => `- \`${name}\` = \`${value}\``))
   }
   if (report !== undefined) {
     lines.push('', '### Your last report', `${report.state}: ${truncate(report.summary, 4000)}`)
@@ -373,6 +429,8 @@ export class Sessions {
   private agentDelivery?: AgentDelivery
   private readonly disposers: (() => void)[] = []
   private problemSink?: (detail: string) => void
+  /** When set, relay/notify are routed here instead of to the DSH main Session. */
+  private deskLoop?: DeskLoop
 
   constructor(private readonly host: SessionsHost) {
     this.ctx = host.context
@@ -631,7 +689,11 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
         // has not run yet: counting at this point counted a load that then threw (`skill "x" is unknown or no longer
         // available`) and counted every retry of it, so the panel's "已复用 N 次" was a number a worker could raise by
         // calling in a loop. The count moved to the `tools/result` listener in the constructor, which sees the outcome.
-        return guardWorkerCall(ticket, this.host.masterDir(), execution)
+        // 【W30】Read the Ticket again rather than using the one this closure captured at decorate time: a Ticket can
+        // be attached to a Work after its worker was decorated, and a stale `workId` would refuse a read the operator
+        // has since authorized. `ticketEnded` above already reads live for the same reason.
+        const live = this.host.ticket(ticket.id) ?? ticket
+        return guardWorkerCall(live, this.host.masterDir(), execution, this.host.peerDirs(live))
       }))
       this.syncCrafts(agent, ticket.id)
     }
@@ -799,10 +861,22 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
   /** Forget an agent that left the registry, so a restored one is decorated again. */
   forget(agent: Agent): void { this.release(agent) }
 
+  /**
+   * Register the DeskLoop to take over relay/notify from the DSH Session path.
+   * Called by the Runtime after the DeskLoop is initialised.
+   */
+  setDeskLoop(loop: DeskLoop): void { this.deskLoop = loop }
+  hasDeskLoop(): boolean { return this.deskLoop !== undefined }
+
   // ---------------------------------------------------------------- Delivery
 
   /** Put a notice in the main Session's history without waking it. */
   async notify(text: string, requestId: string): Promise<void> {
+    // 【D6】If a DeskLoop is registered, route through it instead of a DSH Session.
+    if (this.deskLoop !== undefined) {
+      await this.deskLoop.notify(requestId, text)
+      return
+    }
     // Resolve or create, never give up quietly: returning nothing here meant a deployment whose main Session was
     // missing lost EVERY report to the front desk with a clean health board — the one failure an unattended system
     // must not hide. Creating it on demand is what "the front desk is on demand" already means everywhere else.
@@ -815,6 +889,11 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
    * @returns false when there is no front desk yet, so the caller knows nobody was told.
    */
   async relay(requestId: string, text: string): Promise<boolean> {
+    // 【D6】If a DeskLoop is registered, route through it instead of a DSH Session.
+    if (this.deskLoop !== undefined) {
+      await this.deskLoop.relay(requestId, text)
+      return true
+    }
     // Resolve or create, never give up quietly: returning nothing here meant a deployment whose main Session was
     // missing lost EVERY report to the front desk with a clean health board — the one failure an unattended system
     // must not hide. Creating it on demand is what "the front desk is on demand" already means everywhere else.

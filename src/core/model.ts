@@ -54,6 +54,39 @@ export interface Trigger {
    * would post a report to a platform that never asked for one.
    */
   readonly replyTo?: ReplyTo
+  /**
+   * The Thread key this Trigger belongs to, supplied by the Source.
+   *
+   * Chat sources set this to identify the conversation (channel + topic/DM) so that follow-up messages
+   * in the same thread are delivered to the existing Ticket rather than creating a new one (W9 Subscription fan-out).
+   * Absent for one-way sources (cron, inbox, rule) which have no conversation to track.
+   */
+  readonly threadKey?: string
+}
+
+/**
+ * A Thread: an ordered sequence of Triggers from one Source conversation.
+ *
+ * The Thread is the unit within which continuity is tracked. When a Trigger arrives with a `threadKey`,
+ * the Engine stores/updates the Thread and can fan out the Trigger to subscribed Tickets (W9).
+ * At most one Eval runs per Thread at a time (queued Triggers are batched into the next Eval).
+ */
+export interface Thread {
+  /** Stable key: typically `<source>:<channelId>:<topicOrDmId>` as written by the Source. */
+  readonly key: string
+  /** When this Thread was first seen. */
+  readonly createdAt: string
+  /** Time of the most recent Trigger on this Thread. */
+  readonly lastAt: string
+  /** Ids of open Tickets that have subscribed to this Thread (receive fan-out of future Triggers). */
+  readonly subscriptions: readonly string[]
+  /**
+   * Ids of Tickets that follow this Thread for read-only context (W10).
+   * Their workers receive fan-out messages but no authorization is granted and no resumption occurs.
+   */
+  readonly contextSubscriptions?: readonly string[]
+  /** Source kind that owns this Thread. */
+  readonly sourceKind: SourceKindName
 }
 
 /** What became of a Trigger: the unit of audit, and what makes intake idempotent. */

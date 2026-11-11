@@ -364,8 +364,21 @@ describe('a fourth Source kind is visible to every call site', () => {
 describe('the triage switch (S3b)', () => {
   it('ships off, so nobody pays for a judge they did not ask for', () => {
     // 【B1 产品变更】triage 多了 desk。旧值：{ enabled: false }。默认仍是专职分诊台（B2）。
-    expect(parseSettings({}).triage).toEqual({ enabled: false, desk: 'dedicated' })
+    // 【triage.sources 产品变更】默认只判 chat。旧值：{ enabled: false, desk: 'dedicated' }，
+    // 而 inbox/cron 在代码里写死为可判（TRIAGED_SOURCES）。改成可配且默认收窄，理由见 policy.ts 的注释：
+    // 排期是操作者自己立的长期指令、inbox 是他亲手写的请求，判它们等于花一次总管轮次重判已判过的事，
+    // 而判错就把他要的活丢了。
+    expect(parseSettings({}).triage).toEqual({ enabled: false, desk: 'dedicated', sources: ['chat'] })
     expect(parseSettings({ triage: { enabled: true } }).triage.enabled).toBe(true)
+  })
+
+  it('takes the triageable kinds and refuses one it has no judge for', () => {
+    expect(parseSettings({ triage: { sources: ['chat', 'inbox', 'cron'] } }).triage.sources)
+      .toEqual(['chat', 'inbox', 'cron'])
+    expect(parseSettings({ triage: { sources: [] } }).triage.sources).toEqual([])
+    // A kind with no intake path (`session`, `rule`) is refused rather than silently never matching: a setting whose
+    // value can never take effect reads as a choice the operator made.
+    expect(() => parseSettings({ triage: { sources: ['session'] } })).toThrowError(/sources/)
   })
 
   /**
@@ -385,6 +398,8 @@ describe('the triage switch (S3b)', () => {
   it('does not move the policy version, because routing a future request invalidates no authorization', () => {
     const base = settings({})
     expect(policyVersion(settings({ triage: { enabled: true } }))).toBe(policyVersion(base))
+    expect(policyVersion(settings({ triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })))
+      .toBe(policyVersion(base))
     // The contrast that makes the line above meaningful: something that DOES bear on authorization moves it.
     expect(policyVersion(settings({ allowedSenders: ['operator', 'alice'] }))).not.toBe(policyVersion(base))
   })
@@ -410,8 +425,17 @@ describe('the triage predicate itself (S3b)', () => {
   it('triages a person’s words from a Source, and nothing else', () => {
     const on = settingsPolicy(settings({ triage: { enabled: true } }))
     expect(on.triage(trigger())).toBe(true)
-    expect(on.triage(trigger({ source: 'inbox', kind: 'inbox' }))).toBe(true)
-    expect(on.triage(trigger({ source: 'cron', kind: 'cron' }))).toBe(true)
+    // 【triage.sources 产品变更】inbox 与 cron 默认**不**判。旧断言两条都是 toBe(true)。
+    // 收窄的理由：排期与 inbox 是操作者自己下的指令，再判一次是白花一轮，判错则丢掉他要的活。
+    expect(on.triage(trigger({ source: 'inbox', kind: 'inbox' }))).toBe(false)
+    expect(on.triage(trigger({ source: 'cron', kind: 'cron' }))).toBe(false)
+    // And they come back the moment the operator asks for them — the knob has two real values.
+    const all = settingsPolicy(settings({ triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } }))
+    expect(all.triage(trigger({ source: 'inbox', kind: 'inbox' }))).toBe(true)
+    expect(all.triage(trigger({ source: 'cron', kind: 'cron' }))).toBe(true)
+    // An empty list judges nothing, even with the switch on.
+    const none = settingsPolicy(settings({ triage: { enabled: true, sources: [] } }))
+    expect(none.triage(trigger())).toBe(false)
     // Already in the room, or already decided.
     expect(on.triage(trigger({ source: 'session', kind: 'session' }))).toBe(false)
     expect(on.triage(trigger({ source: 'rule', kind: 'rule' }))).toBe(false)
@@ -421,5 +445,18 @@ describe('the triage predicate itself (S3b)', () => {
     // Off means off, for every source.
     const off = settingsPolicy(settings({}))
     expect(off.triage(trigger())).toBe(false)
+  })
+
+  /**
+   * Second lock on `sources`, from the other direction: the predicate matches on the Trigger's KIND, not its Source
+   * INSTANCE id. Those coincide for the three built-ins, so a `source`-based test cannot tell them apart — and a
+   * second instance of one kind (a second chat channel configured as its own Source) would silently stop matching.
+   */
+  it('decides by the Source kind, so a second instance of a kind is judged the same way', () => {
+    const on = settingsPolicy(settings({ triage: { enabled: true } }))
+    // Same kind, a different instance id: still triaged.
+    expect(on.triage(trigger({ source: 'chat-second-room', kind: 'chat' }))).toBe(true)
+    // An instance id that happens to name a triageable kind, on a kind that is not one: not triaged.
+    expect(on.triage(trigger({ source: 'inbox', kind: 'session' }))).toBe(false)
   })
 })

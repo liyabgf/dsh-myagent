@@ -947,6 +947,48 @@ describe('reading another Ticket’s artifact', () => {
     expect(() => engine.authorizeArtifactRead(stranger.ticketId!, first, 'report.md')).toThrow(/same Work/)
   })
 
+  // 【W31】A production run produced `skills-pack/` with 27 skills, registered only the handful of index files it
+  // thought to name, and the next Ticket could not reach the 27 — it re-downloaded the upstream repositories and read
+  // this project's own source to work out where things live (102 万 token). A trailing slash registers the whole tree.
+  it('a directory registered with a trailing slash authorizes every file under it, and nothing beside it', () => {
+    const { engine } = harness()
+    const { first, second } = twoInOneWork(engine)
+    const assignment = engine.require(first).assignments[0]!
+    engine.assignmentStarted(first, assignment.id)
+    engine.report(first, { state: 'ready', summary: '27 个技能打成一个包', files: ['skills-pack/', 'README.md'] })
+
+    // The trailing slash is preserved as the marker that says "this is a tree", not stripped into a file name.
+    expect(engine.artifactsOf(first).map(a => a.path)).toEqual(['skills-pack/', 'README.md'])
+
+    const inner = engine.authorizeArtifactRead(second, first, 'skills-pack/skill-creator/SKILL.md')
+    expect(inner.readPath).toBe('skills-pack/skill-creator/SKILL.md')
+    expect(inner.artifact.path).toBe('skills-pack/')   // the directory is what authorized the read
+
+    // A file registered on its own keeps winning over the directory that would also cover it.
+    expect(engine.authorizeArtifactRead(second, first, 'README.md').artifact.path).toBe('README.md')
+
+    // Outside the registered tree stays refused — that is the boundary the registration draws.
+    expect(() => engine.authorizeArtifactRead(second, first, 'secrets.env')).toThrow(UserError)
+    // And a sibling whose name merely starts the same is NOT inside it: `startsWith(dir)` on the raw string would
+    // have let `skills-pack-evil/x` through, which is why the check compares against `dir` WITH its slash.
+    expect(() => engine.authorizeArtifactRead(second, first, 'skills-pack-evil/x')).toThrow(UserError)
+  })
+
+  // Second lock on the same rule, from a different angle (W31): rather than asking whether a prefix-sibling is
+  // refused, ask WHICH registered directory authorized a legitimate read. With `out/` and `output/` both registered,
+  // a slash-less prefix match lets the earlier `out/` claim `output/x` — so the read would "succeed" while being
+  // authorized by the wrong artifact, and the refusal above would be the only thing left to catch it.
+  it('attributes a read to the directory that really covers it, not to one that merely shares a prefix', () => {
+    const { engine } = harness()
+    const { first, second } = twoInOneWork(engine)
+    const assignment = engine.require(first).assignments[0]!
+    engine.assignmentStarted(first, assignment.id)
+    // Registered in the order that makes the bug visible: the shorter name first.
+    engine.report(first, { state: 'ready', summary: '两个目录', files: ['out/', 'output/'] })
+    expect(engine.authorizeArtifactRead(second, first, 'output/report.md').artifact.path).toBe('output/')
+    expect(engine.authorizeArtifactRead(second, first, 'out/report.md').artifact.path).toBe('out/')
+  })
+
   it('refuses a file that was never registered, even inside the same Work and the same directory', () => {
     // The narrowing that makes this safe to hand a model: readable means "a report claimed it", not "it happens to be
     // in there". The registry is what a person can audit; a directory listing is not.
@@ -1127,7 +1169,9 @@ describe('triage routing (S3b)', () => {
    * first Assignment's role.
    */
   it('sends a Source request to the desk, and leaves the operator, a rule and a desk-opened Ticket alone', () => {
-    const { engine, memory } = harness({ triage: { enabled: true } })
+    // 【triage.sources】这里把三种都打开：这条测试钉的是**分诊机制**（第一个 Assignment 的 role），
+    // 而"哪些 Source 该判"由 policy.spec 单独钉。默认只有 chat，所以不写这句 inbox 就不进分诊了。
+    const { engine, memory } = harness({ triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
 
     const fromInbox = engine.receive(trigger())
     expect(memory.tickets.get(fromInbox.ticketId!)!.assignments.at(-1)!.role).toBe('triage')

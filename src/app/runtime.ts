@@ -42,6 +42,7 @@ import { Watchdog, type WatchdogHost } from './watchdog.ts'
 import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
+import { DeskLoop } from './desk-loop.ts'
 import { mainTools, workerTools, type ArtifactCatalogEntry, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
 import { isTextFile, resolveInside, resolveRealInside } from './files.ts'
 import { ticketSummary } from './views.ts'
@@ -296,6 +297,7 @@ export class Runtime implements HttpHost {
   readonly executor: DshExecutor
   readonly delivery: OutcomeDelivery
   readonly engine: Engine
+  deskLoop: DeskLoop | undefined = undefined  // satisfies HttpHost
   readonly sources: SourceRegistry
   private readonly watchdog: Watchdog
   private readonly listeners = new Set<(event: DomainEvent) => void>()
@@ -456,6 +458,16 @@ export class Runtime implements HttpHost {
         this.sessionHealth.problem(impostorSubject(sessionId), impostorDetail(sessionId, claimedTicketId))
       },
       environment: (ticket: Ticket): Record<string, string> => this.executor.environment(ticket),
+      // 【W30】Directories of the Tickets sharing this Ticket's Work: the only siblings its worker may read.
+      // Computed per call rather than cached — a Ticket can be attached to a Work after its worker started
+      // (`myagent_create_work`/classification), and a stale list would either refuse a read the operator just
+      // authorized or allow one they never did. The query is indexed by workId and a Work holds a handful of Tickets.
+      peerDirs: (ticket: Ticket): readonly string[] => {
+        if (ticket.workId === undefined) return []
+        return this.engine.ticketsOfWork(ticket.workId)
+          .filter(peer => peer.id !== ticket.id && peer.execution?.directory !== undefined)
+          .map(peer => peer.execution!.directory!)
+      },
       presetFor: (ticket: Ticket): string => this.presetFor(ticket),
       tools: (agent: Agent, ticket?: Ticket): Tool[] => {
         const host = this.toolsHost()
@@ -500,7 +512,7 @@ export class Runtime implements HttpHost {
     this.passes = new Passes({
       effects: this.effects, intervalMs: PASS_INTERVAL_MS, health: this.health.entry('passes'),
       lifetime: this.lifetime,
-      extra: [async (): Promise<void> => this.refresh(), async (): Promise<void> => this.enforceRuntimeBudgets()],
+      extra: [async (): Promise<void> => this.refresh(), async (): Promise<void> => this.enforceRuntimeBudgets(), async (): Promise<void> => this.deskPatrol()],
       onPassError: (error: unknown): void => { context.logger.warn('a myagent pass failed: %s', reason(error)) },
     })
     this.sources = new SourceRegistry(this.sourceHost(), [cronKind, inboxKind(this.machine.inboxDir), sessionKind, ruleKind, chatKind])
@@ -514,14 +526,21 @@ export class Runtime implements HttpHost {
   private toolsHost(): ToolsHost {
     return {
       engine: this.engine, store: this.store, acceptMode: () => this.settings().acceptMode,
-      // Answered by the Sessions, which is the only place that knows: the attempt is recorded when a launch prompts
-      // the worker, and a worker's Session outlives the attempt its tools were registered for.
       attempt: (ticketId: string) => this.sessions.attempt(ticketId),
       readArtifact: (source, target, path, materialize) => this.readArtifact(source, target, path, materialize),
       returnAddressOf: (ticketId: string) => this.returnAddressOf(ticketId),
       replyToRequester: (ticketId: string, text: string) => this.replyToRequester(ticketId, text),
       promoteSkill: (ticketId, input) => this.promoteSkill(ticketId, input),
       raiseDecision: (title, detail, source) => this.raiseDecision(title, detail, source),
+      // 【W19】Non-blocking question from worker to main Session (desk).
+      askDesk: (ticketId: string, question: string): { sent: boolean } => {
+        const ticket = this.store.tickets.get(ticketId)
+        if (ticket === undefined) return { sent: false }
+        const text = `[Ask from worker on Ticket ${ticketId.slice(0, 8)}]\n\n${question}\n\nAnswer via myagent_note_ticket to ticket_id=${ticketId} when you know the answer.`
+        void this.sessions.relay(`ask-desk:${ticketId}:${Date.now()}`, text).catch(() => {})
+        this.context.logger.info('myagent - worker on Ticket %s asked the desk: %s', ticketId.slice(0, 8), question.slice(0, 80))
+        return { sent: true }
+      },
     }
   }
 
@@ -773,7 +792,7 @@ export class Runtime implements HttpHost {
       }
       return { ok: true, catalog: entries, total: candidates.length, truncated }
     }
-    let authorized: { directory: string; artifact: Artifact }
+    let authorized: { directory: string; artifact: Artifact; readPath: string }
     try {
       authorized = this.engine.authorizeArtifactRead(sourceTicketId, targetTicketId, path)
     } catch (error) {
@@ -781,7 +800,8 @@ export class Runtime implements HttpHost {
         ? { ok: false, error: error.message, code: error.code }
         : { ok: false, error: reason(error) }
     }
-    const absolute = await resolveRealInside(authorized.directory, authorized.artifact.path)
+    // 【W31】The file opened is the one asked for; the authorizing artifact may be the directory marker over it.
+    const absolute = await resolveRealInside(authorized.directory, authorized.readPath)
     if (absolute === undefined) return { ok: false, error: 'That artifact is not a path inside its Ticket directory (or is a symbolic link).', code: 'artifact_missing' }
     try {
       // Measured BEFORE anything is copied or read into memory. `readForPanel` reads the whole file and base64-encodes
@@ -790,7 +810,7 @@ export class Runtime implements HttpHost {
       // the size. The panel's own file route has always done it in this order.
       const info = await lstat(absolute)
       if (info.isDirectory()) {
-        return { ok: false, error: `That artifact is a directory, not a file: ${authorized.artifact.path}` }
+        return { ok: false, error: `That artifact is a directory, not a file: ${authorized.readPath}` }
       }
       if (materialize === true) {
         const ownDir = source.execution?.directory
@@ -813,10 +833,10 @@ export class Runtime implements HttpHost {
               + 'or report `blocked` if the work genuinely needs more than the budget.',
           }
         }
-        const rel = await this.executor.sandbox.materializeInput(ownDir, absolute, targetTicketId, authorized.artifact.path)
+        const rel = await this.executor.sandbox.materializeInput(ownDir, absolute, targetTicketId, authorized.readPath)
         // Recorded on the SUCCESS path only — see `Engine.recordArtifactRead` for why authorization time was wrong.
-        this.engine.recordArtifactRead(sourceTicketId, targetTicketId, authorized.artifact.path)
-        const includeInline = isTextFile(authorized.artifact.path, info.size) && info.size <= WORKER_ARTIFACT_BYTES
+        this.engine.recordArtifactRead(sourceTicketId, targetTicketId, authorized.readPath)
+        const includeInline = isTextFile(authorized.readPath, info.size) && info.size <= WORKER_ARTIFACT_BYTES
         return {
           ok: true, size: info.size, at: authorized.artifact.at,
           materialized_to: rel,
@@ -824,8 +844,8 @@ export class Runtime implements HttpHost {
           ...(includeInline ? { content: await readFile(absolute, 'utf8') } : {}),
         }
       }
-      if (!isTextFile(authorized.artifact.path, info.size)) {
-        return { ok: false, error: `That artifact is not a text file, so it cannot go into a worker's context: ${authorized.artifact.path} (pass materialize: true to copy it into inputs/)` }
+      if (!isTextFile(authorized.readPath, info.size)) {
+        return { ok: false, error: `That artifact is not a text file, so it cannot go into a worker's context: ${authorized.readPath} (pass materialize: true to copy it into inputs/)` }
       }
       if (info.size > WORKER_ARTIFACT_BYTES) {
         return {
@@ -835,7 +855,7 @@ export class Runtime implements HttpHost {
         }
       }
       const content = await readFile(absolute, 'utf8')
-      this.engine.recordArtifactRead(sourceTicketId, targetTicketId, authorized.artifact.path)
+      this.engine.recordArtifactRead(sourceTicketId, targetTicketId, authorized.readPath)
       return {
         ok: true, size: info.size, at: authorized.artifact.at,
         ...(authorized.artifact.note === undefined ? {} : { note: authorized.artifact.note }),
@@ -874,7 +894,9 @@ export class Runtime implements HttpHost {
           `这个 worker 已经 ${silentForMinutes} 分钟没有产出任何事件。它可能在长时间安静地计算（不打扰是对的），也可能已经卡死（要处理）。`
           + `是否停下它由你决定：任务详情页有「停止」按钮；不动它也没关系，这条决定不会重复出现。`,
           'watchdog-silent')
-        this.health.entry('watchdog').problem(`任务 ${short} 的 worker 已静默 ${silentForMinutes} 分钟（是否处理由操作者决定）`)
+        // 【G-5 修正】不写健康板。这条是**过去发生的一件事**，而板子的语义是「此刻」——写上去只有两种结局，
+        // 都是缺陷：要么永远留着（任务结束后红线不消，正是活体上抓到的那条），要么被下一轮安静巡检覆盖、
+        // 操作者根本没看见。决断队列才是它的家：那里的一条会留到操作者处理为止，而"是否处理"本来就归他。
       },
       // The log is the counter, so a restart cannot make the Watchdog forget how many times it already tried. It
       // counts both kinds of action, because to the operator they are the same fact: myagent intervened here.
@@ -1036,13 +1058,56 @@ export class Runtime implements HttpHost {
    * The nudge is remembered per attempt in `kv` rather than in the Ticket's log: the log already carries the note
    * itself (that IS the nudge), and a second record of "we told them" would be one fact with two owners.
    */
+
+  /**
+   * 【F2】Total desk patrol: when there are running Tickets and the desk has not received a relay in
+   * PATROL_INTERVAL_MS, send it a summary of what is running so it can decide whether to intervene.
+   *
+   * This is the desk's "active monitoring" capability — without it, the desk only reacts to events
+   * that workers push (blocked, waiting, ready, failed) and never proactively checks in-flight work.
+   * The patrol interval is long enough that it does not interrupt flow (15 minutes), but short enough
+   * that a stuck or silently-failing worker is noticed within two passes.
+   */
+  private deskPatrol(): void {
+    const loop = this.deskLoop
+    if (loop === undefined || !this.sessions.hasDeskLoop()) return
+    const status = loop.getStatus()
+    if (!status.configured || status.state !== 'idle') return   // not ready or already busy
+
+    const PATROL_INTERVAL_MS = 15 * 60_000
+    const sinceLastRelay = Date.now() - status.lastRelayMs
+    if (sinceLastRelay < PATROL_INTERVAL_MS) return             // relayed recently, no need
+
+    const running = this.store.tickets.open().filter(t => !t.ended && t.assignments.at(-1)?.state === 'running')
+    if (running.length === 0) return                            // nothing to patrol
+
+    const lines = running.map(t => {
+      const startedAt = t.assignments.at(-1)?.startedAt
+      const mins = startedAt ? Math.round((Date.now() - Date.parse(startedAt)) / 60_000) : '?'
+      return `- ${t.id.slice(0, 8)} 「${t.title.slice(0, 40)}」 running ${mins} min`
+    })
+    const text = [
+      `[巡检] ${running.length} 张任务正在运行，距上次通知已 ${Math.round(sinceLastRelay / 60_000)} 分钟。`,
+      ...lines,
+      '可用 myagent_ticket_status 看详情，myagent_note_ticket 给 worker 补充信息，myagent_stop_ticket 停止任务。',
+    ].join('\n')
+    // key() ensures uniqueness the same way effects keys are made
+    void this.sessions.relay(key('patrol', String(Date.now()), ...running.map(t => t.id.slice(0, 4))), text).catch((error: unknown) => {
+      this.context.logger.warn('desk patrol relay failed: %s', reason(error))
+    })
+  }
+
   enforceRuntimeBudgets(now = Date.now()): void {
     for (const ticket of this.store.tickets.list()) {
       if (ticket.ended !== undefined) continue
       const assignment = runningAssignment(ticket)
       if (assignment === undefined || assignment.startedAt === undefined) continue
       const trigger = this.store.triggers.get(ticket.origin.triggerId)?.trigger
-      const budget = typeof trigger?.meta?.runtimeBudgetMs === 'number' ? trigger.meta.runtimeBudgetMs : 0
+      // 【W6】预算来源优先级：排期自带 > 全局 watchdog.maxRuntimeMs > 0(不限)。
+      // 之前只有排期自带预算的票会被管，聊天来的票无限制——今天 102 万 token 那张就是证据。
+      const triggerBudget = typeof trigger?.meta?.runtimeBudgetMs === 'number' ? trigger.meta.runtimeBudgetMs : 0
+      const globalBudget = this.settings().watchdog.maxRuntimeMs
+      const budget = triggerBudget > 0 ? triggerBudget : (globalBudget > 0 ? globalBudget : 0)
       if (budget <= 0) continue
       const elapsed = now - Date.parse(assignment.startedAt)
       if (elapsed < budget) continue
@@ -1201,8 +1266,31 @@ export class Runtime implements HttpHost {
     }
     this.passes.start()
     this.watchdog.start()
+    // 【D6】Initialise the DeskLoop. Always created for panel visibility; routes relay/notify
+    // only when a provider+model are configured. Otherwise the DSH Session fallback stays active.
+    this.deskLoop = new DeskLoop(
+      this.context,
+      this.store,
+      this.toolsHost(),
+      this.prompts,
+      () => this.settings(),
+    )
+    await this.deskLoop.init()
+    const deskCfg = this.settings().deskLlm
+    if (deskCfg.provider && deskCfg.model) {
+      this.sessions.setDeskLoop(this.deskLoop)
+      this.context.logger.info('myagent desk: LLM loop active (provider=%s model=%s)', deskCfg.provider, deskCfg.model)
+    } else {
+      this.context.logger.info('myagent desk: LLM loop standby (deskLlm.provider/model not configured)')
+    }
     this.health.entry('runtime').record(this.machine.stateDir)
     this.announceSandbox()
+    // 【S38 防护】重启后，所有在上次进程里已结束的票都不会再发 ticket.ended 事件——
+    // 健康板里它们的残留 sessionHealth 条目永远不会被 clear()，导致永久红线。
+    // 在启动时主动扫描并清掉它们：已结束的票 = 不再是问题的票。
+    for (const ticket of this.store.tickets.list()) {
+      if (ticket.ended !== undefined) this.sessionHealth.clear(ticket.id)
+    }
     this.context.logger.info('myagent runs: state %s, work %s, inbox %s, accept mode %s',
       this.machine.stateDir, this.machine.workRoot, this.machine.inboxDir, this.settings().acceptMode)
     // The one line that answers "where do I look at this thing". The panel is a subpath of the DSH Web GUI, whose
@@ -1420,6 +1508,18 @@ export class Runtime implements HttpHost {
       // disposed Session rather than only a refused one, because clearing a subject that is not in the account writes
       // nothing, and asking first would mean holding a second list of which Sessions were refused.
       this.sessionHealth.clear(impostorSubject(agent.id))
+      // 【W1 幽灵票对账】会话被外部停止（如 DSH GUI 直接停止会话）时，检测对应的 Ticket
+      // 是否仍有 running assignment；如果有，触发 assignmentInterrupted 恢复流程。
+      const ticketId = this.ticketIdOfSession(agent.id)
+      if (ticketId !== undefined) {
+        const ticket = this.store.tickets.get(ticketId)
+        const assignment = ticket === undefined ? undefined : runningAssignment(ticket)
+        if (ticket !== undefined && assignment !== undefined && assignment.startedAt !== undefined) {
+          this.engine.assignmentInterrupted(ticketId, assignment.id,
+            'worker Session was disposed (stopped externally, e.g. via DSH GUI)', undefined, 'external-stop')
+          this.context.logger.info('myagent reconciled ghost Ticket %s: worker Session was disposed', ticketId.slice(0, 8))
+        }
+      }
     })))
     this.disposers.push(this.context.on('agent/error', contained('agent/error', ({ agent, error }) => {
       const ticketId = this.ticketIdOfSession(agent.id)
@@ -1491,6 +1591,42 @@ export class Runtime implements HttpHost {
     }
   }
 
+  /**
+   * 【W1 幽灵票对账】运行中持续检测「会话已 idle 但 assignment 仍 running」的幽灵票。
+   *
+   * 这种情况由外部停止会话（如 DSH GUI 直接停）引发：myagent 的 `agent/status` 监听器
+   * 没收到通知，票永远悬空。recover() 在重载时能处理，但持续运行中不会重新检查——
+   * 本方法补上这个缺口，在每次 pass 里检测并触发 assignmentInterrupted 恢复流程。
+   *
+   * 条件收窄：只有 assignment.startedAt 存在（真正启动过）且 agent 现在 idle 的情况才算幽灵票。
+   * 没有 startedAt 说明还未真正开始（pending → running 还未经过 assignmentStarted），不算。
+   * 幂等保护：每个 assignmentId 只处理一次，避免每次 pass 重复触发。
+   */
+  private readonly reconciledAssignments = new Set<string>()
+
+  private reconcileGhostTickets(): void {
+    for (const ticket of this.store.tickets.open()) {
+      const assignment = runningAssignment(ticket)
+      if (assignment === undefined) continue
+      // 只有真正启动过（有 startedAt）才能成为幽灵票
+      if (assignment.startedAt === undefined) continue
+      // 幂等：已处理过这个 assignment 就跳过
+      if (this.reconciledAssignments.has(assignment.id)) continue
+      const sessionId = workerSessionOf(ticket)
+      const agent = this.context.agents.get(sessionId)
+      // 会话根本不存在，或者会话 idle（人在外部停掉了它）：这张票是幽灵票
+      if (agent === undefined || agent.status === 'idle') {
+        const why = agent === undefined
+          ? 'worker Session no longer exists (stopped externally)'
+          : 'worker Session is idle while Assignment says running (stopped externally, e.g. via DSH GUI)'
+        this.reconciledAssignments.add(assignment.id)
+        this.engine.assignmentInterrupted(ticket.id, assignment.id, why, undefined, 'external-stop')
+        this.context.logger.info(
+          'myagent reconciled ghost Ticket %s: %s', ticket.id.slice(0, 8), why)
+      }
+    }
+  }
+
   /** Recompute what the panel's header and the main Session's prompt section say, and keep the health board current. */
   private refresh(): void {
     const settings = this.settings()
@@ -1510,6 +1646,20 @@ export class Runtime implements HttpHost {
     this.health.entry('runtime').record(problems.length === 0
       ? `${this.panel.openTickets} open Ticket(s), accept mode ${settings.acceptMode}${settings.paused ? ', paused' : ''}`
       : `${problems.length} problem(s)`)
+    // 【D9】Desk health: only when DeskLoop is active (provider+model configured and routing is live).
+    // When the loop is in standby (created but not routing), we keep the health board quiet so tests
+    // that do not configure a provider see no unexpected health entry.
+    const deskActive = this.sessions.hasDeskLoop()
+    if (deskActive && this.deskLoop !== undefined) {
+      const deskStatus = this.deskLoop.getStatus()
+      const deskEntry = this.health.entry('desk')
+      if (deskStatus.recentErrors.length > 0) {
+        const last = deskStatus.recentErrors.at(-1)!
+        deskEntry.problem(`${last} (${deskStatus.recentErrors.length} recent error(s))`)
+      } else {
+        deskEntry.record(`desk using ${deskStatus.provider}/${deskStatus.model}, state: ${deskStatus.state}`)
+      }
+    }
   }
 
   /** What a domain event changes outside the Engine's own writes. */
@@ -1536,6 +1686,15 @@ export class Runtime implements HttpHost {
         // already halted it — halting again would cancel twice, and with different inbox handling.
         if (event.ticket.ended?.outcome !== 'stopped') {
           void this.executor.haltBackground(event.ticket.id, 'the Ticket ended')
+        }
+        // 【W10/W9】Unsubscribe the ended Ticket from all Threads it was subscribed to.
+        for (const thread of this.store.threads.list()) {
+          if (thread.subscriptions.includes(event.ticket.id)) {
+            this.engine.unsubscribeTicketFromThread(event.ticket.id, thread.key)
+          }
+          if ((thread.contextSubscriptions ?? []).includes(event.ticket.id)) {
+            this.engine.unfollowThreadForContext(event.ticket.id, thread.key)
+          }
         }
         // Whatever waited for this Ticket is told at once instead of noticing at the end of a deferral interval.
         this.executor.releaseDependants(event.ticket.id)

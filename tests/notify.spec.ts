@@ -49,11 +49,11 @@ describe('the record a finished Ticket leaves', () => {
       expect(document).toContain('# ')
       expect(document).toContain('写好了 digest.md')
       expect(document).toContain('- digest.md')
-      // An ending is a notice in the history: it must not cost the operator a model turn to read it.
+      // 【F1】An ending is now a relay (desk woken) so it can decide how to inform the operator.
       const main = host.agents.get('myagent-main')!
-      expect(main.notices).toHaveLength(1)
-      expect(main.followups).toEqual([])
-      expect(main.notices[0]!.text).toContain('写好了 digest.md')
+      expect(main.followups).toHaveLength(1)
+      expect(main.notices).toEqual([])
+      expect(main.followups[0]!.text).toContain('写好了 digest.md')
       expect(runtime.store.effectCounts()).toEqual({})
     } finally { await runtime.stop() }
   })
@@ -88,7 +88,7 @@ describe('the record a finished Ticket leaves', () => {
       await settle(runtime)
       // The file is a courtesy the directory can refuse; the notice is the record that must survive.
       expect(runtime.health.problems().map(problem => problem.detail).join('\n')).toContain('RESULT.md')
-      expect(host.agents.get('myagent-main')!.notices).toHaveLength(1)
+      expect(host.agents.get('myagent-main')!.followups).toHaveLength(1)  // 【F1】ready → relay
       expect(runtime.store.effectCounts()).toEqual({})
     } finally { await runtime.stop() }
   })
