@@ -60,7 +60,7 @@
 - M-R1a：撤掉 `assignmentInterrupted` 的 `role` 继承 → engine.spec + recovery.spec 变红
 - M-R1b：把 DeskLoop 分支的 `assignmentStarted` 移到 `await relay` 之后 → executor.spec 变红
 
-**状态**：⬜ 待实现 | 提交：—
+**状态**：✅ 已完成 | 提交：见验收表
 
 ---
 
@@ -81,7 +81,7 @@
 - M-R2a：把 `selfClosedTriage` 置为 false → notify.spec + delivery.spec 变红
 - M-R2b：往 `orchestrator.md` 写回 `state: 'blocked'` → tool-surface-docs.spec 变红
 
-**状态**：⬜ 待实现 | 提交：—
+**状态**：✅ 已完成 | 提交：见验收表
 
 ---
 
@@ -102,7 +102,7 @@
 - M-R3b：去掉 `settleDirectTriageAnswer` → executor.spec 端到端直答测试变红
 - M-R3c：去掉 `myagent_use_tools` 升级分支 → 复杂分诊派单测试变红
 
-**状态**：⬜ 待实现 | 提交：—
+**状态**：✅ 已完成 | 提交：见验收表
 
 ---
 
@@ -163,7 +163,7 @@ git log --oneline -3       # 核验历史
 | 基线 | `581c6f2` | ✓ 0 | 1198 | `3207eff730830e11` | — | — |
 | R1 | `1bd9c34` | ✓ 0 | 1201 | `6a2fe76481b00185` | M-R1a/b/c ✓ | — |
 | R2 | `21dafd3` | ✓ 0 | 1202 | `e0cef65c44a8d043` | M-R2a ✓ | — |
-| R3 | — | — | — | — | — | — |
+| R3 | `a68d20e` | ✓ 0 | 1206 | `29c7c2fa62f0045d` | M-R3a/b ✓ | 活体 D2/D3/D4 ✓ |
 
 ---
 
@@ -195,4 +195,11 @@ git log --oneline -3       # 核验历史
        结果：21dafd3 / 1202 条 / 产物 e0cef65c44a8d043（512524 字节）
              变异检验 M-R2a 变红并逐字节还原
        下一步：开始 R3（按需工具挂载）
+```
+
+```
+[2026-11-13 04:12 Asia/Shanghai] 操作：R3 提交并推送（git push origin HEAD:main）
+       结果：a68d20e / 1206 条 / 产物 29c7c2fa62f0045d（516520 字节）
+             变异检验 M-R3a/b 均变红并逐字节还原
+       下一步：收尾——更新验收表、更新 docs/v2/36 §2 状态、推送
 ```
