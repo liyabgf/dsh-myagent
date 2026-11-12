@@ -3,8 +3,8 @@
  * Verifies the schema is pure JSON and the execution path doesn't throw on unknown tools.
  */
 import { describe, expect, it } from 'vitest'
-import { deskToolSchemas, executeDeskToolCalls } from '../src/app/desk-tools.ts'
-import { stubHost, type StubHost } from './helpers/host.ts'
+import { DESK_GATE_TOOL_NAME, deskGateToolSchema, deskToolSchemas, executeDeskToolCalls } from '../src/app/desk-tools.ts'
+import { stubHost } from './helpers/host.ts'
 
 function host() { return stubHost() as unknown as import('../src/app/tools.ts').ToolsHost }
 
@@ -45,5 +45,24 @@ describe('desk-tools', () => {
       new AbortController().signal,
     )
     expect(results[0]!.isError).toBe(true)
+  })
+})
+
+/**
+ * 【R3】Gateway tool schema: the lightweight zero-parameter tool that mounts the full toolset on demand.
+ */
+describe('deskGateToolSchema (R3)', () => {
+  it('has the correct name and empty parameters', () => {
+    const gate = deskGateToolSchema()
+    expect(gate.name).toBe(DESK_GATE_TOOL_NAME)
+    expect(gate.name).toBe('myagent_use_tools')
+    expect(JSON.parse(JSON.stringify(gate.parameters))).toEqual({
+      type: 'object', properties: {}, additionalProperties: false,
+    })
+  })
+
+  it('is not in the full deskToolSchemas — it is the gateway, not a desk tool', () => {
+    const names = deskToolSchemas(host() as unknown as import('../src/app/tools.ts').ToolsHost).map(s => s.name)
+    expect(names).not.toContain(DESK_GATE_TOOL_NAME)
   })
 })

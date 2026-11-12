@@ -27,6 +27,44 @@ export interface ToolCallResult {
 // ── schema projection ─────────────────────────────────────────────────────────────────────
 
 /**
+ * 【R3】The name of the lightweight gateway tool that mounts the full desk toolset on demand.
+ * Exposed so desk-loop.ts can intercept it without a string literal.
+ */
+export const DESK_GATE_TOOL_NAME = 'myagent_use_tools' as const
+
+/**
+ * 【R3】A minimal zero-parameter gateway tool for the first LLM round.
+ *
+ * Why: passing all 11 management tool schemas on every turn is expensive. Most desk messages
+ * (simple questions, notice acknowledgements) need no tools at all — the LLM can answer or
+ * acknowledge in one round with no tool call. Only when the LLM decides it needs to query
+ * tickets, dispatch work, or ask a clarifying question does it call this gateway, which causes
+ * DeskLoop to mount the full toolset for the next round (0 ms, in-memory).
+ *
+ * Two clean exits on every turn — no dangling triage Ticket, no invented state:
+ *   1. No tool call → LLM answered directly. DeskLoop calls settleDirectTriageAnswer() to
+ *      close the triage Ticket (if any) via engine.report(ready) and deliver the answer.
+ *   2. myagent_use_tools called → full toolset mounted for round+1; LLM uses normal tools.
+ */
+export function deskGateToolSchema(): ToolSchema {
+  return {
+    name: DESK_GATE_TOOL_NAME,
+    description:
+      'Mount the full myagent desk toolset (myagent_list_tickets, myagent_ticket_status, '
+      + 'myagent_recall, myagent_create_ticket, myagent_close_ticket, myagent_reply, '
+      + 'myagent_note_ticket, myagent_answer_ticket, myagent_stop_ticket, '
+      + 'myagent_retry_ticket, myagent_raise_decision). '
+      + 'Call this ONLY when you need to query or modify Tickets, dispatch work, ask a '
+      + 'clarifying question while keeping a triage Ticket open, or drop a non-request. '
+      + 'If you can answer directly from context — a capability question, a greeting, '
+      + 'acknowledging a completion notice — write your reply directly WITHOUT calling '
+      + 'any tool. For a pending triage Ticket, your direct reply text is automatically '
+      + 'delivered to the requester and closes the triage Ticket as ready.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  }
+}
+
+/**
  * Build the ToolSchema array to pass to ctx.llm.stream().
  * Uses the same host that the DSH session path uses, so authorisation rules are identical.
  */

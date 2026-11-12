@@ -121,3 +121,78 @@ describe('DeskHistory.trim is called by DeskLoop on each successful processEntry
     expect(h.since(0).length).toBe(1)
   })
 })
+
+/**
+ * 【R3】DeskLoop on-demand tool mounting and direct triage answer settlement.
+ *
+ * Key invariants:
+ * 1. First round exposes only the gateway tool (myagent_use_tools) — not 11 full schemas.
+ * 2. When LLM answers directly (no tool calls), engine.report(ready) is called to settle the triage Ticket.
+ * 3. When LLM calls myagent_use_tools, the next round exposes all 11 management tools.
+ */
+describe('DeskLoop R3: on-demand tool mounting and direct triage answer settlement', () => {
+  function makeStore(ticketRecord?: object): import('../src/app/store.ts').Store {
+    const db = makeDb()
+    // Minimal stub for store — DeskLoop only needs deskHistory, tickets.get, events.list
+    return {
+      deskHistory: new DeskHistory(db),
+      tickets: {
+        get: (id: string) => ticketRecord && (ticketRecord as { id: string }).id === id ? ticketRecord : undefined,
+      },
+      events: { list: (_id: string) => [] },
+    } as unknown as import('../src/app/store.ts').Store
+  }
+
+  it('first round passes only 1 tool (the gateway) to the LLM', async () => {
+    const seenCounts: number[] = []
+    const ctx = {
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      llm: {
+        stream: async function* (opts: { tools?: unknown[] }) {
+          seenCounts.push(opts.tools?.length ?? 0)
+          yield { type: 'text-delta', index: 0, text: '你好，我可以帮你。' }
+          yield { type: 'finish', reason: { kind: 'stop' } }
+        },
+      },
+    } as unknown as import('@deepseek-ai/cordis').Context
+
+    const prompts = { current: () => '' } as unknown as import('../src/app/prompts.ts').Prompts
+    const loop = new (await import('../src/app/desk-loop.ts')).DeskLoop(
+      ctx, makeStore(), {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+    )
+    await loop.relay('req-1', 'hello')
+    expect(seenCounts[0], '首轮必须只挂载 1 个轻量网关工具').toBe(1)
+  })
+
+  it('direct text reply closes a running triage Assignment via engine.report(ready)', async () => {
+    const reports: { state: string; summary: string }[] = []
+    const engine = { report: (_id: string, r: { state: string; summary: string }) => { reports.push(r) } }
+    const ctx = {
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      llm: {
+        stream: async function* () {
+          yield { type: 'text-delta', index: 0, text: '纽约现在是晴天，气温 18°C。' }
+          yield { type: 'finish', reason: { kind: 'stop' } }
+        },
+      },
+    } as unknown as import('@deepseek-ai/cordis').Context
+
+    const triageTicket = {
+      id: 'triage-t1', title: '天气查询',
+      assignments: [{ id: 'a-1', state: 'running', role: 'triage', startedAt: '2026-11-13T00:00:00Z' }],
+      inputs: [], notes: [], attachments: [],
+    }
+    const store = makeStore(triageTicket)
+    const prompts = { current: () => '' } as unknown as import('../src/app/prompts.ts').Prompts
+    const loop = new (await import('../src/app/desk-loop.ts')).DeskLoop(
+      ctx, store, {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+      engine as unknown as import('../src/core/engine.ts').Engine,
+    )
+    await loop.relay('req-2', '现在纽约天气怎么样', 'triage-t1')
+    expect(reports, '直答后必须调用 engine.report(ready) 结案分诊单').toHaveLength(1)
+    expect(reports[0]!.state).toBe('ready')
+    expect(reports[0]!.summary).toBe('纽约现在是晴天，气温 18°C。')
+  })
+})

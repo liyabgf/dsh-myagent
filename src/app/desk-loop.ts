@@ -31,7 +31,8 @@ import type { Settings } from '../core/policy.ts'
 import type { Engine } from '../core/engine.ts'
 import { DeskHistory } from './desk-history.ts'
 import { deskGenerate } from './desk-llm.ts'
-import { deskToolSchemas, executeDeskToolCalls } from './desk-tools.ts'
+import { DESK_GATE_TOOL_NAME, deskGateToolSchema, deskToolSchemas, executeDeskToolCalls } from './desk-tools.ts'
+import { latestAssignment, liveTicket } from '../core/model.ts'
 
 // ── constants ─────────────────────────────────────────────────────────────────────────────
 
@@ -215,14 +216,14 @@ export class DeskLoop {
       return
     }
 
-    // Run the LLM turn loop (may involve multiple tool-call rounds).
-    const tools = deskToolSchemas(this.toolsHost)
-    await this.runTurn(cfg, tools, entry.ticketId)
+    // 【R3】First round uses only the lightweight gateway tool — not all 11 management schemas.
+    // Simple questions and notice acknowledgements complete in one round with no tool call.
+    await this.runTurn(cfg, false, entry.ticketId)
   }
 
   private async runTurn(
     cfg: Settings['deskLlm'],
-    tools: readonly ToolSchema[],
+    toolsMounted: boolean,
     ticketId: string | undefined,
     round = 0,
   ): Promise<void> {
@@ -232,6 +233,9 @@ export class DeskLoop {
     }
 
     this.status = 'thinking'
+    const activeTools: readonly ToolSchema[] = toolsMounted
+      ? deskToolSchemas(this.toolsHost)
+      : [deskGateToolSchema()]
 
     // Build conversation from history.
     const history = this.history.recent(50)
@@ -244,7 +248,7 @@ export class DeskLoop {
 
     let response
     try {
-      response = await deskGenerate(this.ctx, cfg, history, tools, combined)
+      response = await deskGenerate(this.ctx, cfg, history, activeTools, combined)
     } finally {
       clearTimeout(timer)
     }
@@ -258,16 +262,34 @@ export class DeskLoop {
       at: new Date().toISOString(),
     })
 
-    // If no tool calls, we're done.
+    // No tool calls: LLM answered directly. Close any pending triage Ticket via engine.report.
     if (response.toolCalls.length === 0) {
+      this.settleDirectTriageAnswer(ticketId, response.text)
       this.status = 'idle'
       return
     }
 
-    // Execute tool calls.
+    // Execute tool calls, mounting the full toolset when the gateway tool is called.
     this.status = 'executing'
+    let nextMounted = toolsMounted
     for (const call of response.toolCalls) {
       this.currentTool = call.name
+      if (call.name === DESK_GATE_TOOL_NAME) {
+        // 【R3】Gateway called: mount full toolset for next round (0 ms, in-memory).
+        nextMounted = true
+        const allNames = deskToolSchemas(this.toolsHost).map(t => t.name)
+        this.history.append({
+          role: 'tool',
+          content: JSON.stringify({ mounted: true, count: allNames.length, tools: allNames }),
+          tool_call_id: call.id,
+          name: call.name,
+          ticketId,
+          at: new Date().toISOString(),
+        })
+        continue
+      }
+      // Any real myagent_* tool: execute normally and keep full toolset mounted.
+      nextMounted = true
       const results = await executeDeskToolCalls([call], this.toolsHost, combined)
       const result = results[0]!
       this.history.append({
@@ -282,7 +304,37 @@ export class DeskLoop {
     this.currentTool = undefined
 
     // Continue the turn so the LLM can see the tool results.
-    await this.runTurn(cfg, tools, ticketId, round + 1)
+    await this.runTurn(cfg, nextMounted, ticketId, round + 1)
+  }
+
+  /**
+   * 【R3】When the LLM gives a direct text reply (no tool calls) for a pending triage Ticket,
+   * close it via engine.report(ready) so the answer reaches the requester and the Ticket ends cleanly.
+   *
+   * Guards (all must pass):
+   * - ticketId present, engine injected, text non-empty
+   * - Ticket is live and its latest Assignment is running triage
+   * - No `replied` event since the Assignment started (means myagent_reply was not used to keep it open)
+   */
+  private settleDirectTriageAnswer(ticketId: string | undefined, text: string): void {
+    const summary = text.trim()
+    if (!ticketId || !this.engine || summary === '') return
+    const ticket = this.store.tickets.get(ticketId)
+    if (ticket === undefined || !liveTicket(ticket)) return
+    const assignment = latestAssignment(ticket)
+    if (assignment === undefined || assignment.state !== 'running' || assignment.role !== 'triage') return
+    // If the desk already sent a reply via myagent_reply to keep the Ticket open, do not force-close it.
+    const events = this.store.events.list(ticketId)
+    const repliedAfterStart = events.some(ev =>
+      ev.type === 'replied' && (assignment.startedAt === undefined || ev.at >= assignment.startedAt))
+    if (repliedAfterStart) return
+    try {
+      this.engine.report(ticketId, { state: 'ready', summary })
+      this.ctx.logger.info('[DeskLoop] direct triage answer settled ticket %s', ticketId.slice(0, 8))
+    } catch (error) {
+      this.ctx.logger.warn('[DeskLoop] could not settle direct triage answer for %s: %s',
+        ticketId.slice(0, 8), String(error).slice(0, 80))
+    }
   }
 
   private addError(msg: string): void {
