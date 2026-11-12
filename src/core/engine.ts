@@ -605,7 +605,11 @@ export class Engine {
       let next: Ticket = { ...ticket, attention: undefined, inputs: [...ticket.inputs, input] }
       const current = latestAssignment(next)
       if (current === undefined || current.state === 'ended') {
-        const assignment: Assignment = { id: key('assignment', ticketId, next.assignments.length + 1), state: 'pending', createdAt: at }
+        // 【R1 F-D2】inherit role from ended attempt: a triage Ticket answered by a person resumes AS triage.
+        const assignment: Assignment = {
+          id: key('assignment', ticketId, next.assignments.length + 1), state: 'pending', createdAt: at,
+          ...(current?.role === undefined ? {} : { role: current.role }),
+        }
         next = { ...next, assignments: [...next.assignments, assignment] }
       } else if (current.report?.state === 'waiting' || current.report?.state === 'blocked') {
         // Advance the running Assignment's report out of `waiting`/`blocked` once an answer is handed over, so a
@@ -734,7 +738,11 @@ export class Engine {
       if (stalled !== undefined && stalled.state !== 'ended') {
         next = withAssignment(next, { ...stalled, state: 'ended', endedAt: at, endedReason: 'retried' })
       }
-      const assignment: Assignment = { id: key('assignment', ticketId, next.assignments.length + 1), state: 'pending', createdAt: at }
+      // 【R1 F-D2】model.ts:308 — a triage Ticket retried after a crash is retried AS triage; a Ticket is never both.
+      const assignment: Assignment = {
+        id: key('assignment', ticketId, next.assignments.length + 1), state: 'pending', createdAt: at,
+        ...(stalled?.role === undefined ? {} : { role: stalled.role }),
+      }
       next = { ...next, assignments: [...next.assignments, assignment] }
       // Both retry paths record, because both replace what a person is looking at: one pushes the same attempt again,
       // this one ends a stalled attempt and opens another.
@@ -1233,7 +1241,11 @@ export class Engine {
         id: key('input', ticketId, 'interrupted', assignmentId), kind: 'note', at,
         text: noteText ?? 'myagent restarted while you were working. Read the current state of your directory, then continue the assignment from where it stopped; do not repeat completed work.',
       }
-      const fresh: Assignment = { id: key('assignment', ticketId, ticket.assignments.length + 1), state: 'pending', createdAt: at }
+      // 【R1 F-D2】preserve role so an interrupted triage Assignment is re-queued AS triage, never mutating into a worker.
+      const fresh: Assignment = {
+        id: key('assignment', ticketId, ticket.assignments.length + 1), state: 'pending', createdAt: at,
+        ...(assignment.role === undefined ? {} : { role: assignment.role }),
+      }
       const withEnded = withAssignment(ticket, { ...assignment, state: 'ended', endedAt: at, endedReason: 'interrupted' })
       const withFresh: Ticket = { ...withEnded, inputs: [...ticket.inputs, note], assignments: [...withEnded.assignments, fresh] }
       this.tx.afterCommit(() => this.executor.start(withFresh, fresh))

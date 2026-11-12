@@ -865,16 +865,16 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
    * Register the DeskLoop to take over relay/notify from the DSH Session path.
    * Called by the Runtime after the DeskLoop is initialised.
    */
-  setDeskLoop(loop: DeskLoop): void { this.deskLoop = loop }
+  setDeskLoop(loop: DeskLoop | undefined): void { this.deskLoop = loop }
   hasDeskLoop(): boolean { return this.deskLoop !== undefined }
 
   // ---------------------------------------------------------------- Delivery
 
   /** Put a notice in the main Session's history without waking it. */
-  async notify(text: string, requestId: string): Promise<void> {
+  async notify(text: string, requestId: string, ticketId?: string): Promise<void> {
     // 【D6】If a DeskLoop is registered, route through it instead of a DSH Session.
     if (this.deskLoop !== undefined) {
-      await this.deskLoop.notify(requestId, text)
+      await this.deskLoop.notify(requestId, text, ticketId)
       return
     }
     // Resolve or create, never give up quietly: returning nothing here meant a deployment whose main Session was
@@ -888,10 +888,10 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
    * Wake the main Session with a message it answers in its next turn, for a Ticket that waits for a person.
    * @returns false when there is no front desk yet, so the caller knows nobody was told.
    */
-  async relay(requestId: string, text: string): Promise<boolean> {
+  async relay(requestId: string, text: string, ticketId?: string): Promise<boolean> {
     // 【D6】If a DeskLoop is registered, route through it instead of a DSH Session.
     if (this.deskLoop !== undefined) {
-      await this.deskLoop.relay(requestId, text)
+      await this.deskLoop.relay(requestId, text, ticketId)
       return true
     }
     // Resolve or create, never give up quietly: returning nothing here meant a deployment whose main Session was

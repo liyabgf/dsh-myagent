@@ -537,7 +537,7 @@ export class Runtime implements HttpHost {
         const ticket = this.store.tickets.get(ticketId)
         if (ticket === undefined) return { sent: false }
         const text = `[Ask from worker on Ticket ${ticketId.slice(0, 8)}]\n\n${question}\n\nAnswer via myagent_note_ticket to ticket_id=${ticketId} when you know the answer.`
-        void this.sessions.relay(`ask-desk:${ticketId}:${Date.now()}`, text).catch(() => {})
+        void this.sessions.relay(`ask-desk:${ticketId}:${Date.now()}`, text, ticketId).catch(() => {})
         this.context.logger.info('myagent - worker on Ticket %s asked the desk: %s', ticketId.slice(0, 8), question.slice(0, 80))
         return { sent: true }
       },
@@ -978,6 +978,11 @@ export class Runtime implements HttpHost {
     // detection latency against a 15s threshold, with the rescue landing on mountedAt + 7×60s to within 23ms.
     this.watchdog.settingsChanged()
     this.announceSandbox()
+    // 【R2 F-D5 热同步】saveSettings 修改 deskLlm 时动态挂载/卸载 DeskLoop，无需手动重载插件。
+    if (this.deskLoop !== undefined) {
+      const active = Boolean(next.deskLlm.provider && next.deskLlm.model)
+      this.sessions.setDeskLoop(active ? this.deskLoop : undefined)
+    }
     const effects = this.engine.policyChanged(before, next)
     this.context.logger.info('myagent settings saved (version %s, %d live Ticket(s) affected)', policyVersion(next), effects.length)
     void this.sources.sync().catch((error: unknown) => { this.health.entry('sources').problem(reason(error)) })
@@ -1277,6 +1282,8 @@ export class Runtime implements HttpHost {
       this.engine,  // passed so DeskLoop can close triage tickets directly
     )
     await this.deskLoop.init()
+    // 【R2 F-D5 热同步】提示词修订变更时立即同步 DeskLoop 的 system prompt。
+    this.disposers.push(this.prompts.onChange(() => { this.deskLoop?.onPromptsChanged() }))
     const deskCfg = this.settings().deskLlm
     if (deskCfg.provider && deskCfg.model) {
       this.sessions.setDeskLoop(this.deskLoop)
@@ -1557,6 +1564,15 @@ export class Runtime implements HttpHost {
   }
 
   /**
+   * 【R1 F-D3】Whether this Assignment runs on the main desk rather than a dedicated worker Session.
+   * main-desk triage Tickets never create a worker-<id> Session, so recover() and reconcileGhostTickets()
+   * must not use the absence of a worker Session as evidence of a crash.
+   */
+  private usesMainDesk(assignment: { readonly role?: 'triage' }): boolean {
+    return assignment.role === 'triage' && this.settings().triage.desk === 'main'
+  }
+
+  /**
    * Recover what a crash left behind: an Assignment that says a worker is running while no Session is loaded was
    * interrupted, so it ends as such and a fresh one starts in the same directory with a note saying what happened.
    */
@@ -1565,6 +1581,18 @@ export class Runtime implements HttpHost {
     for (const ticket of this.store.tickets.open()) {
       const assignment = runningAssignment(ticket)
       if (assignment === undefined) continue
+      // 【R1 F-D3】main-desk triage Tickets never have a worker Session — do not misread absence as a crash.
+      if (this.usesMainDesk(assignment)) {
+        // If DeskLoop is active, the in-memory queue was lost on reload; re-queue as triage (role is preserved by R1 F-D2).
+        // If DeskLoop is not active, the DSH main Session may still be running — leave it alone.
+        if (this.sessions.hasDeskLoop()) {
+          this.engine.assignmentInterrupted(ticket.id, assignment.id,
+            'myagent was reloaded before triage finished; re-queuing to the desk',
+            undefined, 'reload')
+          recovered++
+        }
+        continue
+      }
       const agent = this.context.agents.get(workerSessionOf(ticket))
       if (agent === undefined) {
         this.engine.assignmentInterrupted(ticket.id, assignment.id)
@@ -1609,6 +1637,8 @@ export class Runtime implements HttpHost {
     for (const ticket of this.store.tickets.open()) {
       const assignment = runningAssignment(ticket)
       if (assignment === undefined) continue
+      // 【R1 F-D3】main-desk triage Tickets never have a worker Session — skip them entirely.
+      if (this.usesMainDesk(assignment)) continue
       // 只有真正启动过（有 startedAt）才能成为幽灵票
       if (assignment.startedAt === undefined) continue
       // 幂等：已处理过这个 assignment 就跳过

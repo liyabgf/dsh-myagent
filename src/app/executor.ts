@@ -499,13 +499,22 @@ export class DshExecutor implements Executor {
       // being dropped without a trace (the failure `relay`'s own comment records).
       const toMain = assignment.role === 'triage' && settings.triage.desk === 'main'
       if (toMain) {
-        // `relay` plays the part both `ensure` and `promptWorker` play for a worker, so the ordering that matters is
-        // kept: the assignment is marked started only AFTER the thing that could fail has succeeded. Marking it first
-        // is what a launch that cannot even reach the desk would then lie about — three existing tests assert that a
-        // failed launch leaves the Ticket `pending`, "without pretending the Ticket started".
-        await this.host.sessions.relay(`triage:${assignmentId}`,
-          `${TRIAGE_BRIEF}\n\n${this.taskText(prepared)}${this.threadContext(prepared)}`)
-        this.host.engine.assignmentStarted(ticketId, assignmentId)
+        const brief = `${TRIAGE_BRIEF}\n\n${this.taskText(prepared)}${this.threadContext(prepared)}`
+        if (this.host.sessions.hasDeskLoop()) {
+          // 【R1 F-D1】DeskLoop.relay() resolves only after the full LLM turn completes — unlike DSH Session's
+          // delivery.send('queue') which returns on enqueue. If assignmentStarted is placed after await relay,
+          // the desk's in-turn myagent_close_ticket or a timeout engine.report(dropped) finds the Assignment still
+          // pending, and the real Engine throws assignment_stale (live: seq=83, seq=152, 3675fa3b).
+          // DeskLoop already in memory means the desk is reachable, so mark started first — same structure as the
+          // worker branch below: ensure → assignmentStarted → promptWorker.
+          this.host.engine.assignmentStarted(ticketId, assignmentId)
+          await this.host.sessions.relay(`triage:${assignmentId}`, brief, ticketId)
+        } else {
+          // DSH Session path: relay itself is ensureMaster + enqueue, which may fail when the host is unreachable.
+          // Keep the original order: enqueue succeeds → mark started, preserving "never pretend it started".
+          await this.host.sessions.relay(`triage:${assignmentId}`, brief, ticketId)
+          this.host.engine.assignmentStarted(ticketId, assignmentId)
+        }
       } else {
         await this.host.sessions.ensure(prepared, settings.executor.model)
         this.host.engine.assignmentStarted(ticketId, assignmentId)
@@ -734,9 +743,14 @@ export class DshExecutor implements Executor {
             }
           }
         }
-        await this.host.sessions.promptWorker(ticket, `input:${input.id}`,
-          `# Added to Ticket ${ticket.id}\n\n${authorOf(input).sentence}:\n\n${input.text}`,
-          settings.executor.model)
+        const toMain = assignment.role === 'triage' && this.host.settings().triage.desk === 'main'
+        const promptText = `# Added to Ticket ${ticket.id}\n\n${authorOf(input).sentence}:\n\n${input.text}`
+        if (toMain) {
+          // 【R1 F-D3】main-desk triage Tickets never create a worker Session; follow-up inputs relay to the desk.
+          await this.host.sessions.relay(`input:${input.id}`, promptText, ticketId)
+        } else {
+          await this.host.sessions.promptWorker(ticket, `input:${input.id}`, promptText, settings.executor.model)
+        }
         this.host.engine.inputsDelivered(ticketId, assignmentId, [input.id])
       } catch (error) {
         this.host.engine.deliveryFailed(ticketId, assignmentId, reason(error))

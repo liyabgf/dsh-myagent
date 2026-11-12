@@ -1573,4 +1573,50 @@ describe('a schedule’s firings share one Work (S-3)', () => {
       expect(report?.summary).toBe('LLM timeout')
     })
   })
+
+  /**
+   * 【R1 F-D2 契约锁】model.ts:308 明写「a triage Ticket retried after a crash is retried AS a triage attempt,
+   * and a Ticket is never both」。三条 Assignment 创建路径（assignmentInterrupted / retryTicket / answer）
+   * 都必须保留前序的 role: 'triage'，否则分诊单会静默蜕变为 worker。
+   */
+  describe('triage Assignment role is preserved across all lifecycle operations (R1 F-D2)', () => {
+    it('assignmentInterrupted creates a replacement that keeps role: triage', () => {
+      const { engine, memory } = harness({ triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
+      const id = engine.receive(trigger()).ticketId!
+      const first = memory.tickets.get(id)!.assignments.at(-1)!
+      expect(first.role).toBe('triage')
+      engine.assignmentInterrupted(id, first.id, 'reload')
+      const second = memory.tickets.get(id)!.assignments.at(-1)!
+      expect(second.id).not.toBe(first.id)
+      expect(second.role, 'interrupted 接替后必须仍是 triage').toBe('triage')
+    })
+
+    it('retryTicket creates a replacement that keeps role: triage', () => {
+      const { engine, memory } = harness({ triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
+      const id = engine.receive(trigger()).ticketId!
+      const first = memory.tickets.get(id)!.assignments.at(-1)!
+      engine.assignmentStarted(id, first.id)
+      engine.report(id, { state: 'failed', summary: 'upstream error' })
+      engine.retryTicket(id)
+      const second = memory.tickets.get(id)!.assignments.at(-1)!
+      expect(second.id).not.toBe(first.id)
+      expect(second.role, 'retryTicket 后必须仍是 triage').toBe('triage')
+    })
+
+    it('answer creates a new attempt that keeps role: triage when previous attempt ended', () => {
+      const { engine, memory } = harness({ triage: { enabled: true, sources: ['chat', 'inbox', 'cron'] } })
+      const id = engine.receive(trigger()).ticketId!
+      const first = memory.tickets.get(id)!.assignments.at(-1)!
+      engine.assignmentStarted(id, first.id)
+      engine.report(id, { state: 'blocked', summary: '需要确认', question: '哪个季度？' })
+      // Manually mark the assignment ended to test the `current.state === 'ended'` branch in answer()
+      const ticket = memory.tickets.get(id)!
+      const ended = { ...first, state: 'ended' as const, endedAt: '2026-11-13T00:00:00.000Z', endedReason: 'interrupted' as const }
+      memory.tickets.save({ ...ticket, assignments: [ended] })
+      engine.answer(id, 'Q3')
+      const second = memory.tickets.get(id)!.assignments.at(-1)!
+      expect(second.id).not.toBe(first.id)
+      expect(second.role, 'ended attempt 后 answer 新建的 Assignment 必须仍是 triage').toBe('triage')
+    })
+  })
 })
