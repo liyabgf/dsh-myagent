@@ -769,14 +769,14 @@ export class OutcomeDelivery implements Delivery {
     this.complained = false
     const settings = this.host.settings()
     if (payload.kind === 'policy') {
-      await this.host.sessions.notify(`Settings changed for Ticket ${ticket.id} (${payload.detail}).`, key('policy-notice', payload.ticketId, payload.at))
+      await this.host.sessions.notify(`Settings changed for Ticket ${ticket.id} (${payload.detail}).`, key('policy-notice', payload.ticketId, payload.at), payload.ticketId)
       this.summarize()
       return
     }
     if (payload.kind === 'escalation') {
       // Wakes the front desk rather than leaving a notice: this is the "nothing moves until a person acts" case, and
       // the front desk is the one place that can act without the operator.
-      await this.host.sessions.relay(key('escalation-relay', payload.ticketId, payload.at), escalationRelayText(ticket, payload.why))
+      await this.host.sessions.relay(key('escalation-relay', payload.ticketId, payload.at), escalationRelayText(ticket, payload.why), payload.ticketId)
       if (settings.notify.enabled) {
         await this.machineNotification({
           title: ticket.title, subtitle: 'needs a person', body: payload.why,
@@ -809,10 +809,18 @@ export class OutcomeDelivery implements Delivery {
     // the desk is the one place that can decide whether to escalate a failure, add context to a result, or
     // send a summary to the requester — and it can only decide in a turn, not by accumulating injected history.
     // `progress` is the only state that stays on the inject path: one progress line per turn is not a decision point.
-    const wakesDesk = payload.state === 'blocked' || payload.state === 'waiting'
+    // 【R2 F-D5 防回声】纯分诊单（所有 Assignment 都是 triage role）由总管自己结案，
+    // ready/dropped 结案时不应反向 relay 唤醒总管再跑一轮「确认回执」（活体 seq=166→171 白烧 ~100s）。
+    // 普通 worker 票的终态仍保持 F1 唤醒总管。
+    const selfClosedTriage = ticket.assignments.length > 0
+      && ticket.assignments.every(a => a.role === 'triage')
+      && (payload.state === 'ready' || payload.state === 'dropped')
+    const wakesDesk = !selfClosedTriage && (
+      payload.state === 'blocked' || payload.state === 'waiting'
       || payload.state === 'ready' || payload.state === 'failed' || payload.state === 'dropped'
-    if (wakesDesk) await this.host.sessions.relay(requestId, text)
-    else await this.host.sessions.notify(text, requestId)
+    )
+    if (wakesDesk) await this.host.sessions.relay(requestId, text, payload.ticketId)
+    else await this.host.sessions.notify(text, requestId, payload.ticketId)
     if (settings.notify.enabled) {
       await this.machineNotification({
         title: ticket.title,

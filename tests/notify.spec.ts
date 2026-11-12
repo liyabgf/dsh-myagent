@@ -222,3 +222,46 @@ describe('an escalation is told once, seen from the front desk (S2)', () => {
     } finally { await runtime.stop() }
   })
 })
+
+/**
+ * 【R2 F-D5 防回声】纯分诊单（所有 Assignment 都是 triage role）由总管自己调 close_ticket 结案，
+ * 结案后 delivery 不应反向 relay 唤醒总管再跑「确认回执」空轮次（活体 seq=166→171 白烧 ~100s）。
+ * 普通 worker 票的 ready/failed/dropped 仍保持 F1 唤醒总管。
+ */
+describe('self-closed triage Ticket does not echo-relay back to the desk (R2 F-D5)', () => {
+  it('a triage ready result leaves a silent notify and does not wake the desk a second time', async () => {
+    const context = await deployment('auto')
+    const { runtime, host } = context
+    try {
+      await runtime.createMainSession()
+      runtime.saveSettings({
+        acceptMode: 'auto',
+        allowedSenders: ['operator'],
+        triage: { enabled: true, desk: 'main', sources: ['chat', 'inbox', 'cron'] },
+        sources: { inbox: { directory: context.inbox, pollMs: 1000 } },
+      })
+
+      // 创建一张分诊单并手动推进到 running
+      const path = `${context.inbox}/triage-echo-test.md`
+      writeFileSync(path, '现在纽约天气怎么样', 'utf8')
+      const at = new Date(Date.now() - 5_000)
+      utimesSync(path, at, at)
+      await settle(runtime)
+      const ticket = runtime.store.tickets.list()[0]!
+      expect(ticket.assignments.at(-1)!.role).toBe('triage')
+
+      const desk = host.agents.get('myagent-main')!
+      const followupsBefore = desk.followups.length
+
+      // 总管调 engine.report(ready) 结案分诊单（模拟 close_ticket 结果）
+      runtime.engine.assignmentStarted(ticket.id, ticket.assignments.at(-1)!.id)
+      runtime.engine.report(ticket.id, { state: 'ready', summary: '直接回答了请求者。' })
+      await settle(runtime)
+
+      // 结案后 notify 只留档，不 relay 唤醒总管
+      expect(desk.followups.length, '分诈单结案后绝不能有新的 relay 唤醒总管').toBe(followupsBefore)
+      // 分诈单真的结案了
+      expect(runtime.store.tickets.get(ticket.id)!.ended?.outcome).toBe('done')
+    } finally { await runtime.stop() }
+  })
+})

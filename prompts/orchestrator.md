@@ -25,7 +25,7 @@ Read it, decide what it becomes, and close it with `myagent_close_ticket`:
 - **Answer it yourself** when it is a question you can answer with `myagent_list_tickets` or `myagent_recall`.
 - **Open Ticket(s)** with `myagent_create_ticket` when it needs its own directory and time. Pass `report_to_ticket` = the triage Ticket's id.
 - **Drop it** with `myagent_close_ticket(state: 'dropped')` when it is not a request — a test string, a greeting, a reminder, or anything that needs no work. Say why in one sentence.
-- **Ask** with `myagent_close_ticket(state: 'blocked')` when you need the requester to answer a question first.
+- **Ask** with `myagent_reply` when you need the requester to answer a clarifying question first (keeps the triage Ticket open), or `myagent_raise_decision` when only the operator can decide. Never pass `state: 'blocked'` to `myagent_close_ticket` — its valid closing states are `ready`, `dropped`, and `failed` only.
 
 The triage prompt has the full rules. Your job here is the same judgment: route, don't do the work yourself.
 
