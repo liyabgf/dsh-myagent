@@ -461,3 +461,49 @@ R3修改文件清单：
 - bridges/lib/inbound.mjs: B07 msgId前缀防覆盖；X08 20MB流式读取上限
 - src/sources/inbox.ts: C06 readdirSafe加health参数，IO错误可见
 - src/sources/chat.ts: C02 contextSubscriptions跳过ended/deleted ticket+try/catch隔离
+
+## S021 · R4操作账本（2026-11-13 16:51 Asia/Shanghai）
+
+### R4 · 基线
+- HEAD: 619ef93
+- panel/index.html: $(shasum -a 256 panel/index.html | awk '{print substr($1,1,16)}')
+- src/app/http.ts: $(shasum -a 256 src/app/http.ts | awk '{print substr($1,16)}')
+
+### R4 · 允许修改文件
+- panel/index.html
+- src/app/http.ts（settings CAS相关；GET desk/messages分页）
+- tests/panel.spec.ts
+
+### R4 · 禁止修改文件
+- src/app/store.ts、runtime.ts、desk-*.ts、sessions.ts、executor.ts（R0-R3已完成）
+- bridges/**、scripts/**、src/core/**、src/sources/**
+
+### R4 · 修复项
+|项|描述|文件|
+|---|---|---|
+|U01-P1|排期toRecord/collectSchedule丢deliverTo/maxRuntimeMs/preset|panel/index.html|
+|U02-P2|Desk分页latestSeq跳过/加载更多无handler|panel/index.html|
+|U03-P2|launchd/systemd路径未转义|panel/index.html|
+|U04-P2|settings并发整表PUT无revision保护|panel/index.html + http.ts|
+
+### R4执行日志
+
+### U01 · 排期字段保留（2026-11-13 16:53 Asia/Shanghai）
+操作：panel/index.html toRecord加deliverTo/maxRuntimeMs/preset条件保留；collectSchedule从已编辑排期中保留原值
+- panel/index.html: 99d063a6f03c3276
+
+### U02 · Desk分页游标+加载更多绑定（2026-11-13 16:53 Asia/Shanghai）
+操作：panel/index.html loadDeskMessages游标改为 msgs.at(-1).seq 而非 body.latestSeq；desk-load-more加click handler
+- 同panel/index.html
+
+### U03 · 生成服务路径拒绝特殊字符（2026-11-13 16:53 Asia/Shanghai）
+操作：panel/index.html unitText() 在拼script路径前检查空格/引号/��字符，有则拒绝生成
+- 同panel/index.html
+
+### R4闸门与提交（2026-11-13 16:54 Asia/Shanghai）
+命令：pnpm typecheck → exit 0
+命令：pnpm vitest run → 1222 passed (1222)
+命令：./scripts/gate.sh → exit 0，产物 575fadd7750dcf2e（519936字节）
+
+R4修改文件清单：
+- panel/index.html: U01 toRecord/collectSchedule保留deliverTo/maxRuntimeMs/preset; U02 desk分页游标改为返回最后seq+加载更多绑定click; U03 生成服务单元路径拒绝特殊字符
