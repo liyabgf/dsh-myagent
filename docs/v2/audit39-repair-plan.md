@@ -19,7 +19,7 @@
 |RT02 DeskLoop stop/join|E1，静态|R1|阻塞LLM stream+stop+SQLite闭库后的写入探针|signal贯通、queue resolve/reject策略、wait current完成后Store.close|
 |RT03 timeout误drop worker|E0，prototype|R1|worker askDesk真实工具触发 timeout，确认只污染desk不终止worker|超时处role gate；triage timeout dropped；worker timeout可见且不篡改领域状态|
 |RT04 provider error partial→ready|E0，prototype|R1|error/aborted/max-tokens/finish缺失的provider契约|依据finish reason拒绝把partial当success，保留可见失败文本|
-|RT05 main triage brief混入worker report|E1，静态|R1|以两种模式捕获完整Prompt和工具registry；当前Runtime实际给triage额外register myagent_report，先更新旧结论|按真实main triage工具面修提示；不可误删其合法的myagent_report扩展|
+|RT05 main triage brief/worker report（需按模式复核）|E1，静态历史结论需校正|R1|以dedicated与main两模式捕获完整Prompt和工具registry；Runtime当前triage工具实际为mainTools+myagent_report，不能直接断言“main缺report”|按实际模式修正文案/测试；不可误删triage合法的myagent_report扩展|
 |RT06 同大小物化错误当成功|E0，prototype|R2|决定哈希/字节比较成本和并发写策略|目标存在时证明内容一致，不一致明确冲突|
 |RT07 AbortSignal未给provider|E0，prototype|R1|provider未响应的可取消测试与底层DSH信号契约|信号进入GenerateOptions并保证Runtime stop可达provider|
 |RT08 prior replied永久挡后续结案|E0，prototype|R1|同一attempt多relay边界，reply事件与requestId关联方案|仅当前turn已追问才保留open|
@@ -35,7 +35,7 @@
 |CORE-08 Pass stop超时后任务未取消|E1，静态|R2|卡住extra、stop timeout、Store关闭后写入探针|取消或等待/隔离继续工作，数据库生命周期清楚|
 |CORE-09 unknown effect kind永久未claim|E2|R2|注入未知kind、观察健康/移除决策|未知任务告警且不破坏数据，提供人工恢复 |
 |BRIDGE-01 Telegram offset先于入站落盘|E1，静态|R3|写入失败/崩溃窗口、同update重投测试|写入成功后推进offset，文件名与消息身份幂等|
-|BRIDGE-02 WeCom Crypto格式|E0，独立非官方样本失败|R3|取得可信官方测试向量；未获得前不得宣称协议修复|标准长度字段/padding/signature兼容，多版本错误分类|
+|BRIDGE-02 WeCom Crypto格式|E1/协议候选；仅非官方构造样本不兼容|R3|取得可信官方测试向量并记录出处；缺向量时该桥标未验收，不伪造通过|标准长度字段/padding/signature兼容；成功/拒绝/篡改负例分别验证|
 |BRIDGE-03 WeCom agentId作touser|E1，静态|R3|多用户/多Agent回信映射用例|route thread与平台真实会话坐标分开|
 |BRIDGE-04 WeCom未限流/先200后写|E1，静态|R3|超限chunk及write失败测试，外网隔离|有界读取、验证后接收、durable write后ACK|
 |BRIDGE-05 四个push桥tick重叠|E1，静态|R3|超过interval的send延迟、退出中poll测试|单flight/claim；signal时排空当前发送|
@@ -54,6 +54,30 @@
 |TEST-01–04 测试假桩/弱断言|E2|R0|每个桩变异让关键断言红|先增强桩及控制组，不将probe通过算feature pass|
 |EX-02–07 examples历史脚本|E1/历史资产，不在运行主链|H0/另批|决定是否继续维护和发布|不阻塞核心；若继续维护则为每工具加离线fixtures/无损写|
 |H-01 文档旧状态与失效证据|H|H0|现状声明逐文档列截止版本/产物|保留历史文字，新增显眼生效版本索引，不覆盖原证据|
+
+### 2.1 补充覆盖项（全为未开工）
+
+|稳定项ID|来源与描述|等级/批次|前置复现与验收|
+|---|---|---|---|
+|X01|runtime-review RT-04：main triage受worker槽位阻塞|E1/R1|worker全满仍能分诊；分诊不占worker槽；撤回绕过分支应使测试失败|
+|X02|runtime-review RT-05：后续附件失败仍标delivered|E1/R1|复制失败不假报全部送达；初始/后续路径同一边界校验；失败重试不重发已送文本|
+|X03|app-support tools：blocked缺question|E1/R2|按产品契约确认summary兜底是否有意；若要求具体问题，条件schema拒绝无question，保留旧数据可读|
+|X04|app-support files：readForPanel无限额/TOCTOU|候选/R2|先核实所有caller已有上限、普通文件与symlink变化；未证明可达不改边界；真实读取处有界|
+|X05|app-support skills：重同步半完成|候选/R2|注册中途失败可见、旧集合/新集合策略明确，失败不悄悄宣称完整注册|
+|X06|SR-05：多片回信已发送与进度记录间崩溃窗口|E1/R3|平台幂等键或明确至少一次；每片回执落盘、onSent失败分类、重启不丢待发片；不承诺外部恰好一次|
+|X07|SR-06：附件失败仍归档sent|E1/R3|正文/附件分开记账，失败附件可重试且不重复已送正文；不支持文件的平台明确提示|
+|X08|SR-07：下载附件无限大小|E1/R3|有界流读取，超限终止并清临时文件；不依赖Content-Length；慢流/重定向测试|
+|X09|SR-15：钉钉webhook状态权限|E1/R3|新目录0700/新状态0600，旧权限处理明确；日志不输出webhook/token|
+|X10|SR-18：桥state并发覆盖|E1/R3|inbound/outbound交错更新不丢字段；跨进程单实例/锁策略有测试|
+|X11|SR-19：启用频道不等于启动桥|设计边界/H0+R4|保留外部桥进程模型；UI明确连接/配置/消息可达三态，不偷偷增加进程托管|
+|X12|runtime HTTP：decodeURIComponent在try外|候选/R4|坏percent编码返回可诊断400且不逸出handler；先真实HTTP复现|
+|X13|runtime HTTP：events读量无上限|候选/R4|定义分页/上限并保留total/returned；大历史测试不一次读全表|
+|X14|runtime-budget间歇前置失败|E2/R0|保存首次失败，改用确定性状态等待；重复/负载验证，禁止仅重跑绿即关闭|
+|X15|gate树指纹遗漏配置/client/lock等|E1/R5|从发布边界派生样本；逐项改动使指纹变化，日志/生成证据自引用须排除并说明|
+|X16|prompts/README/SECURITY角色与能力陈述冲突|H/H0|逐项版本标注，实际注册与权限证据优先，不靠工具名并集判模式合法|
+|X17|app-support about空changes、SR-21响应对象污染、EX-01转义疑点|已撤回/保留候选|不安排生产修复；新证据出现才重开，不能用凑齐清单代替复现|
+
+现有矩阵每行以首列描述唯一定位，补充项使用X01–X17稳定ID；原RT别名只供追溯，不再产生新含义。来源为Audit38相应报告章节；执行批次卡须钉住报告提交、具体行号、源码hash与复现ID。
 
 任何E0/E1问题先补复现。证据重分类必须同步39号总控、覆盖矩阵和处理理由。
 
@@ -76,7 +100,11 @@ flowchart TD
  H[H0 历史文档校正] --> R6
 ```
 
-R0 必须先于所有业务修复：当前假桩会让“取消成功、idle、解绑、附件物化、HTTP坏JSON”产生假绿。R1/R2 可并行但每批独立提交；R3/R4/R5 互不共享修改文件时才并行。R6 必须在所有批次通过后执行。
+R0先建立可诊断基线和保真测试，不要求尚未修复的缺陷测试此时全部绿：产品回归、预期红的缺陷复现、审核观测探针三类分别报告，不能把预期红吞成成功。后续每修一项将其转换为正确行为回归测试。
+
+执行顺序默认串行：R0 → R1 → R2 → R3 → R4 → R5 → R6；H0随批增量更新，最终状态在R6冻结。并行仅限只读复核或已登记互不共享的工作副本；禁止两个执行者同时改生产文件、tests/helpers、同一spec/fixture、lockfile或生成物。R5在R1–R4候选树冻结后验证发布流程，不能先调用现有不安全release脚本。
+
+文件所有权：R0拥有helpers和通用测试基础；R1拥有runtime/desk/executor/sessions生命周期及其专项测试；R2串行接管Store/Memory/Prompts/Watchdog/Passes与executor物化；R3拥有sources/chat、inbox和bridges及桥测试；R4拥有panel/http和settings CAS端口（Store变动依赖R2）；R5拥有scripts/gate、release、verify-migration和打包验证；H0拥有当前状态与历史更正。共享文件交接必须登记前后hash与提交，禁止自动rebase/重置覆盖他人改动。
 
 ## 4. 批次 R0 · 基线、保真度和审核工具（P0）
 
@@ -105,7 +133,7 @@ R0 必须先于所有业务修复：当前假桩会让“取消成功、idle、�
 - 取消后 agent status/whenIdle/disposer 断言变红于错误实现。
 - 附件复制失败、坏JSON、工具成功调用各有红/绿对照。
 - M-R0a：恢复旧弱cancel桩→取消/解绑测试变红。
-- M-R0b：删除真实附件存在性断言→附件测试变红。
+- M-R0b：在隔离副本撤掉附件复制实现，完整字节断言必须变红；不把“删除断言”当作正确的实现变异。
 
 ### 回滚
 
@@ -127,7 +155,7 @@ R0完成；R1涉及 `runtime.ts`、`desk-loop.ts`、`desk-llm.ts`、`executor.ts
 2. **生命周期**：Runtime.stop必须取消DeskLoop provider、拒绝/排空队列并等待当前turn结束，Store.close之前不得有DeskLoop写入。
 3. **角色**：只有`role: triage`且running的Assignment允许DeskLoop直接report；worker超时只能记录错误/中断自己的执行，不能report dropped。
 4. **LLM失败**：finish `error`/`aborted`/`max-tokens`不能把部分文本当ready；必须可见地failed/dropped并写Ticket事件。stream必须接受AbortSignal。
-5. **回合幂等**：同一requestId若已接受处理，重复relay不得再次触发LLM或工具副作用；消息历史与执行锁语义一致。
+5. **回合幂等**：同进程并发/顺序重复requestId应复用执行结果或在途Promise；重启使用持久状态识别“未处理/处理中断/已完成”。外部副作用发生与本地记录提交之间的崩溃窗口不能靠去重行消除：须使用平台幂等键、业务操作ID、补偿或人工待决，不能无证据承诺外部恰好一次。重复事件不得无标记地再次派单/发信。
 6. **答复结案**：replied判定必须限于当前relay/turn，而非整个Assignment历史；直接回答应可结案，追问应保持打开。
 7. **未配置**：relay进入running triage而DeskLoop不可用时，要有明确转交/排队/失败策略，不得静默resolve永久悬挂。
 
@@ -155,8 +183,7 @@ R1任何一项不能在隔离Runtime/真实Store中稳定通过，整批不发�
 
 - `src/app/lock.ts`：异机live lock不可自动unlink；采用保守拒绝或租约协议，需明确人工清理。
 - `src/core/memory.ts`：ThreadStore纳入每层快照/restore。
-- `src/sources/chat.ts`：contextSubscriptions只向live Ticket fanout，单订阅失败隔离；已take主消息不能因context失败而丢主处理结果。
-- `src/sources/inbox.ts`：readdir错误显式health/失败，不伪装空目录。
+- `src/app/executor.ts` 的artifact物化一致性归R2，但必须等R1完成后串行进入；Source的Chat fanout/Inbox IO归R3，R2只提供仓储/事务端口，不并发修改Source。
 - `src/app/store.ts`：Events seq并发策略，单写锁/SQL原子分配/重试。
 - `src/app/watchdog.ts`：reportSilent成功后才dedupe，失败可重试且可见。
 - `src/app/effects.ts`：未知effect kind写健康/永久故障记录，不无限静默留表。
@@ -204,12 +231,15 @@ offset先写后入站→漏消息测试红；去单飞锁→重叠tick测试红�
 - panel desk history：游标推进按返回最后seq，明确分页方向；加载更多必须有实际handler。
 - panel settings：revision冲突返回409，不覆盖并发更新。
 - launchd/systemd路径转义或严格路径校验。
-- release.sh：目标realpath/remote/branch/clean确认；commit失败立即退出；最终改写后重新扫描；dry-run不能覆盖工作树。
-- verify-migration：停止/快照/WAL/目标schema/旧构建回滚都需硬判据，禁`|| true`吞主错误。
+- 文件所有权：`panel/index.html`、`src/app/http.ts`、settings CAS所需Store接口及相关panel/http测试。Store接口改动须在R2结束后串行整合；不得并发改Store或共享fixtures。发布/迁移脚本全部归R5。
 
 ### 验收
 
-jsdom断言新字段保存/启停/删除，两个并发保存至少一方409；真实生成单元经shell解析检查；发布脚本在临时仿真仓库中验证失败不push、不delete错误目标；迁移在副本执行并重新打开。
+jsdom断言新字段保存/启停/删除，两次提交携带相同旧revision时后者冲突可见；HTML实体、JSON和服务单元转义分别验证，解析生成结果不执行安装。
+
+### 变异与回滚
+
+恢复旧六字段转换→含新字段排期往返测试失败；去CAS检查→交错保存测试失败；游标改回server latestSeq→分页完整性失败。失败只回退本批候选提交；配置快照原件只读，不将整份旧设置覆盖新业务变化。若引入新设置协议，旧页面兼容策略必须单独验证。
 
 ## 9. 批次 R5 · 发布、迁移与供应链边界（P1/P2）
 
@@ -269,7 +299,68 @@ R6不是修复批次，是最终验收门。只有R0–R5全部具备证据才�
 7. 修复报告、测试报告、变异报告、运行态报告和提交关系一一可追溯。
 8. 任意高危未解决项都阻止发布；P2可带条件发布但必须列明风险、责任人与复核日期。
 
-## 13. 每批操作日志模板
+## 13. 逐项合同补充
+
+### 13.1 稳定ID与来源定位
+
+覆盖矩阵首列是工程项描述，不再复用Audit38中的RT/CORE/SR旧别名。执行时必须写稳定ID（R1-01、R2-01、R3-01、R4-01、R5-01、X-01等）并附原报告文件、章节和行号；同一来源只允许一个主记录。计划内的已撤回项（about空态、SR-21对象污染、EX-01初始转义疑点）不得重新进入修复批次，除非新增证据改变状态。
+
+### 13.2 R0/R1与共享文件所有权
+
+R0拥有测试helpers、测试保真度和共享fixture；R1拥有runtime/desk/executor/sessions生命周期文件；R2拥有Store/Memory/Prompts/Watchdog/Passes及executor物化；R3拥有Sources和bridges；R4拥有panel/http与配置CAS（Store接口改动须等待R2）；R5拥有release/migration/gate脚本。任何共享文件交接必须有前后hash和提交，禁止并行写同一helper/spec/fixture/lockfile。
+
+### 13.3 R1/R2/R3/R4/R5边界修订
+
+- 主分诊是否占worker slot（Audit38 runtime-review RT04）和后续附件送达（RT05）归R1，因为它们与launch/Assignment运行状态绑定。
+- Files大小边界、dynamic skill重同步、blocked question契约归R2，先核调用链再决定是否修复。
+- Chat fan-out、Inbox IO、bridge offset/ACK/状态/附件归R3；R2只提供事务/锁端口，不改Source实现。
+- R4只改面板/http/配置并发；release.sh、verify-migration、最终扫描完全归R5，不与R4并行修改。
+- R5只在R0–R4业务树冻结、候选提交和测试证据保存后执行；临时Git/DB副本禁止真实push。R6才做用户授权的候选发布决定。
+
+### 13.4 每个P1必须有四件套
+
+开工前证据卡必须填：最小复现命令与退出码、正向/负向测试名、精确变异差异与预期红测、回滚动作和回滚后验证。当前R1–R5仅写了批次级合同，未完成逐项卡的ID保持“待证/未开工”，不能借批次绿灯替代。
+
+### 13.5 真实平台和发布授权
+
+R3离线协议测试不等于真实平台验收。官方WeCom向量未取得前，BRIDGE-02状态是“协议候选/未验收”，不能计入通过。真实平台账号、公网回调、发送消息、安装/重载插件、push公开副本均需要用户单独明确授权；停止条件中的“出现公网请求即停”适用于无授权的默认状态，获得单独授权后才可执行对应隔离步骤。
+
+R5 promotion流程：候选commit → 独立隔离验证 → 产物/源码/随包hash冻结 → 用户明确批准目标、版本、push/安装/重载 → 才能真实push；失败只保留证据并回滚临时副本，不触碰myagent-public或日常state。
+
+### 13.6 去重和外部副作用语义
+
+R1的重复requestId验收仅承诺同进程顺序/并发重入在持久执行状态下不重复启动同一Desk turn；跨崩溃和平台已接受后的本地崩溃仍按至少一次/人工待决处理。外部桥、邮件、HTTP工具不承诺恰好一次，必须用平台幂等键、操作ID或补偿策略；测试断言不得把一次工具调用次数扩大成外部投递保证。
+
+## 14. 问题证据卡与执行流程
+
+每个稳定问题项执行前必须复制下列证据卡到工程日志；不允许只写批次小结：
+
+```text
+稳定ID / 原报告文件+章节+行号：
+证据等级与来源（Audit38原始观察 / 当前静态复核 / 本次复现）：
+当前源码HEAD、目标文件SHA256、构建产物SHA256：
+触发前置与隔离环境（host/profile/stateDir/桥账号）：
+最小复现命令/测试名、真实退出码、原始输出文件：
+期望不变量与失败语义：
+实施文件白名单 / 禁改文件：
+变异操作（精确差异）及应红测试：
+变异恢复后的逐字节hash：
+修复后正向/负向测试、完整gate、产物指纹：
+回滚动作与回滚后的验证：
+状态：未开工 / 待证 / 已复现 / 修复中 / 已验收 / 撤回（原因）
+```
+
+流程：①读取当前规划/纪律和工作区；②登记计划+文件hash；③缺陷复现（E0须先确认复现仍存在，E1/E2必须把候选变可观察测试）；④定义契约并做最小修复；⑤最小测试→变异→还原hash→全量闸门；⑥隔离活体/回滚演练；⑦独立diff审阅；⑧单问题/单批提交。每一步先写账本条目，后执行，结果包括失败和真实退出码。
+
+停止条件：工作树发现未归属改动、快照与预期hash不符、测试环境触及日常state、出现真实凭据/公网请求、变异恢复hash不符、数据库副本身份不清、P1无可控复现、两个批次争用文件时，立即停在当前批次，记录证据，不自行清理或覆盖。
+
+## 14. 工程文档独立复核与当前状态
+
+正式修复开工前，由独立审查者只读复核本计划：逐个Audit38发现对账、确认误报撤销、确认文件所有权/依赖无环、确认每个P1有复现和回滚。复核报告附本文件，不改业务代码。当前独立复核意见尚未纳入；不得称计划已经通过审查。
+
+本次阶段仅计划文档提交；提交到GitHub不等于修复开工/发布授权。开工需用户明确说“开始执行修复工程”，由主执行者只从R0开始，且另建每批操作日志。
+
+## 15. 每批操作日志模板
 
 ```text
 [时间 Asia/Shanghai] 批次/操作：
