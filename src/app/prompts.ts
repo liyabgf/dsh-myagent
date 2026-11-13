@@ -102,9 +102,10 @@ export interface PromptVersion {
 
 export class Prompts {
   private readonly cache = new Map<PromptRole, string>()
-  private readonly store: Pick<Store, 'get' | 'set'>
+  // C05: include atomic() so config+revision can be written in a single SQLite transaction.
+  private readonly store: Pick<Store, 'get' | 'set' | 'atomic'>
 
-  constructor(store: Pick<Store, 'get' | 'set'>) { this.store = store }
+  constructor(store: Pick<Store, 'get' | 'set' | 'atomic'>) { this.store = store }
 
   /** The shipped text of a role, read once per process. */
   base(role: PromptRole): string {
@@ -194,8 +195,12 @@ export class Prompts {
     }
     const nextSkills = { ...(current.skills ?? {}), [fullName]: saved }
     const next: PromptConfig = { ...current, skills: nextSkills }
-    this.store.set(KV.promptsConfig, next)
-    this.store.set(KV.promptsRevision, this.revision() + 1)
+    // C05: write config and revision atomically so a crash between the two
+    // cannot leave config updated but revision unchanged.
+    this.store.atomic(() => {
+      this.store.set(KV.promptsConfig, next)
+      this.store.set(KV.promptsRevision, this.revision() + 1)
+    })
     this.notifyChange()
     return saved
   }
@@ -206,8 +211,10 @@ export class Prompts {
     const existing = current.skills?.[name]
     if (existing === undefined) throw new PromptConflict(`No saved skill named ${name}`)
     const updated: SavedSkill = { ...existing, enabled, updatedAt: new Date().toISOString() }
-    this.store.set(KV.promptsConfig, { ...current, skills: { ...current.skills, [name]: updated } })
-    this.store.set(KV.promptsRevision, this.revision() + 1)
+    this.store.atomic(() => {
+      this.store.set(KV.promptsConfig, { ...current, skills: { ...current.skills, [name]: updated } })
+      this.store.set(KV.promptsRevision, this.revision() + 1)
+    })
     this.notifyChange()
     return updated
   }
@@ -221,8 +228,10 @@ export class Prompts {
     const next: PromptConfig = { ...current }
     if (Object.keys(nextSkills).length === 0) delete next.skills
     else next.skills = nextSkills
-    this.store.set(KV.promptsConfig, next)
-    this.store.set(KV.promptsRevision, this.revision() + 1)
+    this.store.atomic(() => {
+      this.store.set(KV.promptsConfig, next)
+      this.store.set(KV.promptsRevision, this.revision() + 1)
+    })
     this.notifyChange()
   }
 
@@ -261,8 +270,10 @@ export class Prompts {
       else next[role as PromptRole] = text as string
     }
     const revision = this.revision() + 1
-    this.store.set(KV.promptsConfig, next)
-    this.store.set(KV.promptsRevision, revision)
+    this.store.atomic(() => {
+      this.store.set(KV.promptsConfig, next)
+      this.store.set(KV.promptsRevision, revision)
+    })
     this.notifyChange()
     return revision
   }

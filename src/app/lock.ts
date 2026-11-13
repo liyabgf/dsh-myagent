@@ -77,9 +77,15 @@ export function takeLock(directory: string): StateLock {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
       const holder = read(path)
-      const ours = holder !== undefined && holder.host === record.host && alive(holder.pid)
-      if (ours) throw new LockHeld(holder!)
-      // Gone, unreadable or on another machine: the directory is free, so take it on the next attempt.
+      const liveOnThisHost = holder !== undefined && holder.host === record.host && alive(holder.pid)
+      if (liveOnThisHost) throw new LockHeld(holder!)
+      // C01: A lock whose holder is on a different host cannot be verified with kill(pid, 0).
+      // We refuse conservatively rather than silently stealing it, because two deployments
+      // sharing a state directory produce duplicate work and corrupt the database.
+      if (holder !== undefined && holder.host !== record.host) {
+        throw new LockHeld(holder)
+      }
+      // Gone, unreadable, or same host with a dead PID: safe to take on the next attempt.
       try { unlinkSync(path) } catch { /* another taker got there first */ }
       if (!existsSync(path)) continue
     }

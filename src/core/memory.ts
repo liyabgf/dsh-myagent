@@ -113,6 +113,10 @@ class ThreadStore implements ThreadRepository {
   get(key: string): Thread | undefined { return this.records.get(key) }
   save(thread: Thread): void { this.records.set(thread.key, thread) }
   list(): Thread[] { return [...this.records.values()] }
+  // C04: snapshot/restore like every other store, so Memory.atomic rolls back Thread writes
+  // the same way Store.atomic does via SQLite ROLLBACK.
+  snapshot(): Map<string, Thread> { return new Map(this.records) }
+  restore(snapshot: Map<string, Thread>): void { this.records.clear(); for (const [key, value] of snapshot) this.records.set(key, value) }
 }
 
 /** In-memory {@link Repositories} and {@link Transaction} with the same commit and rollback behaviour as the Store. */
@@ -154,7 +158,7 @@ export class Memory implements Repositories, Transaction {
     const snapshots = [
       this.triggerStore.snapshot(), this.ticketStore.snapshot(), this.decisionStore.snapshot(), this.artifactStore.snapshot(),
       this.projectStore.snapshot(), this.workStore.snapshot(), this.eventStore.snapshot(),
-      this.dependencyStore.snapshot(),
+      this.dependencyStore.snapshot(), this.threadStore.snapshot(),
     ] as const
     const mark = this.queue.length
     this.depth++
@@ -173,6 +177,9 @@ export class Memory implements Repositories, Transaction {
       this.workStore.restore(snapshots[5])
       this.eventStore.restore(snapshots[6])
       this.dependencyStore.restore(snapshots[7])
+      // C04 fix: ThreadStore was missing from snapshots/restore, so a rolled-back transaction
+      // left thread writes in Memory while SQLite correctly rolled them back.
+      this.threadStore.restore(snapshots[8])
       throw error
     }
     this.depth--

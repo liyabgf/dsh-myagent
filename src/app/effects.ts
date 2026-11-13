@@ -83,7 +83,7 @@ export class Effects {
    */
   private readonly unresolved = new Set<string>()
 
-  constructor(private readonly store: Pick<Store, 'enqueueEffect' | 'claimEffects' | 'settleEffect' | 'failEffect' | 'deferEffect' | 'pendingEffects'>, options: EffectsOptions = {}) {
+  constructor(private readonly store: Pick<Store, 'enqueueEffect' | 'claimEffects' | 'settleEffect' | 'failEffect' | 'deferEffect' | 'pendingEffects' | 'effectCounts'>, options: EffectsOptions = {}) {
     this.backoffMs = options.backoffMs ?? 15 * 60_000
     this.tries = options.tries ?? 5
     this.retryIntervalMs = options.retryIntervalMs ?? 15_000
@@ -118,6 +118,13 @@ export class Effects {
             // The loop runs over the registered kinds, so a handler exists by construction.
             const outcome = await this.settle(kind, row.key, row.payload, row.failures, this.handlers.get(kind)!)
             if (outcome.status !== 'ok') again = true
+          }
+        }
+        // C09: Detect effects rows whose kind has no registered handler. They will never be
+        // claimed, so they would sit in the table forever without this check.
+        for (const [kind, count] of Object.entries(this.store.effectCounts())) {
+          if (!this.handlers.has(kind)) {
+            this.health?.problem(`${count} effect(s) with unregistered kind '${kind}' cannot be processed`)
           }
         }
         // A retry that became due during this pass is taken in the same one, so no work waits a whole interval.

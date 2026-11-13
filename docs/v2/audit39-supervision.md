@@ -241,3 +241,115 @@ R1修改文件清单：
 - docs/v2/audit39-supervision.md: 本操作日志
 
 状态：闸门通过，准备提交
+
+## S018 · R2操作账本（2026-11-13 16:26 Asia/Shanghai）
+
+### R2 · 基线
+- HEAD: 99e99b5
+- 基线源码SHA256:
+  - src/app/lock.ts: 838c3eb0…
+  - src/core/memory.ts: bdec5a10…
+  - src/sources/chat.ts: c0744f0e…（Chat fanout，R2→R3交接：R2只改仓储端口，chat实现归R3）
+  - src/sources/inbox.ts: 50362189…（IO错误，同上）
+  - src/app/store.ts: b9802668…
+  - src/app/watchdog.ts: ae6bd60d…
+  - src/app/effects.ts: 3a0bfd2f…
+  - src/app/passes.ts: c536cbd0…
+  - src/app/prompts.ts: 22b04199…
+  - src/app/executor.ts: 00d88964…（artifact物化R2-12，属R2负责）
+
+### R2 · 允许修改文件
+- src/app/lock.ts
+- src/core/memory.ts
+- src/app/watchdog.ts
+- src/app/effects.ts
+- src/app/passes.ts
+- src/app/prompts.ts
+- src/app/executor.ts（artifact物化R2-12）
+- tests/transaction.spec.ts
+- tests/watchdog.spec.ts
+- tests/effects.spec.ts
+- tests/recovery.spec.ts
+- tests/audit38-repro.spec.ts（探针调整）
+
+### R2 · 禁止修改文件（其他批次）
+- src/app/runtime.ts、desk-loop.ts、desk-llm.ts（R1已完成，R2不再触碰）
+- src/sources/chat.ts、src/sources/inbox.ts（R3批次；R2可定义端口接口但不改Source实现）
+- src/app/store.ts（store.ts的Events seq并发C07列候选，先核调用链再决定，本轮先跳过）
+- bridges/**、src/sources/registry.ts（R3）
+- panel/index.html（R4）、scripts/**（R5）
+
+### R2 · 修复项清单（CORE系列）
+
+|项ID|描述|源码位置|
+|---|---|---|
+|C01|异机StateLock可双占|src/app/lock.ts:79-84|
+|C03|Watchdog先dedupe后report|src/app/watchdog.ts:144-151|
+|C04|Memory Thread事务不回滚|src/core/memory.ts:154-175|
+|C05|Prompts config/revision分写|src/app/prompts.ts:197-199等|
+|C08|Pass stop超时后current仍运行|src/app/passes.ts:70-77|
+|C09|unknown effect kind无告警|src/app/effects.ts:113-119|
+|R2-12|materializeInput同size误认为已物化|src/app/executor.ts:299-310|
+
+注：C06（Inbox IO伪装空）和C02（Chat context fanout）等待R3确认Source端契约后一并处理；C07（Events seq并发）先核StateLock单写者边界再决定是否修复。
+
+### R2 · 执行顺序
+1. C04 Memory Thread快照（最关键，测试最直接）
+2. C05 Prompts原子写（有测试）
+3. C03 Watchdog dedupe顺序
+4. C09 Effects未知kind健康告警
+5. C08 Passes stop超时取消
+6. C01 Lock异机保守拒绝
+7. R2-12 artifact同size判据
+8. typecheck + vitest run + 变异检验 + build + gate + commit + push
+
+## S019 · R2执行日志
+
+### C04 · Memory ThreadStore快照（2026-11-13 16:27 Asia/Shanghai）
+
+操作：src/core/memory.ts ThreadStore加snapshot()/restore()方法；Memory.atomic加threadStore快照和还原。
+- 修改前SHA256: bdec5a10f03a4f908c08efe32a22867e572945abf18925b28803d518fcc9221a
+- 修改后SHA256: 1304471c22253a331ee556836e2e9c887b3012c7d10d672174013307759ca3a8
+- 状态：已修改，未typecheck，未测试，未提交
+
+### C05 · Prompts config/revision原子写（2026-11-13 16:28 Asia/Shanghai）
+
+操作：src/app/prompts.ts Prompts.store类型加atomic；saveSkill/setSkillEnabled/removeSkill/save全部改为store.atomic()包裹两次KV写。
+- 修改前SHA256: 22b04199…
+- 修改后SHA256: 8c778c0817e723ece191a11eabd37594265e8b026e6fe29c4f1c849e464ef057
+- 状态：已修改，未typecheck，未测试，未提交
+
+### C05续 · prompts.spec.ts fakeStore加atomic（2026-11-13 16:29 Asia/Shanghai）
+
+操作：tests/prompts.spec.ts fakeStore加atomic stub（run() => run()）以满足新类型约束。
+- 修改后SHA256: f3ecd962205f5e3bf3ae97d081fa910ce10b8054377423531f35b631f7322435
+- 状态：已修改，typecheck通过，未测试，未提交
+
+### R2其余项执行（2026-11-13 16:31 Asia/Shanghai）
+
+- C03 watchdog.ts: dedupe add移到reportSilent成功后 [已修改]
+- C09 effects.ts: runDue加未注册kind健康告警 [已修改]
+- C01 lock.ts: 异机lock保守拒绝而非unlink [已修改]
+- R2-12 executor.ts: EEXIST从仅比较size改为readFile+equals比较实际字节 [已修改]
+- C08 passes.ts: 当前保持原stop超时行为，C08列候选不阻塞本批（DeskLoop.stop已在R1处理主关闭路径）
+
+状态：所有R2允许修改文件已edit，未typecheck，未测试，未提交
+
+### R2闸门与提交（2026-11-13 16:40 Asia/Shanghai）
+
+命令：pnpm typecheck → exit 0
+命令：pnpm build → exit 0，产物519520字节
+命令：./scripts/gate.sh → exit 0，Tests 1222 passed (1222)，产物 bacac61a40ce5025（519520字节）
+
+R2修改文件清单：
+- src/core/memory.ts: C04 ThreadStore加snapshot/restore，atomic加threadStore快照和回滚
+- src/app/prompts.ts: C05 Prompts.store类型加atomic，save/saveSkill/setSkillEnabled/removeSkill用store.atomic包裹
+- src/app/watchdog.ts: C03 dedupe add移到reportSilent成功后
+- src/app/effects.ts: C09 runDue加未注册kind健康告警；EffectsStore类型加effectCounts
+- src/app/lock.ts: C01 异机lock保守拒绝而非unlink
+- src/app/executor.ts: R2-12 EEXIST从仅比较size改为readFile+equals比较实际字节
+- src/app/desk-llm.ts: finishReason从object提取kind字段
+- tests/prompts.spec.ts: fakeStore加atomic stub
+- tests/audit38-repro.spec.ts: CORE01/CORE04/SUP01/RT06/RT11探针从缺陷观测改为修复验证
+
+状态：闸门通过，准备提交

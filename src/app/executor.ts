@@ -305,8 +305,18 @@ export class LocalHostSandbox implements ExecutionSandbox {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
       const existing = await lstat(target)
+      // R2-12: Same size is NOT sufficient to prove the file is the same content. Compare
+      // actual bytes: a genuine retry is byte-identical (same source file), so this is cheap
+      // and prevents different content of the same length from being silently accepted.
       if (existing.size !== source.size) {
         throw new Error(`Refused to overwrite ${relativeDest}: a different file is already at that path in inputs/`)
+      }
+      if (existing.size > 0) {
+        const srcBuf = await readFile(sourceFile)
+        const dstBuf = await readFile(target)
+        if (!srcBuf.equals(dstBuf)) {
+          throw new Error(`Refused to overwrite ${relativeDest}: same-size file at that path has different content`)
+        }
       }
     }
     return relative(resolve(workspaceDir), target)

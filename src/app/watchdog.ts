@@ -146,8 +146,11 @@ export class Watchdog {
       // a restart re-reports once, and the runtime's queue check keeps the repeat from landing while the first
       // still sits undismissed.
       if (this.reportedSilence.has(silent.assignmentId)) continue
-      this.reportedSilence.add(silent.assignmentId)
+      // C03: add to dedupe set only AFTER a successful report, not before. If reportSilent()
+      // throws (e.g. the decision queue is unavailable), the assignment would be permanently
+      // skipped on subsequent looks even though the operator was never actually told.
       this.host.reportSilent(silent.ticketId, silent.assignmentId, minutes)
+      this.reportedSilence.add(silent.assignmentId)
       actions.push({ ...silent, why: `its worker said nothing for ${minutes} minute(s)`, acted: false })
     }
     return actions

@@ -10,6 +10,9 @@ function fakeStore() {
   return {
     get: <T>(key: string): T | undefined => values.get(key) as T | undefined,
     set: (key: string, value: unknown): void => { values.set(key, value) },
+    // C05: Prompts now requires atomic(); the stub runs the callback synchronously with no
+    // actual transaction (fine for unit tests where there is no concurrent writer).
+    atomic: <T>(run: () => T): T => run(),
     values,
   }
 }

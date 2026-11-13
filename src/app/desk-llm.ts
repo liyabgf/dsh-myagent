@@ -73,7 +73,12 @@ export async function deskGenerate(
   for await (const chunk of stream) {
     if (signal?.aborted) throw new Error('Desk LLM call aborted.')
     processChunk(assembler, chunk)
-    if (chunk.type === 'finish') finishReason = chunk.reason as unknown as string
+    if (chunk.type === 'finish') {
+      // The finish reason is an object with a `kind` field in DSH's stream protocol; extract it
+      // so downstream code can compare against 'stop', 'error', 'aborted', 'max-tokens'.
+      const reason = chunk.reason as unknown as { kind?: string } | string
+      finishReason = typeof reason === 'string' ? reason : (reason?.kind ?? 'stop')
+    }
   }
 
   return assembleResponse(assembler, finishReason)

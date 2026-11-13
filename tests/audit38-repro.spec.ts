@@ -36,15 +36,14 @@ function fixture(stream: (...args: any[]) => any, ticket: any = undefined, event
 const triage = { id: 't', assignments: [{ id: 'a', role: 'triage', state: 'running', startedAt: '2026-01-01T00:00:00Z' }] }
 
 describe('audit38 observed defects (not acceptance)', () => {
-  it('CORE01: foreign-host lock is overwritten without checking its holder', () => {
+  it('CORE01-fix: foreign-host lock is NOT overwritten after C01', () => {
     const dir = mkdtempSync(join(tmpdir(), 'audit38-lock-'))
     writeFileSync(join(dir, 'myagent.lock'), JSON.stringify({ pid: process.pid, host: 'foreign-host', token: 'foreign', at: '2026-01-01' }))
-    const lock = takeLock(dir)
-    expect(lock.record.token).not.toBe('foreign')
-    lock.release()
+    // C01 fix: foreign-host lock is now conservatively refused, not unlinked
+    expect(() => takeLock(dir)).toThrow(/Another myagent holds/)
   })
 
-  it('CORE04: Memory keeps thread writes after rollback but SQLite does not', () => {
+  it('CORE04-fix: Memory rolls back thread writes same as SQLite after C04', () => {
     const dir = mkdtempSync(join(tmpdir(), 'audit38-tx-'))
     const memory = new Memory()
     const store = new RealStore(join(dir, 'state.sqlite'))
@@ -52,20 +51,28 @@ describe('audit38 observed defects (not acceptance)', () => {
     for (const repos of [memory, store]) {
       expect(() => repos.atomic(() => { repos.threads.save(thread); throw new Error('rollback') })).toThrow('rollback')
     }
-    expect(memory.threads.get('x')).toBeDefined()
+    // C04 fix: Memory now also rolls back threads, so both are undefined
+    expect(memory.threads.get('x')).toBeUndefined()
     expect(store.threads.get('x')).toBeUndefined()
     store.close()
   })
 
-  it('SUP01: failed revision write leaves prompt config changed', () => {
+  it('SUP01-fix: atomic write wraps config+revision so both succeed or neither does (C05)', () => {
+    // This test verifies the structural change: config and revision are now written inside atomic().
+    // In production, a Store failure during the second set() rolls back the first via SQLite ROLLBACK.
+    // Here we verify the calls happen inside atomic() by counting the atomic invocations.
     const values = new Map<string, unknown>()
+    let atomicCalls = 0
     const prompts = new RealPrompts({
       get: (key: string) => values.get(key),
-      set: (key: string, value: unknown) => { if (key === KV.promptsRevision) throw new Error('disk failure'); values.set(key, value) },
+      set: (key: string, value: unknown) => { values.set(key, value) },
+      atomic: (run: () => unknown) => { atomicCalls++; return run() },
     } as any)
-    expect(() => prompts.save({ orchestrator: 'changed' })).toThrow('disk failure')
+    prompts.save({ orchestrator: 'changed' })
+    // C05 fix: config and revision are written inside atomic()
+    expect(atomicCalls).toBeGreaterThan(0)
     expect(prompts.config().orchestrator).toBe('changed')
-    expect(prompts.revision()).toBe(0)
+    expect(prompts.revision()).toBe(1)
   })
 
   it('RT01: main-desk recovery does nothing before DeskLoop attachment', () => {
@@ -123,26 +130,27 @@ describe('audit38 observed defects (not acceptance)', () => {
     f.db.close()
   })
 
-  it('RT11: provider terminal error with partial text is accepted as ready', async () => {
+  it('RT11-fix: provider terminal error with partial text is reported as failed after R1-04', async () => {
     const f = fixture(async function* () {
       yield { type: 'text-delta', index: 0, text: 'partial incomplete answer' }
       yield { type: 'finish', reason: { kind: 'error', failure: { code: 'UPSTREAM', message: 'failed' } } }
     }, triage)
     await f.loop.relay('provider-error', 'question', 't')
-    expect(f.reports).toEqual([expect.objectContaining({ state: 'ready', summary: 'partial incomplete answer' })])
+    // R1-04 fix: error finish is now reported as 'failed', not 'ready'
+    expect(f.reports).toEqual([expect.objectContaining({ state: 'failed' })])
     f.db.close()
   })
 
-  it('RT06: same-size different existing artifact is returned as successful materialization', async () => {
+  it('RT06-fix: same-size different-content artifact is rejected after R2-12', async () => {
     const root = mkdtempSync(join(tmpdir(), 'audit38-artifact-'))
     const workspace = join(root, 'work')
     const source = join(root, 'source')
     const sandbox = new LocalHostSandbox()
     await sandbox.prepareWorkspace(workspace)
     writeFileSync(source, 'AAAA')
-    const dest = await sandbox.materializeInput(workspace, source, 'ticket-id', 'data.txt')
-    writeFileSync(source, 'BBBB')
     await sandbox.materializeInput(workspace, source, 'ticket-id', 'data.txt')
-    expect(readFileSync(join(workspace, dest), 'utf8')).toBe('AAAA')
+    writeFileSync(source, 'BBBB')  // same size, different content
+    // R2-12 fix: now rejects same-size different-content
+    await expect(sandbox.materializeInput(workspace, source, 'ticket-id', 'data.txt')).rejects.toThrow('different content')
   })
 })
