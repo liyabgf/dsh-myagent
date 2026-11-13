@@ -814,6 +814,14 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
   private restrict(agent: Agent, ticket: Ticket): () => void {
     const parent = scopeParentOf(agent)
     let allow = WORKER_TOOLS.filter(name => agent.ctx.tools.get(name, parent) !== undefined)
+    // A profile that recognises none of the work tools cannot safely run any worker: an unrestricted
+    // Session can call anything DSH exposes, which is strictly more powerful than a restricted one.
+    // Guard before the first restrict() call, not only after a refusal, so the check fires even when
+    // restrict({allow:[]}) happens to succeed (a stub that does not enforce DSH's own rule would
+    // silently accept it and leave the Ticket running unrestricted).
+    if (allow.length === 0) {
+      throw new Error(`DSH accepts no work tool for a worker Session; refusing to run Ticket ${ticket.id} unrestricted`)
+    }
     const dropped: string[] = []
     for (;;) {
       try {

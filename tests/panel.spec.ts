@@ -698,7 +698,7 @@ describe('one Ticket', () => {
     // 旧断言：toEqual(['Ticket', '创建', '更新', '归属', '授权', '目录', '来源 Trigger'])
     expect(all('#detail .kv dt').map(node => node.textContent))
       .toEqual(['任务', '创建', '更新', '归属', '目录', '授权', '来源 Trigger'])  // 【U7】首行标签 Ticket→任务
-    expect(detailValue('任务'))  // 【U7 改名】旧标签 'Ticket'.toBe('ticket-1')
+    expect(detailValue('任务')).toBe('ticket-1')  // 【U7 改名】旧标签 'Ticket'.
     expect(detailValue('授权')).toBe('operator（person）经 schedule，策略版本 pv-9f3c')
     expect(detailValue('目录')).toBe('/work/ticket-1')
     expect(detailValue('来源 Trigger')).toBe('trigger-7')
@@ -1900,6 +1900,7 @@ describe('schedules', () => {
     expect(text('sched-last')).toBe('还没有')
   })
 
+  // TODO(R4): add a save round-trip case preserving preset/maxRuntimeMs/deliverTo; the six-field fixture below does not cover them.
   it('saves a schedule the server will accept, with nothing on it that only a view needs', async () => {
     const untouched = scheduleView({
       id: 'weekly-report', name: '每周报表', prompt: '每周一产出上一周的报表', scope: '',
@@ -4074,7 +4075,7 @@ describe('归档与完全删除（U21）', () => {
   })
 
   it('删掉一个工作，它名下的任务不再指着它，而 toast 说清有几张被解除归属', async () => {
-    const { sent, last } = await mount(myRoutes({
+    const { sent } = await mount(myRoutes({
       'POST works/work-1/delete': { deleted: 'work-1', detachedTickets: 1 },
     }))
     await openWorksPage()
@@ -4082,17 +4083,31 @@ describe('归档与完全删除（U21）', () => {
     click(button('删除'))
     await settle()
     expect(text('work-detail')).toContain('它名下 1 张任务会失去这个归属')
+    expect(sent('POST works/work-1/delete')).toHaveLength(0)
+    const readsBeforeDelete = sent('GET works/work-1').length
+    expect(readsBeforeDelete).toBeGreaterThan(0)
     click(button('确认删除'))
     await settle()
     expect(sent('POST works/work-1/delete')).toHaveLength(1)
     expect(toastText()).toContain('1 张任务失去了这个归属')
     // 删掉的东西不能还留在选中态里，否则详情区会去读一个已经不存在的 id。
-    expect(last('GET works/work-1')).toBeDefined()
+    // 以删除前的实际读取数为基线，既证明详情曾读过，又不把确认阶段的刷新误算为删后读取。
+    expect(sent('GET works/work-1')).toHaveLength(readsBeforeDelete)
+    expect(text('work-detail')).toBe('选择左边一个项目或工作；里面的任务点一下就回到任务页打开。')
+    const worksReadsAfterDelete = sent('GET works').length
+    await tick(10_000)
+    // 正控制：工作页确实继续刷新；负控制：刷新也不得重读已删除的详情。
+    expect(sent('GET works').length).toBeGreaterThan(worksReadsAfterDelete)
+    expect(sent('GET works/work-1')).toHaveLength(readsBeforeDelete)
   })
 
-  it('归属下拉不再提供已归档的工作，但这张任务当前所在的那个必须还在', async () => {
+  it('归属下拉不再提供无关已归档工作，但当前所在的已归档工作必须还在', async () => {
     await mount(myRoutes({
-      'GET works': { works: [work(), work({ id: 'work-2', name: '月报', archivedAt: LATER })] },
+      'GET works': { works: [
+        work(),
+        work({ id: 'work-2', name: '月报', archivedAt: LATER }),
+        work({ id: 'work-3', name: '季度归档', archivedAt: LATER }),
+      ] },
       'GET tickets/ticket-1': ticket({ workId: 'work-2', workSeq: 1 }),
     }))
     click(button('任务'))
@@ -4103,7 +4118,10 @@ describe('归档与完全删除（U21）', () => {
     expect(options).toContain('周报')
     // 已归档的那条**因为这张任务正在里面**而留着，并且标明它已归档——否则下拉会静默丢掉现值。
     expect(options).toContain('月报（已归档）')
-    // 再建一个已归档但无关的工作，它不该出现在选项里。
+    expect(input('d-work').value).toBe('work-2')
+    // 无关已归档工作不得混入选择项：同时钉住 id 与标签，避免仅改变文案就绕过负控制。
+    expect(all('#d-work option').map(valueOf)).not.toContain('work-3')
+    expect(options.some(option => option.includes('季度归档'))).toBe(false)
   })
 
   it('任务行仍然叫得出已归档工作的名字——命名索引含已归档，选择列表才排除', async () => {
@@ -5361,7 +5379,7 @@ describe('短码与技术细节折叠（U4）', () => {
     }))
     await openListed()
     // dd 的文本恰为短码，别无他物：整串若也画出来，这一行就又变回 32 位噪声。
-    expect(detailValue('任务'))  // 【U7 改名】旧标签 'Ticket'.toBe('b356ac64…')
+    expect(detailValue('任务')).toBe('b356ac64…')  // 【U7 改名】旧标签 'Ticket'.
     const link = one('#detail .kv button.linklike')
     expect(link.getAttribute('title')).toContain(LONG)
     expect(read(link)).toBe('b356ac64…')

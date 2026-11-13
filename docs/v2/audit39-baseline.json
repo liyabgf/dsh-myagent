@@ -1,0 +1,15 @@
+{
+  "base": "/tmp/audit39-baseline.Ye8s5N",
+  "head": "2064ca67624f76543806bd19e84c505fb18b30a1",
+  "status": " M docs/v2/39-corrective-repair-engineering.md\n M lib/index.js\n?? docs/v2/audit39-supervision.md\n",
+  "files": {
+    "lib/index.js": {
+      "worktree": "2cac4b8c36ee96b638a0ae2fe7d14a4309e779727f782389eda0ad02d9524def",
+      "backup": "2cac4b8c36ee96b638a0ae2fe7d14a4309e779727f782389eda0ad02d9524def"
+    },
+    "lib/index.d.ts": {
+      "worktree": "a7b1549c68196e1ae56a6d44a40e0127e476c5ce1db2576dff709c51080170e9",
+      "backup": "a7b1549c68196e1ae56a6d44a40e0127e476c5ce1db2576dff709c51080170e9"
+    }
+  }
+}

@@ -710,7 +710,9 @@ describe('a profile that does not know several of the worker tools', () => {
       await settle(runtime)
       const ticket = runtime.store.tickets.list()[0]!
       expect(ticket.assignments.at(-1)!.state).toBe('pending')
-      expect(host.restrictions.length).toBeGreaterThan(0)
+      // With the early guard, restrict() is never called because the tool list is known-empty before the first
+      // restrict() attempt. The important invariant is still met: the Ticket stays pending and the health board
+      // records the problem, so the operator can see why nothing started.
       expect(runtime.health.problems().length).toBeGreaterThan(0)
     } finally { await runtime.stop() }
   })
@@ -872,40 +874,36 @@ describe('the operator is told where the panel is, by the system itself', () => 
 })
   
 
-describe('attachments from chat notes reach the Ticket\'s inputs/ directory', () => {
-  it('a note with attachment paths copies the files into inputs/ before delivering to worker', async () => {
-    const { runtime, inbox, work } = await deployment('auto')
+describe('attachments from chat notes reach the Ticket\'s attachments/ directory', () => {
+  it('copies attachment bytes into attachments/ and marks the note delivered', async () => {
+    const { runtime, inbox } = await deployment('auto')
     try {
-      // Create a temp file to act as an "attachment from the bridge"
-      const { mkdtempSync, writeFileSync } = await import('node:fs')
+      // Create a temp file to act as an "attachment from the bridge".
+      const { mkdtempSync, readFileSync, writeFileSync } = await import('node:fs')
       const { join: j } = await import('node:path')
       const { tmpdir } = await import('node:os')
       const attachDir = mkdtempSync(j(tmpdir(), 'myagent-attach-'))
       const attachFile = j(attachDir, 'photo.jpg')
-      writeFileSync(attachFile, 'fake image bytes')
+      const attachmentBytes = Buffer.from('fake image bytes')
+      writeFileSync(attachFile, attachmentBytes)
 
-      // Drop an inbox request so the worker starts
+      // Drop an inbox request so the worker starts.
       drop(inbox, 'task.md', 'do something simple and report ready')
       await settle(runtime)
       const ticket = runtime.store.tickets.list()[0]!
 
-      // Simulate a chat note with an attachment (what fan-out would do)
+      // Simulate a chat note with an attachment (what fan-out would do).
       runtime.engine.note(ticket.id, 'extra context', [attachFile])
       await settle(runtime)
 
-      // The attachment should be in the Ticket's inputs/ directory
-      const { readdirSync, existsSync } = await import('node:fs')
-      const ticketDir = ticket.execution!.directory
-      const inputsDir = j(ticketDir, 'inputs')
-      if (existsSync(inputsDir)) {
-        const files = readdirSync(inputsDir)
-        expect(files).toContain('photo.jpg')
-      } else {
-        // inputs/ may not exist yet if worker hasn't been delivered to — verify the note stored the attachment
-        const after = runtime.store.tickets.get(ticket.id)!
-        const noteInput = after.inputs.find(inp => inp.kind === 'note' && inp.text === 'extra context')
-        expect(noteInput?.attachments).toEqual([attachFile])
-      }
+      // LocalHostSandbox's real contract is attachments/, not inputs/: prove the copied bytes, not just a directory entry.
+      const after = runtime.store.tickets.get(ticket.id)!
+      const noteInput = after.inputs.find(inp => inp.kind === 'note' && inp.text === 'extra context')
+      expect(noteInput).toBeDefined()
+      expect(noteInput!.attachments).toEqual([attachFile])
+      expect(noteInput!.deliveredAt).toBeTruthy()
+      const ticketDir = after.execution!.directory
+      expect(readFileSync(j(ticketDir, 'attachments', 'photo.jpg'))).toEqual(attachmentBytes)
     } finally { await runtime.stop() }
   })
 })

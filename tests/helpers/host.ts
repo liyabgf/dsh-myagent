@@ -65,6 +65,16 @@ export interface RecordedGuard {
   readonly guard: (execution?: { readonly name?: string; readonly arguments?: unknown }) => string | undefined
 }
 
+/** Disposed registrations stay in the history arrays, but no longer answer live queries. */
+const disposedRegistrations = new WeakSet<object>()
+
+export interface ActiveRegistrations {
+  readonly tools: RegisteredTool[]
+  readonly restrictions: { allow?: readonly string[] }[]
+  readonly sections: { agentId: string; definition: { name?: string; text?: unknown } }[]
+  readonly guards: RecordedGuard[]
+}
+
 /** What a stub agent records, which is what a test asserts on. */
 export interface AgentRecord {
   id: string
@@ -76,6 +86,10 @@ export interface AgentRecord {
   /** Messages injected into its history without waking it. */
   notices: { id: string; text: string; source: unknown }[]
   cancelled: number
+  /** Every cancellation, including its arguments and the status it interrupted. */
+  readonly cancellations: { cause: unknown; options: unknown; status: 'idle' | 'running' }[]
+  /** Effective registrations; the arrays supplied to fakeAgent remain complete call histories. */
+  readonly active: ActiveRegistrations
   ctx: {
     systemPrompt: { section(definition: unknown): () => void }
     tools: {
@@ -138,11 +152,39 @@ export function fakeAgent(id: string, tools: RegisteredTool[], restrictions: { a
   sections: { agentId: string; definition: { name?: string; text?: unknown } }[] = [],
   guards: RecordedGuard[], policy: RestrictPolicy,
   log: { seq: number; type: string; data?: Record<string, unknown> }[] = [], fault?: DeliveryFault): AgentRecord {
+  let status: AgentRecord['status'] = 'idle'
+  const idleWaiters = new Set<() => void>()
+  const active: ActiveRegistrations = { tools: [], restrictions: [], sections: [], guards: [] }
+  const register = <T extends object>(history: T[] | undefined, effective: T[], entry: T): (() => void) => {
+    history?.push(entry)
+    effective.push(entry)
+    let disposed = false
+    return () => {
+      if (disposed) return
+      disposed = true
+      disposedRegistrations.add(entry)
+      const index = effective.indexOf(entry)
+      if (index >= 0) effective.splice(index, 1)
+    }
+  }
   const agent: AgentRecord = {
-    id, status: 'idle', session: sessionRecord(id), followups: [], notices: [], cancelled: 0, flushes: 0, log,
+    id, session: sessionRecord(id), followups: [], notices: [], cancelled: 0, cancellations: [], active, flushes: 0, log,
+    get status() { return status },
+    set status(value) {
+      status = value
+      if (value === 'idle') {
+        const pending = [...idleWaiters]
+        idleWaiters.clear()
+        for (const resolve of pending) resolve()
+      }
+    },
     inbox: { nextTurn: [], nextStep: [] },
-    cancel() { agent.cancelled++ },
-    whenIdle: async () => {},
+    cancel(cause, options) {
+      agent.cancelled++
+      agent.cancellations.push({ cause, options, status })
+      agent.status = 'idle'
+    },
+    whenIdle: () => status === 'idle' ? Promise.resolve() : new Promise<void>(resolve => { idleWaiters.add(resolve) }),
     followup(message) {
       fault?.relay(id)
       agent.followups.push({ id: message.id, text: textOf(message), source: sourceOf(message) })
@@ -158,16 +200,16 @@ export function fakeAgent(id: string, tools: RegisteredTool[], restrictions: { a
     },
     ctx: {
       systemPrompt: {
-        section: (definition: unknown) => {
-          sections.push({ agentId: id, definition: definition as { name?: string; text?: unknown } })
-          return () => {}
-        },
+        section: (definition: unknown) => register(sections, active.sections,
+          { agentId: id, definition: definition as { name?: string; text?: unknown } }),
       },
       tools: {
-        register(definition) { tools.push({ agentId: id, definition }); return () => {} },
+        register(definition) { return register(tools, active.tools, { agentId: id, definition }) },
         // Faithful to DSH: a name it does not know globally is refused, and the message carries the name.
         restrict(filter) {
-          restrictions.push(filter)
+          // Keep failed attempts in history too, but never install them as effective restrictions.
+          const entry = { ...filter }
+          restrictions.push(entry)
           if (policy.fails) throw new Error('this profile accepts no tool restriction')
           // Faithful to DSH in shape as well as content: it collects EVERY unknown name and refuses once, plural
           // above one name. Throwing on the first name only — always singular — left the multi-name case unreachable,
@@ -177,11 +219,15 @@ export function fakeAgent(id: string, tools: RegisteredTool[], restrictions: { a
             throw new Error(`tools.restrict() names unknown global tool${unknown.length > 1 ? 's' : ''} `
               + `${unknown.map(name => `"${name}"`).join(', ')}; known global tools: ${policy.knownTools.join(', ')}`)
           }
-          return () => {}
+          return register(undefined, active.restrictions, entry)
         },
         // Recorded, so a test can ask what a Session is told once its authorization is over.
-        guard: (deny: (execution?: { readonly name?: string; readonly arguments?: unknown }) => string | undefined) => { guards.push({ agentId: id, guard: deny }); return () => {} },
-        get: () => ({}),
+        guard: (deny: RecordedGuard['guard']) => register(guards, active.guards, { agentId: id, guard: deny }),
+        // DSH resolves local registrations first, then the parent/global tool scope used by restrict().
+        // A disposed local registration must not shadow the global tool of the same name.
+        get: (name: string, scope?: unknown) => (scope === undefined
+          ? active.tools.filter(tool => tool.definition.name === name).at(-1)?.definition : undefined)
+          ?? (policy.knownTools.includes(name) ? { name } : undefined),
       },
     },
   }
@@ -528,13 +574,15 @@ export function stubHost(options: StubOptions = {}): StubHost {
       if (permission !== undefined) presets.set(sessionId, permission)
       return agent
     },
-    tool: (agentId: string, name: string) => tools.find(tool => tool.agentId === agentId && tool.definition.name === name),
-    guardOf: (agentId: string) => guards.filter(item => item.agentId === agentId).at(-1)?.guard,
-    toolsOf: (agentId: string) => tools.filter(tool => tool.agentId === agentId).map(tool => tool.definition.name),
+    tool: (agentId: string, name: string) => tools.filter(tool => tool.agentId === agentId
+      && tool.definition.name === name && !disposedRegistrations.has(tool)).at(-1),
+    guardOf: (agentId: string) => guards.filter(item => item.agentId === agentId && !disposedRegistrations.has(item)).at(-1)?.guard,
+    toolsOf: (agentId: string) => tools.filter(tool => tool.agentId === agentId && !disposedRegistrations.has(tool)).map(tool => tool.definition.name),
     // Dispatch as DSH does: a throwing listener propagates to the caller, which is what makes it fatal.
     // `text` 可能是字符串，也可能是 thunk（真的 Sessions 传函数，好让提示词改动能重新绑定）。
     sectionText: (agentId: string) => {
-      const found = sections.filter(item => item.agentId === agentId && item.definition.name === 'myagent').at(-1)
+      const found = sections.filter(item => item.agentId === agentId && item.definition.name === 'myagent'
+        && !disposedRegistrations.has(item)).at(-1)
       const text = found?.definition.text
       return typeof text === 'function' ? String((text as () => unknown)()) : text === undefined ? undefined : String(text)
     },

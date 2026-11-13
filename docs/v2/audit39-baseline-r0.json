@@ -1,0 +1,46 @@
+{
+  "at": "2026-11-13T06:54:07.006426+00:00",
+  "head": "2064ca67624f76543806bd19e84c505fb18b30a1",
+  "files": {
+    "tests/helpers/host.ts": {
+      "sha256": "1131f231609e41bea1788c81b9172fee1acc69fdc81bc187771ca4e1f252706e",
+      "bytes": 32830
+    },
+    "tests/helpers/deployment.ts": {
+      "sha256": "036573499391ea69bed47386251b26ad3a1c9c298254d1da0518124d068fb4ba",
+      "bytes": 2301
+    },
+    "tests/flow.spec.ts": {
+      "sha256": "1bf5aa166dd15e1e3c0cba1bacc5fb49f9861def16cfa2d265e38b9ad058b4a9",
+      "bytes": 53289
+    },
+    "tests/http.spec.ts": {
+      "sha256": "ae9b7c73d1db50725d13c920b0f64f44417c8f221f5ea581f8e91336691973a0",
+      "bytes": 70080
+    },
+    "tests/desk-tools.spec.ts": {
+      "sha256": "dee43921f370fe2556cbce837d750bdb54c84ba8a61620ec035b9b80aeef91ec",
+      "bytes": 2582
+    },
+    "tests/panel.spec.ts": {
+      "sha256": "7bae5253708c29ff13e885716497c0711af1989341c9474d4234733dac2048e9",
+      "bytes": 313827
+    },
+    "src/app/desk-loop.ts": {
+      "sha256": "bfa09c1e2f63e65bfb81617497d9e6f850e4745d511672686258b49bd411dc66",
+      "bytes": 15319
+    },
+    "src/app/desk-llm.ts": {
+      "sha256": "b63e9cc32c2dab4f5464af41ec58ebe123d4001287c34066a66e6d2f423e99f6",
+      "bytes": 5849
+    },
+    "src/app/runtime.ts": {
+      "sha256": "15cfcc4de87adcf0842890f9cef0961a85ed691855cc13f2b22c99bb7e350512",
+      "bytes": 103141
+    },
+    "lib/index.js": {
+      "sha256": "2cac4b8c36ee96b638a0ae2fe7d14a4309e779727f782389eda0ad02d9524def",
+      "bytes": 516828
+    }
+  }
+}

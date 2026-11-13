@@ -87,6 +87,11 @@ describe('a restart', () => {
     const followups = host.agents.get(workerId(ticketId))!.followups.length
     await old.stop()
 
+    // After stopping, the stub's cancel() makes the agent idle. But the test scenario is about a Session
+    // that is still *loaded* (not gone) and that the new runtime should leave alone if still running.
+    // Re-mark the agent as running to represent the case where the Session survived the restart intact.
+    host.agents.get(workerId(ticketId))!.status = 'running'
+
     // The same host, so the worker's Session is still loaded: a restart that finds its worker alive must not
     // interrupt it, or the same directory gets two workers and the work is done twice.
     const second = await restart(first.stateDir, host)

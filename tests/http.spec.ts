@@ -10,6 +10,7 @@ import { chmodSync, mkdirSync, readFileSync, readdirSync, utimesSync, writeFileS
 import { join } from 'node:path'
 import { api, deployment, type Deployment } from './helpers/deployment.ts'
 import { wait } from './helpers/host.ts'
+import type { StubHost } from './helpers/host.ts'
 import type { LostTrigger } from '../src/core/engine.ts'
 // The bounds the Store enforces, read from it rather than copied: a test that repeated `20` would keep passing after
 // the bound moved, and would then be pinning the route to a number nothing enforces.
@@ -30,6 +31,28 @@ async function createTicket(context: Deployment, title = '每日摘要'): Promis
   const id = response.json.ticketId as string | undefined
   expect(id).toBeTruthy()
   return id!
+}
+
+/** Invoke the registered route with the shape Node's IncomingMessage supplies, without the helper's JSON shortcut. */
+async function invokeRealRequest(host: StubHost, path: string, chunks: readonly (Buffer | string)[], streamError?: Error) {
+  const handler = host.routes.get('/myagent')
+  expect(handler).toBeDefined()
+  const req = {
+    method: 'PUT', url: path, headers: { host: '127.0.0.1:3080', 'x-myagent-request': '1' },
+    async *[Symbol.asyncIterator]() {
+      for (const chunk of chunks) yield typeof chunk === 'string' ? Buffer.from(chunk) : chunk
+      if (streamError !== undefined) throw streamError
+    },
+  }
+  const res = {
+    status: 0, headers: {} as Record<string, string>, text: '',
+    writeHead(status: number, headers: Record<string, string> = {}) { res.status = status; res.headers = headers; return res },
+    end(text = '') { res.text = String(text) },
+  }
+  await handler!(req, res)
+  let json: Record<string, unknown> = {}
+  try { json = JSON.parse(res.text) as Record<string, unknown> } catch { /* route errors are JSON */ }
+  return { status: res.status, json, text: res.text }
 }
 
 /**
@@ -217,15 +240,56 @@ describe('what the panel writes', () => {
     })
   })
 
-  it('refuses a body that is not JSON, and one that is too large', async () => {
+  it('refuses an absent body through schema validation, and one that is too large', async () => {
     await withDeployment(async ({ host }) => {
-      const notJson = await host.request(api('tickets'), { method: 'POST', body: undefined, headers: PANEL_HEADERS })
+      const absent = await host.request(api('tickets'), { method: 'POST', body: undefined, headers: PANEL_HEADERS })
       // An absent body reads as an empty object, which the schema then refuses by naming what is missing.
-      expect(notJson.status).toBe(400)
+      expect(absent.status).toBe(400)
       const huge = await host.request(api('tickets'), {
         method: 'POST', body: { title: 'x'.repeat(200_000), request: 'y' },
       })
       expect(huge.status).toBe(400)
+    })
+  })
+
+  it.each([
+    { name: 'malformed JSON', chunks: ['{"worker":'], error: undefined, status: 400, message: 'The request body is not JSON' },
+    { name: 'a stream that throws after a complete JSON chunk', chunks: ['{"worker":"must not be saved"}'], error: new Error('request stream failed'), status: 500, message: 'request stream failed' },
+  ])('refuses $name from an IncomingMessage-shaped stream without side effects', async ({ chunks, error, status, message }) => {
+    await withDeployment(async ({ host, runtime, work }) => {
+      const beforePrompts = (await host.request(api('prompts'))).json
+      const beforeState = (await host.request(api('state'))).json
+      const beforeCalls = structuredClone(host.calls)
+      const beforeWork = readdirSync(work)
+      const response = await invokeRealRequest(host, api('prompts'), chunks, error)
+      expect(response.status).toBe(status)
+      expect(response.json).toEqual({ error: message })
+      expect((await host.request(api('prompts'))).json).toEqual(beforePrompts)
+      const afterState = (await host.request(api('state'))).json
+      expect(afterState.counts).toEqual(beforeState.counts)
+      expect(afterState.settings).toEqual(beforeState.settings)
+      expect(afterState.settingsRevision).toBe(beforeState.settingsRevision)
+      expect(runtime.decisions()).toEqual([])
+      expect(host.calls).toEqual(beforeCalls)
+      expect(host.agents.size).toBe(0)
+      expect(readdirSync(work)).toEqual(beforeWork)
+    })
+  })
+
+  it('joins multiple IncomingMessage chunks before decoding JSON, including a split UTF-8 character', async () => {
+    await withDeployment(async ({ host }) => {
+      const worker = '中文分块正文'
+      const bytes = Buffer.from(JSON.stringify({ worker }))
+      const split = bytes.indexOf(Buffer.from('中')) + 1
+      const response = await invokeRealRequest(host, api('prompts'), [bytes.subarray(0, split), bytes.subarray(split, split + 1), bytes.subarray(split + 1)])
+      expect(response.status).toBe(200)
+      expect(response.json.revision).toBe(1)
+      const read = (await host.request(api('prompts'))).json
+      expect(read.revision).toBe(1)
+      expect((read.roles as { role: string; current: string; override?: string }[]).find(role => role.role === 'worker'))
+        .toMatchObject({ current: worker, override: worker })
+      expect((await host.request(api('tickets?state=all'))).json.count).toBe(0)
+      expect(host.calls.sessions).toEqual([])
     })
   })
 
