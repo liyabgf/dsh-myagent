@@ -76,7 +76,7 @@ A005后续：将全部10条审核探针复制进同一快照重跑完整gate，�
 
 
 
-### A008 · 当前审核结论（整合完成，最终核验进行中）
+### A008 · 当前审核结论（审核交付完成，发现尚未修复）
 
 本轮新增纪律执行器 `audit38/run-recorded.py`：命令前追加planned记录，命令结束追加真实exit与stdout/stderr SHA-256；A009 smoke记录已写入 `audit38/operations.jsonl`。后续审核命令优先通过该包装器执行。
 
@@ -89,3 +89,11 @@ Audit38隔离探针当前10条通过（退出0）是“缺陷观测成立”，�
 - P2：DeskLoop旧reply守卫、requestId未去重turn、artifact同size判据、Memory Thread回滚、Prompts KV分裂、Chat fanout、Watchdog告警先去重、测试假桩/降级断言、文档与历史状态漂移。
 
 本轮只审核，不修复业务代码，不运行发布脚本，不操作myagent-public，不操作日常运行态。工作区既有lib/index.js修改保留；新增audit38文档、拓扑数据、审核探针是本轮审计产物，提交前需人工确认是否纳入版本。pnpm-lock.yaml仅做结构核查（依赖锁文件本身、tarball/integrity/local引用计数已落盘），未安装/审CVE/联网供应链。
+
+### A011 · 交付提交与远端核实（已执行）
+
+- 精确暂存38总控、audit38目录、audit38探针；原有lib/index.js修改未暂存未提交。
+- staged diff --check返回2，原因仅原始.log尾随空格/EOF空行；原始证据保持逐字不修改。排除.log后的作者文档/JSON/脚本/测试检查退出0。
+- 审核交付提交 `3d247dc`（42文件，27,847行，主要为机器索引、覆盖表、原始日志与报告）。git fetch origin main退出0，remote-only为空，local-only仅该提交；git push origin HEAD:main退出0，远端a06e999→3d247dc。
+- 最终隔离gate退出0，1218 passed；10个新增probe验证缺陷观测，不是修复验收。完整首次失败、定向重跑、最终通过均保存。
+- 工作树仍保留原有lib/index.js修改；本轮未更改业务源码、未更改日常任务、未操作公开副本。审核完成不等于全部缺陷修复；修复需另立工程和验收批次。
