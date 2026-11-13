@@ -1260,6 +1260,27 @@ export class Runtime implements HttpHost {
   async start(): Promise<void> {
     this.indexSessions()
     this.wireAgents()
+    // R1-01: Create and wire the DeskLoop BEFORE recover() so that recover()'s
+    // usesMainDesk() check can see sessions.hasDeskLoop(). Without this, running
+    // main-desk triage Tickets are silently skipped by recover() at every restart
+    // instead of being re-queued to the desk.
+    this.deskLoop = new DeskLoop(
+      this.context,
+      this.store,
+      this.toolsHost(),
+      this.prompts,
+      () => this.settings(),
+      this.engine,
+    )
+    await this.deskLoop.init()
+    this.disposers.push(this.prompts.onChange(() => { this.deskLoop?.onPromptsChanged() }))
+    const deskCfg = this.settings().deskLlm
+    if (deskCfg.provider && deskCfg.model) {
+      this.sessions.setDeskLoop(this.deskLoop)
+      this.context.logger.info('myagent desk: LLM loop active (provider=%s model=%s)', deskCfg.provider, deskCfg.model)
+    } else {
+      this.context.logger.info('myagent desk: LLM loop standby (deskLlm.provider/model not configured)')
+    }
     this.recover()
     this.refresh()
     try {
@@ -1271,26 +1292,6 @@ export class Runtime implements HttpHost {
     }
     this.passes.start()
     this.watchdog.start()
-    // 【D6】Initialise the DeskLoop. Always created for panel visibility; routes relay/notify
-    // only when a provider+model are configured. Otherwise the DSH Session fallback stays active.
-    this.deskLoop = new DeskLoop(
-      this.context,
-      this.store,
-      this.toolsHost(),
-      this.prompts,
-      () => this.settings(),
-      this.engine,  // passed so DeskLoop can close triage tickets directly
-    )
-    await this.deskLoop.init()
-    // 【R2 F-D5 热同步】提示词修订变更时立即同步 DeskLoop 的 system prompt。
-    this.disposers.push(this.prompts.onChange(() => { this.deskLoop?.onPromptsChanged() }))
-    const deskCfg = this.settings().deskLlm
-    if (deskCfg.provider && deskCfg.model) {
-      this.sessions.setDeskLoop(this.deskLoop)
-      this.context.logger.info('myagent desk: LLM loop active (provider=%s model=%s)', deskCfg.provider, deskCfg.model)
-    } else {
-      this.context.logger.info('myagent desk: LLM loop standby (deskLlm.provider/model not configured)')
-    }
     this.health.entry('runtime').record(this.machine.stateDir)
     this.announceSandbox()
     // 【S38 防护】重启后，所有在上次进程里已结束的票都不会再发 ticket.ended 事件——
@@ -1416,6 +1417,9 @@ export class Runtime implements HttpHost {
         await this.executor.halt(ticket.id, 'myagent stopped', true)
       }
     }, 15_000)
+    // R1-02: Stop the DeskLoop before closing the Store so its pending LLM calls
+    // and history writes do not outlive the database.
+    this.deskLoop?.stop()
     await step('close the database', () => this.store.close(), 5_000)
     this.lock.release()
   }

@@ -60,6 +60,9 @@ export async function deskGenerate(
     tools: tools.length > 0 ? [...tools] : undefined,
     temperature: cfg.temperature,
     maxTokens: cfg.maxTokens,
+    // R1-06: forward the caller's AbortSignal to the provider so Runtime.stop can
+    // cancel an in-flight LLM call, not merely detect abort after the next chunk.
+    ...(signal !== undefined ? { signal } : {}),
   }
 
   // Collect stream chunks into a finished assistant message.

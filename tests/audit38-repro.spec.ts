@@ -81,31 +81,31 @@ describe('audit38 observed defects (not acceptance)', () => {
     expect(interrupted).toBe(0)
   })
 
-  it('RT07: aborted generation signal is not forwarded to provider', async () => {
+  it('RT07-fix: signal IS forwarded to provider after R1-06', async () => {
     let received: any
     const f = fixture(async function* (options) { received = options; yield { type: 'finish', reason: { kind: 'stop' } } })
     const controller = new AbortController()
     controller.abort()
     await expect(deskGenerate(f.ctx, cfg.deskLlm, [], [], controller.signal)).rejects.toThrow('aborted')
-    expect(received.signal).toBeUndefined()
+    expect(received.signal).not.toBeUndefined()  // R1-06 fixed: signal is now passed
     f.db.close()
   })
 
-  it('RT08: worker ask-desk timeout is reported as dropped against the worker id', async () => {
+  it('RT08-fix: worker timeout does NOT drop the worker ticket after R1-03', async () => {
     const worker = { id: 'worker-ticket', assignments: [{ state: 'running' }] }
     const f = fixture(() => { throw new Error('timeout') }, worker)
     await expect(f.loop.relay('ask', 'worker question', worker.id)).rejects.toThrow('timeout')
-    expect(f.reports).toEqual([expect.objectContaining({ id: worker.id, state: 'dropped' })])
+    expect(f.reports).toHaveLength(0)  // R1-03 fixed: worker id is not dropped
     f.db.close()
   })
 
-  it('RT09: one prior reply suppresses settlement on later requester answer', async () => {
+  it('RT09-fix: prior-turn reply does NOT block settlement in new turn after R1-07', async () => {
     const f = fixture(async function* () {
       yield { type: 'text-delta', index: 0, text: 'The final answer' }
       yield { type: 'finish', reason: { kind: 'stop' } }
     }, triage, [{ type: 'replied', at: '2026-01-01T00:01:00Z' }])
     await f.loop.relay('followup', 'requester answered', 't')
-    expect(f.reports).toHaveLength(0)
+    expect(f.reports).toEqual([expect.objectContaining({ state: 'ready', summary: 'The final answer' })])  // R1-07 fixed
     f.db.close()
   })
 

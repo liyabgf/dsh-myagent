@@ -141,7 +141,20 @@ export class DeskLoop {
 
   // ── private ─────────────────────────────────────────────────────────────────────────────
 
+  /** R1-02: Stop the loop, abort any in-flight LLM call, and reject all queued entries.
+   *  Called by Runtime.stop() before closing the Store. */
+  stop(): void {
+    this.abortController.abort()
+    for (const entry of this.queue.splice(0)) {
+      entry.reject(new Error('DeskLoop stopped'))
+    }
+  }
+
   private enqueue(entry: Omit<QueueEntry, 'resolve' | 'reject'>): Promise<void> {
+    // R1-10: Reject immediately when already stopped.
+    if (this.abortController.signal.aborted) {
+      return Promise.reject(new Error('DeskLoop stopped'))
+    }
     return new Promise<void>((resolve, reject) => {
       this.queue.push({ ...entry, resolve, reject })
       this.scheduleRun()
@@ -171,18 +184,24 @@ export class DeskLoop {
         const isTimeout = msg.includes('aborted') || msg.includes('timeout') || msg.includes('Timeout')
         if (!isTimeout) this.addError(msg)
         else this.ctx.logger.warn('[DeskLoop] turn timed out for %s: %s', entry.ticketId?.slice(0, 8) ?? '?', msg)
-        // 【E 真修】triage turn 超时后，直接调 engine.report(dropped) 结束 assignment
-        // 不经过模型工具层——engine.report 是领域层唯一写者，这是正确的接口
+        // R1-03: Only drop a *triage* Ticket on timeout.  A worker's askDesk() relay also
+        // carries a ticketId, but that ticketId belongs to a *worker* Ticket — dropping it
+        // would silently end work that is still running in a separate Session.
         if (isTimeout && entry.ticketId) {
-          try {
-            this.engine?.report(entry.ticketId, {
-              state: 'dropped',
-              summary: 'Triage timed out — desk LLM did not respond in time. Ticket dropped automatically.',
-            })
-            this.ctx.logger.info('[DeskLoop] closed timed-out triage ticket %s via engine.report', entry.ticketId.slice(0, 8))
-          } catch (closeError) {
-            this.ctx.logger.warn('[DeskLoop] could not close timed-out ticket %s: %s',
-              entry.ticketId.slice(0, 8), String(closeError).slice(0, 80))
+          const ticket = this.store.tickets.get(entry.ticketId)
+          const assignment = ticket?.assignments.at(-1)
+          const isRunningTriage = assignment?.role === 'triage' && assignment.state === 'running'
+          if (isRunningTriage) {
+            try {
+              this.engine?.report(entry.ticketId, {
+                state: 'dropped',
+                summary: 'Triage timed out — desk LLM did not respond in time. Ticket dropped automatically.',
+              })
+              this.ctx.logger.info('[DeskLoop] closed timed-out triage ticket %s via engine.report', entry.ticketId.slice(0, 8))
+            } catch (closeError) {
+              this.ctx.logger.warn('[DeskLoop] could not close timed-out ticket %s: %s',
+                entry.ticketId.slice(0, 8), String(closeError).slice(0, 80))
+            }
           }
         }
         entry.reject(error)
@@ -210,10 +229,11 @@ export class DeskLoop {
     // Notify messages are saved to history but don't trigger a desk turn.
     if (entry.kind === 'notify') return
 
-    // If not configured, record a warning but don't crash.
+    // R1-09: Throw so the caller gets an error and the queue entry is rejected.
+    // A silent return here would leave a running triage Ticket open forever when
+    // the desk LLM is not yet configured.
     if (!cfg.provider || !cfg.model) {
-      this.addError('Desk LLM not configured (deskLlm.provider / deskLlm.model empty).')
-      return
+      throw new Error('Desk LLM not configured (deskLlm.provider / deskLlm.model empty).')
     }
 
     // 【R3】First round uses only the lightweight gateway tool — not all 11 management schemas.
@@ -264,6 +284,28 @@ export class DeskLoop {
 
     // No tool calls: LLM answered directly. Close any pending triage Ticket via engine.report.
     if (response.toolCalls.length === 0) {
+      // R1-04: An error/aborted/max-tokens finish is NOT a successful answer even if partial text
+      // was emitted. Settling the Ticket as 'ready' with partial text would misrepresent a failure.
+      const failFinish = response.finishReason === 'error' || response.finishReason === 'aborted'
+        || response.finishReason === 'max-tokens'
+      if (failFinish && ticketId) {
+        const ticket = this.store.tickets.get(ticketId)
+        const assignment = ticket?.assignments.at(-1)
+        const isRunningTriage = assignment?.role === 'triage' && assignment.state === 'running'
+        if (isRunningTriage) {
+          try {
+            this.engine?.report(ticketId, {
+              state: 'failed',
+              summary: `Desk LLM ended with reason '${response.finishReason}'; ${response.text || '(no text)'}`,
+            })
+            this.ctx.logger.warn('[DeskLoop] triage %s failed: finish=%s', ticketId.slice(0, 8), response.finishReason)
+          } catch (err) {
+            this.ctx.logger.warn('[DeskLoop] could not report failed triage %s: %s', ticketId.slice(0, 8), String(err).slice(0, 80))
+          }
+        }
+        this.status = 'idle'
+        return
+      }
       this.settleDirectTriageAnswer(ticketId, response.text)
       this.status = 'idle'
       return
@@ -323,11 +365,15 @@ export class DeskLoop {
     if (ticket === undefined || !liveTicket(ticket)) return
     const assignment = latestAssignment(ticket)
     if (assignment === undefined || assignment.state !== 'running' || assignment.role !== 'triage') return
-    // If the desk already sent a reply via myagent_reply to keep the Ticket open, do not force-close it.
+    // R1-07: Only block settlement if a 'replied' event occurred in THIS relay turn
+    // (after the user message we just appended), not across the whole Assignment history.
+    // Using assignment.startedAt would permanently block settlement once the desk asked
+    // any question via myagent_reply, even on completely separate follow-up requests.
     const events = this.store.events.list(ticketId)
-    const repliedAfterStart = events.some(ev =>
-      ev.type === 'replied' && (assignment.startedAt === undefined || ev.at >= assignment.startedAt))
-    if (repliedAfterStart) return
+    const lastUserAt = this.history.recent(1).at(-1)?.at ?? assignment.startedAt
+    const repliedInThisTurn = events.some(ev =>
+      ev.type === 'replied' && lastUserAt !== undefined && ev.at >= lastUserAt)
+    if (repliedInThisTurn) return
     try {
       if (summary === '') {
         // 【Bug fix】LLM returned empty text with no tool calls (e.g. timeout truncation or content filter).
