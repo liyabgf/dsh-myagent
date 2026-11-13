@@ -318,7 +318,7 @@ export class DeskLoop {
    */
   private settleDirectTriageAnswer(ticketId: string | undefined, text: string): void {
     const summary = text.trim()
-    if (!ticketId || !this.engine || summary === '') return
+    if (!ticketId || !this.engine) return
     const ticket = this.store.tickets.get(ticketId)
     if (ticket === undefined || !liveTicket(ticket)) return
     const assignment = latestAssignment(ticket)
@@ -329,8 +329,16 @@ export class DeskLoop {
       ev.type === 'replied' && (assignment.startedAt === undefined || ev.at >= assignment.startedAt))
     if (repliedAfterStart) return
     try {
-      this.engine.report(ticketId, { state: 'ready', summary })
-      this.ctx.logger.info('[DeskLoop] direct triage answer settled ticket %s', ticketId.slice(0, 8))
+      if (summary === '') {
+        // 【Bug fix】LLM returned empty text with no tool calls (e.g. timeout truncation or content filter).
+        // Silently returning here left the triage Ticket running indefinitely (live: 3ba0fe58, 8 hours stuck).
+        // Drop it so the Ticket ends cleanly and the requester is not left waiting forever.
+        this.engine.report(ticketId, { state: 'dropped', summary: 'The desk LLM returned an empty response; this triage item was dropped automatically.' })
+        this.ctx.logger.warn('[DeskLoop] empty LLM reply for triage ticket %s — dropping', ticketId.slice(0, 8))
+      } else {
+        this.engine.report(ticketId, { state: 'ready', summary })
+        this.ctx.logger.info('[DeskLoop] direct triage answer settled ticket %s', ticketId.slice(0, 8))
+      }
     } catch (error) {
       this.ctx.logger.warn('[DeskLoop] could not settle direct triage answer for %s: %s',
         ticketId.slice(0, 8), String(error).slice(0, 80))

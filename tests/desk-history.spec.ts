@@ -230,4 +230,34 @@ describe('DeskLoop R3: on-demand tool mounting and direct triage answer settleme
     expect(seenCounts[0], '首轮必须只有 1 个网关工具').toBe(1)
     expect(seenCounts[1], '调 myagent_use_tools 后必须挂载全套工具').toBeGreaterThan(1)
   })
+
+  it('empty LLM reply drops a running triage Ticket instead of leaving it stuck forever', async () => {
+    const reports: { state: string; summary: string }[] = []
+    const engine = { report: (_id: string, r: { state: string; summary: string }) => { reports.push(r) } }
+    const ctx = {
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      llm: {
+        stream: async function* () {
+          yield { type: 'text-delta', index: 0, text: '' }
+          yield { type: 'finish', reason: { kind: 'stop' } }
+        },
+      },
+    } as unknown as import('@deepseek-ai/cordis').Context
+
+    const triageTicket = {
+      id: 'triage-empty', title: 'test',
+      assignments: [{ id: 'a-1', state: 'running', role: 'triage', startedAt: '2026-11-13T00:00:00Z' }],
+      inputs: [], notes: [], attachments: [],
+    }
+    const store = makeStore(triageTicket)
+    const prompts = { current: () => '' } as unknown as import('../src/app/prompts.ts').Prompts
+    const loop = new (await import('../src/app/desk-loop.ts')).DeskLoop(
+      ctx, store, {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+      engine as unknown as import('../src/core/engine.ts').Engine,
+    )
+    await loop.relay('req-empty', 'some question', 'triage-empty')
+    expect(reports, '空回复必须触发 engine.report 而非静默返回').toHaveLength(1)
+    expect(reports[0]!.state, '空回复应 dropped 而非 ready').toBe('dropped')
+  })
 })
