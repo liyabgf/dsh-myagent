@@ -195,4 +195,39 @@ describe('DeskLoop R3: on-demand tool mounting and direct triage answer settleme
     expect(reports[0]!.state).toBe('ready')
     expect(reports[0]!.summary).toBe('纽约现在是晴天，气温 18°C。')
   })
+
+  it('calling myagent_use_tools mounts all 11 management tools for the next round', async () => {
+    const seenCounts: number[] = []
+    let round = 0
+    const ctx = {
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      llm: {
+        stream: async function* (opts: { tools?: { name: string }[] }) {
+          seenCounts.push(opts.tools?.length ?? 0)
+          round++
+          if (round === 1) {
+            // Round 0: LLM calls the gateway tool
+            yield { type: 'tool-call-delta', index: 0, id: 'tc-gate', name: 'myagent_use_tools', argumentsDelta: '{}' }
+            yield { type: 'finish', reason: { kind: 'tool-calls' } }
+          } else {
+            // Round 1+: LLM sees full toolset, answers
+            yield { type: 'text-delta', index: 0, text: '已处理。' }
+            yield { type: 'finish', reason: { kind: 'stop' } }
+          }
+        },
+      },
+    } as unknown as import('@deepseek-ai/cordis').Context
+
+    const store = makeStore()
+    const prompts = { current: () => '' } as unknown as import('../src/app/prompts.ts').Prompts
+    const loop = new (await import('../src/app/desk-loop.ts')).DeskLoop(
+      ctx, store, {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+    )
+    await loop.relay('req-3', '帮我查一下现在有几张票')
+
+    // Round 0 should see 1 tool (gateway), round 1 should see >1 (full toolset)
+    expect(seenCounts[0], '首轮必须只有 1 个网关工具').toBe(1)
+    expect(seenCounts[1], '调 myagent_use_tools 后必须挂载全套工具').toBeGreaterThan(1)
+  })
 })
