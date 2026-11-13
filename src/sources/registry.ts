@@ -20,6 +20,8 @@ export class SourceRegistry {
   private readonly running = new Map<string, Source>()
   private readonly signatures = new Map<string, string>()
   private syncing: Promise<void> | undefined
+  private closing = false
+  private stopping: Promise<void> | undefined
 
   constructor(private readonly host: SourceHost, private readonly kinds: readonly SourceKind[]) {}
 
@@ -31,6 +33,7 @@ export class SourceRegistry {
     // That orphan is what produced 40 unhandled `database is not open` errors across the suite, and it would keep
     // reading settings from a closed database in production too.
     while (this.syncing !== undefined) await this.syncing
+    if (this.closing) return
     const run = this.syncNow()
     this.syncing = run
     try {
@@ -43,6 +46,7 @@ export class SourceRegistry {
   private async syncNow(): Promise<void> {
     const settings = this.host.settings()
     for (const kind of this.kinds) {
+      if (this.closing) return
       const signature = signatureOf(kind.name, settings)
       const existing = this.running.get(kind.name)
       if (existing !== undefined && this.signatures.get(kind.name) === signature) continue
@@ -59,6 +63,7 @@ export class SourceRegistry {
         await source.start()
         this.running.set(kind.name, source)
         this.signatures.set(kind.name, signature)
+        if (this.closing) return
       } catch (error) {
         this.host.health.entry(`source:${kind.name}`)
           .problem(error instanceof Error ? `${error.name}: ${error.message}` : String(error))
@@ -69,15 +74,37 @@ export class SourceRegistry {
   /** Stop every Source; their read positions stay stored. */
   /** Ask every running Source to look now, and wait for the ones that do. */
   async nudge(): Promise<void> {
-    for (const source of this.running.values()) await source.poll?.()
+    if (this.closing) return
+    for (const source of this.running.values()) {
+      if (this.closing) return
+      await source.poll?.()
+    }
   }
 
-  async stop(): Promise<void> {
-    for (const source of this.running.values()) {
-      try { await source.stop() } catch { /* a Source that will not stop must not hold the shutdown */ }
-    }
-    this.running.clear()
-    this.signatures.clear()
+  stop(): Promise<void> {
+    this.closing = true
+    if (this.stopping !== undefined) return this.stopping
+    const run = (async (): Promise<void> => {
+      // A source whose start is pending is not in running yet. Join sync before
+      // taking the stop set, so it cannot appear after shutdown has returned.
+      await this.syncing
+      const failures: unknown[] = []
+      await Promise.all([...this.running].map(async ([id, source]) => {
+        try {
+          await source.stop()
+          this.running.delete(id)
+          this.signatures.delete(id)
+        } catch (error) {
+          failures.push(error)
+        }
+      }))
+      if (failures.length === 1) throw failures[0]
+      if (failures.length > 1) throw new AggregateError(failures, 'Sources did not stop')
+    })()
+    this.stopping = run
+    const clear = (): void => { if (this.stopping === run) this.stopping = undefined }
+    void run.then(clear, clear)
+    return run
   }
 
   source(id: string): Source | undefined { return this.running.get(id) }

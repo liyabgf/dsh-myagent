@@ -28,7 +28,13 @@ function fixture(stream: (...args: any[]) => any, ticket: any = undefined, event
   const history = new DeskHistory(db)
   const reports: any[] = []
   const ctx = { logger: { info() {}, warn() {}, error() {} }, llm: { stream } } as unknown as Context
-  const store = { deskHistory: history, tickets: { get: () => ticket }, events: { list: () => events } } as unknown as Store
+  const receipts = new Map<string, unknown>()
+  const store = {
+    deskHistory: history, tickets: { get: () => ticket }, events: { list: () => events },
+    get: <T>(key: string) => receipts.get(key) as T | undefined,
+    set: (key: string, value: unknown) => { receipts.set(key, value) },
+    atomic: <T>(run: () => T): T => run(),
+  } as unknown as Store
   const loop = new DeskLoop(ctx, store, {} as ToolsHost, { current: () => '' } as unknown as Prompts,
     () => cfg, { report: (id: string, report: any) => reports.push({ id, ...report }) } as unknown as Engine)
   return { loop, reports, history, ctx, db }
@@ -67,6 +73,7 @@ describe('audit38 observed defects (not acceptance)', () => {
       get: (key: string) => values.get(key),
       set: (key: string, value: unknown) => { values.set(key, value) },
       atomic: (run: () => unknown) => { atomicCalls++; return run() },
+      afterCommit: (run: () => void) => { run() },
     } as any)
     prompts.save({ orchestrator: 'changed' })
     // C05 fix: config and revision are written inside atomic()
@@ -100,9 +107,13 @@ describe('audit38 observed defects (not acceptance)', () => {
 
   it('RT08-fix: worker timeout does NOT drop the worker ticket after R1-03', async () => {
     const worker = { id: 'worker-ticket', assignments: [{ state: 'running' }] }
-    const f = fixture(() => { throw new Error('timeout') }, worker)
-    await expect(f.loop.relay('ask', 'worker question', worker.id)).rejects.toThrow('timeout')
-    expect(f.reports).toHaveLength(0)  // R1-03 fixed: worker id is not dropped
+    const f = fixture(async function* () {
+      yield { type: 'finish', reason: { kind: 'error', failure: { code: 'timeout', message: 'timed out' } } }
+    }, worker)
+    // Catch the relay rejection (error finish reason → failed report or rejection)
+    await f.loop.relay('ask', 'worker question', worker.id).catch(() => {})
+    // R1-03 fix: non-triage ticketId is not dropped on error finish
+    expect(f.reports).toHaveLength(0)
     f.db.close()
   })
 
@@ -116,17 +127,22 @@ describe('audit38 observed defects (not acceptance)', () => {
     f.db.close()
   })
 
-  it('RT10: repeated requestId dedupes row but executes the LLM turn again', async () => {
+  it('RT10-fix: concurrent same requestId shares one Promise/LLM execution (P1-4)', async () => {
     let calls = 0
     const f = fixture(async function* () {
       calls++
+      await new Promise(r => setTimeout(r, 5))  // slight delay so second relay is concurrent
       yield { type: 'text-delta', index: 0, text: 'ok' }
       yield { type: 'finish', reason: { kind: 'stop' } }
     })
-    await f.loop.relay('same', 'hello')
-    await f.loop.relay('same', 'hello')
+    // Both relays are launched before either completes — concurrent case
+    const [, ] = await Promise.all([
+      f.loop.relay('same', 'hello'),
+      f.loop.relay('same', 'hello'),
+    ])
     expect(f.history.since(0).filter(x => x.role === 'user')).toHaveLength(1)
-    expect(calls).toBe(2)
+    // P1-4 fix: concurrent same requestId returns same Promise, LLM called only once
+    expect(calls).toBe(1)
     f.db.close()
   })
 
@@ -139,6 +155,56 @@ describe('audit38 observed defects (not acceptance)', () => {
     // R1-04 fix: error finish is now reported as 'failed', not 'ready'
     expect(f.reports).toEqual([expect.objectContaining({ state: 'failed' })])
     f.db.close()
+  })
+
+  it.each(['error', 'aborted', 'max-tokens'] as const)(
+    'reliability: %s finish stops tool processing with or without a Ticket', async finish => {
+      for (const ticket of [undefined, triage, { id: 'worker', assignments: [{ role: 'worker', state: 'running' }] }]) {
+        let calls = 0
+        const f = fixture(async function* () {
+          calls++
+          if (calls === 1) {
+            yield { type: 'tool-call-delta', index: 0, id: 'gate', name: 'myagent_use_tools', argumentsDelta: '{}' }
+            yield { type: 'finish', reason: { kind: finish } }
+          } else {
+            yield { type: 'text-delta', index: 0, text: 'should not run' }
+            yield { type: 'finish', reason: { kind: 'stop' } }
+          }
+        }, ticket)
+        try {
+          await f.loop.relay(`failure-${finish}`, 'question', ticket?.id)
+          expect(calls).toBe(1)
+          expect(f.history.recent(100).filter(message => message.role === 'tool')).toHaveLength(0)
+          expect(f.reports).toHaveLength(ticket === triage ? 1 : 0)
+          if (ticket === triage) expect(f.reports[0].state).toBe('failed')
+        } finally {
+          await f.loop.stop()
+          f.db.close()
+        }
+      }
+    },
+  )
+
+  it('reliability: a handled provider rejection releases its requestId for retry without unhandled cleanup', async () => {
+    let calls = 0
+    const f = fixture(async function* () {
+      calls++
+      if (calls === 1) throw new Error('synthetic provider failure')
+      yield { type: 'text-delta', index: 0, text: 'recovered' }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    })
+    try {
+      await expect(f.loop.relay('retryable', 'question')).rejects.toThrow('synthetic provider failure')
+      await new Promise<void>(resolve => setImmediate(resolve))
+      await f.loop.relay('retryable', 'question')
+      expect(calls).toBe(2)
+      expect(f.history.recent(100).at(-1)?.content).toBe('recovered')
+      // Vitest also fails this run if the cleanup creates an unhandled rejected Promise.
+      await new Promise<void>(resolve => setImmediate(resolve))
+    } finally {
+      await f.loop.stop()
+      f.db.close()
+    }
   })
 
   it('RT06-fix: same-size different-content artifact is rejected after R2-12', async () => {

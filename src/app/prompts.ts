@@ -103,9 +103,9 @@ export interface PromptVersion {
 export class Prompts {
   private readonly cache = new Map<PromptRole, string>()
   // C05: include atomic() so config+revision can be written in a single SQLite transaction.
-  private readonly store: Pick<Store, 'get' | 'set' | 'atomic'>
+  private readonly store: Pick<Store, 'get' | 'set' | 'atomic' | 'afterCommit'>
 
-  constructor(store: Pick<Store, 'get' | 'set' | 'atomic'>) { this.store = store }
+  constructor(store: Pick<Store, 'get' | 'set' | 'atomic' | 'afterCommit'>) { this.store = store }
 
   /** The shipped text of a role, read once per process. */
   base(role: PromptRole): string {
@@ -201,7 +201,7 @@ export class Prompts {
       this.store.set(KV.promptsConfig, next)
       this.store.set(KV.promptsRevision, this.revision() + 1)
     })
-    this.notifyChange()
+    this.store.afterCommit(() => this.notifyChange())
     return saved
   }
 
@@ -215,7 +215,7 @@ export class Prompts {
       this.store.set(KV.promptsConfig, { ...current, skills: { ...current.skills, [name]: updated } })
       this.store.set(KV.promptsRevision, this.revision() + 1)
     })
-    this.notifyChange()
+    this.store.afterCommit(() => this.notifyChange())
     return updated
   }
 
@@ -232,7 +232,7 @@ export class Prompts {
       this.store.set(KV.promptsConfig, next)
       this.store.set(KV.promptsRevision, this.revision() + 1)
     })
-    this.notifyChange()
+    this.store.afterCommit(() => this.notifyChange())
   }
 
   /**
@@ -274,7 +274,7 @@ export class Prompts {
       this.store.set(KV.promptsConfig, next)
       this.store.set(KV.promptsRevision, revision)
     })
-    this.notifyChange()
+    this.store.afterCommit(() => this.notifyChange())
     return revision
   }
 

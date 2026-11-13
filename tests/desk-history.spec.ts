@@ -6,6 +6,15 @@ import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { DeskHistory } from '../src/app/desk-history.ts'
 
+function receiptStore(): Pick<import('../src/app/store.ts').Store, 'get' | 'set' | 'atomic'> {
+  const values = new Map<string, unknown>()
+  return {
+    get: <T>(key: string) => values.get(key) as T | undefined,
+    set: (key: string, value: unknown) => { values.set(key, value) },
+    atomic: <T>(run: () => T): T => run(),
+  }
+}
+
 function makeDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:')
   db.exec(`CREATE TABLE desk_messages (
@@ -45,6 +54,29 @@ describe('DeskHistory', () => {
     expect(r.at(-1)!.content).toBe('msg 4')
   })
 
+  it('projects a context window without orphan tool results or incomplete tool calls', () => {
+    const db = makeDb()
+    const h = new DeskHistory(db)
+    try {
+      h.append({ role: 'assistant', content: 'calling', tool_calls: [{ id: 'pair', name: 'tool', arguments: '{}' }], at: '2026-01-01T00:00:00Z' })
+      h.append({ role: 'tool', content: 'done', tool_call_id: 'pair', at: '2026-01-01T00:00:01Z' })
+      h.append({ role: 'user', content: 'next', at: '2026-01-01T00:00:02Z' })
+      expect(h.recent(2).map(m => m.role)).toEqual(['user'])
+      expect(h.recent(3).map(m => m.role)).toEqual(['assistant', 'tool', 'user'])
+      h.append({ role: 'assistant', content: 'partial', tool_calls: [{ id: 'missing', name: 'tool', arguments: '{}' }], at: '2026-01-01T00:00:03Z' })
+      expect(h.recent(4).some(m => m.tool_calls?.some(call => call.id === 'missing'))).toBe(false)
+      expect(h.since(0).at(-1)?.tool_calls?.[0]?.id).toBe('missing') // audit rows stay intact
+      h.append({ role: 'user', content: 'interrupted', at: '2026-01-01T00:00:04Z' })
+      h.append({ role: 'tool', content: 'late orphan', tool_call_id: 'missing', at: '2026-01-01T00:00:05Z' })
+      expect(h.recent(10).some(m => m.tool_call_id === 'missing' || m.tool_calls?.some(c => c.id === 'missing'))).toBe(false)
+      h.append({ role: 'assistant', content: '', tool_calls: [
+        { id: 'multi-a', name: 'tool', arguments: '{}' }, { id: 'multi-b', name: 'tool', arguments: '{}' },
+      ], at: '2026-01-01T00:00:06Z' })
+      h.append({ role: 'tool', content: 'only half', tool_call_id: 'multi-a', at: '2026-01-01T00:00:07Z' })
+      expect(h.recent(10).some(m => m.tool_call_id === 'multi-a' || m.tool_calls?.some(c => c.id === 'multi-b'))).toBe(false)
+    } finally { db.close() }
+  })
+
   it('since returns messages after a given seq', () => {
     const h = new DeskHistory(makeDb())
     const s1 = h.append({ role: 'user', content: 'a', at: '2026-01-01T00:00:00Z' })
@@ -74,14 +106,16 @@ describe('DeskHistory', () => {
     const h = new DeskHistory(makeDb())
     const calls = [{ id: 'tc-1', name: 'myagent_list_tickets', arguments: '{}' }]
     h.append({ role: 'assistant', content: '', tool_calls: calls, at: '2026-01-01T00:00:00Z' })
-    const r = h.recent(10).filter(m => m.role === 'assistant')
+    const r = h.since(0).filter(m => m.role === 'assistant')
     expect(r[0]!.tool_calls).toEqual(calls)
+    expect(h.recent(10).filter(m => m.role === 'assistant')).toHaveLength(0) // incomplete call is not a model context
   })
 
   it('stores and retrieves tool result with tool_call_id', () => {
     const h = new DeskHistory(makeDb())
     h.append({ role: 'tool', content: '{"ok":true}', tool_call_id: 'tc-1', name: 'myagent_list_tickets', at: '2026-01-01T00:00:00Z' })
-    const r = h.recent(10).filter(m => m.role === 'tool')
+    const r = h.since(0).filter(m => m.role === 'tool')
+    expect(h.recent(10).filter(m => m.role === 'tool')).toHaveLength(0) // orphan stays in audit history only
     expect(r[0]!.tool_call_id).toBe('tc-1')
     expect(r[0]!.name).toBe('myagent_list_tickets')
   })
@@ -135,6 +169,7 @@ describe('DeskLoop R3: on-demand tool mounting and direct triage answer settleme
     const db = makeDb()
     // Minimal stub for store — DeskLoop only needs deskHistory, tickets.get, events.list
     return {
+      ...receiptStore(),
       deskHistory: new DeskHistory(db),
       tickets: {
         get: (id: string) => ticketRecord && (ticketRecord as { id: string }).id === id ? ticketRecord : undefined,
@@ -259,5 +294,117 @@ describe('DeskLoop R3: on-demand tool mounting and direct triage answer settleme
     await loop.relay('req-empty', 'some question', 'triage-empty')
     expect(reports, '空回复必须触发 engine.report 而非静默返回').toHaveLength(1)
     expect(reports[0]!.state, '空回复应 dropped 而非 ready').toBe('dropped')
+  })
+
+  it('P1-2: replied event in this turn blocks settlement; old replied in prior turn does not', async () => {
+    const reports: any[] = []
+    const triage = {
+      id: 't-p12', title: 'triage',
+      assignments: [{ id: 'a-1', state: 'running', role: 'triage', startedAt: '2026-01-01T00:00:00Z' }],
+      inputs: [], notes: [], attachments: [],
+    }
+    // A replied event from a PRIOR turn (should not block settlement)
+    const oldReplied = { type: 'replied', at: '2026-01-01T00:01:00Z', by: { kind: 'system' } }
+
+    const ctx = {
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      llm: {
+        stream: async function* () {
+          yield { type: 'text-delta', index: 0, text: 'direct answer' }
+          yield { type: 'finish', reason: { kind: 'stop' } }
+        },
+      },
+    } as unknown as import('@deepseek-ai/cordis').Context
+
+    const store = {
+      ...receiptStore(),
+      deskHistory: new DeskHistory(makeDb()),
+      tickets: { get: () => triage },
+      events: { list: () => [oldReplied] },   // only old replied, not in this turn
+    } as unknown as import('../src/app/store.ts').Store
+
+    const { DeskLoop } = await import('../src/app/desk-loop.ts')
+    const prompts = { current: () => '' } as unknown as import('../src/app/prompts.ts').Prompts
+    const loop = new DeskLoop(
+      ctx, store, {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+      { report: (_id: string, r: any) => reports.push(r) } as unknown as import('../src/core/engine.ts').Engine,
+    )
+
+    // Old replied should NOT block — settlement should happen
+    await loop.relay('req-p12-a', 'follow-up', 't-p12')
+    expect(reports).toHaveLength(1)
+    expect(reports[0]!.state).toBe('ready')
+    reports.length = 0
+
+    // Now simulate a replied event timestamped AFTER the turn started
+    const thisReplied = { type: 'replied', at: '', by: { kind: 'system' } }
+    const inTurnContext = {
+      ...ctx,
+      llm: { stream: async function* () {
+        thisReplied.at = new Date().toISOString()
+        yield { type: 'text-delta', index: 0, text: 'direct answer' }
+        yield { type: 'finish', reason: { kind: 'stop' } }
+      } },
+    } as unknown as import('@deepseek-ai/cordis').Context
+    const store2 = {
+      ...receiptStore(),
+      deskHistory: new DeskHistory(makeDb()),
+      tickets: { get: () => triage },
+      events: { list: () => [thisReplied] },  // in-turn replied
+    } as unknown as import('../src/app/store.ts').Store
+
+    const loop2 = new DeskLoop(
+      inTurnContext, store2, {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+      { report: (_id: string, r: any) => reports.push(r) } as unknown as import('../src/core/engine.ts').Engine,
+    )
+
+    // In-turn replied SHOULD block — no report
+    await loop2.relay('req-p12-b', 'question', 't-p12')
+    expect(reports, 'in-turn replied should block settlement').toHaveLength(0)
+    await loop.stop().catch(() => {})
+    await loop2.stop().catch(() => {})
+  })
+
+  it('P1-1: stop() is async and awaits the in-flight turn', async () => {
+    let release!: () => void
+    let started!: () => void
+    const held = new Promise<void>(resolve => { release = resolve })
+    const running = new Promise<void>(resolve => { started = resolve })
+    const db = makeDb()
+    const store = {
+      ...receiptStore(),
+      deskHistory: new DeskHistory(db),
+      tickets: { get: () => undefined },
+      events: { list: () => [] },
+    } as unknown as import('../src/app/store.ts').Store
+    const ctx = {
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      llm: { stream: async function* () { started(); await held; yield { type: 'finish', reason: { kind: 'stop' } } } },
+    } as unknown as import('@deepseek-ai/cordis').Context
+    const prompts = { current: () => '' } as unknown as import('../src/app/prompts').Prompts
+    const { DeskLoop } = await import('../src/app/desk-loop.ts')
+    const loop = new DeskLoop(
+      ctx, store, {} as import('../src/app/tools.ts').ToolsHost, prompts,
+      () => ({ deskLlm: { provider: 'p', model: 'm' } } as import('../src/core/policy.ts').Settings),
+    )
+    const relay = loop.relay('stop-join', 'question').catch(() => {})
+    await running
+    let stopped = false
+    const stopping = loop.stop().then(() => { stopped = true })
+    try {
+      await new Promise<void>(resolve => setImmediate(resolve))
+      expect(stopped).toBe(false)
+      release()
+      await stopping
+      await relay
+      expect(stopped).toBe(true)
+    } finally {
+      release()
+      await stopping
+      await relay
+      db.close()
+    }
   })
 })

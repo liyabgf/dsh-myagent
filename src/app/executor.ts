@@ -88,6 +88,16 @@ export interface LaunchPayload { readonly ticketId: string; readonly assignmentI
 /** The payload of an `input` effect: which Assignment to hand the waiting Inputs to. */
 export type InputPayload = LaunchPayload
 
+interface StopIntent {
+  readonly ticketId: string
+  readonly assignmentId?: string
+  readonly agent?: import('@deepseek-ai/dsh-agent').Agent
+  readonly reason: string
+  readonly keepInbox: boolean
+  readonly cancelTurn: boolean
+  readonly shouldStop: () => boolean
+}
+
 const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
 /**
@@ -334,6 +344,10 @@ export class DshExecutor implements Executor {
   private readonly starting = new Map<string, number>()
   /** Stops in flight, so a launch that races one does not resurrect the work. */
   private readonly halting = new Set<string>()
+  private readonly haltWork = new Set<Promise<void>>()
+  private readonly haltFailures = new Map<StopIntent, unknown>()
+  private readonly haltQueues = new Map<string, Promise<void>>()
+  private readonly launchWork = new Set<Promise<void>>()
 
   constructor(private readonly host: ExecutorHost) {
     // 注入 spawn 的地方（在构造函数而不是字段初始化器：参数属性在初始化器运行时还没赋上）：
@@ -450,7 +464,7 @@ export class DshExecutor implements Executor {
 
   /** Stop an Assignment's work: its turn, its shell jobs and its subagents. */
   stop(ticket: Ticket, _assignment: Assignment, stopReason: string): void {
-    void this.halt(ticket.id, stopReason, false)
+    void this.halt(ticket.id, stopReason, false).catch(() => {})
   }
 
   /**
@@ -482,7 +496,15 @@ export class DshExecutor implements Executor {
    * Start one Assignment: make its directory, create or resume its Session, mark it running and hand over the work.
    * Anything that fails after the directory exists is retried by the effect; a failed prepare command is not.
    */
-  private async launch(payload: LaunchPayload): Promise<void> {
+  private launch(payload: LaunchPayload): Promise<void> {
+    const work = this.launchNow(payload)
+    this.launchWork.add(work)
+    const release = (): void => { this.launchWork.delete(work) }
+    void work.then(release, release)
+    return work
+  }
+
+  private async launchNow(payload: LaunchPayload): Promise<void> {
     const { ticketId, assignmentId } = payload
     const stored = this.host.store.tickets.get(ticketId)
     // A Ticket that ended, or an Assignment another one replaced, has nothing to launch; the effect is settled.
@@ -502,7 +524,8 @@ export class DshExecutor implements Executor {
       // A prepare command runs once per Assignment, never on a retry of one that already started.
       const fresh = assignment.state === 'pending'
       const prepared = await this.prepareDirectory(stored, settings, fresh)
-      if (this.host.closing()) throw new Later(PAUSED_RETRY_MS)
+      if (this.currentLaunch(ticketId, assignmentId) === undefined) return
+      if (this.host.closing() || this.host.lifetime.aborted) throw new Later(PAUSED_RETRY_MS)
       // B1 (`triage.desk: 'main'`): the operator's own Session is the desk, so there is no worker Session to make and
       // no worker slot to hold. The request is queued into the conversation they are already in — `relay` resolves or
       // CREATES the front desk rather than giving up quietly, which is the property that keeps a triage item from
@@ -526,12 +549,17 @@ export class DshExecutor implements Executor {
           this.host.engine.assignmentStarted(ticketId, assignmentId)
         }
       } else {
-        await this.host.sessions.ensure(prepared, settings.executor.model)
+        const agent = await this.host.sessions.ensure(prepared, settings.executor.model)
+        if (this.currentLaunch(ticketId, assignmentId) === undefined || this.host.closing() || this.host.lifetime.aborted) {
+          await this.cleanupLateAgent(ticketId, assignmentId, agent)
+          return
+        }
         this.host.engine.assignmentStarted(ticketId, assignmentId)
         await this.host.sessions.promptWorker(prepared, `launch:${assignmentId}`, this.taskText(prepared), settings.executor.model)
       }
       // The timestamp is recorded whether or not Inputs were waiting: it is what tells a turn that ends without a
       // report apart from one that never received its work, and the fallback to `waiting` depends on it.
+      if (this.currentLaunch(ticketId, assignmentId) === undefined || this.host.closing() || this.host.lifetime.aborted) return
       this.host.engine.inputsDelivered(ticketId, assignmentId, undelivered(prepared).map(input => input.id))
       // (The Inputs of a triage Ticket go to whichever desk took it: `relay` carries the same task text, so nothing
       // here has to differ — the record of delivery is what tells a turn that ended without a report apart from one
@@ -559,6 +587,31 @@ export class DshExecutor implements Executor {
     } finally {
       this.starting.delete(ticketId)
     }
+  }
+
+  private currentLaunch(ticketId: string, assignmentId: string): Ticket | undefined {
+    const ticket = this.host.store.tickets.get(ticketId)
+    const assignment = ticket === undefined ? undefined : latestAssignment(ticket)
+    if (ticket === undefined || !liveTicket(ticket) || assignment?.id !== assignmentId || assignment.state === 'ended') return undefined
+    return ticket
+  }
+
+  /** A late ensure may have created the worker Session after stop committed. Cancel only its verified owner. */
+  private async cleanupLateAgent(ticketId: string, assignmentId: string, agent: import('@deepseek-ai/dsh-agent').Agent): Promise<void> {
+    const ticket = this.host.store.tickets.get(ticketId)
+    if (ticket === undefined || workerSessionOf(ticket) !== agent.id
+      || this.host.context.agents.get(agent.id) !== agent) return
+    if (latestAssignment(ticket)?.id !== assignmentId) return
+    // A binding that points to another Ticket's worker is inconsistent; never cancel that worker.
+    if (this.host.store.tickets.list().some(other => other.id !== ticketId && workerSessionOf(other) === agent.id)) return
+    if (agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox: false })
+    await stopBackground(this.host.context, agent.id, 'Ticket stopped during worker Session creation', false, {
+      agent, shouldStop: () => {
+        const current = this.host.store.tickets.get(ticketId)
+        return current !== undefined && latestAssignment(current)?.id === assignmentId
+          && workerSessionOf(current) === agent.id && this.host.context.agents.get(agent.id) === agent
+      },
+    })
   }
 
   /** Make the Ticket's directory and run the configured prepare command in it, once. */
@@ -761,6 +814,7 @@ export class DshExecutor implements Executor {
         } else {
           await this.host.sessions.promptWorker(ticket, `input:${input.id}`, promptText, settings.executor.model)
         }
+        if (this.currentLaunch(ticketId, assignmentId) === undefined || this.host.closing() || this.host.lifetime.aborted) return
         this.host.engine.inputsDelivered(ticketId, assignmentId, [input.id])
       } catch (error) {
         this.host.engine.deliveryFailed(ticketId, assignmentId, reason(error))
@@ -779,13 +833,73 @@ export class DshExecutor implements Executor {
    *   has just reported itself done does not — its turn is ending on its own, its tools are already denied, and
    *   cancelling loses the last thing it had to say.
    */
-  async halt(ticketId: string, haltReason: string, keepInbox: boolean, cancelTurn = true): Promise<void> {
+  halt(ticketId: string, haltReason: string, keepInbox: boolean, cancelTurn = true): Promise<void> {
     const sessionId = this.sessionOf(ticketId)
+    const original = this.host.store.tickets.get(ticketId)
+    const assignmentId = original === undefined ? undefined : latestAssignment(original)?.id
+    const agent = this.host.context.agents.get(sessionId)
+    const shouldStop = (): boolean => {
+      const current = this.host.store.tickets.get(ticketId)
+      return current !== undefined && latestAssignment(current)?.id === assignmentId
+        && workerSessionOf(current) === sessionId
+        && this.host.context.agents.get(sessionId) === agent
+        && !this.host.store.tickets.list().some(other => other.id !== ticketId && workerSessionOf(other) === sessionId)
+    }
+    return this.queueStop({ ticketId, assignmentId, agent, reason: haltReason, keepInbox, cancelTurn, shouldStop })
+  }
+
+  private queueStop(intent: StopIntent): Promise<void> {
+    const previous = this.haltQueues.get(intent.ticketId)
+    // Preserve synchronous delivery cancellation at admission, including queued stops.
+    if (intent.shouldStop()) this.host.sessions.stopWorkerDelivery(intent.ticketId)
+    const run = (): Promise<void> => this.haltWorkNow(intent)
+    const work = previous === undefined ? run() : previous.then(run, run)
+    this.haltQueues.set(intent.ticketId, work)
+    this.haltWork.add(work)
+    void work.then(() => {
+      this.haltWork.delete(work)
+      if (this.haltQueues.get(intent.ticketId) === work) this.haltQueues.delete(intent.ticketId)
+      // A weaker background-only stop cannot certify a failed turn cancellation.
+      for (const failed of intent.shouldStop() ? this.haltFailures.keys() : []) {
+        if (failed.ticketId === intent.ticketId && failed.assignmentId === intent.assignmentId
+          && failed.agent === intent.agent && (!failed.cancelTurn || intent.cancelTurn)) this.haltFailures.delete(failed)
+      }
+    }, error => {
+      this.haltWork.delete(work)
+      if (this.haltQueues.get(intent.ticketId) === work) this.haltQueues.delete(intent.ticketId)
+      this.haltFailures.set(intent, error)
+    })
+    return work
+  }
+
+  /** One explicit recovery pass; newly failing work waits for the next stop attempt. */
+  async retryFailedStops(): Promise<void> {
+    const failed = [...this.haltFailures.keys()]
+    const results = await Promise.allSettled(failed.map(intent => this.queueStop(intent)))
+    const errors = results.filter(result => result.status === 'rejected')
+    if (errors.length > 0) throw new AggregateError(errors.map(result => result.reason), 'Executor stop retry failed')
+  }
+
+  /** Join fire-and-forget stops before their Store and health board are released. */
+  async drain(): Promise<void> {
+    while (this.haltWork.size > 0 || this.launchWork.size > 0) {
+      await Promise.allSettled([...this.haltWork, ...this.launchWork])
+    }
+    if (this.haltFailures.size > 0) {
+      throw new AggregateError([...this.haltFailures.values()], 'Executor stop drain failed; successful stop retry required')
+    }
+  }
+
+  private async haltWorkNow(intent: StopIntent): Promise<void> {
+    const { ticketId, reason: haltReason, keepInbox, cancelTurn, agent, shouldStop } = intent
+    // A stale retry supplies no successful-stop evidence and must never touch its replacement.
+    if (!shouldStop()) throw new Error(`Stop scope changed for ${ticketId}; original work has no successful stop evidence`)
+    const sessionId = agent?.id ?? this.sessionOf(ticketId)
     this.halting.add(ticketId)
+    this.host.sessions.stopWorkerDelivery(ticketId)
     try {
-      const agent = this.host.context.agents.get(sessionId)
       if (cancelTurn && agent !== undefined && agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox })
-      await stopBackground(this.host.context, sessionId, haltReason, keepInbox)
+      await stopBackground(this.host.context, sessionId, haltReason, keepInbox, { cancelTurn, agent, shouldStop })
     } catch (error) {
       // AggregateError 的 message 只有外层一句话（"Stopping the background work … failed"），不说是哪一半
       // （shell jobs？subagents？）也不说为什么——健康线上只有它，于是两次实捕都没法从红线本身定位。
@@ -794,6 +908,7 @@ export class DshExecutor implements Executor {
         ? [reason(error), ...error.errors.map((inner: unknown) => reason(inner))].join('；')
         : reason(error)
       this.health.problem(`Could not stop the work of ${ticketId}: ${detail}`)
+      throw error
     } finally {
       this.halting.delete(ticketId)
       this.starting.delete(ticketId)

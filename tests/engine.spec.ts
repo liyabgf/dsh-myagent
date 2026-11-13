@@ -41,7 +41,7 @@ function harness(value: unknown = {}, now: () => string = () => '2026-11-02T12:0
   const events: string[] = []
   let current = settings(value)
   const engine = new Engine({
-    repos: memory, tx: memory, policy: () => settingsPolicy(current), executor, delivery,
+    repos: memory, tx: memory, inputConsumptions: memory.inputConsumptions, policy: () => settingsPolicy(current), executor, delivery,
     now, emit: event => events.push(event.type),
   })
   // The real Executor marks the Assignment running when a launch succeeds (executor.ts:156); a fake
@@ -1618,5 +1618,66 @@ describe('a schedule’s firings share one Work (S-3)', () => {
       expect(second.id).not.toBe(first.id)
       expect(second.role, 'ended attempt 后 answer 新建的 Assignment 必须仍是 triage').toBe('triage')
     })
+  })
+})
+
+
+describe('atomic continuation receipts', () => {
+  it('does not hide a lost Trigger behind a continuation receipt', () => {
+    const { engine, memory } = harness()
+    const main = engine.receive(trigger()).ticketId!
+    const incoming = trigger({ id: 'lost-followup', kind: 'chat', source: 'chat', text: 'followup', threadKey: 'chat:ops:t' })
+    memory.triggers.save({ trigger: incoming, disposition: { state: 'lost', error: 'earlier failure', effectKey: 'lost' } })
+    expect(() => engine.consumeContinuation({ trigger: incoming, target: { ticketId: main, mode: 'note' } })).toThrow('source_identity_lost')
+    expect(memory.tickets.get(main)!.inputs).toHaveLength(0)
+    expect(memory.inputConsumptions.get(incoming.id)).toBeUndefined()
+    expect(memory.triggers.get(incoming.id)?.disposition.state).toBe('lost')
+    expect(engine.receive(incoming).stored).toBe('stored') // explicit receive retains its recovery contract
+  })
+
+  it('consumes once, fixes context targets, and replays after the original ticket is gone', () => {
+    const { engine, memory } = harness()
+    const main = engine.receive(trigger()).ticketId!
+    const context = engine.receive(trigger({ id: 'context' })).ticketId!
+    const incoming = trigger({ id: 'continuation', kind: 'chat', source: 'chat', threadKey: 'chat:ops:t', text: 'answer', meta: { attachments: ['/tmp/a'] } })
+    const command = { trigger: incoming, target: { ticketId: main, mode: 'note' as const }, contextTicketIds: [context] }
+    expect(engine.consumeContinuation(command).stored).toBe('consumed')
+    expect(memory.tickets.get(main)!.inputs).toHaveLength(1)
+    expect(memory.tickets.get(context)!.inputs).toHaveLength(1)
+    expect(memory.triggerList()).toHaveLength(2)
+    memory.tickets.remove(main)
+    expect(engine.consumeContinuation({ ...command, target: { ticketId: 'absent', mode: 'answer' } }).stored).toBe('duplicate')
+    expect(engine.sourceConsumptionOf({ ...incoming, at: '2030-01-01' })?.targets).toHaveLength(2)
+    expect(() => engine.sourceConsumptionOf({ ...incoming, text: 'changed' })).toThrow('source_identity_conflict')
+    expect(() => engine.receive(incoming)).toThrow('source_identity_consumed')
+  })
+
+  it('rolls back main, answer assignment, context, subscriptions, events and hooks when receipt save fails', () => {
+    const { engine, memory, executor, events } = harness()
+    const main = engine.receive(trigger()).ticketId!
+    const ctx = engine.receive(trigger({ id: 'context' })).ticketId!
+    engine.report(main, { state: 'waiting', summary: 'question' })
+    const before = JSON.stringify([memory.tickets.list(), memory.events.list(main), memory.events.list(ctx), memory.threads.list()])
+    const hooks = JSON.stringify([executor.started, executor.delivered, events])
+    const save = memory.inputConsumptions.save.bind(memory.inputConsumptions)
+    memory.inputConsumptions.save = () => { throw new Error('receipt fault') }
+    const incoming = trigger({ id: 'followup', threadKey: 'chat:ops:t', text: 'yes' })
+    const command = { trigger: incoming, target: { ticketId: main, mode: 'answer' as const }, contextTicketIds: [ctx] }
+    expect(() => engine.consumeContinuation(command)).toThrow('receipt fault')
+    expect(JSON.stringify([memory.tickets.list(), memory.events.list(main), memory.events.list(ctx), memory.threads.list()])).toBe(before)
+    expect(JSON.stringify([executor.started, executor.delivered, events])).toBe(hooks)
+    expect(memory.inputConsumptions.get(incoming.id)).toBeUndefined()
+    memory.inputConsumptions.save = save
+    expect(engine.consumeContinuation(command).stored).toBe('consumed')
+  })
+
+  it('does not reinterpret an initial Trigger as a continuation', () => {
+    const { engine, memory } = harness()
+    const incoming = trigger()
+    const main = engine.receive(incoming).ticketId!
+    const result = engine.consumeContinuation({ trigger: incoming, target: { ticketId: main, mode: 'note' } })
+    expect(result.stored).toBe('trigger')
+    expect(memory.tickets.get(main)!.inputs).toHaveLength(0)
+    expect(memory.inputConsumptions.get(incoming.id)).toBeUndefined()
   })
 })

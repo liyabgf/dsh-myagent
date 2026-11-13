@@ -1,5 +1,6 @@
 /** Prompts: the shipped text, the operator's overrides, and finding the files this package ships. */
 import { readFileSync } from 'node:fs'
+import { Store } from '../src/app/store.ts'
 import { describe, expect, it } from 'vitest'
 import { PROMPT_MAX_CHARS, PromptConflict, Prompts, packageFile, promptFile } from '../src/app/prompts.ts'
 import { BUILTIN_SKILL_NAMES } from '../src/app/skills.ts'
@@ -13,6 +14,7 @@ function fakeStore() {
     // C05: Prompts now requires atomic(); the stub runs the callback synchronously with no
     // actual transaction (fine for unit tests where there is no concurrent writer).
     atomic: <T>(run: () => T): T => run(),
+    afterCommit: (run: () => void): void => { run() },
     values,
   }
 }
@@ -157,4 +159,39 @@ describe('saved team skills in PromptConfig (E2)', () => {
     const prompts = new Prompts(fakeStore())
     expect(prompts.saveSkill({ name: 'auto', title: 'x', description: 'y', content: 'z' }).enabled).toBe(true)
   })
+})
+
+
+describe('prompt change notifications follow commit', () => {
+  it.each(['save', 'saveSkill', 'setSkillEnabled', 'removeSkill'] as const)(
+    '%s notifies once after outer commit, never on rollback, and also without an outer transaction', method => {
+      const store = new Store(':memory:')
+      const prompts = new Prompts(store)
+      const skill = { name: 'notify', title: 't', description: 'd', content: 'c' }
+      if (method === 'setSkillEnabled' || method === 'removeSkill') prompts.saveSkill(skill)
+      const before = prompts.config()
+      const revision = prompts.revision()
+      const observed: number[] = []
+      prompts.onChange(() => observed.push(prompts.revision()))
+      const change = () => {
+        if (method === 'save') prompts.save({ worker: 'committed text' })
+        if (method === 'saveSkill') prompts.saveSkill(skill)
+        if (method === 'setSkillEnabled') prompts.setSkillEnabled('myagent-notify', false)
+        if (method === 'removeSkill') prompts.removeSkill('myagent-notify')
+      }
+      try {
+        expect(() => store.atomic(() => { change(); throw new Error('rollback') })).toThrow('rollback')
+        expect(prompts.config()).toEqual(before)
+        expect(prompts.revision()).toBe(revision)
+        expect(observed).toEqual([])
+        store.atomic(() => { change(); expect(observed).toEqual([]) })
+        expect(observed).toEqual([revision + 1])
+        if (method === 'removeSkill') prompts.saveSkill(skill)
+        observed.length = 0
+        const beforeStandalone = prompts.revision()
+        change()
+        expect(observed).toEqual([beforeStandalone + 1])
+      } finally { store.close() }
+    },
+  )
 })

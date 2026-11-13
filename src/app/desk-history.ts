@@ -84,6 +84,28 @@ export class DeskHistory {
     `).all(maxMessages) as unknown as RawRow[]
 
     const messages: DeskMessage[] = rows.reverse().map(deserialize)
+    // Never present an orphaned tool result or a tool request whose results fell outside the window.
+    // Keep the durable audit log unchanged; only trim the model-facing projection inward.
+    const pairedMessages: DeskMessage[] = []
+    for (let index = 0; index < messages.length; index++) {
+      const message = messages[index]!
+      if (message.role === 'tool') continue // no preceding complete request in this window
+      const calls = message.role === 'assistant' ? message.tool_calls ?? [] : []
+      if (calls.length === 0) { pairedMessages.push(message); continue }
+      const expected = new Set(calls.map(call => call.id))
+      const results: DeskMessage[] = []
+      let next = index + 1
+      while (next < messages.length && messages[next]!.role === 'tool') {
+        results.push(messages[next]!)
+        next++
+      }
+      const returned = new Set(results.map(result => result.tool_call_id))
+      if (expected.size === calls.length && results.length === calls.length
+        && returned.size === calls.length && results.every(result => expected.has(result.tool_call_id ?? ''))) {
+        pairedMessages.push(message, ...results)
+      }
+      index = next - 1
+    }
 
     // Prepend the latest system message (there is usually only one; it is re-written when the
     // orchestrator prompt changes).
@@ -95,8 +117,8 @@ export class DeskHistory {
       LIMIT 1
     `).get() as unknown as RawRow | undefined
 
-    if (systemRow !== undefined) messages.unshift(deserialize(systemRow))
-    return messages
+    if (systemRow !== undefined) pairedMessages.unshift(deserialize(systemRow))
+    return pairedMessages
   }
 
   /** Return messages after `afterSeq`, oldest first (used for panel paging). */

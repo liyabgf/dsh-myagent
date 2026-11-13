@@ -59,6 +59,8 @@ export function definitionOf(definition: Tool): {
 export interface ToolsHost {
   readonly engine: Engine
   readonly store: Pick<Store, 'tickets' | 'decisions' | 'artifacts'>
+  /** Wrap async tool bodies so Runtime shutdown joins post-await Store writes. */
+  readonly runOperation?: <T>(work: () => Promise<T>) => Promise<T>
   /** The accept mode now, so a tool can say why nothing executed. */
   acceptMode(): 'auto' | 'observe'
   /**
@@ -159,12 +161,20 @@ export type ArtifactRead =
   }
   | { ok: false; error: string; code?: string }
 
+function trackedTools(host: ToolsHost, definitions: Tool[]): Tool[] {
+  if (host.runOperation === undefined) return definitions
+  return definitions.map(definition => ({
+    ...definition,
+    execute: (args, signal) => host.runOperation!(() => definition.execute(args, signal)),
+  }))
+}
+
 // ------------------------------------------------------------------ Worker
 
 /** The worker's one tool: classify its own work, which is how it speaks to the system. */
 export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
   const ticketId = ticket.id
-  return [tool({
+  return trackedTools(host, [tool({
     name: 'myagent_report',
     description: 'Report the state of this Ticket\'s work. Call it before your turn ends. `state` classifies the work: '
       + 'progress (working, for the record), waiting (turn ended with work you cannot do now), ready (done; this ends the Ticket), '
@@ -313,14 +323,14 @@ export function workerTools(host: ToolsHost, ticket: Ticket): Tool[] {
         return { ticket_id: args.ticket_id, input_id: input.id, delivered: input.deliveredAt !== undefined }
       } catch (error) { return refusal(error) }
     },
-  })]
+  })])
 }
 
 // ------------------------------------------------------------ Main Session
 
 /** The management tools of the operator's front desk. */
 export function mainTools(host: ToolsHost): Tool[] {
-  return [
+  return trackedTools(host, [
     tool({
       name: 'myagent_create_ticket',
       description: 'Open a Ticket for work that needs its own directory and time: a worker Session runs it unattended and reports back. '
@@ -552,7 +562,7 @@ export function mainTools(host: ToolsHost): Tool[] {
         } catch (error) { return refusal(error) }
       },
     }),
-  ]
+  ])
 }
 
 function latestAssignmentState(ticket: Ticket): string {

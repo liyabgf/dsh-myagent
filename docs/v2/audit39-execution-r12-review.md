@@ -6,7 +6,7 @@
 
 ## 操作与失败账本
 
-- O01：先尝试读取 `/Users/liyang/Documents/SA/docs/v2/audit39-execution-audit.md`，工具报 not found；使用 glob 定位后读取正确文件 `/Users/liyang/Documents/SA/myagent/docs/v2/audit39-execution-audit.md`（48 行）。未修改原件。
+- O01：先尝试读取 `~/Documents/SA/docs/v2/audit39-execution-audit.md`，工具报 not found；使用 glob 定位后读取正确文件 `~/Documents/SA/myagent/docs/v2/audit39-execution-audit.md`（48 行）。未修改原件。
 - O02（完成）：`git show --format=fuller 99e99b5` 与 `77292c2` 完整 diff/stat 均退出 0；当前 HEAD=`99477e1f96119608bc8d1fc70f7f4473786f7407`，`git status --short` 仅显示既有 `lib/index.js`、`lib/index.d.ts` 修改及本报告/既有报告未跟踪，未触碰。两提交改动路径、R1/R2 supervision 日志、修复计划已读。
 - O03（完成）：只读 `read/grep/glob` 检查 desk-loop/desk-history/runtime/desk-llm/effects/prompts/store/health 及 `audit38-repro.spec.ts`、effects/prompts tests；工具调用退出成功。
 - O04（失败）：初次绝对路径读取总控文档报 not found（路径误在仓库根）；随后 glob 定位并成功读取 `myagent/docs/v2/audit39-execution-audit.md`。该失败不改变工作树。

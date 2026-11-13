@@ -15,28 +15,40 @@ interface Jobs {
   kill(id: string, caller: string, reason?: string): unknown
 }
 
-/** What this system uses of DSH's subagents: listing a worker's children and releasing them. */
+/** What this system uses of DSH's optional subagents service. */
 interface Subagents {
+  listDescendants(rootSessionId: string, signal?: AbortSignal): Promise<readonly { id: string }[]>
+  drainDescendants(parents: readonly Agent[]): Promise<void>
+  rootOf(caller: Agent): Agent
+}
+
+/** An older host shape kept only when both legacy methods are present. */
+interface LegacySubagents {
   listChildren(parentSessionId: string): Promise<readonly { id: string }[]>
   drainChildren(parent: Agent, childIds: readonly string[]): Promise<void>
 }
 
+type SubagentsService = Subagents | LegacySubagents
+
+const isFunction = (value: unknown): value is (...args: never[]) => unknown => typeof value === 'function'
+
 /** How long a kill waits for a job to end, collecting that end so the worker is not woken to hear of it. */
 const KILL_WAIT_MS = 10_000
-/** How long a release of subagents may take; it can hold up a shutdown, so DSH's own callers bound it too. */
-const DRAIN_LIMIT_MS = 10_000
+/** Strict owner join: Runtime bounds callers without dropping the actual cleanup Promise. */
+export interface BackgroundStopOptions {
+  readonly cancelTurn?: boolean
+  readonly shouldStop?: () => boolean
+  readonly agent?: Agent
+}
 
 const jobsOf = (ctx: Context): Jobs | undefined => ctx.get('jobs') as Jobs | undefined
-// 【DSH 兼容性修正】新版 DSH 重构了 subagents 服务，ctx.get('subagents') 返回的对象可能没有
-// listChildren 方法（该方法已改为独立函数，从 '@deepseek-ai/dsh-subagent' 导入）。
-// 检查方法是否存在，不存在就当作 undefined（优雅降级：没有子代理功能时不抛错）。
-const subagentsOf = (ctx: Context): Subagents | undefined => {
+const subagentsOf = (ctx: Context): SubagentsService | undefined => {
   const raw = ctx.get('subagents')
   if (raw === undefined || raw === null) return undefined
   const candidate = raw as Record<string, unknown>
-  // Guard: listChildren must be a function. Without it, drainChildren is unusable anyway.
-  if (typeof candidate['listChildren'] !== 'function') return undefined
-  return raw as Subagents
+  if (isFunction(candidate['listDescendants']) && isFunction(candidate['drainDescendants']) && isFunction(candidate['rootOf'])) return raw as Subagents
+  if (isFunction(candidate['listChildren']) && isFunction(candidate['drainChildren'])) return raw as LegacySubagents
+  throw new Error('The subagents service is present but has no supported list/drain contract')
 }
 const live = (status: string): boolean => status === 'running' || status === 'stopping'
 /** The jobs this Session owns that still run. */
@@ -76,11 +88,14 @@ export async function killJobs(ctx: Context, sessionId: string, reason: string):
     }
   }
   await Promise.all(collected)
+  // Registry waits are bounded collection, not proof that the process ended.
+  const remaining = owned(jobs!, sessionId)
+  if (remaining.length > 0) failures.push(new Error(`Jobs still running for ${sessionId}: ${remaining.map(job => job.id).join(', ')}`))
   if (failures.length > 0) throw new AggregateError(failures, `Killing the shell jobs of ${sessionId} failed`)
 }
 
 /**
- * Release a worker's live subagents, for a bounded time. DSH delivers each one's end to the worker before the release
+ * Release a worker's live subagents and join the real cleanup. DSH delivers each one's end to the worker before the release
  * returns, which wakes it, so its turn is cancelled after — keeping its inbox when `keepInbox` — and the stop ends with
  * that turn.
  *
@@ -90,35 +105,60 @@ export async function killJobs(ctx: Context, sessionId: string, reason: string):
  * the agent list is the fact. Production showed this shape a day after the killJobs fix: the same red line,
  * from the OTHER half of `stopBackground`.
  */
-export async function stopSubagents(ctx: Context, agent: Agent, keepInbox = false): Promise<void> {
+export async function stopSubagents(ctx: Context, agent: Agent, keepInbox = false, options: BackgroundStopOptions = {}): Promise<void> {
   const subagents = subagentsOf(ctx)
-  if (subagents === undefined) return
+  if (subagents === undefined || options.shouldStop?.() === false) return
+  const cancelParent = async (): Promise<void> => {
+    if (options.cancelTurn === false || options.shouldStop?.() === false) return
+    if (ctx.agents.get(agent.id) !== agent) return
+    if (agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox })
+    await agent.whenIdle()
+  }
   // The catalog lists every subagent the Session ever had; one that already ended has no agent.
   const live = (id: string) => ctx.agents.get(id as SessionId) !== undefined
-  const live_ = (await subagents.listChildren(agent.id)).map(child => child.id).filter(live)
-  if (live_.length === 0) return
-  try { await until(subagents.drainChildren(agent, live_), undefined, DRAIN_LIMIT_MS) }
-  catch (error) {
-    // Re-list: every child of ours that no longer has an agent ended on its own — a drain that complains about
-    // exactly those is reporting success as failure. Only a child that is STILL live after a failed drain is a
-    // real refusal (recorded, re-raised, and shown on the board).
-    const stillLive = (await subagents.listChildren(agent.id)).map(child => child.id).filter(live)
-    if (stillLive.length === 0) return
-    throw error
+  const modern = 'listDescendants' in subagents
+  const list = () => modern
+    ? subagents.listDescendants(agent.id)
+    : subagents.listChildren(agent.id)
+  if (modern) {
+    // drainDescendants closes admission and waits for pending startup as well as
+    // materialized children, so it must run even when the catalog is currently empty.
+    // It accepts exact roots only; promote only a true root from its actual runtime tree.
+    const root = subagents.rootOf(agent)
+    if (root !== agent) {
+      throw new Error(`Cannot drain descendants of ${agent.id}: an exact subagent tree root is required (actual tree root ${root.id})`)
+    }
+    try {
+      await subagents.drainDescendants([root])
+    } finally {
+      await cancelParent()
+    }
+    return
   }
-  finally {
-    if (agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox })
-    await until(agent.whenIdle(), undefined, DRAIN_LIMIT_MS)
+  const liveDescendants = (await list()).filter(child => live(child.id))
+  if (liveDescendants.length === 0) return
+  if (options.shouldStop?.() === false) return
+  try {
+    await subagents.drainChildren(agent, liveDescendants.map(child => child.id))
+  } catch (error) {
+    // Re-list: every child that no longer has an agent ended on its own. Only a
+    // child still live after the failed drain is a real refusal.
+    const stillLive = (await list()).some(child => live(child.id))
+    if (!stillLive) return
+    throw error
+  } finally {
+    await cancelParent()
   }
 }
 
 /** Stop everything a Session runs in the background: its shell jobs and its subagents. */
-export async function stopBackground(ctx: Context, sessionId: string, reason: string, keepInbox = false): Promise<void> {
+export async function stopBackground(ctx: Context, sessionId: string, reason: string, keepInbox = false, options: BackgroundStopOptions = {}): Promise<void> {
+  if (options.shouldStop?.() === false) return
+  const agent = options.agent ?? ctx.agents.get(sessionId as SessionId)
   const failures: unknown[] = []
   await killJobs(ctx, sessionId, reason).catch((error: unknown) => { failures.push(error) })
-  const agent = ctx.agents.get(sessionId as SessionId)
-  if (agent !== undefined) {
-    await stopSubagents(ctx, agent, keepInbox).catch((error: unknown) => { failures.push(error) })
+  if (agent !== undefined && options.shouldStop?.() !== false && ctx.agents.get(agent.id) === agent) {
+    await stopSubagents(ctx, agent, keepInbox, options).catch((error: unknown) => { failures.push(error) })
   }
   if (failures.length > 0) throw new AggregateError(failures, `Stopping the background work of ${sessionId} failed`)
 }

@@ -566,7 +566,12 @@ export function settingsPolicy(settings: Settings): Policy {
     revalidate(mandate) {
       // Pausing is deliberately not here: it holds execution rather than withdrawing an authorization, so a paused
       // Ticket keeps its Mandate and resumes under it. That is also why `paused` is not part of the policy version.
-      if (mandate.sender.kind === 'person' && !settings.allowedSenders.includes(mandate.sender.id)) {
+      const sourceForVia: Partial<Record<MandateVia, SourceKindName>> = {
+        schedule: 'cron', inbox: 'inbox', session: 'session', rule: 'rule', chat: 'chat',
+      }
+      const kind = sourceForVia[mandate.via]
+      const allowed = kind === undefined ? settings.allowedSenders : sourcePolicy(kind, settings).allowedSenders
+      if (mandate.sender.kind === 'person' && !allowed.includes(mandate.sender.id)) {
         return { holds: false, reason: 'sender_not_allowed' as const, detail: `${mandate.sender.id} may no longer start work here` }
       }
       // `inferred` strength does not occur in v1 — every Source is something the operator wrote — so there is no

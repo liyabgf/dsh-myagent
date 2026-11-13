@@ -218,6 +218,19 @@ describe('what a settings change does to work already authorized', () => {
     expect(after.revalidate(mandate()).detail).toContain('operator')
   })
 
+  it('revalidates against the source allow-list that authorized the Mandate', () => {
+    const chatMandate = mandate({ via: 'chat', sender: { id: 'alice', kind: 'person' } })
+    const sourceOnlyAlice = settings({ sources: { chat: { enabled: true, allowedSenders: ['alice'] } } })
+    expect(gate(trigger({ kind: 'chat', actor: { id: 'alice', kind: 'person' } }), sourceOnlyAlice).allow).toBe(true)
+    expect(settingsPolicy(sourceOnlyAlice).revalidate(chatMandate)).toMatchObject({ holds: true })
+
+    const revoked = settings({ allowedSenders: ['alice'], sources: { chat: { enabled: true, allowedSenders: ['operator'] } } })
+    expect(settingsPolicy(revoked).revalidate(chatMandate)).toMatchObject({ holds: false, reason: 'sender_not_allowed' })
+
+    const otherSource = mandate({ via: 'inbox', sender: { id: 'alice', kind: 'person' } })
+    expect(settingsPolicy(sourceOnlyAlice).revalidate(otherSource)).toMatchObject({ holds: false, reason: 'sender_not_allowed' })
+  })
+
   it('keeps a Mandate holding while processing is paused, because a pause holds execution rather than withdrawing it', () => {
     expect(settingsPolicy(settings({ paused: true })).revalidate(mandate())).toMatchObject({ holds: true })
   })

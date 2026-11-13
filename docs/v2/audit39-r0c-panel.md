@@ -2,7 +2,7 @@
 
 ## 范围与初始证据（编辑前创建）
 
-- cwd：`/Users/liyang/Documents/SA/myagent`。
+- cwd：`~/Documents/SA/myagent`。
 - 唯一测试写入：`tests/panel.spec.ts`；独占报告：`docs/v2/audit39-r0c-panel.md`。
 - 编辑前 SHA-256：`tests/panel.spec.ts` = `7bae5253708c29ff13e885716497c0711af1989341c9474d4234733dac2048e9`。
 - 审核输入 SHA-256：`docs/v2/audit38/test-coverage-review.md` = `5981827fc19a7cd7c6a6027caa9b3c9298f892e80e165cabf2b0ab789263ffa1`。

@@ -148,10 +148,13 @@ export class InboxSource implements Source {
     await this.pollOnce()
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     this.stopped = true
     if (this.timer !== undefined) clearTimeout(this.timer)
     this.timer = undefined
+    // Clearing the timer does not cancel a scan already awaiting filesystem I/O.
+    // Keep the owner alive until that scan's final writes and archive work settle.
+    await this.scanning
   }
 
   status(): SourceStatus { return this.last }

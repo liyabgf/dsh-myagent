@@ -813,11 +813,22 @@ const BodySchemas = {
  * Register the panel and its API on the harness's web server.
  * @returns the disposer that removes both.
  */
-export function registerHttp(host: HttpHost): () => void {
+export function registerHttp(host: HttpHost): (() => void) & { drain(): Promise<void> } {
   const routes = table(host)
   const ctx = host.context
-  return ctx.webServer.register({
+  let closing = false
+  const active = new Set<Promise<void>>()
+  const drain = async (): Promise<void> => { while (active.size > 0) await Promise.all([...active]) }
+  const unregister = ctx.webServer.register({
     kind: 'prefix', path: BASE_PATH, handler: async (req, res) => {
+      if (closing) { json(res, 503, { error: 'myagent is stopping' }); return }
+      let finish!: () => void
+      const current = new Promise<void>(resolve => { finish = resolve })
+      active.add(current)
+      try { await runHandler(req, res) } finally { active.delete(current); finish() }
+    },
+  })
+  const runHandler = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
       const url = new URL(req.url ?? '/', 'http://localhost')
       const method = req.method ?? 'GET'
       if (!url.pathname.startsWith(`${BASE_PATH}/api/`)) {
@@ -844,6 +855,7 @@ export function registerHttp(host: HttpHost): () => void {
         const [status, payload] = failure(error)
         json(res, status, payload)
       }
-    },
-  })
+  }
+  const dispose = (): void => { closing = true; unregister() }
+  return Object.assign(dispose, { drain })
 }

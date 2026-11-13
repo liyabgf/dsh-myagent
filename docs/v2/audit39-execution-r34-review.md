@@ -6,7 +6,7 @@
 
 ## 操作账本
 
-- R34-001：已先读总审计文档。首次在 `/Users/liyang/Documents/SA` 执行 pwd/git status/log，git因非仓库退出128；读取同目录文档失败后用glob定位 `myagent`。随后在目标仓库执行 git status/log，退出0；HEAD `99477e1`，既有 `lib/index.js`、`lib/index.d.ts` 修改受保护。已先创建本报告标题。
+- R34-001：已先读总审计文档。首次在 `~/Documents/SA` 执行 pwd/git status/log，git因非仓库退出128；读取同目录文档失败后用glob定位 `myagent`。随后在目标仓库执行 git status/log，退出0；HEAD `99477e1`，既有 `lib/index.js`、`lib/index.d.ts` 修改受保护。已先创建本报告标题。
 - R34-002：已读两提交全部 diff（包括 supervision 增量）、stat/name-status，命令退出0；其中一次详细diff误用上层工作目录退出128，随后在目标仓库完整重读成功。当前源码已交叉读取 WeCom、Telegram、共享 inbound、Inbox、ScheduleSchema、HTTP Desk与DeskHistory、panel相关函数。未运行项目代码。
 - R34-003：已读取WeCom crypto/state、相关 bridges/panel/desk specs、Health实现与HTTP settings路由；已将静态发现增量写入本报告。未执行实验。
 

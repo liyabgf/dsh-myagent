@@ -7,7 +7,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, truncateSync, utimesSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { canRetry, key } from '../src/core/index.ts'
 import { LocalHostSandbox } from '../src/app/executor.ts'
 import { tempDir } from './helpers/temp.ts'
@@ -220,6 +220,171 @@ describe('a launch whose work is no longer wanted', () => {
       expect(host.calls.sessions).toHaveLength(created)
       expect(runtime.store.tickets.get(id)!.ended).toMatchObject({ outcome: 'stopped' })
     } finally { await runtime.stop() }
+  })
+})
+
+describe('B2f strict stop contracts', () => {
+  it('preserves the reporting worker closing turn when only background work stops', async () => {
+    const context = await deployment('auto', { services: true })
+    const { runtime, host } = context
+    try {
+      const id = runtime.engine.createTicket({ title: 'closing', text: 'work' }).ticketId!
+      await settle(runtime)
+      const agent = host.agents.get(workerId(id))!
+      agent.status = 'running'
+      await runtime.executor.haltBackground(id, 'reported done')
+      expect(agent.cancelled).toBe(0)
+    } finally { await runtime.stop() }
+  })
+
+  it('does not cancel a replacement Agent after an older halt reaches late cleanup', async () => {
+    const context = await deployment('auto', { services: true })
+    const { runtime, host } = context
+    try {
+      const id = runtime.engine.createTicket({ title: 'replacement', text: 'work' }).ticketId!
+      await settle(runtime)
+      const original = host.agents.get(workerId(id))!
+      let release!: () => void
+      let entered!: () => void
+      const gate = new Promise<void>(resolve => { release = resolve })
+      const reached = new Promise<void>(resolve => { entered = resolve })
+      const originalDrain = (host.ctx as any).get('subagents')
+      const blockingService = { ...originalDrain, drainDescendants: async (roots: unknown[]) => {
+        if (roots[0] === original) { entered(); await gate }
+        return originalDrain.drainDescendants(roots)
+      } }
+      ;(host.ctx as any).get = (name: string) => name === 'subagents' ? blockingService : undefined
+      const ending = runtime.executor.haltBackground(id, 'closing turn')
+      await reached
+      runtime.engine.assignmentInterrupted(id, runtime.store.tickets.get(id)!.assignments.at(-1)!.id, 'new attempt')
+      const replacement = host.spawn(original.id, 'running')
+      release()
+      await ending
+      expect(original.cancelled).toBe(0)
+      expect(replacement.cancelled).toBe(0)
+    } finally { await runtime.stop() }
+  })
+
+  it('rejects explicit halt and retains failed stop evidence in drain until successful retry', async () => {
+    const context = await deployment('auto', { services: true })
+    const { runtime, host } = context
+    try {
+      const id = runtime.engine.createTicket({ title: 'failure', text: 'work' }).ticketId!
+      await settle(runtime)
+      host.spawn('drain-child', 'running')
+      host.services.children.set(workerId(id), ['drain-child'])
+      host.services.failDrains.push('drain-child')
+      await expect(runtime.executor.halt(id, 'stop failed', false)).rejects.toThrow(/Stopping/)
+      await expect(runtime.executor.drain()).rejects.toThrow(/stop|drain/i)
+      host.services.failDrains.length = 0
+      await runtime.executor.halt(id, 'retry', false)
+      await expect(runtime.executor.drain()).resolves.toBeUndefined()
+    } finally { host.services.failDrains.length = 0; await runtime.stop() }
+  })
+})
+
+describe('stop at worker delivery await boundaries', () => {
+  for (const boundary of ['late-create', 'late-create-alias', 'second-ensure', 'history'] as const) {
+    it(`does not prompt after stop commits during ${boundary}`, async () => {
+      const context = await deployment('auto', boundary === 'late-create-alias'
+        ? { answersWith: id => id.startsWith('worker-') ? `actual-${id}` : id } : {})
+      const { runtime, host } = context
+      let release!: () => void
+      let entered!: () => void
+      const blocked = new Promise<void>(resolve => { release = resolve })
+      const reached = new Promise<void>(resolve => { entered = resolve })
+      if (boundary === 'late-create' || boundary === 'late-create-alias') {
+        const controller = host.ctx.sessionController
+        const create = controller.create.bind(controller)
+        vi.spyOn(controller, 'create').mockImplementation(async request => {
+          if (request.agentPreset !== undefined) { entered(); await blocked }
+          const created = await create(request)
+          if (request.agentPreset !== undefined) host.agents.get(created.sessionId)!.status = 'running'
+          return created
+        })
+      } else if (boundary === 'second-ensure') {
+        const ensure = runtime.sessions.ensure.bind(runtime.sessions)
+        let count = 0
+        vi.spyOn(runtime.sessions, 'ensure').mockImplementation(async (...args) => {
+          if (++count === 2) { entered(); await blocked }
+          return ensure(...args)
+        })
+      } else {
+        const persistence = host.ctx.sessionPersistence
+        const flush = persistence.flush.bind(persistence)
+        vi.spyOn(persistence, 'flush').mockImplementation(async (...args) => {
+          entered(); await blocked
+          return flush(...args)
+        })
+      }
+      try {
+        const path = join(context.inbox, `stop-${boundary}.md`)
+        writeFileSync(path, '工作')
+        const old = new Date(Date.now() - 5000)
+        utimesSync(path, old, old)
+        await runtime.nudge()
+        await reached
+        const id = runtime.store.tickets.list()[0]!.id
+        runtime.engine.stopTicket(id)
+        // Ensure the first halt can finish BEFORE a late create returns.
+        await runtime.executor.halt(id, 'test stop', false)
+        release()
+        await settle(runtime)
+        const bound = runtime.store.tickets.get(id)!.execution?.sessionId ?? workerId(id)
+        const agent = host.agents.get(bound)
+        expect(agent).toBeDefined()
+        expect(agent!.followups).toEqual([])
+        if (agent !== undefined) expect(agent.status).toBe('idle')
+        expect(runtime.store.tickets.get(id)!.assignments.at(-1)!.state).toBe('ended')
+      } finally { release(); await runtime.stop() }
+    })
+  }
+})
+
+describe('worker Session ownership on late create', () => {
+  it('refuses a returned Session owned by another Ticket without cancelling it', async () => {
+    let answer: string | undefined
+    const context = await deployment('auto', { answersWith: id => answer ?? id })
+    const { runtime, host } = context
+    try {
+      const first = await one(context, 'owner.md', 'first')
+      const owner = host.agents.get(workerId(first))!
+      answer = workerId(first)
+      const path = join(context.inbox, 'unrelated.md')
+      writeFileSync(path, 'second')
+      const old = new Date(Date.now() - 5000)
+      utimesSync(path, old, old)
+      await settle(runtime)
+      const replacement = host.agents.get(workerId(first))!
+      expect(replacement.cancelled).toBe(0)
+      expect(replacement.followups).toEqual([])
+      expect(owner.cancelled).toBe(0)
+      expect(runtime.store.tickets.list().find(t => t.id !== first)!.execution?.sessionId).toBeUndefined()
+    } finally { await runtime.stop() }
+  })
+})
+
+describe('stop while a launch is preparing', () => {
+  it('does not start the assignment after stop commits during prepare', async () => {
+    const context = await deployment('auto')
+    const { runtime, host } = context
+    let release!: () => void
+    const blocked = new Promise<void>(resolve => { release = resolve })
+    const original = runtime.executor.sandbox.runPrepare.bind(runtime.executor.sandbox)
+    vi.spyOn(runtime.executor.sandbox, 'runPrepare').mockImplementation(async (...args) => {
+      await blocked
+      return original(...args)
+    })
+    try {
+      runtime.saveSettings(inboxOf(context, { executor: { prepare: 'true' } }))
+      const id = await one(context, 'stop-during-prepare.md', '工作')
+      // Launch is now held inside prepare. Commit stop before the prepare promise resumes.
+      runtime.engine.stopTicket(id)
+      release()
+      await settle(runtime)
+      expect(host.agents.get(workerId(id))).toBeUndefined()
+      expect(runtime.store.tickets.get(id)!.ended).toMatchObject({ outcome: 'stopped' })
+    } finally { release(); await runtime.stop() }
   })
 })
 
@@ -995,5 +1160,66 @@ describe('the worker-slot count after a worker finishes', () => {
       // not coexist with it.
       expect(state.health.runtime?.ok).toBe(true)
     } finally { await runtime.stop() }
+  })
+})
+
+
+describe('B2h stop retry evidence', () => {
+  it('serializes same-scope stops so a delayed old failure cannot poison a later success', async () => {
+    const context = await deployment('auto', { services: true })
+    const { runtime, host } = context
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    try {
+      const id = runtime.engine.createTicket({ title: 'serial stop', text: 'work' }).ticketId!
+      await settle(runtime)
+      const service = (host.ctx as any).get('subagents')
+      const get = host.ctx.get.bind(host.ctx)
+      vi.spyOn(host.ctx, 'get').mockImplementation((name: string) => name === 'subagents' ? service : get(name as never))
+      let calls = 0
+      const entered = new Promise<void>(resolve => {
+        vi.spyOn(service, 'drainDescendants').mockImplementation(async () => {
+          if (++calls === 1) { resolve(); await gate; throw new Error('old stop failed') }
+        })
+      })
+      const first = runtime.executor.halt(id, 'old reason', true).catch(error => error)
+      await entered
+      const second = runtime.executor.halt(id, 'new reason', true)
+      await new Promise<void>(resolve => setImmediate(resolve))
+      expect(calls, 'same scope must not run a newer stop ahead of pending failure evidence').toBe(1)
+      release()
+      expect(await first).toBeInstanceOf(Error)
+      await second
+      await expect(runtime.executor.drain()).resolves.toBeUndefined()
+    } finally { release(); vi.restoreAllMocks(); await runtime.stop() }
+  })
+
+  it('retains real old failure while the newer stop is pending or also fails', async () => {
+    const context = await deployment('auto', { services: true })
+    const { runtime, host } = context
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    try {
+      const id = runtime.engine.createTicket({ title: 'failed evidence', text: 'work' }).ticketId!
+      await settle(runtime)
+      const service = (host.ctx as any).get('subagents')
+      const get = host.ctx.get.bind(host.ctx)
+      vi.spyOn(host.ctx, 'get').mockImplementation((name: string) => name === 'subagents' ? service : get(name as never))
+      let calls = 0
+      const entered = new Promise<void>(resolve => {
+        vi.spyOn(service, 'drainDescendants').mockImplementation(async () => {
+          if (++calls === 2) { resolve(); await gate }
+          throw new Error(`failure ${calls}`)
+        })
+      })
+      await expect(runtime.executor.halt(id, 'first', true)).rejects.toThrow()
+      const second = runtime.executor.halt(id, 'second', true).catch(error => error)
+      await entered
+      expect((runtime.executor as any).haltFailures.size).toBeGreaterThan(0)
+      release(); await second
+      await expect(runtime.executor.drain()).rejects.toThrow(/stop drain failed/)
+      vi.restoreAllMocks()
+      await runtime.executor.halt(id, 'successful evidence', true)
+    } finally { release(); vi.restoreAllMocks(); await runtime.stop() }
   })
 })

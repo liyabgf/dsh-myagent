@@ -13,7 +13,7 @@ import { dirname } from 'node:path'
 import { waitsForPerson, type Decision, type Ticket, type Trigger } from '../core/model.ts'
 import type { Artifact, Dependency, Disposition, Project, Thread, TicketEvent, Work } from '../core/model.ts'
 import type { DecisionRepository, DependencyRepository, EventRepository, LostTrigger, ProjectRepository, TicketRepository, TriggerRecord, TriggerRepository, WorkRepository, ThreadRepository } from '../core/engine.ts'
-import type { Transaction } from '../core/engine.ts'
+import type { Transaction, InputConsumption, InputConsumptionRepository } from '../core/engine.ts'
 import { parseSettings, type Settings } from '../core/policy.ts'
 
 /** The schema this build writes; a database of a newer schema is refused rather than misread. */
@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS kv (
 
 /** A row of `kv`: a typed record with the family that owns it. */
 export const KV = {
+  sourceConsumption: (identity: string) => `source:consumed:${encodeURIComponent(identity)}` as const,
   /** A Source's read position, written only by that Source: `source:<id>:cursor`. */
   sourceCursor: (id: string) => `source:${id}:cursor` as const,
   /** The stored settings document: `settings:document`. */
@@ -563,6 +564,7 @@ export interface EffectRow {
  */
 export class Store implements Transaction {
   private readonly db: DatabaseSync
+  private transactionFailure: Error | undefined
   private depth = 0
   private queue: (() => void)[] = []
   /** Deferred actions that threw, newest last, bounded. A Store must never be the only place that knows one failed. */
@@ -579,6 +581,10 @@ export class Store implements Transaction {
   readonly dependencies: Dependencies
   readonly threads: Threads
   readonly deskHistory: DeskHistory
+  readonly inputConsumptions: InputConsumptionRepository = {
+    get: identity => this.get<InputConsumption>(KV.sourceConsumption(identity)),
+    save: (identity, receipt) => this.set(KV.sourceConsumption(identity), receipt),
+  }
 
   constructor(path: string) {
     mkdirSync(dirname(path), { recursive: true })
@@ -642,9 +648,10 @@ export class Store implements Transaction {
   }
 
   atomic<T>(run: () => T): T {
+    if (this.transactionFailure !== undefined) throw this.transactionFailure
     const outermost = this.depth === 0
     const name = `s${this.depth}`
-    // Where this transaction's own deferred actions start, so a rollback can drop exactly those and no others.
+    // A failed transaction drops only the callbacks registered within its boundary.
     const mark = this.queue.length
     if (outermost) this.db.exec('BEGIN IMMEDIATE')
     else this.db.exec(`SAVEPOINT ${name}`)
@@ -652,21 +659,29 @@ export class Store implements Transaction {
     let result: T
     try {
       result = run()
+      // COMMIT may fail while SQLite keeps the transaction open (deferred constraints, busy I/O).
+      // Keep it in the same failure boundary as the writes, with callbacks still pending.
+      this.db.exec(outermost ? 'COMMIT' : `RELEASE ${name}`)
     } catch (error) {
-      this.depth--
-      // A deferred action belongs to the writes of the transaction that registered it. Running one after that
-      // transaction rolled back would act on state that was never committed — a launch for a Ticket that does not exist.
       this.queue.length = mark
-      if (outermost) this.db.exec('ROLLBACK')
-      else this.db.exec(`ROLLBACK TO ${name}`)
+      try {
+        if (outermost) this.db.exec('ROLLBACK')
+        else {
+          this.db.exec(`ROLLBACK TO ${name}`)
+          this.db.exec(`RELEASE ${name}`)
+        }
+      } catch (rollbackError) {
+        // No repository may keep writing when SQLite's transaction outcome is unknown.
+        this.queue = []
+        this.transactionFailure = new AggregateError([error, rollbackError], 'Transaction rollback failed; Store is unusable')
+        try { this.db.close() } catch { /* retain both original failures */ }
+        throw this.transactionFailure
+      }
       throw error
+    } finally {
+      this.depth--
     }
-    this.depth--
-    if (!outermost) {
-      this.db.exec(`RELEASE ${name}`)
-      return result
-    }
-    this.db.exec('COMMIT')
+    if (!outermost) return result
     const deferred = this.queue.slice(mark)
     this.queue = []
     // Deliberately outside the try above: the transaction has committed, so a throwing action is not a transaction
@@ -706,6 +721,7 @@ export class Store implements Transaction {
   }
 
   afterCommit(run: () => void): void {
+    if (this.transactionFailure !== undefined) throw this.transactionFailure
     if (this.depth === 0) { run(); return }
     this.queue.push(run)
   }

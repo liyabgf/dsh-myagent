@@ -7,6 +7,7 @@
  * and an Assignment whose worker Session is gone is interrupted rather than left looking alive.
  */
 import { readdirSync, readFileSync } from 'node:fs'
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { Dirent } from 'node:fs'
 import { lstat, readdir, readFile } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
@@ -306,6 +307,7 @@ export class Runtime implements HttpHost {
   private readonly lock: StateLock
   private readonly abort = new AbortController()
   private readonly disposers: (() => void)[] = []
+  private readonly httpDrains: (() => Promise<void>)[] = []
   private settingsValue: Settings
   private settingsRevisionValue: number
   private panel: MainState = { acceptMode: 'observe', panelPath: `${BASE_PATH}/`, openTickets: 0, waiting: 0 }
@@ -322,6 +324,39 @@ export class Runtime implements HttpHost {
   /** The error `agent/error` saw for one Session, which the turn end that follows it writes onto that Ticket. */
   private readonly sessionErrors = new Map<string, string>()
   private stopped = false
+  private startup?: Promise<void>
+  private readonly operations = new Set<Promise<unknown>>()
+  private readonly operationScope = new AsyncLocalStorage<{ active: boolean }>()
+
+  /** Admission and ownership for real async tool bodies, including direct API calls. */
+  private runOperation<T>(work: () => Promise<T>): Promise<T> {
+    // A helper reached after an admitted tool's await belongs to that tool even
+    // during closing. An escaped callback cannot reuse a scope after it settles.
+    if (this.operationScope.getStore()?.active) return Promise.resolve().then(work)
+    if (this.stopped) return Promise.reject(new Error('myagent is closing'))
+    const scope = { active: true }
+    // Register before invoking the body, which may synchronously re-enter shutdown.
+    const operation = Promise.resolve().then(() => this.operationScope.run(scope, work))
+    this.operations.add(operation)
+    const settled = (): void => { scope.active = false; this.operations.delete(operation) }
+    void operation.then(settled, settled)
+    return operation
+  }
+
+  private async drainOperations(): Promise<void> {
+    while (this.operations.size > 0) await Promise.allSettled([...this.operations])
+  }
+  private budgetTimer?: ReturnType<typeof setInterval>
+  /** Admission closes once; an incomplete stop retains its work and resources for retry. */
+  private stopAttempt?: Promise<void>
+  private stopDrain?: Promise<void>
+  private shutdownComplete = false
+  private readonly stopTasks = new Map<string, {
+    work: () => unknown | Promise<unknown>
+    state: 'pending' | 'succeeded' | 'failed'
+    promise: Promise<void>
+    error?: unknown
+  }>()
   private problem?: string
 
   constructor(context: Context, config: DeploymentConfig) {
@@ -500,7 +535,7 @@ export class Runtime implements HttpHost {
       panelPath: (): string => this.panelPath(),
     })
     this.engine = engine = new Engine({
-      repos: this.store, tx: this.store,
+      repos: this.store, tx: this.store, inputConsumptions: this.store.inputConsumptions,
       policy: () => settingsPolicy(this.settings()),
       executor: this.executor, delivery: this.delivery,
       emit: (event: DomainEvent): void => this.onEvent(event),
@@ -512,7 +547,7 @@ export class Runtime implements HttpHost {
     this.passes = new Passes({
       effects: this.effects, intervalMs: PASS_INTERVAL_MS, health: this.health.entry('passes'),
       lifetime: this.lifetime,
-      extra: [async (): Promise<void> => this.refresh(), async (): Promise<void> => this.enforceRuntimeBudgets(), async (): Promise<void> => this.deskPatrol()],
+      extra: [async (): Promise<void> => this.refresh(), async (): Promise<void> => this.deskPatrol()],
       onPassError: (error: unknown): void => { context.logger.warn('a myagent pass failed: %s', reason(error)) },
     })
     this.sources = new SourceRegistry(this.sourceHost(), [cronKind, inboxKind(this.machine.inboxDir), sessionKind, ruleKind, chatKind])
@@ -526,6 +561,7 @@ export class Runtime implements HttpHost {
   private toolsHost(): ToolsHost {
     return {
       engine: this.engine, store: this.store, acceptMode: () => this.settings().acceptMode,
+      runOperation: work => this.runOperation(work),
       attempt: (ticketId: string) => this.sessions.attempt(ticketId),
       readArtifact: (source, target, path, materialize) => this.readArtifact(source, target, path, materialize),
       returnAddressOf: (ticketId: string) => this.returnAddressOf(ticketId),
@@ -594,7 +630,11 @@ export class Runtime implements HttpHost {
    * The measurement happens before the removal for the same reason the tombstone carries numbers at all: once the
    * directory is gone, "17 files, 2.4 MB" exists nowhere else.
    */
-  async deleteTicket(id: string, options: { assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing' }): Promise<{
+  deleteTicket(id: string, options: { assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing' }) {
+    return this.runOperation(() => this.deleteTicketNow(id, options))
+  }
+
+  private async deleteTicketNow(id: string, options: { assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing' }): Promise<{
     deleted: string; assets: 'keep' | 'delete'; record: 'tombstone' | 'nothing'
     directory?: string; files?: number; bytes?: number
   }> {
@@ -687,7 +727,13 @@ export class Runtime implements HttpHost {
    * 2. Must be a non-empty text file <= 64 KB.
    * 3. Must NOT hardcode the Ticket's private directory path or `workRoot` path.
    */
-  async promoteSkill(ticketId: string, input: {
+  promoteSkill(ticketId: string, input: {
+    name: string; title: string; description: string; script_path: string; usage?: string
+  }) {
+    return this.runOperation(() => this.promoteSkillNow(ticketId, input))
+  }
+
+  private async promoteSkillNow(ticketId: string, input: {
     name: string; title: string; description: string; script_path: string; usage?: string
   }): Promise<{ ok: boolean; skill_name?: string; error?: string }> {
     const ticket = this.store.tickets.get(ticketId)
@@ -747,7 +793,11 @@ export class Runtime implements HttpHost {
    * When `path` is omitted, returns the catalog of accessible Tickets and their registered artifacts so the worker LLM
    * can judge which data assets are relevant without rummaging through `workRoot`.
    */
-  async readArtifact(sourceTicketId: string, targetTicketId?: string, path?: string, materialize?: boolean): Promise<ArtifactRead> {
+  readArtifact(sourceTicketId: string, targetTicketId?: string, path?: string, materialize?: boolean): Promise<ArtifactRead> {
+    return this.runOperation(() => this.readArtifactNow(sourceTicketId, targetTicketId, path, materialize))
+  }
+
+  private async readArtifactNow(sourceTicketId: string, targetTicketId?: string, path?: string, materialize?: boolean): Promise<ArtifactRead> {
     let source: Ticket
     try {
       source = this.engine.require(sourceTicketId)
@@ -1055,8 +1105,7 @@ export class Runtime implements HttpHost {
    * Enforce the wall-clock budget a scheduled firing carries: tell the worker to wrap up at the budget, and stop it
    * a grace period later if it is still running.
    *
-   * On the pass loop rather than on a timer of its own: the pass already runs every two seconds and already has the
-   * lifetime and the health entry, and a second timer is a second thing that has to be disposed correctly. The
+   * An independent synchronous timer checks every two seconds, even while a pass awaits slow effects. The
    * measurement is the running attempt's own `startedAt`, so it covers the subagents and background jobs the worker
    * started — a limit a worker could delegate its way around would not be a limit.
    *
@@ -1257,7 +1306,14 @@ export class Runtime implements HttpHost {
    * mounting a bundle must not be able to hang or break the host's own startup. The main Session is created on demand
    * by {@link createMainSession}, from the panel or from a Ticket somebody opens in it.
    */
-  async start(): Promise<void> {
+  start(): Promise<void> {
+    if (this.stopped) return Promise.reject(new Error('myagent is closing'))
+    this.startup ??= Promise.resolve().then(() => this.startNow())
+    return this.startup
+  }
+
+  private async startNow(): Promise<void> {
+    if (this.stopped) return
     this.indexSessions()
     this.wireAgents()
     // R1-01: Create and wire the DeskLoop BEFORE recover() so that recover()'s
@@ -1273,6 +1329,7 @@ export class Runtime implements HttpHost {
       this.engine,
     )
     await this.deskLoop.init()
+    if (this.stopped) return
     this.disposers.push(this.prompts.onChange(() => { this.deskLoop?.onPromptsChanged() }))
     const deskCfg = this.settings().deskLlm
     if (deskCfg.provider && deskCfg.model) {
@@ -1281,6 +1338,7 @@ export class Runtime implements HttpHost {
     } else {
       this.context.logger.info('myagent desk: LLM loop standby (deskLlm.provider/model not configured)')
     }
+    if (this.stopped) return
     this.recover()
     this.refresh()
     try {
@@ -1290,7 +1348,18 @@ export class Runtime implements HttpHost {
       this.health.entry('sources').problem(reason(error))
       this.context.logger.warn('myagent could not start its Sources: %s', reason(error))
     }
+    if (this.stopped) return
     this.passes.start()
+    this.budgetTimer = setInterval(() => {
+      if (this.stopped) return
+      try {
+        this.enforceRuntimeBudgets()
+      } catch (error) {
+        this.health.entry('runtime').problem(`runtime budget check failed: ${reason(error)}`)
+        this.context.logger.warn('myagent runtime budget check failed: %s', reason(error))
+      }
+    }, PASS_INTERVAL_MS)
+    this.budgetTimer.unref?.()
     this.watchdog.start()
     this.health.entry('runtime').record(this.machine.stateDir)
     this.announceSandbox()
@@ -1380,48 +1449,104 @@ export class Runtime implements HttpHost {
   }
 
   /**
-   * Stop the Sources, the pump, the workers and the Store, in that order.
-   *
-   * This runs while the host is disposing, possibly because something else already failed, so every step is contained
-   * and bounded: a step that throws or hangs must not take the host's shutdown with it.
+   * Bound the caller's wait, never the lifetime of a writer. A timed-out caller
+   * receives an incomplete error while the real drain retains the DB and lock.
    */
-  async stop(): Promise<void> {
-    if (this.stopped) return
-    this.stopped = true
-    this.abort.abort()
-    const step = async (name: string, work: () => unknown | Promise<unknown>, timeoutMs: number): Promise<void> => {
-      try {
-        await Promise.race([
-          Promise.resolve(work()),
-          new Promise((_resolve, reject) => {
-            const timer = setTimeout(() => reject(new Error(`${name} did not finish in ${timeoutMs} ms`)), timeoutMs)
-            timer.unref?.()
+  stop(): Promise<void> {
+    if (this.shutdownComplete) return Promise.resolve()
+    if (this.stopAttempt !== undefined) return this.stopAttempt
+    const task = (name: string, work: () => unknown | Promise<unknown>): Promise<void> => {
+      const existing = this.stopTasks.get(name)
+      if (existing !== undefined && existing.state !== 'failed') return existing.promise
+      const record = { work, state: 'pending' as 'pending' | 'succeeded' | 'failed', promise: Promise.resolve(), error: undefined as unknown }
+      // Defer invocation so the record exists before reentrant stop callbacks run.
+      record.promise = Promise.resolve().then(work).then(() => { record.state = 'succeeded' }, error => {
+        record.state = 'failed'
+        record.error = error
+        throw error
+      })
+      this.stopTasks.set(name, record)
+      return record.promise
+    }
+    if (!this.stopped) {
+      this.stopped = true
+      if (this.budgetTimer !== undefined) { clearInterval(this.budgetTimer); this.budgetTimer = undefined }
+      this.abort.abort()
+      for (const dispose of this.disposers.splice(0).reverse()) {
+        const drain = (dispose as { drain?: () => Promise<void> }).drain
+        if (drain !== undefined) this.httpDrains.push(drain)
+        try { dispose() } catch (error) { this.context.logger.warn('myagent route disposal failed: %s', reason(error)) }
+      }
+      this.watchdog.stop()
+      this.effects.dispose()
+    }
+    if (this.stopDrain === undefined) {
+      const retryStops = this.stopTasks.size > 0
+      const drain = (async (): Promise<void> => {
+        // Retry retained ended-ticket cleanup once on a new explicit stop attempt.
+        if (retryStops) await this.executor.retryFailedStops()
+        const results = await Promise.allSettled([
+          task('HTTP handlers', async () => { for (const drain of this.httpDrains) await drain() }),
+          task('pump', () => this.passes.stop(Infinity)),
+          task('Sources', () => this.sources.stop()),
+          task('Effects drain', () => this.effects.drain()),
+          task('Sessions dispose', () => this.sessions.dispose()),
+          task('Sessions drain', () => this.sessions.drain()),
+          task('Executor drain', () => this.executor.drain()),
+          task('DeskLoop', () => this.deskLoop?.stop()),
+          task('startup', async () => { await this.startup?.catch(() => {}) }),
+          task('Host tool operations', () => this.drainOperations()),
+          task('workers', async () => {
+            for (const ticket of this.store.tickets.open()) {
+              if (runningAssignment(ticket) === undefined) continue
+              await this.executor.halt(ticket.id, 'myagent stopped', true)
+            }
           }),
         ])
-      } catch (error) {
-        this.context.logger.warn('myagent could not %s while stopping: %s', name, reason(error))
-      }
+        const failures = results.filter(result => result.status === 'rejected')
+        if (failures.length > 0) throw new AggregateError(failures.map(result => result.reason), 'Shutdown drains failed')
+        // HTTP/effect/pass work can create tracked cleanup while draining. Join
+        // owners again after those producers have ended, before finalization.
+        await this.executor.drain()
+        await this.sessions.drain()
+        await this.effects.drain()
+        // A synchronous close failure leaves the lock held and is retried without
+        // repeating successfully drained owners.
+        this.store.close()
+        this.lock.release()
+        this.shutdownComplete = true
+      })()
+      this.stopDrain = drain
+      void drain.then(() => {}, error => {
+        if (this.stopDrain === drain) this.stopDrain = undefined
+        this.context.logger.warn('myagent shutdown incomplete; DB/lock retained: %s', reason(error))
+      })
     }
-    for (const dispose of this.disposers.splice(0).reverse()) {
-      try { dispose() } catch { /* a route that will not unregister must not hold the shutdown */ }
+    const drain = this.stopDrain
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const incomplete = (): Error => {
+      const pending = [...this.stopTasks].filter(([, value]) => value.state !== 'succeeded').map(([name, value]) => `${name}:${value.state}`)
+      const error = new Error(`Shutdown incomplete (${pending.join(', ') || 'finalization'}); DB/lock retained`)
+      error.name = 'StopIncompleteError'
+      return error
     }
-    this.watchdog.stop()
-    await step('stop the pump', () => this.passes.stop(5_000), 8_000)
-    await step('stop the Sources', () => this.sources.stop(), 8_000)
-    await step('release the Sessions', () => this.sessions.dispose(), 5_000)
-    this.effects.dispose()
-    // A stopped deployment leaves no worker running under an authorization nobody holds any more.
-    await step('stop the workers', async () => {
-      for (const ticket of this.store.tickets.open()) {
-        if (runningAssignment(ticket) === undefined) continue
-        await this.executor.halt(ticket.id, 'myagent stopped', true)
-      }
-    }, 15_000)
-    // R1-02: Stop the DeskLoop before closing the Store so its pending LLM calls
-    // and history writes do not outlive the database.
-    this.deskLoop?.stop()
-    await step('close the database', () => this.store.close(), 5_000)
-    this.lock.release()
+    const attempt = Promise.race([
+      drain.catch(() => { throw incomplete() }),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(incomplete()), 15_000)
+        timer.unref?.()
+      }),
+    ])
+    this.stopAttempt = attempt
+    const clear = (): void => {
+      if (timer !== undefined) clearTimeout(timer)
+      if (this.stopAttempt === attempt) this.stopAttempt = undefined
+    }
+    void attempt.then(clear, error => {
+      clear()
+      this.context.logger.warn('myagent shutdown wait ended: %s', reason(error))
+    })
+    return attempt
   }
 
   /**
@@ -1720,7 +1845,10 @@ export class Runtime implements HttpHost {
         // Work left running under an authorization that ended stops with it, keeping the Session readable. A stop
         // already halted it — halting again would cancel twice, and with different inbox handling.
         if (event.ticket.ended?.outcome !== 'stopped') {
-          void this.executor.haltBackground(event.ticket.id, 'the Ticket ended')
+          void this.executor.haltBackground(event.ticket.id, 'the Ticket ended').catch((error: unknown) => {
+            this.context.logger.warn('could not stop background work for ended Ticket %s: %s',
+              event.ticket.id.slice(0, 8), reason(error))
+          })
         }
         // 【W10/W9】Unsubscribe the ended Ticket from all Threads it was subscribed to.
         for (const thread of this.store.threads.list()) {

@@ -1,7 +1,7 @@
 commit e12aa0d47ff55e2d667900d20f2699e76db48e7e
-Author:     李扬 <liyang@Mac.lan>
+Author:     operator <operator@example.invalid>
 AuthorDate: Fri Nov 13 16:06:47 2026 +0800
-Commit:     李扬 <liyang@Mac.lan>
+Commit:     operator <operator@example.invalid>
 CommitDate: Fri Nov 13 16:06:47 2026 +0800
 
     R0：测试保真度与空工具集安全守卫
@@ -158,7 +158,7 @@ index 0000000..d407bcc
 +真实退出码：0。
 +
 +```text
-+ RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
++ RUN  v4.1.8 ~/Documents/SA/myagent
 +
 + ✓ tests/agent-delivery.spec.ts (12 tests) 6ms
 + ✓ tests/background.spec.ts (18 tests) 18ms
@@ -266,7 +266,7 @@ index 0000000..6c58435
 +
 +## 范围与初始证据（编辑前创建）
 +
-+- cwd：`/Users/liyang/Documents/SA/myagent`。
++- cwd：`~/Documents/SA/myagent`。
 +- 唯一测试写入：`tests/panel.spec.ts`；独占报告：`docs/v2/audit39-r0c-panel.md`。
 +- 编辑前 SHA-256：`tests/panel.spec.ts` = `7bae5253708c29ff13e885716497c0711af1989341c9474d4234733dac2048e9`。
 +- 审核输入 SHA-256：`docs/v2/audit38/test-coverage-review.md` = `5981827fc19a7cd7c6a6027caa9b3c9298f892e80e165cabf2b0ab789263ffa1`。
@@ -324,7 +324,7 @@ index 0000000..bd3b89f
 +
 +## 命令输出（关键结果）
 +```text
-+RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
++RUN  v4.1.8 ~/Documents/SA/myagent
 +✓ copies attachment bytes into attachments/ and marks the note delivered 353ms
 +FAIL tests/flow.spec.ts > a profile that does not know several of the worker tools > leaves the Ticket unlaunched rather than running a worker with no restriction at all
 +AssertionError: expected 'running' to be 'pending' // Object.is equality
@@ -379,14 +379,14 @@ index 0000000..489a980
 +
 +## 实际验证
 +
-+工作目录均为 `/Users/liyang/Documents/SA/myagent`。初次测试和 typecheck 均通过；工具未给 exit marker，因此额外执行显式保存并打印命令退出码的同一检查，以下保留真实输出。
++工作目录均为 `~/Documents/SA/myagent`。初次测试和 typecheck 均通过；工具未给 exit marker，因此额外执行显式保存并打印命令退出码的同一检查，以下保留真实输出。
 +
 +### HTTP spec
 +
 +命令：`pnpm exec vitest run tests/http.spec.ts; result=$?; printf '\\n[exit code: %s]\\n' "$result"; exit "$result"`
 +
 +```text
-+ RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
++ RUN  v4.1.8 ~/Documents/SA/myagent
 + ✓ tests/http.spec.ts (61 tests) 3693ms
 + Test Files  1 passed (1)
 +      Tests  61 passed (61)

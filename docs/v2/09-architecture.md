@@ -1,5 +1,7 @@
 # V2 架构
 
+> **当前结构说明（2026-11-13）**：本文旧行号及旧生命周期描述属于历史记录。当前结构包括五类 Source、Thread/Subscription、DeskLoop 与 DSH Session 两种分诊路由、持久化消费回执，以及真实 drain 后再关闭数据库的停机流程。最新代码/验证状态见 [`44-current-status-and-preview.md`](44-current-status-and-preview.md) 和 [`43-reliability-repair-results.md`](43-reliability-repair-results.md)。
+
 这份文档只描述**代码里已经存在的东西**。每条断言后面跟着 `file:line`；核实不了的地方写「未核实」，并说明核实它需要什么。
 行号截至 **2026-11-04 07:22（Asia/Shanghai）** 的工作副本；`pnpm typecheck` 退出码 0。构建产物 `lib/index.js` 是钉住的，本文没有重建它。
 **注意**：这棵树正被并行编辑。写作期间 `src/sources/rule.ts` 就被改过一次（07:17），本文的 rule.ts 行号已按改后的版本重新核对；其余源文件在同一窗口内未变动。

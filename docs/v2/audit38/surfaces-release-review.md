@@ -1,10 +1,10 @@
 # Surfaces / Release 逐文件审核（本委派范围收口，未审项显式保留）
 
-> 范围：bridges 下全部 `.mjs`/`.js`、`panel/index.html`、`client.js`、`scripts/*`、`prompts/*`、配置/manifest/build 文件、`package.json`、README/SECURITY/CHANGELOG 及相关测试关键部分。仅本报告落盘；未读文件保持“未审”。基线与纪律见 [38-topology-audit.md](/Users/liyang/Documents/SA/myagent/docs/v2/38-topology-audit.md)。
+> 范围：bridges 下全部 `.mjs`/`.js`、`panel/index.html`、`client.js`、`scripts/*`、`prompts/*`、配置/manifest/build 文件、`package.json`、README/SECURITY/CHANGELOG 及相关测试关键部分。仅本报告落盘；未读文件保持“未审”。基线与纪律见 [38-topology-audit.md](~/Documents/SA/myagent/docs/v2/38-topology-audit.md)。
 
 ## 操作日志
 
-- A-S001（完成）：先读纪律文件全文（34 行）并创建本报告。只读 `pwd; ls -la /Users/liyang/Documents/SA/myagent` 与 `git ls-files ...` 均成功（工具未显示数值 exit marker，未捏造）；确认工作目录 /Users/liyang/Documents/SA。glob 以带层级模式在仓库根查找出现无匹配；改以各实际子目录 `*`/`**/*` 列举，已获得桥/脚本/提示词清单。未读 node_modules。
+- A-S001（完成）：先读纪律文件全文（34 行）并创建本报告。只读 `pwd; ls -la ~/Documents/SA/myagent` 与 `git ls-files ...` 均成功（工具未显示数值 exit marker，未捏造）；确认工作目录 ~/Documents/SA。glob 以带层级模式在仓库根查找出现无匹配；改以各实际子目录 `*`/`**/*` 列举，已获得桥/脚本/提示词清单。未读 node_modules。
 - A-S002（完成）：全文读取 scripts/release.sh 1–561、gate.sh 1–280、verify-live.sh 1–126、verify-migration.sh 1–92、client.js 1–61、bridges/lib 七文件；panel/index.html 与 verify-browser.mjs 输出达到工具上限，暂只读至 614/786，仍为未审全篇。未执行这些脚本。
 - A-S003（完成）：全文读取 Telegram bridge 273/transform 138、Lark 237/125、DingTalk 202/98、QQ bridge 347/protocol 108/transform 93、WeCom bridge 248/crypt 75/transform 66；六份桥 README（根 173、Telegram 104、Lark 141、DingTalk 50、QQ 59、WeCom 65 行）与两个桥 package.json 各 16 行；全文 package.json 97、cordis.patch.yml 203、tsdown 13、tsconfig 21、vitest 9、三提示词 worker 130/orchestrator 105/triage 107、README 455、SECURITY 154、CHANGELOG 42。tests/bridges.spec.ts 全文 1032、build.spec.ts 全文 55；verify-browser 全文 1212。未运行测试与浏览器。
 - A-S004（完成）：panel/index.html 已全文读取 1–4925；verify-browser.mjs 已全文读取 1–1212。发现 SR-16/17/20/21；面板未执行、未启动浏览器。

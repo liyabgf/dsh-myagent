@@ -55,6 +55,26 @@ describe('the backoff', () => {
 })
 
 describe('one effect, one outcome', () => {
+  it('keeps unknown kinds unhealthy across quiet passes until handled', async () => {
+    const { store, effects, health } = harness()
+    try {
+      effects.enqueue('future-kind', 'pending', {})
+      await effects.runDue()
+      expect(store.effectCounts()).toEqual({ 'future-kind': 1 })
+      expect(health.snapshot().effects?.ok).toBe(false)
+      expect(health.snapshot().effects?.detail).toContain('future-kind')
+      await effects.runDue()
+      expect(health.snapshot().effects?.ok).toBe(false)
+      effects.handle('future-kind', () => {})
+      await effects.runDue()
+      expect(store.effectCounts()).toEqual({})
+      expect(health.snapshot().effects?.ok).toBe(true)
+    } finally {
+      effects.dispose()
+      store.close()
+    }
+  })
+
   it('settles an effect its handler got through, so it never runs again', async () => {
     const { store, effects } = harness()
     const seen: unknown[] = []

@@ -25,14 +25,14 @@
 
 ## 实际验证
 
-工作目录均为 `/Users/liyang/Documents/SA/myagent`。初次测试和 typecheck 均通过；工具未给 exit marker，因此额外执行显式保存并打印命令退出码的同一检查，以下保留真实输出。
+工作目录均为 `~/Documents/SA/myagent`。初次测试和 typecheck 均通过；工具未给 exit marker，因此额外执行显式保存并打印命令退出码的同一检查，以下保留真实输出。
 
 ### HTTP spec
 
 命令：`pnpm exec vitest run tests/http.spec.ts; result=$?; printf '\\n[exit code: %s]\\n' "$result"; exit "$result"`
 
 ```text
- RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
+ RUN  v4.1.8 ~/Documents/SA/myagent
  ✓ tests/http.spec.ts (61 tests) 3693ms
  Test Files  1 passed (1)
       Tests  61 passed (61)

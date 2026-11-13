@@ -29,6 +29,8 @@ export interface JobRecord {
 export interface ServiceCalls {
   /** Every call the two services received, in the order they arrived: `wait:job-1`, `kill:job-1`, `drain:child-1`. */
   readonly log: string[]
+  /** Exact root objects passed to the modern Host teardown API. */
+  readonly drainedRoots: AgentRecord[][]
   readonly jobs: JobRecord[]
   /** Children the subagents service lists for a Session, by parent Session id. */
   readonly children: Map<string, string[]>
@@ -390,7 +392,7 @@ export function stubHost(options: StubOptions = {}): StubHost {
     return log
   }
   const services: ServiceCalls = {
-    log: [], failKills: [], vanishKills: [], vanishDrains: [], failDrains: [],
+    log: [], drainedRoots: [], failKills: [], vanishKills: [], vanishDrains: [], failDrains: [],
     jobs: (options.jobs ?? []).map(job => ({ id: job.id, owner: job.owner, status: job.status ?? 'running' })),
     children: new Map(Object.entries(options.children ?? {})),
   }
@@ -541,17 +543,49 @@ export function stubHost(options: StubOptions = {}): StubHost {
       }
       if (name === 'subagents') {
         return {
-          listChildren: async (parentId: string) => (services.children.get(parentId) ?? []).map(id => ({ id })),
-          drainChildren: async (_parent: unknown, childIds: readonly string[]) => {
-            for (const id of childIds) {
-              services.log.push(`drain:${id}`)
-              if (services.vanishDrains.includes(id)) {
-                // 先从目录消失（它自己结束了），然后 drain 才发现扑空——stopSubagents 同族误报的形状。
-                const gone = services.children.get('worker-1') ?? []
-                services.children.set('worker-1', gone.filter(child => child !== id))
-                throw new Error(`subagent ${id} is not running`)
+          listDescendants: async (rootSessionId: string) => {
+            const descendants: { id: string }[] = []
+            const visit = (parentId: string) => {
+              for (const id of services.children.get(parentId) ?? []) {
+                descendants.push({ id })
+                visit(id)
               }
-              if (services.failDrains.includes(id)) throw new Error(`subagent ${id} will not release`)
+            }
+            visit(rootSessionId)
+            return descendants
+          },
+          rootOf: (agent: AgentRecord) => {
+            let cursor = agent.id
+            const seen = new Set<string>()
+            while (!seen.has(cursor)) {
+              seen.add(cursor)
+              const parent = [...services.children].find(([, children]) => children.includes(cursor))?.[0]
+              if (parent === undefined) break
+              cursor = parent
+            }
+            return agents.get(cursor) ?? agent
+          },
+          drainDescendants: async (parents: readonly AgentRecord[]) => {
+            services.drainedRoots.push([...parents])
+            const descendantsOf = (parentId: string): string[] => (services.children.get(parentId) ?? [])
+              .flatMap(id => [id, ...descendantsOf(id)])
+            for (const parent of parents) {
+              for (const id of descendantsOf(parent.id)) {
+                if (agents.has(id)) services.log.push(`drain:${id}`)
+              }
+              const candidates = [parent.id, ...descendantsOf(parent.id)]
+              if (candidates.some(id => services.vanishDrains.includes(id))) {
+                const remove = (parentId: string, id: string): boolean => {
+                  const children = services.children.get(parentId) ?? []
+                  const index = children.indexOf(id)
+                  if (index >= 0) { children.splice(index, 1); return true }
+                  return children.some(child => remove(child, id))
+                }
+                for (const id of services.vanishDrains) remove('worker-1', id)
+                throw new Error(`subagent ${parent.id} is not running`)
+              }
+              if (candidates.some(id => services.failDrains.includes(id))) throw new Error(`subagent ${parent.id} will not release`)
+              for (const id of descendantsOf(parent.id)) agents.delete(id)
             }
           },
         }

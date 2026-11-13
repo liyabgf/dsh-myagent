@@ -54,7 +54,8 @@
  * re-read as a `from`-less message and wait on the health board forever.
  */
 import type { Dirent } from 'node:fs'
-import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { key, UserError } from '../core/index.ts'
 
@@ -232,10 +233,12 @@ export class ChatSource implements TwoWaySource {
     await this.pollOnce()
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     this.stopped = true
     if (this.timer !== undefined) clearTimeout(this.timer)
     this.timer = undefined
+    // A scan awaiting I/O still owns the Store until its processing tail settles.
+    await this.scanning
   }
 
   status(): SourceStatus { return this.last }
@@ -502,61 +505,6 @@ export class ChatSource implements TwoWaySource {
       const normalizedTitle = normalizeChatTitle(message.title, mapped.actor, message.body, entry.name)
       const triggerId = key('chat', channel.id, message.id)
       const threadKey = `chat:${channel.id}:${message.thread ?? `dm:${message.from}`}`
-      // 【W9+W10 Subscription fan-out】If the Thread has subscribed Tickets AND this is a new message
-      // (not a duplicate), deliver to them directly without creating a new Ticket or evaluating the gate.
-      const thread = this.host.engine.getThread(threadKey)
-      if (thread !== undefined && thread.subscriptions.length > 0) {
-        const existing = this.host.engine.triggerExists(triggerId)
-        if (!existing) {
-          const subscribed = thread.subscriptions
-            .map(id => this.host.engine.open().find(t => t.id === id))
-            .filter((t): t is NonNullable<typeof t> => t !== undefined)
-          if (subscribed.length > 0) {
-          const ticket = subscribed[0]!
-          const needsAnswer = waitsForPerson(ticket)
-            || ['waiting', 'blocked'].includes(latestReport(ticket)?.state ?? '')
-          if (needsAnswer) {
-            this.host.engine.answer(ticket.id, message.body, message.attachments)
-            await this.take(path, directory, entry.name, 'accepted', `Answered Ticket ${ticket.id} (subscription)`, triggerId, issues)
-          } else {
-            this.host.engine.note(ticket.id, message.body, message.attachments)
-            await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${ticket.id} (subscription)`, triggerId, issues)
-          }
-          // 【W10】Also deliver to context subscribers (read-only context, as note)
-          // C02 fix: skip ended/deleted tickets to avoid engine.note() throwing ticket_ended,
-          // which would interrupt delivery after the main message was already taken.
-          for (const ctxTicketId of thread.contextSubscriptions ?? []) {
-            if (ctxTicketId !== ticket.id) {
-              const ctxTicket = this.host.engine.ticket(ctxTicketId)
-              if (ctxTicket !== undefined && ctxTicket.ended === undefined) {
-                try { this.host.engine.note(ctxTicketId, message.body) }
-                catch (err) { issues.push(`context note to ${ctxTicketId.slice(0, 8)} failed: ${String(err).slice(0, 80)}`) }
-              }
-            }
-          }
-          this.counts.accepted++
-          this.host.requestPass()
-          continue
-        }
-        } // end if (!existing)
-      }
-      // Fall back to the legacy heuristic (W12 will retire this)
-      const continuation = this.findContinuationTarget(channel.id, message, mapped.actor)
-      if (continuation !== undefined) {
-        if (continuation.mode === 'answer') {
-          this.host.engine.answer(continuation.ticket.id, message.body, message.attachments)
-        } else {
-          this.host.engine.note(continuation.ticket.id, message.body, message.attachments)
-        }
-        // 【W12】Subscribe the Ticket to this Thread so subsequent messages go via W9 subscription fan-out,
-        // not through this legacy fallback. This replaces the 60-second rapid-coalescing heuristic.
-        this.host.engine.subscribeTicketToThread(continuation.ticket.id, threadKey)
-        this.counts.accepted++
-        await this.take(path, directory, entry.name, 'accepted',
-          `${continuation.mode === 'answer' ? 'Answered' : 'Noted on'} Ticket ${continuation.ticket.id}`, triggerId, issues)
-        this.host.requestPass()
-        continue
-      }
       const trigger: Trigger = {
         // A pure function of the message's identity — channel and message id, never the scan instant, never the
         // mtime (S31). A bridge that re-delivers the same message under a fresh file write must deduplicate.
@@ -592,6 +540,40 @@ export class ChatSource implements TwoWaySource {
           ...(message.thread === undefined ? {} : { thread: message.thread }),
         },
       }
+      // Receipts must win before looking for today's targets: the original Ticket may have ended.
+      const consumed = this.host.engine.sourceConsumptionOf(trigger)
+      if (consumed !== undefined) {
+        this.counts.duplicate++
+        await this.take(path, directory, entry.name, 'accepted',
+          `Already consumed on Ticket ${consumed.targets.map(target => target.ticketId).join(', ')}`, triggerId, issues)
+        continue
+      }
+      const alreadyReceived = this.host.engine.triggerExists(triggerId)
+      const thread = this.host.engine.getThread(threadKey)
+      const subscribed = alreadyReceived ? [] : (thread?.subscriptions ?? [])
+        .map(id => this.host.engine.open().find(ticket => ticket.id === id))
+        .filter((ticket): ticket is Ticket => ticket !== undefined)
+      const first = subscribed[0]
+      const continuation = alreadyReceived ? undefined : first === undefined
+        ? this.findContinuationTarget(channel.id, message, mapped.actor)
+        : { ticket: first, mode: waitsForPerson(first)
+          || ['waiting', 'blocked'].includes(latestReport(first)?.state ?? '') ? 'answer' as const : 'note' as const }
+      if (continuation !== undefined) {
+        const result = this.host.engine.consumeContinuation({
+          trigger, target: { ticketId: continuation.ticket.id, mode: continuation.mode }, threadKey,
+          contextTicketIds: thread?.contextSubscriptions,
+        })
+        if (result.stored !== 'trigger') {
+          if (result.stored === 'duplicate') this.counts.duplicate++
+          else this.counts.accepted++
+          await this.take(path, directory, entry.name, 'accepted',
+            `${result.stored === 'duplicate' ? 'Already consumed on' : continuation.mode === 'answer' ? 'Answered' : 'Noted on'} Ticket ${continuation.ticket.id}`,
+            triggerId, issues)
+          if (result.stored === 'consumed') this.host.requestPass()
+          continue
+        }
+      }
+
       // Received inline rather than enqueued like the rule Source's Triggers: there, the event is transient, so the
       // queue is what survives a crash between the ending and the asking. Here the message FILE is the durable
       // record until it is claimed — a crash between `receive` and the move is healed by the next scan, which sees a
@@ -752,8 +734,19 @@ export class ChatSource implements TwoWaySource {
     if (options?.ticketId !== undefined) headers.push(`ticket: ${options.ticketId}`)
     if (options?.files !== undefined && options.files.length > 0) headers.push(`files: ${options.files.join(', ')}`)
     const front = headers.length === 0 ? '' : `---\n${headers.join('\n')}\n---\n`
-    const name = `reply-${key('chat-reply', replyTo.channel, replyTo.thread ?? '', text)}.md`
-    await writeFile(join(directory, name), `${front}${text}`, 'utf8')
+    // Include delivery metadata in the identity: two Tickets may owe identical text to one room with different files.
+    const metadata = options?.ticketId !== undefined || (options?.files?.length ?? 0) > 0
+      ? [JSON.stringify({ ticketId: options?.ticketId ?? null, files: options?.files ?? [] })] : []
+    const name = `reply-${key('chat-reply', replyTo.channel, replyTo.thread ?? '', text, ...metadata)}.md`
+    const target = join(directory, name)
+    const temporary = join(directory, `.tmp-${process.pid}-${randomUUID()}`)
+    try {
+      await writeFile(temporary, `${front}${text}`, { encoding: 'utf8', flag: 'wx' })
+      await rename(temporary, target)
+    } catch (error) {
+      await unlink(temporary).catch(() => {})
+      throw error
+    }
   }
 }
 

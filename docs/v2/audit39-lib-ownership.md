@@ -8,7 +8,7 @@
 
 ### O001 · 归属核验计划
 
-已落盘后执行只读身份核验。结果：工作区 `/Users/liyang/Documents/SA/myagent`，远端为 `https://github.com/liyabgf/dsh-myagent.git`；HEAD在核验时为 `98adbc4`，当前工程后续提交仍未把lib纳入。原有 `lib/index.js` 修改未触碰。
+已落盘后执行只读身份核验。结果：工作区 `~/Documents/SA/myagent`，远端为 `https://github.com/liyabgf/dsh-myagent.git`；HEAD在核验时为 `98adbc4`，当前工程后续提交仍未把lib纳入。原有 `lib/index.js` 修改未触碰。
 
 ### O002 · 内容与源码对照
 

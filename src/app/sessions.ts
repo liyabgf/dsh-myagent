@@ -18,8 +18,9 @@ import type {} from '@deepseek-ai/dsh-tools'
 import { lstatSync, realpathSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { homedir } from 'node:os'
-import { latestReport, ticketStage, type Ticket } from '../core/model.ts'
+import { latestAssignment, latestReport, liveTicket, ticketStage, type Ticket } from '../core/model.ts'
 import { AgentDelivery } from './agent-delivery.ts'
+import { stopBackground } from './background.ts'
 import type { Prompts, PromptRole, SavedSkill } from './prompts.ts'
 import { builtInSkillsView, registerDynamicSkills, type SkillsPort } from './skills.ts'
 import { definitionOf, type Tool } from './tools.ts'
@@ -407,6 +408,15 @@ export class Sessions {
   private readonly bindings = new Map<Agent, Binding>()
   /** The attempt each Ticket's worker was last launched for; see {@link attempt}. */
   private readonly attempts = new Map<string, string>()
+  private readonly workerDeliveries = new Map<string, Set<AbortController>>()
+  private readonly workerWork = new Set<Promise<unknown>>()
+  /** Late cleanup failures are safety-critical and survive until a later drain really retries them. */
+  private readonly failedLateCleanups = new Map<Agent, { retry: () => Promise<void>; observed: boolean }>()
+
+  /** Synchronously revoke deliveries already waiting inside ensure or persistence. */
+  stopWorkerDelivery(ticketId: string): void {
+    for (const controller of this.workerDeliveries.get(ticketId) ?? []) controller.abort()
+  }
   /** The sessions this class created, so `status` can tell an existing Session from one it never made. */
   private readonly known = new Set<string>()
   /**
@@ -438,7 +448,7 @@ export class Sessions {
     // The listener body is contained: it runs inside DSH's own dispatch, where a throw is a fatal load failure that
     // takes the host process down, not a plugin error.
     this.disposers.push(this.ctx.on('agent/created', ({ agent }) => {
-      this.decorateAgent(agent).catch((error: unknown) => {
+      this.track(this.decorateAgent(agent)).catch((error: unknown) => {
         this.ctx.logger.warn('myagent could not decorate the Session %s: %s', agent.id, String(error))
       })
     }))
@@ -500,7 +510,11 @@ export class Sessions {
   }
 
   /** The main Session's agent, creating it in `cwd` if absent. */
-  async ensureMaster(cwd: string): Promise<Agent> {
+  ensureMaster(cwd: string): Promise<Agent> {
+    return this.track(this.ensureMasterWork(cwd))
+  }
+
+  private async ensureMasterWork(cwd: string): Promise<Agent> {
     const existing = this.ctx.agents.get(this.host.masterId() as SessionId)
     if (existing !== undefined) { await this.decorate(existing, undefined); return existing }
     const restored = await this.resumeMaster()
@@ -533,7 +547,11 @@ export class Sessions {
    * A Ticket's worker agent, creating its Session in the Ticket's own directory if absent.
    * @param model `provider/model` for this worker, or the profile's default when absent or empty.
    */
-  async ensure(ticket: Ticket, model?: string): Promise<Agent> {
+  ensure(ticket: Ticket, model?: string): Promise<Agent> {
+    return this.track(this.ensureWork(ticket, model))
+  }
+
+  private async ensureWork(ticket: Ticket, model?: string): Promise<Agent> {
     const directory = ticket.execution?.directory
     if (directory === undefined) throw new Error(`Ticket ${ticket.id} has no directory yet`)
     const existing = await this.resume(ticket, model)
@@ -545,9 +563,23 @@ export class Sessions {
     })
     // DSH may reuse a blank Session and answer with another identity; from here on, its answer is the truth.
     const sessionId = created?.sessionId ?? requested
+    const owner = this.host.ticketIdOfSession(sessionId)
+    if (sessionId === this.host.masterId() || owner !== undefined && owner !== ticket.id) {
+      throw new Error(`DSH returned Session ${sessionId} owned by ${owner ?? 'the front desk'} for Ticket ${ticket.id}`)
+    }
     if (sessionId !== requested) this.host.bindSession(ticket.id, sessionId)
     const agent = await this.resolve(sessionId)
     if (agent === undefined) throw new Error(`DSH created the worker Session ${sessionId} but did not hand it over`)
+    const currentTicket = this.host.ticket(ticket.id)
+    if (currentTicket === undefined || !liveTicket(currentTicket) || this.host.closing()
+      || latestAssignment(currentTicket)?.id !== latestAssignment(ticket)?.id) {
+      const owner = this.host.ticketIdOfSession(sessionId)
+      if ((owner === undefined || owner === ticket.id)
+        && currentTicket !== undefined && latestAssignment(currentTicket)?.id === latestAssignment(ticket)?.id) {
+        await this.cleanupLateWorker(agent, latestAssignment(ticket)?.id, ticket, 'Ticket stopped during worker Session creation')
+      }
+      throw new Error(`Ticket ${ticket.id} stopped during worker Session creation`)
+    }
     await this.authorize(agent, model)
     await this.ctx.sessionController.rename({ sessionId, title: truncate(ticket.title, 60) }).catch(() => undefined)
     await this.decorate(agent, { ...ticket, execution: { ...ticket.execution!, sessionId } })
@@ -879,7 +911,11 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
   // ---------------------------------------------------------------- Delivery
 
   /** Put a notice in the main Session's history without waking it. */
-  async notify(text: string, requestId: string, ticketId?: string): Promise<void> {
+  notify(text: string, requestId: string, ticketId?: string): Promise<void> {
+    return this.track(this.notifyWork(text, requestId, ticketId))
+  }
+
+  private async notifyWork(text: string, requestId: string, ticketId?: string): Promise<void> {
     // 【D6】If a DeskLoop is registered, route through it instead of a DSH Session.
     if (this.deskLoop !== undefined) {
       await this.deskLoop.notify(requestId, text, ticketId)
@@ -896,7 +932,11 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
    * Wake the main Session with a message it answers in its next turn, for a Ticket that waits for a person.
    * @returns false when there is no front desk yet, so the caller knows nobody was told.
    */
-  async relay(requestId: string, text: string, ticketId?: string): Promise<boolean> {
+  relay(requestId: string, text: string, ticketId?: string): Promise<boolean> {
+    return this.track(this.relayWork(requestId, text, ticketId))
+  }
+
+  private async relayWork(requestId: string, text: string, ticketId?: string): Promise<boolean> {
     // 【D6】If a DeskLoop is registered, route through it instead of a DSH Session.
     if (this.deskLoop !== undefined) {
       await this.deskLoop.relay(requestId, text, ticketId)
@@ -911,7 +951,11 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
   }
 
   /** Wake the main Session with a message it answers in its next turn. */
-  async promptMaster(requestId: string, text: string): Promise<void> {
+  promptMaster(requestId: string, text: string): Promise<void> {
+    return this.track(this.promptMasterWork(requestId, text))
+  }
+
+  private async promptMasterWork(requestId: string, text: string): Promise<void> {
     const agent = await this.resumeMaster()
     if (agent === undefined) throw new Error('The main Session does not exist yet')
     await this.delivery.send(agent, requestId, text, 'queue', this.host.lifetime)
@@ -930,10 +974,103 @@ spend the turn looking for a shell; if the work genuinely needs one, report \`bl
   attempt(ticketId: string): string | undefined { return this.attempts.get(ticketId) }
 
   async promptWorker(ticket: Ticket, requestId: string, text: string, model?: string): Promise<void> {
-    // `launch:<assignmentId>` is the request id the Executor uses for a launch; an input delivery is not a new attempt.
-    if (requestId.startsWith('launch:')) this.attempts.set(ticket.id, requestId.slice('launch:'.length))
-    const agent = await this.ensure(ticket, model)
-    await this.delivery.send(agent, requestId, text, 'queue', this.host.lifetime)
+    return this.track(this.promptWorkerWork(ticket, requestId, text, model))
+  }
+
+  private track<T>(operation: Promise<T>): Promise<T> {
+    this.workerWork.add(operation)
+    const release = (): void => { this.workerWork.delete(operation) }
+    void operation.then(release, release)
+    return operation
+  }
+
+  /** Track the real cleanup operation separately from ordinary provider/delivery failures. */
+  private async cleanupLateWorker(agent: Agent, assignmentId: string | undefined, ticket: Ticket, reason: string): Promise<void> {
+    const stillOwns = (): boolean => {
+      const current = this.host.ticket(ticket.id)
+      const owner = this.host.ticketIdOfSession(agent.id)
+      return current !== undefined && latestAssignment(current)?.id === assignmentId
+        && workerSessionOf(current) === agent.id && (owner === undefined || owner === ticket.id)
+        && this.ctx.agents.get(agent.id) === agent
+    }
+    const cleanup = async (): Promise<void> => {
+      // An old attempt must never cancel an Agent now reused by another attempt or owner.
+      if (!stillOwns()) return
+      if (agent.status !== 'idle') agent.cancel({ kind: 'user' }, { keepInbox: false })
+      await stopBackground(this.ctx, agent.id, reason, false, { agent, shouldStop: stillOwns })
+    }
+    try {
+      await cleanup()
+    } catch (error) {
+      this.failedLateCleanups.set(agent, { retry: cleanup, observed: false })
+      this.report(`Could not stop late worker Session ${agent.id}: ${String(error)}`)
+      throw error
+    }
+  }
+
+  /** Join real operations; only unsafe cleanup failures remain blockers after business failures settle. */
+  async drain(): Promise<void> {
+    // Existing failures get one explicit retry per call, never an unbounded loop.
+    const retry = [...this.failedLateCleanups].filter(([, failure]) => failure.observed)
+    for (const [agent, failure] of retry) {
+      await this.track(failure.retry())
+      if (this.failedLateCleanups.get(agent) === failure) this.failedLateCleanups.delete(agent)
+    }
+    while (this.workerWork.size > 0) await Promise.allSettled([...this.workerWork])
+    if (this.failedLateCleanups.size > 0) {
+      for (const failure of this.failedLateCleanups.values()) failure.observed = true
+      throw new Error(`${this.failedLateCleanups.size} late worker cleanup operation(s) failed; retry drain after cleanup can complete`)
+    }
+  }
+
+  private async promptWorkerWork(ticket: Ticket, requestId: string, text: string, model?: string): Promise<void> {
+    const assignmentId = requestId.startsWith('launch:') ? requestId.slice('launch:'.length) : latestAssignment(ticket)?.id
+    if (assignmentId !== undefined) this.attempts.set(ticket.id, assignmentId)
+    const controller = new AbortController()
+    const deliveries = this.workerDeliveries.get(ticket.id) ?? new Set<AbortController>()
+    deliveries.add(controller)
+    this.workerDeliveries.set(ticket.id, deliveries)
+    const signal = AbortSignal.any([this.host.lifetime, controller.signal])
+    const current = (): Ticket | undefined => {
+      const latest = this.host.ticket(ticket.id)
+      if (latest === undefined || !liveTicket(latest) || this.host.closing()) return undefined
+      const assignment = latestAssignment(latest)
+      if (assignment === undefined || assignment.state === 'ended') return undefined
+      if (assignmentId !== undefined && assignment.id !== assignmentId) return undefined
+      return latest
+    }
+    let ensured: Agent | undefined
+    try {
+      if (current() === undefined) return
+      // ensure may create a Session asynchronously. Never deliver until the same assignment is still live afterwards.
+      const agent = ensured = await this.ensure(ticket, model)
+      signal.throwIfAborted()
+      const latest = current()
+      if (latest === undefined) return
+      const owner = this.host.ticketIdOfSession(agent.id)
+      if (owner !== undefined && owner !== ticket.id) {
+        throw new Error(`Refused to deliver Ticket ${ticket.id} to Session owned by Ticket ${owner}`)
+      }
+      // DSH can publish an Agent before create() resolves. Only clean up a late Session if its identity is this Ticket's
+      // recorded worker binding (or canonical worker id), and never cancel an unrelated agent.
+      if (workerSessionOf(latest) !== agent.id) {
+        throw new Error(`Refused to deliver Ticket ${ticket.id} through an unbound Session ${agent.id}`)
+      }
+      await this.delivery.send(agent, requestId, text, 'queue', signal)
+    } finally {
+      // A stop can finish before ensure creates its Session. Revoke that late worker too, with ownership verified.
+      if (ensured !== undefined && (signal.aborted || current() === undefined)) {
+        const bound = this.host.ticket(ticket.id)
+        const owner = this.host.ticketIdOfSession(ensured.id)
+        if (bound !== undefined && latestAssignment(bound)?.id === assignmentId && workerSessionOf(bound) === ensured.id
+          && (owner === undefined || owner === ticket.id)
+          && this.ctx.agents.get(ensured.id) === ensured) {
+          await this.cleanupLateWorker(ensured, assignmentId, ticket, 'Worker delivery was stopped').catch(() => {})
+        }
+      }
+      deliveries.delete(controller)
+      if (deliveries.size === 0) this.workerDeliveries.delete(ticket.id)
+    }
   }
 
   /** Release every registration this class made. */

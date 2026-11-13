@@ -207,7 +207,29 @@ export type DomainEvent =
   | { readonly type: 'report.recorded'; readonly ticket: Ticket; readonly report: Report }
   | { readonly type: 'policy.changed'; readonly effects: readonly PolicyEffect[] }
 
+export interface InputConsumption {
+  readonly version: 1
+  readonly fingerprint: string
+  readonly consumedAt: string
+  readonly targets: readonly { readonly ticketId: string; readonly mode: 'answer' | 'note' }[]
+}
+
+/** A narrow receipt port sharing the Engine transaction; no Source may write it directly. */
+export interface InputConsumptionRepository {
+  get(identity: string): InputConsumption | undefined
+  save(identity: string, receipt: InputConsumption): void
+}
+
+/** Stable source facts, excluding delivery filename and scan/file timestamps. */
+function consumptionFingerprint(trigger: Trigger): string {
+  return key(trigger.source, trigger.kind, trigger.actor.id, trigger.actor.kind, trigger.text,
+    trigger.threadKey, trigger.replyTo?.kind, trigger.replyTo?.channel, trigger.replyTo?.thread,
+    trigger.meta?.from, trigger.meta?.channel, trigger.meta?.thread, trigger.meta?.followupTicket,
+    trigger.meta?.attachments ?? [])
+}
+
 export interface EngineOptions {
+  readonly inputConsumptions?: InputConsumptionRepository
   readonly repos: Repositories
   readonly tx: Transaction
   /** The current Policy, read fresh on each command so a settings change takes effect at once. */
@@ -219,6 +241,11 @@ export interface EngineOptions {
 }
 
 /** What `receive` answers: whether the Trigger was new, and what became of it. */
+export interface ContinuationResult {
+  readonly stored: 'consumed' | 'duplicate' | 'trigger'
+  readonly receipt?: InputConsumption
+}
+
 export interface ReceiveResult {
   readonly stored: 'stored' | 'duplicate'
   readonly disposition: Disposition
@@ -295,6 +322,7 @@ export class Engine {
    * and the reason is below.
    */
   receive(trigger: Trigger): ReceiveResult {
+    if (this.sourceConsumptionOf(trigger) !== undefined) throw new Error('source_identity_consumed')
     const existing = this.repos.triggers.get(trigger.id)
     // A row that says `lost` is not a duplicate, so the gate runs again and `save` below replaces it with the
     // disposition this attempt earns. Answering `duplicate` for it would tell the caller "already handled", which is
@@ -305,6 +333,9 @@ export class Engine {
     // than duplicative because a `lost` row can only exist where `receive` threw, and everything it writes is inside the
     // one transaction below: no Ticket and no Decision ever committed, so there is nothing to make a second of.
     if (existing !== undefined && existing.disposition.state !== 'lost') {
+      if (trigger.kind === 'chat' && consumptionFingerprint(existing.trigger) !== consumptionFingerprint(trigger)) {
+        throw new Error('source_identity_conflict')
+      }
       return { stored: 'duplicate', disposition: existing.disposition, ticketId: ticketIdOf(existing.disposition) }
     }
     return this.tx.atomic(() => {
@@ -406,6 +437,56 @@ export class Engine {
       const first = latestAssignment(prepared)
       if (first !== undefined) this.tx.afterCommit(() => this.executor.start(prepared, first))
       return { stored: 'stored' as const, disposition, ticketId }
+    })
+  }
+
+  sourceConsumptionOf(trigger: Trigger): InputConsumption | undefined {
+    const receipt = this.options.inputConsumptions?.get(trigger.id)
+    if (receipt === undefined) return undefined
+    if (receipt.fingerprint !== consumptionFingerprint(trigger)) throw new Error('source_identity_conflict')
+    return receipt
+  }
+
+  /** Atomically deliver one source message to the selected Ticket and context subscribers. */
+  consumeContinuation(input: {
+    readonly trigger: Trigger
+    readonly target: { readonly ticketId: string; readonly mode: 'answer' | 'note' }
+    readonly threadKey?: string
+    readonly contextTicketIds?: readonly string[]
+  }): ContinuationResult {
+    const store = this.options.inputConsumptions
+    if (store === undefined) throw new Error('continuation_receipts_unavailable')
+    const fingerprint = consumptionFingerprint(input.trigger)
+    const prior = store.get(input.trigger.id)
+    if (prior !== undefined) {
+      if (prior.fingerprint !== fingerprint) throw new Error('source_identity_conflict')
+      return { stored: 'duplicate', receipt: prior }
+    }
+    const existingTrigger = this.repos.triggers.get(input.trigger.id)
+    if (existingTrigger !== undefined) {
+      if (consumptionFingerprint(existingTrigger.trigger) !== fingerprint) throw new Error('source_identity_conflict')
+      if (existingTrigger.disposition.state === 'lost') throw new Error('source_identity_lost')
+      return { stored: 'trigger' }
+    }
+    return this.tx.atomic(() => {
+      const targets = [input.target, ...[...new Set(input.contextTicketIds ?? [])].filter(id => id !== input.target.ticketId)
+        .map(ticketId => ({ ticketId, mode: 'note' as const }))]
+      const at = this.now()
+      const actual: { ticketId: string; mode: 'answer' | 'note' }[] = []
+      for (const target of targets) {
+        const ticket = this.repos.tickets.get(target.ticketId)
+        if (ticket === undefined || ticket.ended !== undefined || ticket.deleted !== undefined) {
+          if (target.ticketId === input.target.ticketId) throw new UserError('ticket_ended')
+          continue
+        }
+        if (target.mode === 'answer') this.answer(target.ticketId, input.trigger.text, attachmentsOf(input.trigger).map(attachment => attachment.source))
+        else this.note(target.ticketId, input.trigger.text, attachmentsOf(input.trigger).map(attachment => attachment.source))
+        actual.push(target)
+      }
+      if (input.threadKey !== undefined) this.subscribeTicketToThread(input.target.ticketId, input.threadKey, input.trigger.kind)
+      const receipt: InputConsumption = { version: 1, fingerprint, consumedAt: at, targets: actual }
+      store.save(input.trigger.id, receipt)
+      return { stored: 'consumed' as const, receipt }
     })
   }
 

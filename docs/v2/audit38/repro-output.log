@@ -1,5 +1,5 @@
 
- RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
+ RUN  v4.1.8 ~/Documents/SA/myagent
 
  ✓ tests/audit38-repro.spec.ts (10 tests) 14ms
 

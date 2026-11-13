@@ -71,7 +71,13 @@ export async function apply(ctx: Context, config: DeploymentConfig): Promise<voi
     })
   }
   // Stopping releases the state lock, the routes, the pump and the Store, in that order.
-  ctx.effect(() => async () => { await runtime.stop() })
+  ctx.effect(() => async () => {
+    try { await runtime.stop() }
+    catch (error) {
+      if (!(error instanceof Error) || error.name !== 'StopIncompleteError') throw error
+      ctx.logger.warn('myagent stopped accepting work but shutdown is incomplete; DB/lock retained: %s', error.message)
+    }
+  })
   try {
     await runtime.start()
   } catch (error) {

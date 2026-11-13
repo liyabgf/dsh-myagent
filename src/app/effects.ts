@@ -72,6 +72,8 @@ export class Effects {
   private disposed = false
   /** Set by a failure in the pass now running, so that pass cannot end by erasing what it just reported. */
   private complained = false
+  /** An unhandled kind stays a health problem until a later pass can actually process it. */
+  private readonly unresolvedKinds = new Set<string>()
   /**
    * The rows this queue has reported a failure for, kept until the row behind each is gone.
    *
@@ -115,6 +117,7 @@ export class Effects {
         for (const kind of [...this.handlers.keys()]) {
           if (this.disposed) return
           for (const row of this.store.claimEffects(kind, 50)) {
+            if (this.disposed) return
             // The loop runs over the registered kinds, so a handler exists by construction.
             const outcome = await this.settle(kind, row.key, row.payload, row.failures, this.handlers.get(kind)!)
             if (outcome.status !== 'ok') again = true
@@ -122,10 +125,19 @@ export class Effects {
         }
         // C09: Detect effects rows whose kind has no registered handler. They will never be
         // claimed, so they would sit in the table forever without this check.
-        for (const [kind, count] of Object.entries(this.store.effectCounts())) {
-          if (!this.handlers.has(kind)) {
-            this.health?.problem(`${count} effect(s) with unregistered kind '${kind}' cannot be processed`)
-          }
+        const counts = this.store.effectCounts()
+        for (const kind of [...this.unresolvedKinds]) {
+          const count = counts[kind] ?? 0
+          if (count === 0 || this.handlers.has(kind)) this.unresolvedKinds.delete(kind)
+        }
+        for (const [kind, count] of Object.entries(counts)) {
+          if (!this.handlers.has(kind)) this.unresolvedKinds.add(kind)
+        }
+        if (this.unresolvedKinds.size > 0) {
+          const details = [...this.unresolvedKinds].sort().map(kind =>
+            `${counts[kind] ?? 0} effect(s) with unregistered kind '${kind}' cannot be processed`)
+          this.complained = true
+          this.health?.problem(details.join('; '))
         }
         // A retry that became due during this pass is taken in the same one, so no work waits a whole interval.
         if (!again) break
@@ -202,6 +214,9 @@ export class Effects {
     }
   }
 
-  /** Stop the pump; queued rows stay in the Store for the next start. */
+  /** Stop admission; queued rows stay in the Store for the next start. */
   dispose(): void { this.disposed = true }
+
+  /** Join the actual handler/settlement pass; dispose alone is not a drain. */
+  async drain(): Promise<void> { await this.running }
 }

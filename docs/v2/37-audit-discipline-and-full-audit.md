@@ -57,7 +57,7 @@
 
 - 执行时间：2026-11-13 11:46 Asia/Shanghai  
 - HEAD：`801b9e9`（docs/v2/36 R3 验收证据回写）  
-- 操作目录：`/Users/liyang/Documents/SA/myagent`  
+- 操作目录：`~/Documents/SA/myagent`
 - 闸门上次通过时间：本轮重建 R3 结束时（约 04:12）
 
 ---

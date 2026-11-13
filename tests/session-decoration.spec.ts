@@ -389,3 +389,86 @@ describe('what the front desk is told about the crafts (你会哪些手艺)', ()
     } finally { await runtime.stop() }
   })
 })
+
+
+describe('B2g late Session cleanup safety', () => {
+  async function fixture() {
+    const { Sessions } = await import('../src/app/sessions.ts')
+    const background = await import('../src/app/background.ts')
+    const { vi } = await import('vitest')
+    let current: any = {
+      id: 'cleanup-ticket', execution: { directory: '/tmp/cleanup-ticket' },
+      assignments: [{ id: 'old', state: 'running' }],
+    }
+    const original = current
+    const cancelled: unknown[] = []
+    const agent: any = { id: 'worker-cleanup-ticket', status: 'running', cancel: (...args: unknown[]) => cancelled.push(args) }
+    const context = { on: () => () => {}, logger: { warn() {} }, agents: { get: () => agent } }
+    const sessions = new Sessions({
+      context, lifetime: new AbortController().signal, ticket: () => current,
+      ticketIdOfSession: () => original.id, closing: () => false,
+    } as never)
+    let release!: (agent: any) => void
+    let entered!: () => void
+    const started = new Promise<void>(resolve => { entered = resolve })
+    const ensure = vi.spyOn(sessions, 'ensure').mockImplementation(() => { entered(); return new Promise(resolve => { release = resolve }) })
+    return { sessions, agent, original, cancelled, started, release: () => release(agent), setCurrent: (value: any) => { current = value },
+      cleanup: vi.spyOn(background, 'stopBackground'), restore: () => { ensure.mockRestore(); vi.restoreAllMocks() } }
+  }
+
+  it('retains late cleanup failure across drain and joins a real successful retry before clearing it', async () => {
+    const h = await fixture()
+    let releaseRetry!: () => void
+    let retryEntered!: () => void
+    const retryStarted = new Promise<void>(resolve => { retryEntered = resolve })
+    h.cleanup.mockRejectedValueOnce(new Error('synthetic cleanup failure')).mockImplementationOnce(async () => {
+      retryEntered(); await new Promise<void>(resolve => { releaseRetry = resolve })
+    })
+    try {
+      const sending = h.sessions.promptWorker(h.original, 'launch:old', 'payload').catch(error => error)
+      await h.started
+      h.sessions.stopWorkerDelivery(h.original.id)
+      h.release()
+      await sending
+      await expect(h.sessions.drain()).rejects.toThrow(/cleanup/i)
+      expect(h.cleanup).toHaveBeenCalledTimes(1)
+      let completed = false
+      const retry = h.sessions.drain().then(() => { completed = true })
+      await retryStarted
+      await Promise.resolve()
+      expect(completed).toBe(false)
+      expect(h.cleanup).toHaveBeenCalledTimes(2)
+      releaseRetry()
+      await retry
+      await expect(h.sessions.drain()).resolves.toBeUndefined()
+      expect(h.cleanup).toHaveBeenCalledTimes(2)
+    } finally { h.restore() }
+  })
+
+  it('does not let an old assignment finally cancel the exact Agent reused by a new assignment', async () => {
+    const h = await fixture()
+    h.cleanup.mockResolvedValue()
+    try {
+      const sending = h.sessions.promptWorker(h.original, 'launch:old', 'old payload').catch(error => error)
+      await h.started
+      h.sessions.stopWorkerDelivery(h.original.id)
+      h.setCurrent({ ...h.original, assignments: [{ id: 'new', state: 'running' }] })
+      h.release()
+      await sending
+      expect(h.cancelled).toEqual([])
+      expect(h.cleanup).not.toHaveBeenCalled()
+      await expect(h.sessions.drain()).resolves.toBeUndefined()
+    } finally { h.restore() }
+  })
+
+  it('does not retain ordinary ensure/provider failure as an unsafe cleanup failure', async () => {
+    const h = await fixture()
+    const { vi } = await import('vitest')
+    vi.mocked(h.sessions.ensure).mockRejectedValue(new Error('ordinary provider failure'))
+    try {
+      await expect(h.sessions.promptWorker(h.original, 'launch:old', 'payload')).rejects.toThrow('ordinary provider failure')
+      await expect(h.sessions.drain()).resolves.toBeUndefined()
+      expect(h.cleanup).not.toHaveBeenCalled()
+    } finally { h.restore() }
+  })
+})

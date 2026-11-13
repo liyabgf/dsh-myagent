@@ -40,7 +40,7 @@ pnpm vitest run tests/session-decoration.spec.ts tests/session-health.spec.ts te
 真实退出码：0。
 
 ```text
- RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
+ RUN  v4.1.8 ~/Documents/SA/myagent
 
  ✓ tests/agent-delivery.spec.ts (12 tests) 6ms
  ✓ tests/background.spec.ts (18 tests) 18ms

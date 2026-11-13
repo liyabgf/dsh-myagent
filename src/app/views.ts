@@ -126,6 +126,12 @@ export function scheduleView(schedule: Schedule, from: number, zone = localZone(
     // this view is its only owner — which is why `tests/views.spec.ts` pins both of its wordings.
     // Which surface the worker gets. Shown because "the prompt tells it not to run anything" and "it cannot run
     // anything" are different guarantees, and the operator is entitled to see which one this schedule has.
+    // P1-5 fix: return the original preset and maxRuntimeMs values so the panel can
+    // round-trip them when saving/toggling/deleting schedules. Without this the panel
+    // only has the human-readable *Text fields and silently zeroes the budget and
+    // resets researcher preset back to worker on every save.
+    preset: schedule.preset,
+    maxRuntimeMs: schedule.maxRuntimeMs,
     presetText: schedule.preset === 'researcher'
       ? '研究型 worker（无 shell：不能执行、安装或运行任何东西）'
       : '标准 worker（含 shell）',

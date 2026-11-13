@@ -3,7 +3,7 @@
 属于你自己的 Agent 系统：一个 DeepSeek Harness（DSH）bundle。定时排期、本地投递目录、主 Session 对话、规则、聊天平台这**五条来路**，
 经**同一道门禁**变成 Ticket；每个 Ticket 由**自己的 DSH Session**在**自己的目录**里无人值守地做完，再把结果送回**它来的那条路**。
 
-设计目标是给一个人减负：平时你只在 Telegram（或飞书）里说话，面板只在你想查账时打开，能自动的都不问你。
+项目方向是聊天优先、无人值守和可审计的任务执行。当前版本适合在受控环境中进行个人试用和开发者预览；它**不是稳定版多用户服务**，也不应被部署到彼此不信任的用户或本机进程共享的环境。当前真实状态、验证证据和发布限制见 [`docs/v2/44-current-status-and-preview.md`](docs/v2/44-current-status-and-preview.md)。
 
 > **装完第一件事：面板在 `<你的 DSH Web GUI 地址>/myagent/`。**
 > 它就是 DSH Web GUI 同一个端口下的一个子路径（GUI 是 `http://127.0.0.1:<端口>/`，面板是它后面加 `myagent/`）。
@@ -15,8 +15,9 @@
 
 **一句话**：把你在一句话里说清楚的事，无人值守地做完，再把结果送回你说话的那个地方。
 
-**为谁**：一个人、一台他自己的机器。不是团队平台，不是多租户服务，不是给工程师搭的工作流框架。
-它假定"能在本机写文件、能发 HTTP 请求的进程 = 操作者本人"（这个假定的边界见 [`SECURITY.md`](SECURITY.md)）。
+**定位与当前支持范围**：项目不以单人单机作为长期边界，保留聊天连续对话、自动执行、自动回程和成果复用的方向。当前实现尚未具备完整的身份认证、按用户/任务归属授权及执行隔离，不能据此宣称支持多用户安全使用。
+
+临时个人试用只适用于操作者能控制访问者、运行环境、聊天身份映射和投递目录的受控环境。这是当前实现的使用限制，不是用“本机进程天然可信”替代未来安全设计。详细风险见 [`SECURITY.md`](SECURITY.md)。
 
 **它做什么**
 
@@ -29,7 +30,7 @@
 
 - **不做沙箱执行**：worker 拿到的是完全访问。真隔离（VM/容器）是方向但不是现状；把 `executor.sandbox` 设成 `vm`
   不会假装隔离，而是在健康板上明说做不到。
-- **不做多用户/权限体系**：门禁过滤的是"自述的名字"，真边界是文件系统权限与聊天平台的映射表。
+- **当前尚未提供多用户身份与权限体系**：门禁过滤的是来源映射和自述名字，不能代替用户认证、任务归属授权或跨用户数据隔离。这是当前发布阻塞项，不是永久不做的产品承诺。
 - **不做模型评审**：门禁是确定性的；"这个请求值不值得做"由提示词、分诊与 `acceptMode` 决定。
 - **不替你做决定**：上游被人停掉时下游会一直等，因为那是留给人的决定；删除永远是两步确认且写明后果。
 
@@ -42,11 +43,9 @@
    被跳过的检查在验证脚本里登记为跳过而不是消失；已知残留写进 `SECURITY.md` 而不是藏起来。
 
 架构参照 [`dsh-superagent-prototype`](https://github.com/deepseek-ai/dsh-superagent-prototype)，领域模型做了裁剪：
-保留 Source / Trigger / Policy / Decision / Mandate / Ticket / Assignment / Report / Delivery 九个概念，
-去掉 Thread、Subscription、Correlation，评估（Eval）只有确定性门禁、没有模型评审（接缝留在 `Assessor`）。
+保留 Source / Trigger / Policy / Decision / Mandate / Ticket / Assignment / Report / Delivery，并已加入 Thread/Subscription 支持聊天续消息，Project/Work 用于任务归组。确定性门禁负责新请求受理，DeskLoop/分诊负责模型决策，两者不是同一层。
 
-**先读 [`SECURITY.md`](SECURITY.md) 再装**：worker 拿到的是完全访问，没有 OS 级沙箱；面板与 API 不在宿主认证之后。
-那两条不是待办清单里的项目，而是这套系统的安全模型前提（单机单用户）。
+**先读 [`SECURITY.md`](SECURITY.md) 再试用**：worker 拿到的是宿主权限，没有 OS 级沙箱；面板与 API 不在宿主认证之后。这些是当前实现的限制，多用户安全能力尚未实现。
 
 ---
 
@@ -74,13 +73,13 @@ Source ──Trigger──▶ gate（策略）──Decision──▶ Mandate + 
 - **Report**：worker 用 `myagent_report` 汇报，`state` 是事实分类：`progress / waiting / ready / blocked / failed / dropped`。
   `ready` 和 `dropped` 结束 Ticket；`waiting`、`blocked`、`failed` 让 Ticket 等人——**等人这件事一定会被推到该看到的人面前**
   （送回聊天室、唤醒前台、必要时上健康板），不会只在面板里等着你去发现。
-- **Triage（总管分诊）**：当 `triage.enabled: true` 时，chat/inbox/cron 的请求先到总管（主 Session），
+- **Triage（总管分诊）**：当 `triage.enabled: true` 时，配置纳入分诊的 chat/inbox/cron 请求先到总管（独立分诊 Session，或 `main` 路由下已配置的 DeskLoop/主 Session），
   而不是直接建 worker 票。总管一眼判断：该自己答的答了（`ready`）、不是请求的丢掉（`dropped`，比如「1」「在吗」）、
   需要活的开任务。这省掉了「一句话劈成两张票」和「字面 `1` 也建了张票」——分诊票不占 worker 槽，总管答完即关。
   分诊的来源可配（`triage.sources`，默认只 `chat`）：排期与 inbox 是你自己下的指令，再判一次白花一轮，判错丢掉你要的活。
 - **Thread + Subscription**：同一对话里的后续消息不再各自建票。第一条消息建票后自动订阅 Thread，
-  后续消息经 Subscription fan-out 直接投递给已订阅的票（answer 或 note），不创建新票、不走门禁。
-  这修复了「策划书两句话 65 秒 apart 被劈成两张盲票」的根因。
+  后续消息作为既有授权内的 Input（answer 或 note），不重新创建任务，也不重新计算新任务门禁。主/context Inputs、订阅和消费回执在同一 Engine 事务提交；同一消息重投先查回执，避免重复注入或原票结束后改投新票。身份/任务归属的多用户授权仍未实现。
+  这保留连续对话，并使消息消费可恢复；外部动作与成功回执之间的崩溃窗口仍不保证只执行一次。
 - **Delivery**：`ready/failed/dropped` 写进 Ticket 目录的 `RESULT.md`，并送回它来的那条路。
   如果这份结果复用了别的任务的成果或用到了沉淀的手艺，回程末尾会加**一行人话**说明
   （`（这份用上了「上周竞品数据」的成果）`），没有复用时一个字都不加。前台主 Session 收到一条通知
@@ -125,7 +124,11 @@ attach: /abs/last-week.csv
 整理这三家的更新，产出 digest.md 和 table.csv。
 ```
 
-## 安装
+## 安装与实验性试用
+
+本次同步为 **Experimental / Preview 源码预览**。可靠性修复及脱敏准备树通过隔离 gate（1343 tests），但尚未完成该代码的真实 Host、模型、平台收发和浏览器视觉验收。下面 GitHub 安装命令获取仓库当时的内容；请核对对应提交，并按源码构建要求准备产物。公开源码预览不等同于稳定可安装发行；本次不创建 Stable release 或版本标签。
+
+试用时使用独立 DSH profile、独立 stateDir 和可恢复的数据副本，限制面板/API、inbox 和聊天桥的访问者；不要将当前版本作为多用户或不可信输入下的安全执行服务。
 
 ```
 plugin_manager install_bundle  target=github:liyabgf/dsh-myagent
@@ -152,9 +155,9 @@ plugin_manager install_bundle  target=github:liyabgf/dsh-myagent
 
 1. `./scripts/gate.sh` 全绿（typecheck → build → 全部用例 → 产物新鲜度与随包清单），**退出码是唯一判据**。
    其中两组是专门为这一步写的：`tests/mount.spec.ts`（挂载期不创建、不解析、不装饰任何 Session；`apply()` 在一个
-   所有服务都抛异常的宿主上也不 reject；`stop()` 每一步都有界、可以停两次；同一状态目录的第二次部署被拒绝），
-   `tests/flow.spec.ts`（离线跑完整链路，含 observe 模式一个 worker 都不起）。
-2. `node scripts/verify-browser.mjs`：用真浏览器打线上面板做只读检查。它会报告**跳过了哪几条、为什么、谁在覆盖**——
+   所有服务都抛异常的宿主上也不 reject；正常 stop 可重复调用、同一状态目录的第二次部署被拒绝），以及
+   `tests/flow.spec.ts`（离线跑完整链路，含 observe 模式一个 worker 都不起）。停机补充合同由专项测试覆盖：调用方等待有界、底层 drain 继续跟踪；超时报告 incomplete 并保留数据库和锁，不能把“超时返回”当作已停止。
+2. `node scripts/verify-browser.mjs --preflight` 仅检查依赖，不启动浏览器；可用 `MYAGENT_PLAYWRIGHT_PATH` 和 `MYAGENT_CHROME_PATH` 显式配置路径。真实浏览器验收需在可用、授权的浏览器环境另行执行 `node scripts/verify-browser.mjs`；本轮尚未执行。脚本会报告**跳过了哪几条、为什么、谁在覆盖**——
    一条检查凭空消失而结论看不出来，比它变红更危险。
 3. 只在需要真宿主行为（模型调用、真实 Session 生命周期）时，才在**独立 profile + 独立端口**上验证，不动日常那个。
 4. 挂上以后第一件事是看 `/myagent/api/state` 的 `health`，有问题它会写在那里，不会静默。
@@ -238,7 +241,7 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
   },
   "triage": {                       // 进气分诊：请求先经一个判断，再决定开不开任务
     "enabled": false,               // 默认关：它每条请求要花一轮 Session
-    "desk": "dedicated",            // dedicated = 分诊自己一个 Session（默认）；main = 复用你的主 Session
+    "desk": "dedicated",            // dedicated = 独立分诊 Session（默认）；main = 已配置则用 DeskLoop，否则主 Session
     "sources": ["chat"]             // 哪些来路走分诊。默认只有 chat（聊天室的话值得判断）；
                                    // inbox 和 cron 是你自己下的指令，再判一次等于白花一轮，可选 ["chat","inbox","cron"]
   },
@@ -249,9 +252,9 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
         "preset": "researcher",       // worker = 标准（含 shell）；researcher = 研究型，**没有 shell**：
                                      // 不能执行、安装、运行任何东西，只能读文件、搜网、写自己目录里的报告。
                                      // 要读外部不可信材料的排期用它——把"别跑外来脚本"从提示词里的嘱咐变成 Session 的属性。
-        "maxRuntimeMs": 3600000,      // 墙钟预算（毫秒）；0 或省略 = 不限。到点先提醒 worker 收尾并交报告，
+        "maxRuntimeMs": 3600000,      // 墙钟预算（毫秒）；0 或省略时回退到全局 watchdog.maxRuntimeMs，全局也为0才不限。
                                      // 再过 10 分钟仍未结束就停下、任务记为已停、并在面板「需要你决断的事」停一条。
-                                     // 计的是这张任务的墙钟，所以子代理与后台作业都在预算内——绕不过去。
+                                     // 到点先提醒，grace后触发停止；子代理停止依赖Host树形/API能力，非root局部停止及真实Host行为待验收。
         // 报告送到哪个聊天频道（省略 = 只落 RESULT.md 与主会话通知，不进聊天室）。
         // thread 可省：省了就用桥记住的默认会话。同一排期的历次运行会自动归进一个以排期名命名的「工作」。
         "deliverTo": { "channel": "telegram" } }
@@ -314,7 +317,7 @@ POST tickets | pass | main-session | schedules/preview | decisions/:id/dismiss
 - **主 Session**（推荐）：在 DSH GUI 里把文件附上或说出路径，模型用 `myagent_create_ticket` 的 `attachments` 传进来。
 - **inbox**：请求文件的 front matter 里写 `attach: /abs/a.csv, /abs/b.pdf`。
 - **cron**：排期的 `prompt` 里写清路径（排期没有 attachments 字段，因为定时任务读的通常是固定位置的数据）。
-- **chat**：聊天消息只带文本；要给文件，用 inbox 或主 Session。
+- **chat**：附件支持取决于平台桥的下载/上传能力；桥将已下载附件路径写入消息元数据，myagent 再交给 Ticket。当前修复树的真实平台附件收发未做本轮验收；也可用 inbox 或主 Session。
 
 文件在 worker 起跑**之前**被复制进 Ticket 自己的目录（`attachments/<名字>`），所以排队期间源文件被移动或清理都不影响这次执行；
 同名文件自动改名（`report.csv`、`report-2.csv`）而不是互相覆盖。**复制不了就让 Ticket 失败**，
@@ -421,16 +424,21 @@ tests/         挂载、离线全链路、崩溃恢复、配额、幂等投递�
 
 ## 开发
 
+仓库遵循 [`docs/v2/40-new-discipline-and-baseline.md`](docs/v2/40-new-discipline-and-baseline.md)：先登记操作，再在 `/tmp` 隔离快照验证；不在被当前 Host 加载的本体目录构建。快照包含当前受控源码、测试和新增文件，依赖使用已安装的 `node_modules` 链接。
+
+在隔离快照中运行：
+
 ```bash
-pnpm install
-pnpm typecheck && pnpm vitest run && pnpm build   # = pnpm check
-./scripts/gate.sh                                  # 四步闸门；退出码 0 才算绿
+bash scripts/gate.sh > /tmp/myagent-check-output.log 2>&1
+code=$?
+printf 'gate exit=%s\n' "$code"
 ```
+
+gate 会执行 typecheck → build → test → artifact。只有命令自身退出码 0 才能记为该快照通过；真实宿主、桥接和视觉验收另行记录。
 
 ## 已知边界
 
-- **worker 没有 OS 级沙箱**，面板与 API 不在宿主认证之后，inbox 的发起者身份是自述的。
-  这三条是设计前提而不是待办，完整分级见 [`SECURITY.md`](SECURITY.md) 与 `docs/v2/06-security-risk-register.md`。
+- **worker 没有 OS 级沙箱**，面板/API 未接入宿主身份认证；inbox 不验证实际投递者，当前统一视为 `operator`。用户认证、任务归属授权和执行隔离尚未实现；受控个人试用不代表多用户安全可用。详见 [`SECURITY.md`](SECURITY.md) 与 [`当前状态`](docs/v2/44-current-status-and-preview.md)。
 - **桌面通知能不能点开，取决于本机装了什么。** 装了 `terminal-notifier` 时通知可以点击直接打开那张 Ticket；
   只有系统自带的 `osascript` 时，通知会显示标题、状态和摘要的前 160 字，但**点击没有任何反应**，
   而且在通知中心里署名"脚本编辑器"——那是 osascript 的宿主身份，改不了。通知始终只是提醒，
@@ -439,7 +447,7 @@ pnpm typecheck && pnpm vitest run && pnpm build   # = pnpm check
   此后每次投递都是"消息进去、turn 立刻 blocked、什么都没产出"。系统能认出这种情况：记成 `failed` 报告、上健康板、
   写明重试无用（要停掉这张、另开一张，目录原样保留）。它不会自动换一个新 Session——那会在没人看着的时候悄悄丢掉上下文。
 - 面板是服务端渲染的单页，没有 React 客户端 bundle；够用，但不是 DSH 原生 UI 插件。
-- `tickets.page()` / `count()` 会把所有 Ticket 读进内存——个人规模（几百到几千条）没问题，上万条要换成分页 SQL。
+- `tickets.page()` / `count()` 会把大量 Ticket 读进内存——预览和小规模部署需观察数据规模，上万条要换成分页 SQL。
 - 没有模型评审（Assessor）：门禁是确定性的，「这个请求值不值得做」由提示词、`triage` 与 `acceptMode` 决定。
 - 个人微信没有官方 API，不做（个人 QQ 有官方机器人，见下）。**钉钉桥已有**（`bridges/dingtalk/`，
   Stream 模式）、**企业微信桥已有**（`bridges/wecom/`，回调模式，AES 零依赖——公网回调 URL 是它

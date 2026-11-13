@@ -27,7 +27,7 @@
 
 ## 命令输出（关键结果）
 ```text
-RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
+RUN  v4.1.8 ~/Documents/SA/myagent
 ✓ copies attachment bytes into attachments/ and marks the note delivered 353ms
 FAIL tests/flow.spec.ts > a profile that does not know several of the worker tools > leaves the Ticket unlaunched rather than running a worker with no restriction at all
 AssertionError: expected 'running' to be 'pending' // Object.is equality

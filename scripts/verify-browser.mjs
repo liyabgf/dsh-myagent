@@ -16,8 +16,25 @@
  *   5. Cross-Ticket citation backlink (F6: opening `b356ac64` shows that `19dd5c9c` cited/corrected it) + Quick Settings.
  */
 import { createRequire } from 'node:module'
+import { accessSync, constants } from 'node:fs'
+import { resolve } from 'node:path'
 const require = createRequire(import.meta.url)
-const { chromium } = require('~/deepseek-harness/benchmarks/node_modules/playwright')
+const runner = process.env.MYAGENT_PLAYWRIGHT_PATH || 'playwright'
+const chromePath = process.env.MYAGENT_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+let chromium
+try {
+  const loaded = require(process.env.MYAGENT_PLAYWRIGHT_PATH ? resolve(runner) : runner)
+  if (typeof loaded.chromium?.launch !== 'function') throw new Error('module does not export chromium.launch')
+  chromium = loaded.chromium
+  accessSync(chromePath, constants.X_OK)
+} catch (error) {
+  console.error(`Browser verifier prerequisites unavailable: ${error.message}. Set MYAGENT_PLAYWRIGHT_PATH to an installed Playwright module and MYAGENT_CHROME_PATH to a Chrome executable.`)
+  process.exit(2)
+}
+if (process.argv.includes('--preflight')) {
+  console.log('Browser verifier prerequisites resolved; no browser was launched and no page was verified.')
+  process.exit(0)
+}
 
 /**
  * 【环境崩溃 ≠ 断言失败】headless Chrome 偶发在运行中途整页关闭（今天三次，崩点都在 U21 之后的
@@ -90,7 +107,7 @@ function skip(name, reason) {
 }
 
 const LAUNCH = {
-  executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  executablePath: chromePath,
   headless: true,
 }
 let browser = await chromium.launch(LAUNCH)

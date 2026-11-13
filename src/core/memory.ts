@@ -6,7 +6,7 @@
 import type { Decision } from './model.ts'
 import type { Artifact, Dependency, Project, Thread, Ticket, TicketEvent, Trigger, Work } from './model.ts'
 import type { DecisionRecord, Repositories, TicketRepository, Transaction, TriggerRecord, TriggerRepository } from './engine.ts'
-import type { ArtifactRepository, DecisionRepository, DependencyRepository, EventRepository, ProjectRepository, ThreadRepository, WorkRepository } from './engine.ts'
+import type { ArtifactRepository, DecisionRepository, DependencyRepository, EventRepository, InputConsumption, InputConsumptionRepository, ProjectRepository, ThreadRepository, WorkRepository } from './engine.ts'
 
 class TriggerStore implements TriggerRepository {
   readonly records = new Map<string, TriggerRecord>()
@@ -108,6 +108,14 @@ class ArtifactStore {
 }
 
 /** In-memory Thread store for tests. */
+class InputConsumptionStore implements InputConsumptionRepository {
+  readonly records = new Map<string, InputConsumption>()
+  get(identity: string): InputConsumption | undefined { return this.records.get(identity) }
+  save(identity: string, receipt: InputConsumption): void { this.records.set(identity, receipt) }
+  snapshot(): Map<string, InputConsumption> { return new Map(this.records) }
+  restore(snapshot: Map<string, InputConsumption>): void { this.records.clear(); for (const [id, receipt] of snapshot) this.records.set(id, receipt) }
+}
+
 class ThreadStore implements ThreadRepository {
   private readonly records = new Map<string, Thread>()
   get(key: string): Thread | undefined { return this.records.get(key) }
@@ -143,6 +151,7 @@ export class Memory implements Repositories, Transaction {
   readonly works: WorkRepository = this.workStore
   readonly events: EventRepository = this.eventStore
   private readonly threadStore = new ThreadStore()
+  readonly inputConsumptions = new InputConsumptionStore()
   readonly dependencies: DependencyRepository = this.dependencyStore
   readonly threads: ThreadRepository = this.threadStore
 
@@ -158,7 +167,7 @@ export class Memory implements Repositories, Transaction {
     const snapshots = [
       this.triggerStore.snapshot(), this.ticketStore.snapshot(), this.decisionStore.snapshot(), this.artifactStore.snapshot(),
       this.projectStore.snapshot(), this.workStore.snapshot(), this.eventStore.snapshot(),
-      this.dependencyStore.snapshot(), this.threadStore.snapshot(),
+      this.dependencyStore.snapshot(), this.threadStore.snapshot(), this.inputConsumptions.snapshot(),
     ] as const
     const mark = this.queue.length
     this.depth++
@@ -180,6 +189,7 @@ export class Memory implements Repositories, Transaction {
       // C04 fix: ThreadStore was missing from snapshots/restore, so a rolled-back transaction
       // left thread writes in Memory while SQLite correctly rolled them back.
       this.threadStore.restore(snapshots[8])
+      this.inputConsumptions.restore(snapshots[9])
       throw error
     }
     this.depth--

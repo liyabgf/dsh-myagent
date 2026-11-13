@@ -55,10 +55,17 @@ export class Passes {
         this.asked = false
         try {
           await this.options.effects.runDue()
-          for (const work of this.extra) await work()
+          if (this.stopped || this.options.lifetime?.aborted) break
+          for (const work of this.extra) {
+            if (this.stopped || this.options.lifetime?.aborted) break
+            await work()
+          }
+          if (this.stopped || this.options.lifetime?.aborted) break
           this.options.health?.record()
         } catch (error) {
-          this.options.health?.problem(error instanceof Error ? `${error.name}: ${error.message}` : String(error))
+          if (!this.stopped && !this.options.lifetime?.aborted) {
+            this.options.health?.problem(error instanceof Error ? `${error.name}: ${error.message}` : String(error))
+          }
           this.options.onPassError?.(error)
         }
       } while (this.asked && !this.stopped)
@@ -73,6 +80,12 @@ export class Passes {
     if (this.timer !== undefined) { clearInterval(this.timer); this.timer = undefined }
     const current = this.current
     if (current === undefined) return
-    await Promise.race([current, new Promise(resolve => setTimeout(resolve, timeoutMs))])
+    if (timeoutMs === Infinity) { await current; return }
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      await Promise.race([current, new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(`The pass did not finish in ${timeoutMs} ms`)), timeoutMs)
+      })])
+    } finally { if (timer !== undefined) clearTimeout(timer) }
   }
 }

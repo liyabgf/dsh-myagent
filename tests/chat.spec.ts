@@ -45,7 +45,7 @@ function harness(value: unknown = {}) {
   const cursors = new Map<string, unknown>()
   let current: Settings = parseSettings(value)
   const engine = new Engine({
-    repos: memory, tx: memory, policy: () => settingsPolicy(current), executor,
+    repos: memory, tx: memory, inputConsumptions: memory.inputConsumptions, policy: () => settingsPolicy(current), executor,
     delivery: { report: (): void => {} },
     now: () => new Date().toISOString(),
   })
@@ -861,5 +861,81 @@ describe('the bridge heartbeat the chat source watches (G-2)', () => {
       // 键缺席（而不是空串、不是 0）：旧版桥没承诺过写心跳，面板据此画「无」而不是画一个假年龄。
       expect(source2.channels()[0]!.heartbeatAt).toBeUndefined()
     } finally { await source2.stop() }
+  })
+})
+
+
+describe('durable continuation consumption', () => {
+  it('deduplicates an attachment-only continuation redelivered under a different filename', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    const source = new ChatSource(context.host)
+    try {
+      drop(ops, 'initial.md', message({ from: 'U01ABCDEF', id: 'initial', thread: 't' }, 'start task'))
+      await source.poll()
+      const ticketId = context.tickets()[0]!.id
+      const attachment = message({ from: 'U01ABCDEF', id: 'attachment', thread: 't', attachments: '/tmp/a' }, '')
+      drop(ops, 'a.md', attachment)
+      await source.poll()
+      expect(context.engine.ticket(ticketId)!.inputs).toHaveLength(1)
+      drop(ops, 'b.md', attachment)
+      await source.poll()
+      expect(context.engine.ticket(ticketId)!.inputs).toHaveLength(1)
+      expect(existsSync(join(ops, 'b.md'))).toBe(false)
+      expect(problems(context)).not.toContain('source_identity_conflict')
+    } finally { await source.stop() }
+  })
+
+  it('archives replay before target selection, survives source recreation, and detects changed content', async () => {
+    const ops = directory()
+    const context = harness(doc({ channels: [channel('ops', ops)] }))
+    let source = new ChatSource(context.host)
+    const initial = message({ from: 'U01ABCDEF', id: 'initial', thread: 't' }, 'start task')
+    const followup = message({ from: 'U01ABCDEF', id: 'followup', thread: 't', attachments: '/tmp/a' }, 'additional facts')
+    try {
+      drop(ops, 'initial.md', initial)
+      await source.poll()
+      const ticketId = context.tickets()[0]!.id
+      drop(ops, 'initial.md', initial)
+      await source.poll()
+      expect(context.engine.ticket(ticketId)!.inputs).toHaveLength(0)
+      // A failed archive leaves the input file available for retry after the receipt commits.
+      const take = (source as unknown as { take: (...args: unknown[]) => Promise<void> }).take
+      ;(source as unknown as { take: (...args: unknown[]) => Promise<void> }).take = async () => {}
+      drop(ops, 'followup.md', followup)
+      await source.poll()
+      expect(context.engine.ticket(ticketId)!.inputs).toHaveLength(1)
+      expect(context.engine.ticket(ticketId)!.inputs[0]!.attachments).toEqual(['/tmp/a'])
+      ;(source as unknown as { take: (...args: unknown[]) => Promise<void> }).take = take
+      source.stop()
+      context.engine.stopTicket(ticketId, 'done')
+      source = new ChatSource(context.host)
+      await source.poll()
+      expect(context.tickets()).toHaveLength(1)
+      expect(existsSync(join(ops, 'followup.md'))).toBe(false)
+      expect(source.status().counts).toMatchObject({ duplicate: 1, accepted: 0 })
+      drop(ops, 'changed.md', message({ from: 'U01ABCDEF', id: 'followup', thread: 't' }, 'changed'))
+      await source.poll()
+      expect(problems(context)).toContain('source_identity_conflict')
+      expect(existsSync(join(ops, 'changed.md'))).toBe(true)
+      expect(context.triggers()).toHaveLength(1)
+      expect(context.decisions()).toHaveLength(1)
+    } finally { source.stop() }
+  })
+
+  it('keeps the same platform message id distinct across channels', async () => {
+    const left = directory(), right = directory()
+    const context = harness(doc({ channels: [channel('left', left), channel('right', right)] }))
+    const source = new ChatSource(context.host)
+    try {
+      for (const dir of [left, right]) drop(dir, 'first.md', message({ from: 'U01ABCDEF', id: 'first', thread: 't' }, 'start'))
+      await source.poll()
+      for (const dir of [left, right]) drop(dir, 'next.md', message({ from: 'U01ABCDEF', id: 'same', thread: 't' }, 'next'))
+      await source.poll()
+      expect(context.tickets()).toHaveLength(2)
+      expect(context.tickets().map(ticket => ticket.inputs.length)).toEqual([1, 1])
+      expect(context.memory.inputConsumptions.get(key('chat', 'left', 'same'))).toBeDefined()
+      expect(context.memory.inputConsumptions.get(key('chat', 'right', 'same'))).toBeDefined()
+    } finally { source.stop() }
   })
 })

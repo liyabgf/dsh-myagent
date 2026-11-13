@@ -1,7 +1,7 @@
 commit 99e99b5c554872521971511cef43ee4121d2067e
-Author:     李扬 <liyang@Mac.lan>
+Author:     operator <operator@example.invalid>
 AuthorDate: Fri Nov 13 16:25:15 2026 +0800
-Commit:     李扬 <liyang@Mac.lan>
+Commit:     operator <operator@example.invalid>
 CommitDate: Fri Nov 13 16:25:15 2026 +0800
 
     R1：DeskLoop生命周期、分诊状态与LLM失败语义修复

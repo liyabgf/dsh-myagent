@@ -4,7 +4,7 @@
 
 ## 1. 身份与发布边界
 
-- 本体：/Users/liyang/Documents/SA/myagent；公开镜像：myagent-public（发布脚本待独立审查）；运行态：DSH_HOME/state/myagent。
+- 本体：~/Documents/SA/myagent；公开镜像：myagent-public（发布脚本待独立审查）；运行态：DSH_HOME/state/myagent。
 - package.json:7入口 lib/index.js；types lib/index.d.ts；client client.js；Cordis bundle patch cordis.patch.yml。运行时提示词、面板、桥、示例、locale是磁盘文件，不在bundle中（package.json:18–29）。
 - src/index.apply → Runtime构造 → skills注册 → ctx.effect(runtime.stop) → Runtime.start（src/index:41–85）。构造失败只log，启动失败markProblem。
 

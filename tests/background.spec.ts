@@ -5,7 +5,7 @@
  * turn leaves work running under an authorization that was withdrawn. These cases pin what a stop actually reaches, and
  * that one thing refusing to die does not leave the rest running.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { killJobs, stopBackground, stopSubagents, until } from '../src/app/background.ts'
 import { stubHost } from './helpers/host.ts'
 
@@ -95,7 +95,79 @@ describe('releasing a worker\'s subagents', () => {
     expect(agent.cancelled).toBe(0)
   })
 
-  it('treats a subagent that ended on its own between listing and draining as released, not as a failure', async () => {
+  it('uses the modern descendant listing and passes only the exact root to drainDescendants', async () => {
+    const host = stubHost({ services: true, children: { 'worker-1': ['child-1', 'child-root'], 'child-root': ['grandchild'] } })
+    host.spawn('child-1')
+    host.spawn('child-root')
+    host.spawn('grandchild')
+    const agent = host.spawn('worker-1')
+    await stopSubagents(host.ctx, agent as never)
+    expect(host.services.drainedRoots).toEqual([[agent]])
+    expect(host.services.log).toEqual(['drain:child-1', 'drain:child-root', 'drain:grandchild'])
+  })
+
+  it('always drains an exact root even when no descendant is listed, to close pending startup admission', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1', 'running')
+    await stopSubagents(host.ctx, agent as never, false, { cancelTurn: false })
+    expect(host.services.drainedRoots).toEqual([[agent]])
+    expect(agent.cancelled).toBe(0)
+  })
+
+  it('honors the explicit turn-cancellation intent even when no child is listed', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1', 'running')
+    await stopSubagents(host.ctx, agent as never, false, { cancelTurn: true })
+    expect(agent.cancelled).toBe(1)
+  })
+
+  it('keeps a closing parent turn when strict root drain completes', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1', 'running')
+    await stopSubagents(host.ctx, agent as never, true, { cancelTurn: false })
+    expect(host.services.drainedRoots).toEqual([[agent]])
+    expect(agent.cancelled).toBe(0)
+  })
+
+  it('does not resolve strict drain on the legacy ten-second wait bound', async () => {
+    vi.useFakeTimers()
+    try {
+      const host = stubHost({ services: true })
+      const agent = host.spawn('worker-1', 'idle')
+      let finish!: () => void
+      const drainDescendants = vi.fn(() => new Promise<void>(resolve => { finish = resolve }))
+      const service = { rootOf: () => agent, listDescendants: async () => [], drainDescendants }
+      ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+      let done = false
+      const stopping = stopSubagents(host.ctx, agent as never, false).then(() => { done = true })
+      await vi.advanceTimersByTimeAsync(20_000)
+      expect(done).toBe(false)
+      finish()
+      await stopping
+      expect(done).toBe(true)
+    } finally { vi.useRealTimers() }
+  })
+
+  it('does not swallow modern drain failure merely because listing is empty afterward', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1', 'idle')
+    const service = {
+      rootOf: (caller: unknown) => caller,
+      listDescendants: async () => [],
+      drainDescendants: async () => { throw new Error('pending startup cleanup failed') },
+    }
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow('pending startup cleanup failed')
+  })
+
+  it('fails clearly for a present but unsupported subagents service', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1')
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? {} : undefined
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow(/no supported list\/drain contract/)
+  })
+
+  it('keeps modern Host cleanup failures visible even when the child leaves its catalog', async () => {
     // 【误报修正的同族】生产实捕：killJobs 的核实修复上线后，同一条红线从另一半（stopSubagents）
     // 又冒出来——孩子在 list 与 drain 之间自己结束，drain 扑空抛错，"已经停了"被报成"停不掉"。
     // 这条与 failDrains 那条互为对方变异的第二把锁：不核实（全记失败）这条红；吞掉所有失败那条红。
@@ -103,8 +175,8 @@ describe('releasing a worker\'s subagents', () => {
     host.spawn('child-self-ended')
     const agent = host.spawn('worker-1')
     host.services.vanishDrains.push('child-self-ended')
-    await expect(stopSubagents(host.ctx, agent as never)).resolves.toBeUndefined()
-    // 试过 drain（日志为证），且没有谁被记为失败。
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow(/not running/)
+    // Modern drain aggregates cleanup failures; an empty catalog does not prove cleanup succeeded.
     expect(host.services.log).toContain('drain:child-self-ended')
   })
 
@@ -116,11 +188,11 @@ describe('releasing a worker\'s subagents', () => {
     expect(host.services.log).toEqual(['drain:child-live'])
   })
 
-  it('does nothing when no child is left, and leaves the turn alone', async () => {
-    const host = stubHost({ services: true, children: { 'worker-1': ['child-gone'] } })
-    const agent = host.spawn('worker-1', 'running')
+  it('drains catalog-only descendants too, including external instances absent from the agents registry', async () => {
+    const host = stubHost({ services: true, children: { 'worker-1': ['external-child'] } })
+    const agent = host.spawn('worker-1', 'idle')
     await stopSubagents(host.ctx, agent as never)
-    expect(host.services.log).toEqual([])
+    expect(host.services.drainedRoots).toEqual([[agent]])
     expect(agent.cancelled).toBe(0)
   })
 
@@ -131,6 +203,100 @@ describe('releasing a worker\'s subagents', () => {
     await stopSubagents(host.ctx, agent as never, true)
     expect(host.services.log).toEqual(['drain:child-live'])
     expect(agent.cancelled).toBe(1)
+  })
+
+  it('refuses to drain when rootOf returns a different object with the same id', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1', 'idle')
+    const impostor = { ...agent, id: agent.id }
+    const service = { rootOf: () => impostor, listDescendants: async () => [], drainDescendants: vi.fn() }
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow(/exact subagent tree root/)
+    expect(service.drainDescendants).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-root rather than ignoring it or draining its siblings', async () => {
+    const host = stubHost({ services: true, children: { 'worker-1': ['child-live'] } })
+    host.spawn('child-live')
+    const agent = host.spawn('worker-1')
+    const root = host.spawn('outside-root')
+    const service = { rootOf: () => root, listDescendants: async () => [{ id: 'child-live' }], drainDescendants: vi.fn() }
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow(/exact subagent tree root/)
+    expect(service.drainDescendants).not.toHaveBeenCalled()
+    expect(host.agents.has('child-live')).toBe(true)
+  })
+
+  it('rejects a non-root even with no catalog children and never substitutes the enclosing root', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('member', 'idle')
+    const root = host.spawn('outside-root', 'idle')
+    const service = { rootOf: () => root, listDescendants: vi.fn(async () => []), drainDescendants: vi.fn() }
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow(/actual tree root outside-root/)
+    expect(service.drainDescendants).not.toHaveBeenCalled()
+    expect(agent.cancelled).toBe(0)
+  })
+
+  it('rejects incomplete modern contracts instead of claiming success', async () => {
+    const host = stubHost({ services: true })
+    const agent = host.spawn('worker-1', 'idle')
+    const service = { listDescendants: async () => [], drainDescendants: vi.fn() }
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+    await expect(stopSubagents(host.ctx, agent as never)).rejects.toThrow(/no supported list\/drain contract/)
+    expect(service.drainDescendants).not.toHaveBeenCalled()
+  })
+
+  for (const modern of [true, false]) {
+    it(`joins ${modern ? 'modern' : 'legacy'} cleanup beyond 10s and propagates its real failure`, async () => {
+      vi.useFakeTimers()
+      try {
+        const host = stubHost()
+        host.spawn('child-live')
+        const agent = host.spawn('worker-1', 'running')
+        let fail!: (error: Error) => void
+        const drain = () => new Promise<void>((_resolve, reject) => { fail = reject })
+        const service = modern
+          ? { rootOf: () => agent, listDescendants: async () => [], drainDescendants: drain }
+          : { listChildren: async () => [{ id: 'child-live' }], drainChildren: drain }
+        ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+        let settled = false
+        const stopping = stopSubagents(host.ctx, agent as never)
+        void stopping.then(() => { settled = true }, () => { settled = true })
+        const failed = expect(stopping).rejects.toThrow('real cleanup failure')
+        await vi.advanceTimersByTimeAsync(20_000)
+        expect(settled).toBe(false)
+        fail(new Error('real cleanup failure'))
+        await failed
+        expect(agent.cancelled).toBe(1)
+      } finally { vi.useRealTimers() }
+    })
+  }
+
+  it('joins the actual parent idle Promise instead of considering a deadline success', async () => {
+    vi.useFakeTimers()
+    try {
+      const host = stubHost({ services: true })
+      const agent = host.spawn('worker-1', 'running')
+      let finish!: () => void
+      agent.whenIdle = () => new Promise<void>(resolve => { finish = resolve })
+      let settled = false
+      const stopping = stopSubagents(host.ctx, agent as never).then(() => { settled = true })
+      await vi.advanceTimersByTimeAsync(20_000)
+      expect(settled).toBe(false)
+      finish(); await stopping
+      expect(agent.cancelled).toBe(1)
+    } finally { vi.useRealTimers() }
+  })
+
+  it('supports the complete legacy listChildren/drainChildren pair', async () => {
+    const host = stubHost()
+    host.spawn('child-live')
+    const agent = host.spawn('worker-1')
+    const service = { listChildren: async () => [{ id: 'child-live' }], drainChildren: vi.fn(async () => {}) }
+    ;(host.ctx as unknown as { get(name: string): unknown }).get = name => name === 'subagents' ? service : undefined
+    await stopSubagents(host.ctx, agent as never)
+    expect(service.drainChildren).toHaveBeenCalledWith(agent, ['child-live'])
   })
 
   it('cancels the turn even when the release itself fails', async () => {

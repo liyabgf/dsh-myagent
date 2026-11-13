@@ -4,7 +4,7 @@
 
 本轮请求：建立纪律，形成完整细致的项目拓扑，并从结构级到每个代码文件逐级审核。当前阶段是审核，不自动停止任务、重载插件、修改业务数据、安装依赖或发布版本。发现问题先保存证据与修复建议；必要的审核脚本、测试和文档可以新增。不得用重新克隆、重置或覆盖工作目录解决版本差异。
 
-基线：2026-11-13 Asia/Shanghai；仓库 `/Users/liyang/Documents/SA/myagent`；HEAD `a06e999`；远端 `https://github.com/liyabgf/dsh-myagent.git`。初始工作区已有 `lib/index.js` 修改，归属未核实，保留，不还原。原始用户附件 37 是历史审核证据，须与仓库版分开核对。
+基线：2026-11-13 Asia/Shanghai；仓库 `~/Documents/SA/myagent`；HEAD `a06e999`；远端 `https://github.com/liyabgf/dsh-myagent.git`。初始工作区已有 `lib/index.js` 修改，归属未核实，保留，不还原。原始用户附件 37 是历史审核证据，须与仓库版分开核对。
 
 ## 不可绕过的审核纪律
 

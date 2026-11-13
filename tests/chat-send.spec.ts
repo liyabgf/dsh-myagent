@@ -112,6 +112,26 @@ function reopenChannel(context: Deployment & { readonly channel: string }): void
   context.runtime.saveSettings(chatSettings(context, context.channel))
 }
 
+describe('chat durable reply file contract', () => {
+  it('atomically replaces a reply and keeps distinct ticket/file metadata identities separate', async () => {
+    const directory = tempDir('myagent-chat-out-')
+    const settings = parseSettings({ sources: { chat: { channels: [{ id: 'ops', directory, enabled: true }] } } })
+    const source = new ChatSource({ settings: () => settings } as SourceHost)
+    const address: ReplyTo = { kind: 'chat', channel: 'ops', thread: 't-9' }
+    await source.deliver(address, 'same text', { ticketId: 'ticket-a', files: ['/a.txt'] })
+    await source.deliver(address, 'same text', { ticketId: 'ticket-b', files: ['/b.txt'] })
+    const out = join(directory, 'out')
+    expect(readdirSync(out).filter(name => name.endsWith('.md'))).toHaveLength(2)
+    await source.deliver(address, 'same text', { ticketId: 'ticket-a', files: ['/a.txt'] })
+    expect(readdirSync(out)).toHaveLength(2)
+    const contents = readdirSync(out).map(name => readFileSync(join(out, name), 'utf8'))
+    expect(contents.some(text => text.includes('ticket: ticket-a') && text.includes('/a.txt'))).toBe(true)
+    expect(contents.some(text => text.includes('ticket: ticket-b') && text.includes('/b.txt'))).toBe(true)
+
+    expect(readdirSync(out).some(name => name.startsWith('.tmp-'))).toBe(false)
+  })
+})
+
 describe('the chat Source, mounted by the Runtime', () => {
   it('turns a mapped message file into a Ticket whose Mandate says where it came from', async () => {
     const context = await chatDeployment()

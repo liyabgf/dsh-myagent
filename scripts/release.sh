@@ -330,6 +330,45 @@ h2=$(cd "$SRC" && find src tests scripts panel prompts bridges -type f -exec sha
 [ "$h1" = "$h2" ] || { echo "✗ 真源在两次测量之间变了（$h1 → ${h2}）：有东西还在写，先让它停下" >&2; exit 1; }
 echo "  ✓ 真源静止（${h1}）"
 
+# L01 fix: guard against pushing to the wrong target.
+# Verify the canonical origin, branch, and clean working tree before rsyncing.
+validate_release_target() (
+  cd "$PUB" || exit $?
+  {
+  # Resolve Git's effective URLs, including pushurl and insteadOf/pushInsteadOf.
+  # Every destination must match exactly; a no_push URL remains a hard block.
+  pub_remote=$(git remote get-url --all origin) || { echo "✗ 无法读取 origin fetch URLs" >&2; exit 1; }
+  pub_push=$(git remote get-url --push --all origin) || { echo "✗ 无法读取 origin push URLs" >&2; exit 1; }
+  [ -n "$pub_remote" ] || { echo "✗ origin fetch URL 列表为空" >&2; exit 1; }
+  [ -n "$pub_push" ] || { echo "✗ origin push URL 列表为空" >&2; exit 1; }
+  push_count=$(printf '%s\n' "$pub_push" | awk 'NF { n++ } END { print n+0 }')
+  [ "$push_count" -eq 1 ] || { echo "✗ origin 必须恰好只有一个 push URL（实际 ${push_count} 个）；不推送" >&2; exit 1; }
+  for urls in "$pub_remote" "$pub_push"; do
+    while IFS= read -r url; do
+      case "$url" in
+        "https://github.com/$REPO"|"https://github.com/$REPO.git"|\
+        "git@github.com:$REPO"|"git@github.com:$REPO.git"|\
+        "ssh://git@github.com/$REPO"|"ssh://git@github.com/$REPO.git") ;;
+        *) echo "✗ origin URL ($url) 不是预期 GitHub 仓库 $REPO；不推送" >&2; exit 1 ;;
+      esac
+    done <<<"$urls"
+  done
+  pub_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  pub_status=$(git status --porcelain) || { echo "✗ 无法读取目标仓库状态" >&2; exit 1; }
+  pub_dirty=$(printf '%s' "$pub_status" | awk 'NF { n++ } END { print n+0 }')
+  [ -n "$pub_remote" ] || { echo "✗ 目标仓库没有 origin remote" >&2; exit 1; }
+  [ "$pub_branch" = "main" ] || { echo "✗ 目标仓库当前分支是 '$pub_branch'，不是 main" >&2; exit 1; }
+  [ "$pub_dirty" -eq 0 ] || { echo "✗ 目标仓库工作区不干净（有 ${pub_dirty} 个未提交变更）" >&2; exit 1; }
+  pub_realpath=$(realpath "$PUB" 2>/dev/null || echo "$PUB")
+  src_realpath=$(realpath "$SRC" 2>/dev/null || echo "$SRC")
+  [ "$pub_realpath" != "$src_realpath" ] || { echo "✗ 目标仓库与真源是同一目录" >&2; exit 1; }
+  echo "  ✓ 目标仓库核验：origin=$pub_remote branch=$pub_branch dirty=0"
+  }
+)
+# END RELEASE TARGET GUARD
+
+validate_release_target
+
 # ── 2. 同步代码与文档；保留只在公开副本里存在的东西 ───────────────────────────
 # ── 1.5 CHANGELOG 追加（发布即记档：面板「更新」页与安装的包不可能漂移）───────────
 # 【操作者决定】面板最后的页签展示版本更新内容；数据源 CHANGELOG.md 只由这条管道追加，
@@ -347,20 +386,7 @@ fi
 
 step "2/7 同步"
 [ -d "$PUB/.git" ] || { echo "✗ ${PUB} 不是一个 git 仓库" >&2; exit 1; }
-# L01 fix: guard against pushing to the wrong target.
-# Verify the canonical origin, branch, and clean working tree before rsyncing.
-(cd "$PUB" && {
-  pub_remote=$(git remote get-url origin 2>/dev/null || true)
-  pub_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-  pub_dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-  [ -n "$pub_remote" ] || { echo "✗ 目标仓库没有 origin remote" >&2; exit 1; }
-  [ "$pub_branch" = "main" ] || { echo "✗ 目标仓库当前分支是 '$pub_branch'，不是 main" >&2; exit 1; }
-  [ "$pub_dirty" -eq 0 ] || { echo "✗ 目标仓库工作区不干净（有 ${pub_dirty} 个未提交变更）" >&2; exit 1; }
-  pub_realpath=$(realpath "$PUB" 2>/dev/null || echo "$PUB")
-  src_realpath=$(realpath "$SRC" 2>/dev/null || echo "$SRC")
-  [ "$pub_realpath" != "$src_realpath" ] || { echo "✗ 目标仓库与真源是同一目录" >&2; exit 1; }
-  echo "  ✓ 目标仓库核验：origin=$pub_remote branch=$pub_branch dirty=0"
-})
+validate_release_target
 # 保留清单：这些是发布物自己的东西，真源里没有，删了就没了。
 # 不靠"rsync 不加 --delete"来保它们——那会让真源里**删掉**的文件在副本里永远残留，
 # 于是副本慢慢变成一份谁也不认识的混合物。显式保留 + 显式删除才是可核对的。
@@ -555,6 +581,7 @@ if ! git commit -q -m "$MESSAGE"; then
     echo "✗ git commit 失败（hook 拒绝、身份错误或磁盘故障）；不推送" >&2; exit 1
   fi
 fi
+validate_release_target
 git push -q origin main
 echo "  ✓ 已推送 $(git rev-parse --short HEAD)"
 

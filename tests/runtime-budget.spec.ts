@@ -8,7 +8,7 @@
  * The measurement is the attempt's own `startedAt`, which is why delegation cannot escape it: a subagent's work
  * happens inside the same wall clock, and stopping the attempt stops its background work too.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KV } from '../src/app/store.ts'
 import { waitsForPerson, type Trigger } from '../src/core/index.ts'
 import { deployment, type Deployment } from './helpers/deployment.ts'
@@ -45,6 +45,67 @@ function backdate(context: Deployment, ticketId: string, startedAt: string): str
 }
 
 const MINUTE = 60_000
+
+afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers() })
+
+describe('independent runtime budget scheduling', () => {
+  it('writes the budget nudge on the 2s tick while the effects pass is still awaiting runDue', async () => {
+    vi.useFakeTimers()
+    const context = await deployment('auto')
+    let release!: () => void
+    const blocked = new Promise<void>(resolve => { release = resolve })
+    let effectsFinished = false
+    try {
+      const id = await startedWithBudget(context, MINUTE)
+      await vi.waitFor(() => expect(context.runtime.store.tickets.get(id)!.assignments.at(-1)!.state).toBe('running'))
+      backdate(context, id, new Date(Date.now() - MINUTE).toISOString())
+      const runDue = vi.spyOn(context.runtime.effects, 'runDue').mockImplementation(async () => {
+        await blocked
+        effectsFinished = true
+      })
+      await context.runtime.nudge()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(runDue).toHaveBeenCalled()
+      expect(effectsFinished).toBe(false)
+      expect(context.runtime.store.tickets.get(id)!.inputs).toHaveLength(0)
+      await vi.advanceTimersByTimeAsync(2_000)
+      expect(effectsFinished).toBe(false)
+      expect(context.runtime.store.tickets.get(id)!.inputs.map(input => input.text).join('\n')).toContain('时间预算已用完')
+    } finally {
+      release()
+      await context.runtime.stop()
+    }
+  })
+
+  it('clears its timer on stop and a previously queued callback cannot read the closed Store', async () => {
+    vi.useFakeTimers()
+    const timersBefore = vi.getTimerCount()
+    const intervals = vi.spyOn(globalThis, 'setInterval')
+    const context = await deployment('auto')
+    const callbacks = intervals.mock.calls.map(([callback]) => callback).filter(callback => typeof callback === 'function')
+    expect(intervals).toHaveBeenCalledWith(expect.any(Function), 2_000)
+    expect(callbacks.length).toBeGreaterThan(0)
+    await context.runtime.stop()
+    const reads = vi.spyOn(context.runtime.store.tickets, 'list')
+    expect(vi.getTimerCount()).toBe(timersBefore)
+    await vi.advanceTimersByTimeAsync(6_000)
+    for (const callback of callbacks) (callback as () => void)()
+    expect(reads).not.toHaveBeenCalled()
+  })
+
+  it('contains synchronous budget failures on the health board and retries the next tick', async () => {
+    vi.useFakeTimers()
+    const context = await deployment('auto')
+    const enforce = vi.spyOn(context.runtime, 'enforceRuntimeBudgets').mockImplementation(() => { throw new Error('budget-read-failure') })
+    try {
+      await vi.advanceTimersByTimeAsync(2_000)
+      expect(context.runtime.health.problems().map(problem => problem.detail).join('\n')).toContain('budget-read-failure')
+      expect(enforce).toHaveBeenCalledTimes(1)
+      await vi.advanceTimersByTimeAsync(2_000)
+      expect(enforce).toHaveBeenCalledTimes(2)
+    } finally { await context.runtime.stop() }
+  })
+})
 
 describe('a scheduled firing with a wall-clock budget', () => {
   it('says nothing while the work is inside its budget', async () => {

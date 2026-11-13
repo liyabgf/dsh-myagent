@@ -1,7 +1,7 @@
 commit 77292c204e546ba7f8f2e59cce2aa53f93226de8
-Author:     李扬 <liyang@Mac.lan>
+Author:     operator <operator@example.invalid>
 AuthorDate: Fri Nov 13 16:41:03 2026 +0800
-Commit:     李扬 <liyang@Mac.lan>
+Commit:     operator <operator@example.invalid>
 CommitDate: Fri Nov 13 16:41:03 2026 +0800
 
     R2：领域/存储/恢复一致性修复

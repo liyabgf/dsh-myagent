@@ -10,7 +10,7 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Memory } from '../src/core/memory.ts'
 import { Store } from '../src/app/store.ts'
 import type { ArtifactRepository, TriggerRecord } from '../src/core/engine.ts'
@@ -173,3 +173,172 @@ for (const implementation of implementations) {
     })
   })
 }
+
+
+describe('Store COMMIT failure recovery', () => {
+  it('rolls back a failed inner RELEASE without losing outer writes or deferred callbacks', () => {
+    const store = new Store(':memory:')
+    const db = (store as unknown as { db: import('node:sqlite').DatabaseSync }).db
+    const exec = db.exec.bind(db)
+    let failRelease = true
+    const calls: string[] = []
+    const spy = vi.spyOn(db, 'exec').mockImplementation(sql => {
+      calls.push(sql)
+      if (sql === 'RELEASE s1' && failRelease) {
+        failRelease = false
+        throw new Error('injected RELEASE failure')
+      }
+      exec(sql)
+    })
+    const ran: string[] = []
+    try {
+      store.atomic(() => {
+        store.set('outer', 'kept')
+        store.afterCommit(() => ran.push('outer'))
+        expect(() => store.atomic(() => {
+          store.set('inner', 'rolled back')
+          store.afterCommit(() => ran.push('inner'))
+        })).toThrow('injected RELEASE failure')
+        expect(store.get('inner')).toBeUndefined()
+        expect((store as unknown as { depth: number }).depth).toBe(1)
+        store.atomic(() => { store.set('next-inner', 'kept') })
+      })
+      expect(store.get('outer')).toBe('kept')
+      expect(store.get('next-inner')).toBe('kept')
+      expect(ran).toEqual(['outer'])
+      expect(calls).toContain('ROLLBACK TO s1')
+      expect(calls.filter(sql => sql === 'RELEASE s1')).toHaveLength(3)
+      expect((store as unknown as { queue: unknown[] }).queue).toEqual([])
+      expect((store as unknown as { depth: number }).depth).toBe(0)
+    } finally { spy.mockRestore(); store.close() }
+  })
+
+  it('closes the Store and rejects later transactions/hooks when rollback itself fails', () => {
+    const store = new Store(':memory:')
+    const db = (store as unknown as { db: import('node:sqlite').DatabaseSync }).db
+    const exec = db.exec.bind(db)
+    const rollbackFailure = new Error('injected ROLLBACK failure')
+    const workFailure = new Error('work failed')
+    const spy = vi.spyOn(db, 'exec').mockImplementation(sql => {
+      if (sql === 'ROLLBACK') throw rollbackFailure
+      exec(sql)
+    })
+    let failure: unknown
+    let callbackRan = false
+    try {
+      store.atomic(() => {
+        store.afterCommit(() => { callbackRan = true })
+        throw workFailure
+      })
+    } catch (error) { failure = error }
+    try {
+      expect(failure).toBeInstanceOf(AggregateError)
+      expect((failure as AggregateError).errors).toEqual([workFailure, rollbackFailure])
+      expect((store as unknown as { queue: unknown[] }).queue).toEqual([])
+      expect((store as unknown as { depth: number }).depth).toBe(0)
+      expect(() => store.atomic(() => { callbackRan = true })).toThrow('Store is unusable')
+      expect(() => store.afterCommit(() => { callbackRan = true })).toThrow('Store is unusable')
+      expect(() => store.set('later', 'not allowed')).toThrow()
+      expect(callbackRan).toBe(false)
+    } finally { spy.mockRestore(); try { store.close() } catch { /* closed by fail-closed recovery */ } }
+  })
+
+  it('rolls back deferred-constraint COMMIT failure, clears hooks, and remains usable', async () => {
+    const store = new Store(':memory:')
+    const db = (store as unknown as { db: import('node:sqlite').DatabaseSync }).db
+    try {
+      db.exec('CREATE TABLE parent (id INTEGER PRIMARY KEY)')
+      db.exec('CREATE TABLE child (parent_id INTEGER REFERENCES parent(id) DEFERRABLE INITIALLY DEFERRED)')
+      const ran: string[] = []
+      expect(() => store.atomic(() => {
+        db.exec('INSERT INTO child (parent_id) VALUES (404)')
+        store.afterCommit(() => ran.push('leaked'))
+      })).toThrow(/FOREIGN KEY constraint failed/)
+      expect(ran).toEqual([])
+      // The queue must be truncated immediately, not merely hidden by the next transaction's mark.
+      expect((store as unknown as { queue: unknown[] }).queue).toHaveLength(0)
+      expect((store as unknown as { depth: number }).depth).toBe(0)
+      expect((db.prepare('SELECT count(*) AS n FROM child').get() as { n: number }).n).toBe(0)
+      store.atomic(() => {
+        db.exec('INSERT INTO parent (id) VALUES (404)')
+        db.exec('INSERT INTO child (parent_id) VALUES (404)')
+        store.afterCommit(() => ran.push('next'))
+      })
+      expect((db.prepare('SELECT count(*) AS n FROM child').get() as { n: number }).n).toBe(1)
+      expect(ran).toEqual(['next'])
+    } finally { store.close() }
+  })
+})
+
+
+// B3b receipts must participate in the same nested transaction contract as Inputs.
+for (const kind of ['Memory', 'Store'] as const) {
+  it(`${kind} rolls back nested receipts and preserves committed receipts across reopen`, () => {
+    const directory = mkdtempSync(join(tmpdir(), 'myagent-receipts-'))
+    const path = join(directory, 'receipts.sqlite3')
+    const subject = kind === 'Memory' ? new Memory() : new Store(path)
+    const receipt = { version: 1 as const, fingerprint: 'facts', consumedAt: 'now', targets: [{ ticketId: 'target', mode: 'note' as const }] }
+    try {
+      const hooks: string[] = []
+      subject.atomic(() => {
+        subject.inputConsumptions.save('kept', receipt)
+        expect(() => subject.atomic(() => {
+          subject.inputConsumptions.save('inner', receipt)
+          subject.afterCommit(() => hooks.push('inner'))
+          throw new Error('inner rollback')
+        })).toThrow('inner rollback')
+      })
+      expect(subject.inputConsumptions.get('kept')).toEqual(receipt)
+      expect(subject.inputConsumptions.get('inner')).toBeUndefined()
+      expect(() => subject.atomic(() => {
+        subject.atomic(() => subject.inputConsumptions.save('outer', receipt))
+        throw new Error('outer rollback')
+      })).toThrow('outer rollback')
+      expect(subject.inputConsumptions.get('outer')).toBeUndefined()
+      expect(hooks).toEqual([])
+      if (subject instanceof Store) {
+        subject.close()
+        const reopened = new Store(path)
+        try { expect(reopened.inputConsumptions.get('kept')).toEqual(receipt) }
+        finally { reopened.close() }
+      }
+    } finally {
+      if (subject instanceof Store) { try { subject.close() } catch {} }
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+}
+
+
+it('Store atomically rolls back continuation inputs, context, subscription and effects on receipt failure', async () => {
+  const { Engine, parseSettings, settingsPolicy } = await import('../src/core/index.ts')
+  const directory = mkdtempSync(join(tmpdir(), 'myagent-consume-store-'))
+  const path = join(directory, 'consume.sqlite3')
+  const store = new Store(path)
+  const hooks: string[] = []
+  const engine = new Engine({ repos: store, tx: store, inputConsumptions: store.inputConsumptions,
+    policy: () => settingsPolicy(parseSettings({ acceptMode: 'auto', allowedSenders: ['operator'] })),
+    executor: { prepare: ticket => ticket, start: () => { hooks.push('start') }, deliver: () => { hooks.push('deliver') }, stop: () => {} },
+    delivery: { report: () => {} }, emit: event => hooks.push(event.type),
+  })
+  try {
+    const main = engine.receive(record('main').trigger).ticketId!
+    const ctx = engine.receive(record('ctx').trigger).ticketId!
+    const incoming = { ...record('incoming').trigger, threadKey: 'chat:ops:t' }
+    const command = { trigger: incoming, target: { ticketId: main, mode: 'answer' as const }, threadKey: incoming.threadKey, contextTicketIds: [ctx] }
+    const before = JSON.stringify([store.tickets.list(), store.events.list(main), store.events.list(ctx), store.threads.list(), hooks])
+    const save = store.inputConsumptions.save
+    store.inputConsumptions.save = () => { throw new Error('receipt failure') }
+    expect(() => engine.consumeContinuation(command)).toThrow('receipt failure')
+    expect(JSON.stringify([store.tickets.list(), store.events.list(main), store.events.list(ctx), store.threads.list(), hooks])).toBe(before)
+    expect(store.inputConsumptions.get(incoming.id)).toBeUndefined()
+    store.inputConsumptions.save = save
+    expect(engine.consumeContinuation(command).stored).toBe('consumed')
+    const reopened = new Store(path)
+    try {
+      expect(reopened.inputConsumptions.get(incoming.id)?.targets).toHaveLength(2)
+      expect(reopened.tickets.get(main)!.inputs).toHaveLength(1)
+      expect(reopened.tickets.get(ctx)!.inputs).toHaveLength(1)
+    } finally { reopened.close() }
+  } finally { store.close(); rmSync(directory, { recursive: true, force: true }) }
+})
