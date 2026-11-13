@@ -35,7 +35,7 @@
 |C08 [P2] CORE-08 Pass stop超时后任务未取消|E1，静态|R2|卡住extra、stop timeout、Store关闭后写入探针|取消或等待/隔离继续工作，数据库生命周期清楚|
 |C09 [P3] CORE-09 unknown effect kind永久未claim|E2|R2|注入未知kind、观察健康/移除决策|未知任务告警且不破坏数据，提供人工恢复 |
 |B01 [P1] BRIDGE-01 Telegram offset先于入站落盘|E1，静态|R3|写入失败/崩溃窗口、同update重投测试|写入成功后推进offset，文件名与消息身份幂等|
-|B02 [P1候选] BRIDGE-02 WeCom Crypto格式|E1/协议候选；仅非官方构造样本不兼容|R3|取得可信官方测试向量并记录出处；缺向量时该桥标未验收，不伪造通过|标准长度字段/padding/signature兼容；成功/拒绝/篡改负例分别验证|
+|B02 [P1候选→临时不做] BRIDGE-02 WeCom Crypto格式|E1/协议候选；独立样本不兼容（crypt.mjs:57缺4字节长度，autoPadding叠加）|R3→暂停|**用户决定 2026-11-13：临时不做，等官方向量或真实平台回调**；取得可信官方测试向量并记录出处前，该桥加密兼容性标"未验收/候选"|标准长度字段/padding/signature兼容；成功/拒绝/篡改负例分别验证|
 |B03 [P1] BRIDGE-03 WeCom agentId作touser|E1，静态|R3|多用户/多Agent回信映射用例|route thread与平台真实会话坐标分开|
 |B04 [P1] BRIDGE-04 WeCom未限流/先200后写|E1，静态|R3|超限chunk及write失败测试，外网隔离|有界读取、验证后接收、durable write后ACK|
 |B05 [P1] BRIDGE-05 四个push桥tick重叠|E1，静态|R3|超过interval的send延迟、退出中poll测试|单flight/claim；signal时排空当前发送|
