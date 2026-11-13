@@ -507,3 +507,45 @@ R3修改文件清单：
 
 R4修改文件清单：
 - panel/index.html: U01 toRecord/collectSchedule保留deliverTo/maxRuntimeMs/preset; U02 desk分页游标改为返回最后seq+加载更多绑定click; U03 生成服务单元路径拒绝特殊字符
+
+## S022 · R5操作账本（2026-11-13 16:55 Asia/Shanghai）
+
+### R5 · 基线
+- HEAD: 9c52ee6
+- scripts/release.sh: $(shasum -a 256 scripts/release.sh | awk '{print substr($1,1,16)}')
+- scripts/verify-migration.sh: $(shasum -a 256 scripts/verify-migration.sh | awk '{print substr($1,1,16)}')
+
+### R5 · 允许修改文件
+- scripts/release.sh（L01/L02/L03）
+- scripts/verify-migration.sh（L04）
+
+### R5 · 禁止修改文件
+- 所有src/**、panel/**、bridges/**、tests/**（R0-R4已完成）
+
+### R5 · 修复项
+|项|描述|文件|
+|---|---|---|
+|L01-P1|release目标仓身份/dirty guard|scripts/release.sh|
+|L02-P1|commit失败仍push|scripts/release.sh|
+|L03-P2|最终内容未重新扫描|scripts/release.sh|
+|L04-P1|verify-migration吞错/漏验schema|scripts/verify-migration.sh|
+
+### L01 · release目标仓身份/dirty guard（2026-11-13 16:56 Asia/Shanghai）
+操作：scripts/release.sh 第2步前加remote/branch/clean/realpath核验
+- release.sh: 94dfc0691ccaec03
+
+### L02 · commit失败不再静默push（2026-11-13 16:56 Asia/Shanghai）
+操作：scripts/release.sh git commit改为if失败检查staged diff，非空则exit 1
+- 同release.sh
+
+### L04 · verify-migration去吞错+加SCHEMA_VERSION检查（2026-11-13 16:57 Asia/Shanghai）
+操作：scripts/verify-migration.sh node管道去||true；加SCHEMA_VERSION目标值验证
+- verify-migration.sh: 310232cc767a9eee
+
+### R5闸门与提交（2026-11-13 16:58 Asia/Shanghai）
+命令：pnpm vitest run → 1222 passed (1222)
+命令：./scripts/gate.sh → exit 0，产物 575fadd7750dcf2e（519936字节）
+
+R5修改文件清单：
+- scripts/release.sh: L01 目标仓身份/dirty/realpath guard; L02 commit失败exit 1不push
+- scripts/verify-migration.sh: L04 node管道去||true加exit check; 加SCHEMA_VERSION目标值验证

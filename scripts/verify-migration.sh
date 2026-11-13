@@ -44,11 +44,19 @@ echo "── 快照取自 ${LIVE}（只读）"
 echo "   迁移前：$(counts "$DRY")  摘要=$BEFORE"
 
 # 用当前构建打开副本，触发迁移。
+# L04 fix: use a temp file to capture exit code; `|| true` previously swallowed migration failures.
+NODE_OUT="$(mktemp)"
 ( cd "$(dirname "$0")/.." && node --experimental-transform-types -e "
 import { Store } from './src/app/store.ts'
 const store = new Store('$DRY')
 store.close()
-" 2>&1 | grep -v 'ExperimentalWarning\|--trace-warnings' || true )
+" 2>&1 | grep -v 'ExperimentalWarning\|--trace-warnings' ) > "$NODE_OUT" 2>&1
+NODE_EXIT="${PIPESTATUS[0]:-$?}"
+cat "$NODE_OUT"; rm -f "$NODE_OUT"
+if [ "$NODE_EXIT" -ne 0 ]; then
+  echo "   ✗ 迁移失败（node exit $NODE_EXIT）——不要升级线上库"
+  exit 1
+fi
 
 AFTER="$(digest "$DRY")"
 echo "── 迁移后：$(counts "$DRY")  摘要=${AFTER}"
@@ -61,7 +69,20 @@ else
   status=1
 fi
 
-# 新表与索引应当在；旧的死表应当不在。
+# L04 fix: verify the schema_version was actually bumped to what the current build expects.
+# A migration that only sets version=X but forgets to run the schema change would still pass
+# the data check above, but the version bump proves the migration code was actually reached.
+# Read the expected version from the source rather than hardcoding it.
+expected_version=$(node --experimental-transform-types -e "
+import { SCHEMA_VERSION } from './src/app/store.ts'
+process.stdout.write(String(SCHEMA_VERSION))
+" 2>/dev/null)
+actual_version=$(sqlite3 "$DRY" 'select version from schema_version')
+if [ "$actual_version" = "$expected_version" ]; then
+  echo "   ✓ SCHEMA_VERSION 已升至 ${actual_version}"
+else
+  echo "   ✗ SCHEMA_VERSION 应为 ${expected_version}，实际为 ${actual_version}"; status=1
+fi
 sqlite3 "$DRY" "select name from sqlite_master where type='table' and name='artifacts'" | grep -q artifacts \
   && echo "   ✓ artifacts 表已建" || { echo "   ✗ artifacts 表缺失"; status=1; }
 sqlite3 "$DRY" "select name from sqlite_master where type='table' and name='settings'" | grep -q settings \

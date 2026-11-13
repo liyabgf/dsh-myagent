@@ -347,6 +347,20 @@ fi
 
 step "2/7 同步"
 [ -d "$PUB/.git" ] || { echo "✗ ${PUB} 不是一个 git 仓库" >&2; exit 1; }
+# L01 fix: guard against pushing to the wrong target.
+# Verify the canonical origin, branch, and clean working tree before rsyncing.
+(cd "$PUB" && {
+  pub_remote=$(git remote get-url origin 2>/dev/null || true)
+  pub_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  pub_dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  [ -n "$pub_remote" ] || { echo "✗ 目标仓库没有 origin remote" >&2; exit 1; }
+  [ "$pub_branch" = "main" ] || { echo "✗ 目标仓库当前分支是 '$pub_branch'，不是 main" >&2; exit 1; }
+  [ "$pub_dirty" -eq 0 ] || { echo "✗ 目标仓库工作区不干净（有 ${pub_dirty} 个未提交变更）" >&2; exit 1; }
+  pub_realpath=$(realpath "$PUB" 2>/dev/null || echo "$PUB")
+  src_realpath=$(realpath "$SRC" 2>/dev/null || echo "$SRC")
+  [ "$pub_realpath" != "$src_realpath" ] || { echo "✗ 目标仓库与真源是同一目录" >&2; exit 1; }
+  echo "  ✓ 目标仓库核验：origin=$pub_remote branch=$pub_branch dirty=0"
+})
 # 保留清单：这些是发布物自己的东西，真源里没有，删了就没了。
 # 不靠"rsync 不加 --delete"来保它们——那会让真源里**删掉**的文件在副本里永远残留，
 # 于是副本慢慢变成一份谁也不认识的混合物。显式保留 + 显式删除才是可核对的。
@@ -531,7 +545,16 @@ if [ "$MODE" = dry ]; then
   git reset -q
   exit 0
 fi
-git commit -q -m "$MESSAGE" || { echo "  （没有变化可提交）"; }
+# L02 fix: treat commit failure as an error and exit, not as "nothing to commit".
+# Previously `|| { echo "..."; }` swallowed non-zero exit codes from hooks or identity
+# failures, then push proceeded with whatever HEAD was already there.
+if ! git commit -q -m "$MESSAGE"; then
+  if git diff --cached --quiet; then
+    echo "  （没有变化可提交）"
+  else
+    echo "✗ git commit 失败（hook 拒绝、身份错误或磁盘故障）；不推送" >&2; exit 1
+  fi
+fi
 git push -q origin main
 echo "  ✓ 已推送 $(git rev-parse --short HEAD)"
 
