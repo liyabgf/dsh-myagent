@@ -1,0 +1,26 @@
+{
+  "migration_pipeline_clean_output": {
+    "cmd": "set -euo pipefail; ( true | grep -v ExperimentalWarning ) > /tmp/a39-empty; echo CONTINUED",
+    "exit": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "migration_pipeline_expected_grep_1": {
+    "cmd": "set -euo pipefail; ( printf 'ExperimentalWarning\\n' | grep -v ExperimentalWarning ) > /tmp/a39-warn; echo CONTINUED",
+    "exit": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "release_target_subshell_failure": {
+    "cmd": "set -euo pipefail; ( echo checking; false; echo SUBSHELL_CONTINUED ); echo PARENT_CONTINUED",
+    "exit": 1,
+    "stdout": "checking\n",
+    "stderr": ""
+  },
+  "release_commit_empty_diff_branch": {
+    "cmd": "set -euo pipefail; git(){ case \"$*\" in 'commit -q -m msg') return 1;; 'diff --cached --quiet') return 0;; 'push -q origin main') echo PUSH_CALLED;; esac; }; if ! git commit -q -m msg; then if git diff --cached --quiet; then echo NO_CHANGES; else echo COMMIT_FAILED; exit 1; fi; fi; git push -q origin main",
+    "exit": 0,
+    "stdout": "NO_CHANGES\nPUSH_CALLED\n",
+    "stderr": ""
+  }
+}

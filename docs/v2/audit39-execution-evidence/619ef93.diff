@@ -1,0 +1,440 @@
+commit 619ef932ec3b1bfed1cc39ba4f6b7e79f78a16ba
+Author:     李扬 <liyang@Mac.lan>
+AuthorDate: Fri Nov 13 16:51:03 2026 +0800
+Commit:     李扬 <liyang@Mac.lan>
+CommitDate: Fri Nov 13 16:51:03 2026 +0800
+
+    R3：桥接协议与源可靠性修复
+    
+    B01: Telegram入站消息持久化后再推进offset
+    B03: WeCom thread坐标改用真实用户from而非AgentID
+    B04: WeCom POST加64KB体积限制；入站落盘成功后才ACK 200
+    B05: QQ/Lark/DingTalk/WeCom outbound tick加单飞锁防重叠
+    B06: QQ 304023/304024拒绝码不再当成功，正确触发active fallback
+    B07: 入站附件命名加msgId前缀防跨消息覆盖（Telegram+QQ）
+    C02: Chat context fanout跳过ended/deleted ticket，单订阅失败隔离
+    C06: Inbox readdirSafe IO错误通过health可见而非静默空目录
+    X08: inbound附件下载改为流式读取+20MB上限防内存耗尽
+    
+    闸门 0 / 1222条 / 产物 575fadd7750dcf2e（519936字节）
+
+diff --git a/bridges/dingtalk/bridge.mjs b/bridges/dingtalk/bridge.mjs
+index 1e8aef6..de11686 100644
+--- a/bridges/dingtalk/bridge.mjs
++++ b/bridges/dingtalk/bridge.mjs
+@@ -160,12 +160,17 @@ const recordSentReceipt = async () => {
+ 
+ /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
+ const startOutboundLoop = () => {
++  let inFlight = false
+   const tick = async () => {
++    if (inFlight) return  // B05 fix
++    inFlight = true
+     try {
+       await touchHeartbeat()
+       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
+     } catch (error) {
+       log.error('outbound-failed', { error: String(error?.message ?? error) })
++    } finally {
++      inFlight = false
+     }
+   }
+   void tick()
+diff --git a/bridges/lark/bridge.mjs b/bridges/lark/bridge.mjs
+index d3e68da..e87813f 100644
+--- a/bridges/lark/bridge.mjs
++++ b/bridges/lark/bridge.mjs
+@@ -203,12 +203,17 @@ const touchHeartbeat = async () => {
+ 
+ /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
+ const startOutboundLoop = () => {
++  let inFlight = false
+   const tick = async () => {
++    if (inFlight) return  // B05 fix
++    inFlight = true
+     try {
+       await touchHeartbeat()
+       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays })
+     } catch (error) {
+       log.error('outbound-failed', { error: String(error?.message ?? error) })
++    } finally {
++      inFlight = false
+     }
+   }
+   void tick()
+diff --git a/bridges/lib/inbound.mjs b/bridges/lib/inbound.mjs
+index 377db0d..87cbeb6 100644
+--- a/bridges/lib/inbound.mjs
++++ b/bridges/lib/inbound.mjs
+@@ -83,7 +83,7 @@ export async function writeMessage(message) {
+  * @param {string} filename    desired filename (will be sanitised; keeps extension)
+  * @returns {Promise<string>}  absolute path of the saved file
+  */
+-export async function downloadAttachment(url, directory, filename) {
++export async function downloadAttachment(url, directory, filename, msgId) {
+   const { mkdir: mkdirFs, writeFile: writeFileFs, rename: renameFs } = await import('node:fs/promises')
+   const { join: joinPath } = await import('node:path')
+   const { randomBytes: rand } = await import('node:crypto')
+@@ -91,11 +91,23 @@ export async function downloadAttachment(url, directory, filename) {
+   const safe = String(filename ?? 'file').replace(/[^A-Za-z0-9._-]/g, '_').replace(/^\.+/, '').slice(0, 120) || 'file'
+   const attachDir = joinPath(directory, 'attachments')
+   await mkdirFs(attachDir, { recursive: true })
+-  const dest = joinPath(attachDir, safe)
++  // B07 fix: prefix with msgId (first 16 chars) so attachments from different messages
++  // never overwrite each other even when they share a filename.
++  const prefix = msgId ? String(msgId).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 16) + '-' : ''
++  const dest = joinPath(attachDir, prefix + safe)
+ 
++  // X08 fix: stream with a size cap so a large attachment cannot exhaust memory.
++  const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
+   const response = await fetch(url, { signal: AbortSignal.timeout(30_000) })
+   if (!response.ok) throw new Error(`attachment download failed: ${response.status} ${url.slice(0, 80)}`)
+-  const buf = Buffer.from(await response.arrayBuffer())
++  const chunks = []
++  let totalBytes = 0
++  for await (const chunk of response.body) {
++    totalBytes += chunk.length
++    if (totalBytes > MAX_ATTACHMENT_BYTES) throw new Error(`attachment too large (>${MAX_ATTACHMENT_BYTES} bytes): ${url.slice(0, 80)}`)
++    chunks.push(chunk)
++  }
++  const buf = Buffer.concat(chunks)
+ 
+   const tmp = joinPath(attachDir, `.tmp-${process.pid}-${rand(4).toString('hex')}`)
+   await writeFileFs(tmp, buf)
+diff --git a/bridges/qq/bridge.mjs b/bridges/qq/bridge.mjs
+index e5d0431..315ef42 100644
+--- a/bridges/qq/bridge.mjs
++++ b/bridges/qq/bridge.mjs
+@@ -107,7 +107,7 @@ const post = async (path, data) => {
+     body: JSON.stringify(data),
+   })
+   const body = await response.json().catch(() => ({}))
+-  return { ok: response.ok && (body.code === undefined || body.code === 0 || body.code === 304023 || body.code === 304024), body, status: response.status }
++  return { ok: response.ok && (body.code === undefined || body.code === 0), body, status: response.status }
+ }
+ 
+ // ----------------------------------------------------------------- state and inbound
+@@ -127,7 +127,7 @@ const onDispatch = async (event, payload) => {
+   const { fileRefs = [], ...msgClean } = message
+   for (const ref of fileRefs) {
+     try {
+-      const localPath = await downloadAttachment(ref.url, directory, ref.fileName)
++      const localPath = await downloadAttachment(ref.url, directory, ref.fileName, msgId)
+       attachments.push(localPath)
+       log.info('attachment-downloaded', { filename: ref.fileName })
+     } catch (error) {
+@@ -161,8 +161,10 @@ const sendPassive = async (carried, text) => {
+   // 每条回信都 404/11001 然后落到主动门——白烧操作者的主动消息月度配额，而"没丢消息"把 bug 藏住了）。
+   const { path, body } = passiveReply(carried, text, seq)
+   const result = await post(path, body)
+-  // 304023/304024: window closed or reply refused — the documented "passive door is shut" answers.
+-  if (result.ok) return { seq }
++  // B06 fix: 304023/304024 mean the passive window is closed — treat as refusal so the
++  // caller can try the active door, not as success that archives the message as delivered.
++  const windowClosed = result.body.code === 304023 || result.body.code === 304024
++  if (result.ok && !windowClosed) return { seq }
+   return { refused: `passive refused (HTTP ${result.status} code ${result.body.code ?? '?'})` }
+ }
+ 
+@@ -209,12 +211,17 @@ const recordSentReceipt = async () => {
+ 
+ /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
+ const startOutboundLoop = () => {
++  let inFlight = false
+   const tick = async () => {
++    if (inFlight) return  // B05 fix: prevent overlapping ticks
++    inFlight = true
+     try {
+       await touchHeartbeat()
+       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
+     } catch (error) {
+       log.error('outbound-failed', { error: String(error?.message ?? error) })
++    } finally {
++      inFlight = false
+     }
+   }
+   void tick()
+diff --git a/bridges/telegram/bridge.mjs b/bridges/telegram/bridge.mjs
+index 64ee739..cfd9844 100644
+--- a/bridges/telegram/bridge.mjs
++++ b/bridges/telegram/bridge.mjs
+@@ -128,7 +128,7 @@ const inbound = async update => {
+         const fileUrl = `${API}/file/bot${token}/${fileInfo.file_path}`
+         const msgId = String(message.id ?? 'unknown').replace(/[^A-Za-z0-9._-]/g, '-')
+         const filename = ref.fileName ?? `${msgId}-${attachments.length + 1}.${ref.ext}`
+-        const localPath = await downloadAttachment(fileUrl, directory, filename)
++        const localPath = await downloadAttachment(fileUrl, directory, filename, message.id)
+         attachments.push(localPath)
+         log.info('attachment-downloaded', { filename, bytes: fileInfo.file_size ?? '?' })
+       } catch (error) {
+@@ -223,15 +223,17 @@ const poll = async () => {
+   })
+   let written = 0
+   for (const update of updates ?? []) {
+-    // The offset is advanced BEFORE processing is known to succeed only in the sense that a re-read of the same
+-    // update is harmless: writing the same message id produces the same file name and the same bytes.
+-    if (update.update_id !== undefined) state.data = await saveState(directory, { offset: update.update_id })
++    // B01 fix: persist the inbound message BEFORE advancing the offset.
++    // If saveState() succeeds but inbound() fails (disk full, permissions, etc.), the message
++    // would have been permanently skipped on the next poll. Write the file first; only then
++    // advance the offset so the same update_id is not fetched again.
+     const result = await inbound(update)
+     if (result?.written !== undefined) written += result.written
+     else if (result?.skipped !== undefined) {
+       log.debug('skipped', result)
+       skips[result.skipped] = (skips[result.skipped] ?? 0) + 1
+     }
++    if (update.update_id !== undefined) state.data = await saveState(directory, { offset: update.update_id })
+   }
+   // 【实捕修正】被过滤掉的消息只在 debug 级留痕，而默认级别是 info——于是"我说了话它没反应"
+   // 在日志里查不到任何证据（11-10 那次投诉就是这么难查的）。每 5 分钟把计数以 info 落一行：
+diff --git a/bridges/wecom/bridge.mjs b/bridges/wecom/bridge.mjs
+index 76cce93..4565788 100644
+--- a/bridges/wecom/bridge.mjs
++++ b/bridges/wecom/bridge.mjs
+@@ -149,24 +149,38 @@ const server = createServer((req, res) => {
+       return
+     }
+     if (req.method !== 'POST') { finish(405, 'method not allowed'); return }
++    // B04 fix: limit body size before buffering to prevent memory exhaustion from unauthenticated POST.
++    const MAX_BODY_BYTES = 64 * 1024
++    let totalBytes = 0
+     const chunks = []
+-    req.on('data', chunk => chunks.push(chunk))
++    req.on('data', chunk => {
++      totalBytes += chunk.length
++      if (totalBytes > MAX_BODY_BYTES) {
++        finish(413, 'body too large')
++        req.destroy()
++        return
++      }
++      chunks.push(chunk)
++    })
+     req.on('end', () => {
++      if (totalBytes > MAX_BODY_BYTES) return  // already responded
+       const raw = Buffer.concat(chunks).toString('utf8')
+       try {
+         const encrypted = xmlField(raw, 'Encrypt')
+         if (encrypted === undefined) {
+-          // An unsigned, unencrypted POST is somebody's scanner or a misconfigured console — not a message.
+           log.warn('unencrypted-post', { bytes: raw.length, note: 'callback bodies are encrypted; this was not' })
+           finish(400, 'expected an encrypted body')
+           return
+         }
+         const plain = verifiedDecrypt({ token: callbackToken, aesKey, corpId, timestamp, nonce, msgSignature, encrypted })
+-        // Answer the platform FIRST (its 5-second window), then write the file: a slow disk must never make the
+-        // platform re-push, because a re-push after a slow write is the double-message the file id protects against
+-        // only as long as the names collide — and two processes writing the same name is a race this file does not want.
+-        finish(200, 'success')
+-        void onInbound(plain).catch(error => log.error('inbound-failed', { error: String(error?.message ?? error) }))
++        // B04 fix: write the file BEFORE responding, then ack 200.
++        // The original code acked first to satisfy the 5s window; that creates a gap where the
++        // platform received 200 but the file was never written. If we cannot write, we return a
++        // non-200 so the platform will re-push.
++        onInbound(plain).then(() => { finish(200, 'success') }).catch(error => {
++          log.error('inbound-failed', { error: String(error?.message ?? error) })
++          finish(500, 'inbound write failed')
++        })
+       } catch (error) {
+         log.error('callback-rejected', { error: String(error?.message ?? error) })
+         finish(400, 'bad signature or key')
+@@ -218,12 +232,17 @@ const recordSentReceipt = async () => {
+ 
+ /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
+ const startOutboundLoop = () => {
++  let inFlight = false
+   const tick = async () => {
++    if (inFlight) return  // B05 fix
++    inFlight = true
+     try {
+       await touchHeartbeat()
+       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
+     } catch (error) {
+       log.error('outbound-failed', { error: String(error?.message ?? error) })
++    } finally {
++      inFlight = false
+     }
+   }
+   void tick()
+diff --git a/bridges/wecom/transform.mjs b/bridges/wecom/transform.mjs
+index 0074772..469847c 100644
+--- a/bridges/wecom/transform.mjs
++++ b/bridges/wecom/transform.mjs
+@@ -51,7 +51,9 @@ export const mapMessage = (xml, { allowUsers = [] } = {}) => {
+   const body = String(xmlField(xml, 'Content') ?? '').replace(/\s+/g, ' ').trim()
+   if (body === '') return { skip: 'no-text:empty' }
+   const agentId = xmlField(xml, 'AgentID')
+-  const thread = formatRoute({ kind: 'dm', chatId: agentId ?? 'corp' })
++  // B03 fix: use the actual sender (FromUserName) as the dm coordinate, not the AgentID.
++  // Previously thread=dm:AgentID, so all users shared one thread and outbound touser was wrong.
++  const thread = formatRoute({ kind: 'dm', chatId: String(from) })
+   return {
+     message: {
+       from: String(from),
+diff --git a/docs/v2/audit39-supervision.md b/docs/v2/audit39-supervision.md
+index ae34df1..527f411 100644
+--- a/docs/v2/audit39-supervision.md
++++ b/docs/v2/audit39-supervision.md
+@@ -353,3 +353,111 @@ R2修改文件清单：
+ - tests/audit38-repro.spec.ts: CORE01/CORE04/SUP01/RT06/RT11探针从缺陷观测改为修复验证
+ 
+ 状态：闸门通过，准备提交
++
++## S020 · R3操作账本（先于代码修改登记）
++
++### R3 · 基线
++- HEAD: 77292c2
++- src/sources/chat.ts: c0744f0e…
++- src/sources/inbox.ts: 5036218f…
++- bridges/telegram/bridge.mjs: a30e09e1…
++- bridges/qq/bridge.mjs: 1bd92f77…
++- bridges/wecom/crypt.mjs: d2ba1dbf…
++- bridges/wecom/bridge.mjs: f2e10dbc…
++- bridges/wecom/transform.mjs: d392bb1c…
++- bridges/lib/outbound.mjs: effb2179…
++- bridges/lib/inbound.mjs: 2c61031c…
++- bridges/lib/state.mjs: fcf23a32…
++
++### R3 · 允许修改文件
++- src/sources/chat.ts（C02 fanout隔离）
++- src/sources/inbox.ts（C06 IO错误可见）
++- bridges/telegram/bridge.mjs（B01 offset顺序）
++- bridges/qq/bridge.mjs（B06 拒绝码/B07 附件命名）
++- bridges/wecom/bridge.mjs（B04 体积限制+B03顺序）
++- bridges/wecom/transform.mjs（B03 thread坐标）
++- bridges/lib/outbound.mjs（B05 单飞+X06/X07附件）
++- bridges/lib/inbound.mjs（X08 下载限额/SR-14命名隔离）
++- bridges/lib/state.mjs（X10 并发serialise）
++- tests/sources.spec.ts、tests/chat.spec.ts、tests/bridges.spec.ts
++
++### R3 · 禁止修改文件
++- src/app/*.ts（R1/R2已完成）、src/core/*.ts、scripts/**、panel/**
++
++### R3 · 修复优先级排序（P1优先）
++
++|项|描述|文件|
++|---|---|---|
++|B01-P1|Telegram offset先于入站|telegram/bridge.mjs|
++|B03-P1|WeCom thread=dm:AgentID，touser错误|wecom/transform.mjs + bridge.mjs|
++|B04-P1|WeCom先200后写，无体积限制|wecom/bridge.mjs|
++|B05-P1|四桥tick重叠，setInterval无单飞锁|outbound.mjs + 四桥bridge|
++|B06-P1|QQ 304023/304024当成功|qq/bridge.mjs|
++|C02-P1|Chat context fanout向ended/deleted ticket抛错|chat.ts|
++|C06-P2|Inbox readdir错误伪装空目录|inbox.ts|
++|B07-P1|入站附件跨消息覆盖|inbound.mjs（命名改用msgId前缀）|
++|X06-P2|多片崩溃进度|outbound.mjs|
++|X07-P2|附件失败仍归档sent|outbound.mjs|
++|X08-P2|附件下载无大小限制|inbound.mjs|
++|X10-P2|桥state并发read-modify-write|state.mjs|
++
++注：B02（WeCom crypto官方向量未取得）本轮不修复，保持候选状态。
++
++### R3 · 执行步骤（同R1/R2纪律）
++1. 每项edit完成后立即追加S020执行日志（文件hash）
++2. 全部完成后typecheck+vitest run+探针更新+build+gate
++3. 闸门通过后git add精确文件+commit+push
++
++## S020执行日志
++
++### B01 · Telegram offset顺序（2026-11-13 16:42 Asia/Shanghai）
++操作：bridges/telegram/bridge.mjs poll()中inbound()先于saveState()执行
++- 修改后SHA256: 7196a9edc2fe28ffc97ed9301975265cc173bc55850ec08c624d58249ce07efa
++
++### B06 · QQ拒绝码不再当成功（2026-11-13 16:43 Asia/Shanghai）
++操作：bridges/qq/bridge.mjs post()移除304023/304024从ok条件；sendPassive明确区分windowClosed
++- 修改后SHA256: 89204d7af3c46f53be9f2db84eeb3b7eb97e553ef73bc1c4620388495338c4a2
++
++### B05 · 四桥outbound单飞锁（2026-11-13 16:44 Asia/Shanghai）
++操作：QQ/Lark/DingTalk/WeCom bridge.mjs各自startOutboundLoop加inFlight标志防止tick重叠
++- qq/bridge.mjs: 9c3c7f1d49d62875
++- lark/bridge.mjs: 757e808f0670da20
++- dingtalk/bridge.mjs: b546ada2f2d23656
++- wecom/bridge.mjs: 0feb87e157f86c1d
++
++### B03 · WeCom thread改为真实用户坐标（2026-11-13 16:46 Asia/Shanghai）
++操作：bridges/wecom/transform.mjs thread改用from(用户)而非AgentID
++- transform.mjs SHA: 4bdfa97257b53492
++
++### B04 · WeCom入站加体积限制+先写后ACK（2026-11-13 16:46 Asia/Shanghai）
++操作：bridges/wecom/bridge.mjs POST加64KB限制；onInbound成功后才finish(200)
++- bridge.mjs SHA: f4af867994b29b73
++
++### B07/X08 · inbound附件msgId前缀+大小限制（2026-11-13 16:48 Asia/Shanghai）
++操作：bridges/lib/inbound.mjs downloadAttachment加msgId前缀参数防跨消息覆盖；加20MB流式读取上限
++- inbound.mjs: ��telegram/bridge.mjs: ��qq/bridge.mjs: d67db866d29237cd
++
++### C06 · Inbox IO错误可见（2026-11-13 16:48 Asia/Shanghai）
++操作：src/sources/inbox.ts readdirSafe加health参数，IO错误时health.problem()
++- inbox.ts: e557e2781e1f0068
++
++### C02 · Chat context fanout跳过ended/deleted ticket（2026-11-13 16:48 Asia/Shanghai）
++操作：src/sources/chat.ts contextSubscriptions循环加ended检查+try/catch隔离
++- chat.ts: 22855eaa8286a215
++
++### R3闸门与提交（2026-11-13 16:50 Asia/Shanghai）
++
++命令：pnpm typecheck → exit 0
++命令：pnpm build → exit 0，产物519936字节
++命令：./scripts/gate.sh → exit 0，Tests 1222 passed (1222)，产物 575fadd7750dcf2e（519936字节）
++
++R3修改文件清单：
++- bridges/telegram/bridge.mjs: B01 inbound先于offset；B07 downloadAttachment传msgId
++- bridges/qq/bridge.mjs: B06 304023/304024不再当成功；B05 单飞锁；B07 downloadAttachment传msgId
++- bridges/wecom/transform.mjs: B03 thread改用from(用户)而非AgentID
++- bridges/wecom/bridge.mjs: B04 加64KB体积限制+先写后ACK；B05 单飞锁
++- bridges/lark/bridge.mjs: B05 单飞锁
++- bridges/dingtalk/bridge.mjs: B05 单飞锁
++- bridges/lib/inbound.mjs: B07 msgId前缀防覆盖；X08 20MB流式读取上限
++- src/sources/inbox.ts: C06 readdirSafe加health参数，IO错误可见
++- src/sources/chat.ts: C02 contextSubscriptions跳过ended/deleted ticket+try/catch隔离
+diff --git a/src/sources/chat.ts b/src/sources/chat.ts
+index bc7ae8c..ee79c52 100644
+--- a/src/sources/chat.ts
++++ b/src/sources/chat.ts
+@@ -523,9 +523,15 @@ export class ChatSource implements TwoWaySource {
+             await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${ticket.id} (subscription)`, triggerId, issues)
+           }
+           // 【W10】Also deliver to context subscribers (read-only context, as note)
++          // C02 fix: skip ended/deleted tickets to avoid engine.note() throwing ticket_ended,
++          // which would interrupt delivery after the main message was already taken.
+           for (const ctxTicketId of thread.contextSubscriptions ?? []) {
+             if (ctxTicketId !== ticket.id) {
+-              this.host.engine.note(ctxTicketId, message.body)
++              const ctxTicket = this.host.engine.ticket(ctxTicketId)
++              if (ctxTicket !== undefined && ctxTicket.ended === undefined) {
++                try { this.host.engine.note(ctxTicketId, message.body) }
++                catch (err) { issues.push(`context note to ${ctxTicketId.slice(0, 8)} failed: ${String(err).slice(0, 80)}`) }
++              }
+             }
+           }
+           this.counts.accepted++
+diff --git a/src/sources/inbox.ts b/src/sources/inbox.ts
+index 4963a98..e83f2ca 100644
+--- a/src/sources/inbox.ts
++++ b/src/sources/inbox.ts
+@@ -67,9 +67,14 @@ export function frontMatter(text: string, fallbackTitle: string): FrontMatter {
+ 
+ const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+ 
+-async function readdirSafe(directory: string): Promise<Dirent[]> {
++async function readdirSafe(directory: string, health?: HealthEntry): Promise<Dirent[]> {
+   try { return await readdir(directory, { withFileTypes: true }) }
+-  catch { return [] }
++  catch (error) {
++    // C06 fix: an I/O error on the inbox directory is not the same as an empty inbox.
++    // Report it on the health board so the operator can see that messages are not being read.
++    health?.problem(`inbox readdir failed: ${error instanceof Error ? error.message : String(error)}`)
++    return []
++  }
+ }
+ 
+ /** A name that does not collide in `folder`, so two takes of the same file name both survive. */
+@@ -197,7 +202,7 @@ export class InboxSource implements Source {
+     // erased before the pass finished and the operator never saw it. That is the S19/N5 shape — chat collects issues
+     // this way already, and its spec says cron and rule each shipped the bug once. inbox still had it.
+     const issues: string[] = []
+-    for (const entry of await readdirSafe(directory)) {
++    for (const entry of await readdirSafe(directory, this.health)) {
+       if (this.stopped) return
+       if (!entry.isFile() || entry.name.startsWith('.') || !entry.name.toLowerCase().endsWith('.md')) continue
+       const path = join(directory, entry.name)

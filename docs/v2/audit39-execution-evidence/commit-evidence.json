@@ -1,0 +1,38 @@
+[
+  {
+    "commit": "e12aa0d",
+    "gitShowExit": 0,
+    "diffSha256": "c105e9d1ff7bd459e3327dbf3e61248b7a5c5808e669f8ab3bfc7f210cf7de75",
+    "supervisionUTF8": true
+  },
+  {
+    "commit": "99e99b5",
+    "gitShowExit": 0,
+    "diffSha256": "64fb822c832df213e5561f0fd13278f4846081babac5d1e1e90ad299e7e109dd",
+    "supervisionUTF8": true
+  },
+  {
+    "commit": "77292c2",
+    "gitShowExit": 0,
+    "diffSha256": "52d0815121ad0685fc44710dff3e7b67b081cb8e5187f0796ec72af2dc8977fb",
+    "supervisionUTF8": true
+  },
+  {
+    "commit": "619ef93",
+    "gitShowExit": 0,
+    "diffSha256": "00d783e5c5c8fbc5193653491637ca2b09ac54333e63243818557f70eb304400",
+    "supervisionUTF8": false
+  },
+  {
+    "commit": "9c52ee6",
+    "gitShowExit": 0,
+    "diffSha256": "ceee19ffd183cdca6a752bf3a80754a251b39a17ca97818092dbf5d5438b6685",
+    "supervisionUTF8": false
+  },
+  {
+    "commit": "99477e1",
+    "gitShowExit": 0,
+    "diffSha256": "3a58c316a3e2f2fd584e850150f261b73f4d55473d85013ac2eab9f3262a2b98",
+    "supervisionUTF8": false
+  }
+]

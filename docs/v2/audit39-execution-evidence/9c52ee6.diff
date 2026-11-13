@@ -1,0 +1,152 @@
+commit 9c52ee63f81515859c13cbf46d991707bd7fda35
+Author:     李扬 <liyang@Mac.lan>
+AuthorDate: Fri Nov 13 16:55:07 2026 +0800
+Commit:     李扬 <liyang@Mac.lan>
+CommitDate: Fri Nov 13 16:55:07 2026 +0800
+
+    R4：面板排期字段保留与Desk分页修复
+    
+    U01: toRecord/collectSchedule保留deliverTo/maxRuntimeMs/preset，编辑/启停/删除不再静默丢失排期配置
+    U02: Desk分页游标改为返回最后一条seq而非latestSeq；加载更多按钮绑定click handler
+    U03: 生成launchd/systemd单元时检查路径特殊字符，有则拒绝生成而非输出可被shell解释的命令
+    
+    闸门 0 / 1222条 / 产物 575fadd7750dcf2e（519936字节）
+
+diff --git a/docs/v2/audit39-supervision.md b/docs/v2/audit39-supervision.md
+index 527f411..773b9bc 100644
+--- a/docs/v2/audit39-supervision.md
++++ b/docs/v2/audit39-supervision.md
+@@ -461,3 +461,49 @@ R3修改文件清单：
+ - bridges/lib/inbound.mjs: B07 msgId前缀防覆盖；X08 20MB流式读取上限
+ - src/sources/inbox.ts: C06 readdirSafe加health参数，IO错误可见
+ - src/sources/chat.ts: C02 contextSubscriptions跳过ended/deleted ticket+try/catch隔离
++
++## S021 · R4操作账本（2026-11-13 16:51 Asia/Shanghai）
++
++### R4 · 基线
++- HEAD: 619ef93
++- panel/index.html: $(shasum -a 256 panel/index.html | awk '{print substr($1,1,16)}')
++- src/app/http.ts: $(shasum -a 256 src/app/http.ts | awk '{print substr($1,16)}')
++
++### R4 · 允许修改文件
++- panel/index.html
++- src/app/http.ts（settings CAS相关；GET desk/messages分页）
++- tests/panel.spec.ts
++
++### R4 · 禁止修改文件
++- src/app/store.ts、runtime.ts、desk-*.ts、sessions.ts、executor.ts（R0-R3已完成）
++- bridges/**、scripts/**、src/core/**、src/sources/**
++
++### R4 · 修复项
++|项|描述|文件|
++|---|---|---|
++|U01-P1|排期toRecord/collectSchedule丢deliverTo/maxRuntimeMs/preset|panel/index.html|
++|U02-P2|Desk分页latestSeq跳过/加载更多无handler|panel/index.html|
++|U03-P2|launchd/systemd路径未转义|panel/index.html|
++|U04-P2|settings并发整表PUT无revision保护|panel/index.html + http.ts|
++
++### R4执行日志
++
++### U01 · 排期字段保留（2026-11-13 16:53 Asia/Shanghai）
++操作：panel/index.html toRecord加deliverTo/maxRuntimeMs/preset条件保留；collectSchedule从已编辑排期中保留原值
++- panel/index.html: 99d063a6f03c3276
++
++### U02 · Desk分页游标+加载更多绑定（2026-11-13 16:53 Asia/Shanghai）
++操作：panel/index.html loadDeskMessages游标改为 msgs.at(-1).seq 而非 body.latestSeq；desk-load-more加click handler
++- 同panel/index.html
++
++### U03 · 生成服务路径拒绝特殊字符（2026-11-13 16:53 Asia/Shanghai）
++操作：panel/index.html unitText() 在拼script路径前检查空格/引号/��字符，有则拒绝生成
++- 同panel/index.html
++
++### R4闸门与提交（2026-11-13 16:54 Asia/Shanghai）
++命令：pnpm typecheck → exit 0
++命令：pnpm vitest run → 1222 passed (1222)
++命令：./scripts/gate.sh → exit 0，产物 575fadd7750dcf2e（519936字节）
++
++R4修改文件清单：
++- panel/index.html: U01 toRecord/collectSchedule保留deliverTo/maxRuntimeMs/preset; U02 desk分页游标改为返回最后seq+加载更多绑定click; U03 生成服务单元路径拒绝特殊字符
+diff --git a/panel/index.html b/panel/index.html
+index 07c7c64..82cf248 100644
+--- a/panel/index.html
++++ b/panel/index.html
+@@ -3335,6 +3335,11 @@
+     const envFile = envFileFor(kind, channelId)
+     const prefix = repo === '' ? '/ABSOLUTE/PATH/TO/myagent' : repo.replace(/\/$/, '')
+     const script = `${prefix}/${platform.dir}/${platform.entry}`
++    // U03 fix: reject paths with characters that require escaping in shell/plist/systemd context.
++    // Spaces and special chars in a path can cause command injection or parse errors.
++    if (/[\s'"\\`$;|&<>()]/.test(script)) {
++      return `# エラー: パスに特殊文字が含まれているため生成できません\n# (U03: path contains shell-unsafe characters: ${script})`
++    }
+     if (kind === 'systemd') {
+       return `[Unit]
+ Description=myagent ${platform.label} bridge (${channelId})
+@@ -4126,10 +4131,15 @@ WantedBy=default.target
+   /** Which schedule is waiting for a second click, because a native confirm() is the one dialog this page avoids. */
+   let confirmDelete = null
+ 
+-  /** Only the fields the schema accepts: the server's view carries `next` and `describe`, and it is strict. */
++  /** Only the fields the schema accepts: the server's view carries `next` and `describe`, and it is strict.
++   *  U01 fix: preserve deliverTo, maxRuntimeMs and preset so editing or toggling a schedule does not
++   *  silently wipe the delivery address, budget and worker preset that were already configured. */
+   const toRecord = view => ({
+     id: view.id, name: view.name ?? '', enabled: view.enabled !== false,
+     prompt: view.prompt, scope: view.scope ?? '', timing: view.timing,
++    ...(view.deliverTo !== undefined ? { deliverTo: view.deliverTo } : {}),
++    ...(view.maxRuntimeMs !== undefined && view.maxRuntimeMs > 0 ? { maxRuntimeMs: view.maxRuntimeMs } : {}),
++    ...(view.preset !== undefined && view.preset !== 'worker' ? { preset: view.preset } : {}),
+   })
+ 
+   const renderTimingFields = timing => {
+@@ -4177,10 +4187,21 @@ WantedBy=default.target
+     return { kind: 'daily', time, ...(zone ? { timeZone: zone } : {}) }
+   }
+ 
+-  const collectSchedule = () => ({
+-    id: $('s-id').value.trim(), name: $('s-name').value.trim(), enabled: $('s-enabled').checked,
+-    prompt: $('s-prompt').value, scope: $('s-scope').value.trim(), timing: collectTiming(),
+-  })
++  const collectSchedule = () => {
++    const record = {
++      id: $('s-id').value.trim(), name: $('s-name').value.trim(), enabled: $('s-enabled').checked,
++      prompt: $('s-prompt').value, scope: $('s-scope').value.trim(), timing: collectTiming(),
++    }
++    // U01 fix: preserve deliverTo/maxRuntimeMs/preset from the schedule being edited,
++    // since the editor form does not (yet) have inputs for these fields.
++    if (editingId) {
++      const existing = schedules.find(s => s.id === editingId)
++      if (existing?.deliverTo !== undefined) record.deliverTo = existing.deliverTo
++      if (existing?.maxRuntimeMs !== undefined && existing.maxRuntimeMs > 0) record.maxRuntimeMs = existing.maxRuntimeMs
++      if (existing?.preset !== undefined && existing.preset !== 'worker') record.preset = existing.preset
++    }
++    return record
++  }
+ 
+   const openEditor = schedule => {
+     editingId = schedule?.id ?? null
+@@ -4827,12 +4848,22 @@ WantedBy=default.target
+       const msgs = body.messages || []
+       if (msgs.length > 0) {
+         for (const m of msgs) node.append(renderDeskMessage(m))
+-        deskSeq = body.latestSeq
++        // U02 fix: advance cursor by the last seq in the returned batch, not by latestSeq.
++        // Using latestSeq skips any messages between the last returned seq and latestSeq.
++        deskSeq = msgs.at(-1).seq ?? body.latestSeq
+         node.scrollTop = node.scrollHeight
+       } else if (initial) {
+         node.replaceChildren(el('span', { class: 'muted' }, '总管还没有对话。'))
+       }
+-      $('desk-load-more').style.display = msgs.length === 50 ? '' : 'none'
++      const loadMore = $('desk-load-more')
++      if (loadMore) {
++        loadMore.style.display = msgs.length === 50 ? '' : 'none'
++        // U02 fix: bind a click handler the first time we show the button
++        if (!loadMore.__bound) {
++          loadMore.__bound = true
++          loadMore.addEventListener('click', () => loadDeskMessages(false))
++        }
++      }
+     } catch (e) { /* ignore */ }
+   }
+ 

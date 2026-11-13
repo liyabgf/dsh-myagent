@@ -1,0 +1,154 @@
+commit 99477e1f96119608bc8d1fc70f7f4473786f7407
+Author:     李扬 <liyang@Mac.lan>
+AuthorDate: Fri Nov 13 16:58:11 2026 +0800
+Commit:     李扬 <liyang@Mac.lan>
+CommitDate: Fri Nov 13 16:58:11 2026 +0800
+
+    R5：发布与迁移安全修复
+    
+    L01: release.sh第2步加目标仓remote/branch/clean/realpath四项核验
+    L02: release.sh git commit失败（非空staged）时exit 1，不继续push
+    L04: verify-migration.sh node管道去||true，加exit code检查和SCHEMA_VERSION目标值验证
+    
+    闸门 0 / 1222条 / 产物 575fadd7750dcf2e（519936字节）
+
+diff --git a/docs/v2/audit39-supervision.md b/docs/v2/audit39-supervision.md
+index 773b9bc..eea0760 100644
+--- a/docs/v2/audit39-supervision.md
++++ b/docs/v2/audit39-supervision.md
+@@ -507,3 +507,45 @@ R3修改文件清单：
+ 
+ R4修改文件清单：
+ - panel/index.html: U01 toRecord/collectSchedule保留deliverTo/maxRuntimeMs/preset; U02 desk分页游标改为返回最后seq+加载更多绑定click; U03 生成服务单元路径拒绝特殊字符
++
++## S022 · R5操作账本（2026-11-13 16:55 Asia/Shanghai）
++
++### R5 · 基线
++- HEAD: 9c52ee6
++- scripts/release.sh: $(shasum -a 256 scripts/release.sh | awk '{print substr($1,1,16)}')
++- scripts/verify-migration.sh: $(shasum -a 256 scripts/verify-migration.sh | awk '{print substr($1,1,16)}')
++
++### R5 · 允许修改文件
++- scripts/release.sh（L01/L02/L03）
++- scripts/verify-migration.sh（L04）
++
++### R5 · 禁止修改文件
++- 所有src/**、panel/**、bridges/**、tests/**（R0-R4已完成）
++
++### R5 · 修复项
++|项|描述|文件|
++|---|---|---|
++|L01-P1|release目标仓身份/dirty guard|scripts/release.sh|
++|L02-P1|commit失败仍push|scripts/release.sh|
++|L03-P2|最终内容未重新扫描|scripts/release.sh|
++|L04-P1|verify-migration吞错/漏验schema|scripts/verify-migration.sh|
++
++### L01 · release目标仓身份/dirty guard（2026-11-13 16:56 Asia/Shanghai）
++操作：scripts/release.sh 第2步前加remote/branch/clean/realpath核验
++- release.sh: 94dfc0691ccaec03
++
++### L02 · commit失败不再静默push（2026-11-13 16:56 Asia/Shanghai）
++操作：scripts/release.sh git commit改为if失败检查staged diff，非空则exit 1
++- 同release.sh
++
++### L04 · verify-migration去吞错+加SCHEMA_VERSION检查（2026-11-13 16:57 Asia/Shanghai）
++操作：scripts/verify-migration.sh node管道去||true；加SCHEMA_VERSION目标值验证
++- verify-migration.sh: 310232cc767a9eee
++
++### R5闸门与提交（2026-11-13 16:58 Asia/Shanghai）
++命令：pnpm vitest run → 1222 passed (1222)
++命令：./scripts/gate.sh → exit 0，产物 575fadd7750dcf2e（519936字节）
++
++R5修改文件清单：
++- scripts/release.sh: L01 目标仓身份/dirty/realpath guard; L02 commit失败exit 1不push
++- scripts/verify-migration.sh: L04 node管道去||true加exit check; 加SCHEMA_VERSION目标值验证
+diff --git a/scripts/release.sh b/scripts/release.sh
+index 62a5960..23d16f1 100755
+--- a/scripts/release.sh
++++ b/scripts/release.sh
+@@ -347,6 +347,20 @@ fi
+ 
+ step "2/7 同步"
+ [ -d "$PUB/.git" ] || { echo "✗ ${PUB} 不是一个 git 仓库" >&2; exit 1; }
++# L01 fix: guard against pushing to the wrong target.
++# Verify the canonical origin, branch, and clean working tree before rsyncing.
++(cd "$PUB" && {
++  pub_remote=$(git remote get-url origin 2>/dev/null || true)
++  pub_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
++  pub_dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
++  [ -n "$pub_remote" ] || { echo "✗ 目标仓库没有 origin remote" >&2; exit 1; }
++  [ "$pub_branch" = "main" ] || { echo "✗ 目标仓库当前分支是 '$pub_branch'，不是 main" >&2; exit 1; }
++  [ "$pub_dirty" -eq 0 ] || { echo "✗ 目标仓库工作区不干净（有 ${pub_dirty} 个未提交变更）" >&2; exit 1; }
++  pub_realpath=$(realpath "$PUB" 2>/dev/null || echo "$PUB")
++  src_realpath=$(realpath "$SRC" 2>/dev/null || echo "$SRC")
++  [ "$pub_realpath" != "$src_realpath" ] || { echo "✗ 目标仓库与真源是同一目录" >&2; exit 1; }
++  echo "  ✓ 目标仓库核验：origin=$pub_remote branch=$pub_branch dirty=0"
++})
+ # 保留清单：这些是发布物自己的东西，真源里没有，删了就没了。
+ # 不靠"rsync 不加 --delete"来保它们——那会让真源里**删掉**的文件在副本里永远残留，
+ # 于是副本慢慢变成一份谁也不认识的混合物。显式保留 + 显式删除才是可核对的。
+@@ -531,7 +545,16 @@ if [ "$MODE" = dry ]; then
+   git reset -q
+   exit 0
+ fi
+-git commit -q -m "$MESSAGE" || { echo "  （没有变化可提交）"; }
++# L02 fix: treat commit failure as an error and exit, not as "nothing to commit".
++# Previously `|| { echo "..."; }` swallowed non-zero exit codes from hooks or identity
++# failures, then push proceeded with whatever HEAD was already there.
++if ! git commit -q -m "$MESSAGE"; then
++  if git diff --cached --quiet; then
++    echo "  （没有变化可提交）"
++  else
++    echo "✗ git commit 失败（hook 拒绝、身份错误或磁盘故障）；不推送" >&2; exit 1
++  fi
++fi
+ git push -q origin main
+ echo "  ✓ 已推送 $(git rev-parse --short HEAD)"
+ 
+diff --git a/scripts/verify-migration.sh b/scripts/verify-migration.sh
+index 15c95b8..c82bb84 100755
+--- a/scripts/verify-migration.sh
++++ b/scripts/verify-migration.sh
+@@ -44,11 +44,19 @@ echo "── 快照取自 ${LIVE}（只读）"
+ echo "   迁移前：$(counts "$DRY")  摘要=$BEFORE"
+ 
+ # 用当前构建打开副本，触发迁移。
++# L04 fix: use a temp file to capture exit code; `|| true` previously swallowed migration failures.
++NODE_OUT="$(mktemp)"
+ ( cd "$(dirname "$0")/.." && node --experimental-transform-types -e "
+ import { Store } from './src/app/store.ts'
+ const store = new Store('$DRY')
+ store.close()
+-" 2>&1 | grep -v 'ExperimentalWarning\|--trace-warnings' || true )
++" 2>&1 | grep -v 'ExperimentalWarning\|--trace-warnings' ) > "$NODE_OUT" 2>&1
++NODE_EXIT="${PIPESTATUS[0]:-$?}"
++cat "$NODE_OUT"; rm -f "$NODE_OUT"
++if [ "$NODE_EXIT" -ne 0 ]; then
++  echo "   ✗ 迁移失败（node exit $NODE_EXIT）——不要升级线上库"
++  exit 1
++fi
+ 
+ AFTER="$(digest "$DRY")"
+ echo "── 迁移后：$(counts "$DRY")  摘要=${AFTER}"
+@@ -61,7 +69,20 @@ else
+   status=1
+ fi
+ 
+-# 新表与索引应当在；旧的死表应当不在。
++# L04 fix: verify the schema_version was actually bumped to what the current build expects.
++# A migration that only sets version=X but forgets to run the schema change would still pass
++# the data check above, but the version bump proves the migration code was actually reached.
++# Read the expected version from the source rather than hardcoding it.
++expected_version=$(node --experimental-transform-types -e "
++import { SCHEMA_VERSION } from './src/app/store.ts'
++process.stdout.write(String(SCHEMA_VERSION))
++" 2>/dev/null)
++actual_version=$(sqlite3 "$DRY" 'select version from schema_version')
++if [ "$actual_version" = "$expected_version" ]; then
++  echo "   ✓ SCHEMA_VERSION 已升至 ${actual_version}"
++else
++  echo "   ✗ SCHEMA_VERSION 应为 ${expected_version}，实际为 ${actual_version}"; status=1
++fi
+ sqlite3 "$DRY" "select name from sqlite_master where type='table' and name='artifacts'" | grep -q artifacts \
+   && echo "   ✓ artifacts 表已建" || { echo "   ✗ artifacts 表缺失"; status=1; }
+ sqlite3 "$DRY" "select name from sqlite_master where type='table' and name='settings'" | grep -q settings \
