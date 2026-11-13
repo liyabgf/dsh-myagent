@@ -523,9 +523,15 @@ export class ChatSource implements TwoWaySource {
             await this.take(path, directory, entry.name, 'accepted', `Noted on Ticket ${ticket.id} (subscription)`, triggerId, issues)
           }
           // 【W10】Also deliver to context subscribers (read-only context, as note)
+          // C02 fix: skip ended/deleted tickets to avoid engine.note() throwing ticket_ended,
+          // which would interrupt delivery after the main message was already taken.
           for (const ctxTicketId of thread.contextSubscriptions ?? []) {
             if (ctxTicketId !== ticket.id) {
-              this.host.engine.note(ctxTicketId, message.body)
+              const ctxTicket = this.host.engine.ticket(ctxTicketId)
+              if (ctxTicket !== undefined && ctxTicket.ended === undefined) {
+                try { this.host.engine.note(ctxTicketId, message.body) }
+                catch (err) { issues.push(`context note to ${ctxTicketId.slice(0, 8)} failed: ${String(err).slice(0, 80)}`) }
+              }
             }
           }
           this.counts.accepted++

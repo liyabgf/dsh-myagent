@@ -149,24 +149,38 @@ const server = createServer((req, res) => {
       return
     }
     if (req.method !== 'POST') { finish(405, 'method not allowed'); return }
+    // B04 fix: limit body size before buffering to prevent memory exhaustion from unauthenticated POST.
+    const MAX_BODY_BYTES = 64 * 1024
+    let totalBytes = 0
     const chunks = []
-    req.on('data', chunk => chunks.push(chunk))
+    req.on('data', chunk => {
+      totalBytes += chunk.length
+      if (totalBytes > MAX_BODY_BYTES) {
+        finish(413, 'body too large')
+        req.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
     req.on('end', () => {
+      if (totalBytes > MAX_BODY_BYTES) return  // already responded
       const raw = Buffer.concat(chunks).toString('utf8')
       try {
         const encrypted = xmlField(raw, 'Encrypt')
         if (encrypted === undefined) {
-          // An unsigned, unencrypted POST is somebody's scanner or a misconfigured console — not a message.
           log.warn('unencrypted-post', { bytes: raw.length, note: 'callback bodies are encrypted; this was not' })
           finish(400, 'expected an encrypted body')
           return
         }
         const plain = verifiedDecrypt({ token: callbackToken, aesKey, corpId, timestamp, nonce, msgSignature, encrypted })
-        // Answer the platform FIRST (its 5-second window), then write the file: a slow disk must never make the
-        // platform re-push, because a re-push after a slow write is the double-message the file id protects against
-        // only as long as the names collide — and two processes writing the same name is a race this file does not want.
-        finish(200, 'success')
-        void onInbound(plain).catch(error => log.error('inbound-failed', { error: String(error?.message ?? error) }))
+        // B04 fix: write the file BEFORE responding, then ack 200.
+        // The original code acked first to satisfy the 5s window; that creates a gap where the
+        // platform received 200 but the file was never written. If we cannot write, we return a
+        // non-200 so the platform will re-push.
+        onInbound(plain).then(() => { finish(200, 'success') }).catch(error => {
+          log.error('inbound-failed', { error: String(error?.message ?? error) })
+          finish(500, 'inbound write failed')
+        })
       } catch (error) {
         log.error('callback-rejected', { error: String(error?.message ?? error) })
         finish(400, 'bad signature or key')
@@ -218,12 +232,17 @@ const recordSentReceipt = async () => {
 
 /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
 const startOutboundLoop = () => {
+  let inFlight = false
   const tick = async () => {
+    if (inFlight) return  // B05 fix
+    inFlight = true
     try {
       await touchHeartbeat()
       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
     } catch (error) {
       log.error('outbound-failed', { error: String(error?.message ?? error) })
+    } finally {
+      inFlight = false
     }
   }
   void tick()

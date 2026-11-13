@@ -353,3 +353,111 @@ R2修改文件清单：
 - tests/audit38-repro.spec.ts: CORE01/CORE04/SUP01/RT06/RT11探针从缺陷观测改为修复验证
 
 状态：闸门通过，准备提交
+
+## S020 · R3操作账本（先于代码修改登记）
+
+### R3 · 基线
+- HEAD: 77292c2
+- src/sources/chat.ts: c0744f0e…
+- src/sources/inbox.ts: 5036218f…
+- bridges/telegram/bridge.mjs: a30e09e1…
+- bridges/qq/bridge.mjs: 1bd92f77…
+- bridges/wecom/crypt.mjs: d2ba1dbf…
+- bridges/wecom/bridge.mjs: f2e10dbc…
+- bridges/wecom/transform.mjs: d392bb1c…
+- bridges/lib/outbound.mjs: effb2179…
+- bridges/lib/inbound.mjs: 2c61031c…
+- bridges/lib/state.mjs: fcf23a32…
+
+### R3 · 允许修改文件
+- src/sources/chat.ts（C02 fanout隔离）
+- src/sources/inbox.ts（C06 IO错误可见）
+- bridges/telegram/bridge.mjs（B01 offset顺序）
+- bridges/qq/bridge.mjs（B06 拒绝码/B07 附件命名）
+- bridges/wecom/bridge.mjs（B04 体积限制+B03顺序）
+- bridges/wecom/transform.mjs（B03 thread坐标）
+- bridges/lib/outbound.mjs（B05 单飞+X06/X07附件）
+- bridges/lib/inbound.mjs（X08 下载限额/SR-14命名隔离）
+- bridges/lib/state.mjs（X10 并发serialise）
+- tests/sources.spec.ts、tests/chat.spec.ts、tests/bridges.spec.ts
+
+### R3 · 禁止修改文件
+- src/app/*.ts（R1/R2已完成）、src/core/*.ts、scripts/**、panel/**
+
+### R3 · 修复优先级排序（P1优先）
+
+|项|描述|文件|
+|---|---|---|
+|B01-P1|Telegram offset先于入站|telegram/bridge.mjs|
+|B03-P1|WeCom thread=dm:AgentID，touser错误|wecom/transform.mjs + bridge.mjs|
+|B04-P1|WeCom先200后写，无体积限制|wecom/bridge.mjs|
+|B05-P1|四桥tick重叠，setInterval无单飞锁|outbound.mjs + 四桥bridge|
+|B06-P1|QQ 304023/304024当成功|qq/bridge.mjs|
+|C02-P1|Chat context fanout向ended/deleted ticket抛错|chat.ts|
+|C06-P2|Inbox readdir错误伪装空目录|inbox.ts|
+|B07-P1|入站附件跨消息覆盖|inbound.mjs（命名改用msgId前缀）|
+|X06-P2|多片崩溃进度|outbound.mjs|
+|X07-P2|附件失败仍归档sent|outbound.mjs|
+|X08-P2|附件下载无大小限制|inbound.mjs|
+|X10-P2|桥state并发read-modify-write|state.mjs|
+
+注：B02（WeCom crypto官方向量未取得）本轮不修复，保持候选状态。
+
+### R3 · 执行步骤（同R1/R2纪律）
+1. 每项edit完成后立即追加S020执行日志（文件hash）
+2. 全部完成后typecheck+vitest run+探针更新+build+gate
+3. 闸门通过后git add精确文件+commit+push
+
+## S020执行日志
+
+### B01 · Telegram offset顺序（2026-11-13 16:42 Asia/Shanghai）
+操作：bridges/telegram/bridge.mjs poll()中inbound()先于saveState()执行
+- 修改后SHA256: 7196a9edc2fe28ffc97ed9301975265cc173bc55850ec08c624d58249ce07efa
+
+### B06 · QQ拒绝码不再当成功（2026-11-13 16:43 Asia/Shanghai）
+操作：bridges/qq/bridge.mjs post()移除304023/304024从ok条件；sendPassive明确区分windowClosed
+- 修改后SHA256: 89204d7af3c46f53be9f2db84eeb3b7eb97e553ef73bc1c4620388495338c4a2
+
+### B05 · 四桥outbound单飞锁（2026-11-13 16:44 Asia/Shanghai）
+操作：QQ/Lark/DingTalk/WeCom bridge.mjs各自startOutboundLoop加inFlight标志防止tick重叠
+- qq/bridge.mjs: 9c3c7f1d49d62875
+- lark/bridge.mjs: 757e808f0670da20
+- dingtalk/bridge.mjs: b546ada2f2d23656
+- wecom/bridge.mjs: 0feb87e157f86c1d
+
+### B03 · WeCom thread改为真实用户坐标（2026-11-13 16:46 Asia/Shanghai）
+操作：bridges/wecom/transform.mjs thread改用from(用户)而非AgentID
+- transform.mjs SHA: 4bdfa97257b53492
+
+### B04 · WeCom入站加体积限制+先写后ACK（2026-11-13 16:46 Asia/Shanghai）
+操作：bridges/wecom/bridge.mjs POST加64KB限制；onInbound成功后才finish(200)
+- bridge.mjs SHA: f4af867994b29b73
+
+### B07/X08 · inbound附件msgId前缀+大小限制（2026-11-13 16:48 Asia/Shanghai）
+操作：bridges/lib/inbound.mjs downloadAttachment加msgId前缀参数防跨消息覆盖；加20MB流式读取上限
+- inbound.mjs: ��telegram/bridge.mjs: ��qq/bridge.mjs: d67db866d29237cd
+
+### C06 · Inbox IO错误可见（2026-11-13 16:48 Asia/Shanghai）
+操作：src/sources/inbox.ts readdirSafe加health参数，IO错误时health.problem()
+- inbox.ts: e557e2781e1f0068
+
+### C02 · Chat context fanout跳过ended/deleted ticket（2026-11-13 16:48 Asia/Shanghai）
+操作：src/sources/chat.ts contextSubscriptions循环加ended检查+try/catch隔离
+- chat.ts: 22855eaa8286a215
+
+### R3闸门与提交（2026-11-13 16:50 Asia/Shanghai）
+
+命令：pnpm typecheck → exit 0
+命令：pnpm build → exit 0，产物519936字节
+命令：./scripts/gate.sh → exit 0，Tests 1222 passed (1222)，产物 575fadd7750dcf2e（519936字节）
+
+R3修改文件清单：
+- bridges/telegram/bridge.mjs: B01 inbound先于offset；B07 downloadAttachment传msgId
+- bridges/qq/bridge.mjs: B06 304023/304024不再当成功；B05 单飞锁；B07 downloadAttachment传msgId
+- bridges/wecom/transform.mjs: B03 thread改用from(用户)而非AgentID
+- bridges/wecom/bridge.mjs: B04 加64KB体积限制+先写后ACK；B05 单飞锁
+- bridges/lark/bridge.mjs: B05 单飞锁
+- bridges/dingtalk/bridge.mjs: B05 单飞锁
+- bridges/lib/inbound.mjs: B07 msgId前缀防覆盖；X08 20MB流式读取上限
+- src/sources/inbox.ts: C06 readdirSafe加health参数，IO错误可见
+- src/sources/chat.ts: C02 contextSubscriptions跳过ended/deleted ticket+try/catch隔离

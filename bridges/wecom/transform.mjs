@@ -51,7 +51,9 @@ export const mapMessage = (xml, { allowUsers = [] } = {}) => {
   const body = String(xmlField(xml, 'Content') ?? '').replace(/\s+/g, ' ').trim()
   if (body === '') return { skip: 'no-text:empty' }
   const agentId = xmlField(xml, 'AgentID')
-  const thread = formatRoute({ kind: 'dm', chatId: agentId ?? 'corp' })
+  // B03 fix: use the actual sender (FromUserName) as the dm coordinate, not the AgentID.
+  // Previously thread=dm:AgentID, so all users shared one thread and outbound touser was wrong.
+  const thread = formatRoute({ kind: 'dm', chatId: String(from) })
   return {
     message: {
       from: String(from),

@@ -67,9 +67,14 @@ export function frontMatter(text: string, fallbackTitle: string): FrontMatter {
 
 const reason = (error: unknown): string => error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
-async function readdirSafe(directory: string): Promise<Dirent[]> {
+async function readdirSafe(directory: string, health?: HealthEntry): Promise<Dirent[]> {
   try { return await readdir(directory, { withFileTypes: true }) }
-  catch { return [] }
+  catch (error) {
+    // C06 fix: an I/O error on the inbox directory is not the same as an empty inbox.
+    // Report it on the health board so the operator can see that messages are not being read.
+    health?.problem(`inbox readdir failed: ${error instanceof Error ? error.message : String(error)}`)
+    return []
+  }
 }
 
 /** A name that does not collide in `folder`, so two takes of the same file name both survive. */
@@ -197,7 +202,7 @@ export class InboxSource implements Source {
     // erased before the pass finished and the operator never saw it. That is the S19/N5 shape — chat collects issues
     // this way already, and its spec says cron and rule each shipped the bug once. inbox still had it.
     const issues: string[] = []
-    for (const entry of await readdirSafe(directory)) {
+    for (const entry of await readdirSafe(directory, this.health)) {
       if (this.stopped) return
       if (!entry.isFile() || entry.name.startsWith('.') || !entry.name.toLowerCase().endsWith('.md')) continue
       const path = join(directory, entry.name)

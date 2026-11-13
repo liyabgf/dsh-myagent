@@ -128,7 +128,7 @@ const inbound = async update => {
         const fileUrl = `${API}/file/bot${token}/${fileInfo.file_path}`
         const msgId = String(message.id ?? 'unknown').replace(/[^A-Za-z0-9._-]/g, '-')
         const filename = ref.fileName ?? `${msgId}-${attachments.length + 1}.${ref.ext}`
-        const localPath = await downloadAttachment(fileUrl, directory, filename)
+        const localPath = await downloadAttachment(fileUrl, directory, filename, message.id)
         attachments.push(localPath)
         log.info('attachment-downloaded', { filename, bytes: fileInfo.file_size ?? '?' })
       } catch (error) {
@@ -223,15 +223,17 @@ const poll = async () => {
   })
   let written = 0
   for (const update of updates ?? []) {
-    // The offset is advanced BEFORE processing is known to succeed only in the sense that a re-read of the same
-    // update is harmless: writing the same message id produces the same file name and the same bytes.
-    if (update.update_id !== undefined) state.data = await saveState(directory, { offset: update.update_id })
+    // B01 fix: persist the inbound message BEFORE advancing the offset.
+    // If saveState() succeeds but inbound() fails (disk full, permissions, etc.), the message
+    // would have been permanently skipped on the next poll. Write the file first; only then
+    // advance the offset so the same update_id is not fetched again.
     const result = await inbound(update)
     if (result?.written !== undefined) written += result.written
     else if (result?.skipped !== undefined) {
       log.debug('skipped', result)
       skips[result.skipped] = (skips[result.skipped] ?? 0) + 1
     }
+    if (update.update_id !== undefined) state.data = await saveState(directory, { offset: update.update_id })
   }
   // 【实捕修正】被过滤掉的消息只在 debug 级留痕，而默认级别是 info——于是"我说了话它没反应"
   // 在日志里查不到任何证据（11-10 那次投诉就是这么难查的）。每 5 分钟把计数以 info 落一行：

@@ -83,7 +83,7 @@ export async function writeMessage(message) {
  * @param {string} filename    desired filename (will be sanitised; keeps extension)
  * @returns {Promise<string>}  absolute path of the saved file
  */
-export async function downloadAttachment(url, directory, filename) {
+export async function downloadAttachment(url, directory, filename, msgId) {
   const { mkdir: mkdirFs, writeFile: writeFileFs, rename: renameFs } = await import('node:fs/promises')
   const { join: joinPath } = await import('node:path')
   const { randomBytes: rand } = await import('node:crypto')
@@ -91,11 +91,23 @@ export async function downloadAttachment(url, directory, filename) {
   const safe = String(filename ?? 'file').replace(/[^A-Za-z0-9._-]/g, '_').replace(/^\.+/, '').slice(0, 120) || 'file'
   const attachDir = joinPath(directory, 'attachments')
   await mkdirFs(attachDir, { recursive: true })
-  const dest = joinPath(attachDir, safe)
+  // B07 fix: prefix with msgId (first 16 chars) so attachments from different messages
+  // never overwrite each other even when they share a filename.
+  const prefix = msgId ? String(msgId).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 16) + '-' : ''
+  const dest = joinPath(attachDir, prefix + safe)
 
+  // X08 fix: stream with a size cap so a large attachment cannot exhaust memory.
+  const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
   const response = await fetch(url, { signal: AbortSignal.timeout(30_000) })
   if (!response.ok) throw new Error(`attachment download failed: ${response.status} ${url.slice(0, 80)}`)
-  const buf = Buffer.from(await response.arrayBuffer())
+  const chunks = []
+  let totalBytes = 0
+  for await (const chunk of response.body) {
+    totalBytes += chunk.length
+    if (totalBytes > MAX_ATTACHMENT_BYTES) throw new Error(`attachment too large (>${MAX_ATTACHMENT_BYTES} bytes): ${url.slice(0, 80)}`)
+    chunks.push(chunk)
+  }
+  const buf = Buffer.concat(chunks)
 
   const tmp = joinPath(attachDir, `.tmp-${process.pid}-${rand(4).toString('hex')}`)
   await writeFileFs(tmp, buf)

@@ -107,7 +107,7 @@ const post = async (path, data) => {
     body: JSON.stringify(data),
   })
   const body = await response.json().catch(() => ({}))
-  return { ok: response.ok && (body.code === undefined || body.code === 0 || body.code === 304023 || body.code === 304024), body, status: response.status }
+  return { ok: response.ok && (body.code === undefined || body.code === 0), body, status: response.status }
 }
 
 // ----------------------------------------------------------------- state and inbound
@@ -127,7 +127,7 @@ const onDispatch = async (event, payload) => {
   const { fileRefs = [], ...msgClean } = message
   for (const ref of fileRefs) {
     try {
-      const localPath = await downloadAttachment(ref.url, directory, ref.fileName)
+      const localPath = await downloadAttachment(ref.url, directory, ref.fileName, msgId)
       attachments.push(localPath)
       log.info('attachment-downloaded', { filename: ref.fileName })
     } catch (error) {
@@ -161,8 +161,10 @@ const sendPassive = async (carried, text) => {
   // 每条回信都 404/11001 然后落到主动门——白烧操作者的主动消息月度配额，而"没丢消息"把 bug 藏住了）。
   const { path, body } = passiveReply(carried, text, seq)
   const result = await post(path, body)
-  // 304023/304024: window closed or reply refused — the documented "passive door is shut" answers.
-  if (result.ok) return { seq }
+  // B06 fix: 304023/304024 mean the passive window is closed — treat as refusal so the
+  // caller can try the active door, not as success that archives the message as delivered.
+  const windowClosed = result.body.code === 304023 || result.body.code === 304024
+  if (result.ok && !windowClosed) return { seq }
   return { refused: `passive refused (HTTP ${result.status} code ${result.body.code ?? '?'})` }
 }
 
@@ -209,12 +211,17 @@ const recordSentReceipt = async () => {
 
 /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
 const startOutboundLoop = () => {
+  let inFlight = false
   const tick = async () => {
+    if (inFlight) return  // B05 fix: prevent overlapping ticks
+    inFlight = true
     try {
       await touchHeartbeat()
       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays, limit: MESSAGE_LIMIT })
     } catch (error) {
       log.error('outbound-failed', { error: String(error?.message ?? error) })
+    } finally {
+      inFlight = false
     }
   }
   void tick()

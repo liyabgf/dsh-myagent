@@ -203,12 +203,17 @@ const touchHeartbeat = async () => {
 
 /** Outbound is polled, not pushed: `out/` is a directory, and myagent writes into it whenever an answer is owed. */
 const startOutboundLoop = () => {
+  let inFlight = false
   const tick = async () => {
+    if (inFlight) return  // B05 fix
+    inFlight = true
     try {
       await touchHeartbeat()
       await drainOut({ directory, send: outbound, sendFile: sendOutboundFile, onSent: recordSentReceipt, log, keepDays })
     } catch (error) {
       log.error('outbound-failed', { error: String(error?.message ?? error) })
+    } finally {
+      inFlight = false
     }
   }
   void tick()
