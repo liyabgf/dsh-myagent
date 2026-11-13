@@ -1,0 +1,3290 @@
+[
+  {
+    "file": "src/app/about.ts",
+    "line": 12,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/about.ts",
+    "line": 13,
+    "to": "./prompts.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 8,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 9,
+    "to": "@deepseek-ai/dsh-agent",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 10,
+    "to": "@deepseek-ai/dsh-llm",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 11,
+    "to": "@deepseek-ai/dsh-session",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 12,
+    "to": "@deepseek-ai/dsh-session-persistence",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 7,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 8,
+    "to": "@deepseek-ai/dsh-agent",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 9,
+    "to": "@deepseek-ai/dsh-session",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 13,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 14,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 15,
+    "to": "./files.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 16,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 17,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 18,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 19,
+    "to": "@deepseek-ai/dsh-subprocess",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 20,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 21,
+    "to": "../core/policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 22,
+    "to": "../sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 23,
+    "to": "./effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 24,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 25,
+    "to": "./sessions.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 26,
+    "to": "./store.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 13,
+    "to": "node:sqlite",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 15,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 16,
+    "to": "@deepseek-ai/dsh-llm",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 17,
+    "to": "@deepseek-ai/dsh-llm",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 18,
+    "to": "./desk-history.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 19,
+    "to": "../core/policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 25,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 26,
+    "to": "@deepseek-ai/dsh-llm",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 27,
+    "to": "./store.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 28,
+    "to": "./tools.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 29,
+    "to": "./prompts.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 30,
+    "to": "../core/policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 31,
+    "to": "../core/engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 32,
+    "to": "./desk-history.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 33,
+    "to": "./desk-llm.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 34,
+    "to": "./desk-tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 35,
+    "to": "../core/model.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 12,
+    "to": "@deepseek-ai/dsh-llm",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 13,
+    "to": "./desk-history.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 14,
+    "to": "./tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 15,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 8,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 9,
+    "to": "./store.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 10,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 11,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 12,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 13,
+    "to": "@deepseek-ai/dsh-session",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 14,
+    "to": "@deepseek-ai/dsh-subprocess",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 15,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 19,
+    "to": "../core/policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 20,
+    "to": "./files.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 21,
+    "to": "./background.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 22,
+    "to": "./effects.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 23,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 24,
+    "to": "./sessions.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 25,
+    "to": "./store.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 9,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 10,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 8,
+    "to": "node:http",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 9,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 10,
+    "to": "zod",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 11,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 12,
+    "to": "@deepseek-ai/dsh-host-webserver",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 13,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 14,
+    "to": "../core/index.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 15,
+    "to": "../core/errors.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 16,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 17,
+    "to": "../core/timing.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 18,
+    "to": "./about.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 19,
+    "to": "./prompts.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 20,
+    "to": "./skills.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 21,
+    "to": "./views.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 22,
+    "to": "./files.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 23,
+    "to": "./runtime.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 24,
+    "to": "../deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 25,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 26,
+    "to": "./passes.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 27,
+    "to": "./prompts.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 28,
+    "to": "../sources/registry.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 29,
+    "to": "../sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 30,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 31,
+    "to": "./store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 32,
+    "to": "./views.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 33,
+    "to": "./executor.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 40,
+    "to": "./desk-loop.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 10,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 11,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 12,
+    "to": "node:crypto",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 8,
+    "to": "./effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 9,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 8,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 9,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 10,
+    "to": "./skills.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 11,
+    "to": "./store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 10,
+    "to": "node:fs",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 11,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 12,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 13,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 14,
+    "to": "@deepseek-ai/dsh-agent",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 15,
+    "to": "@deepseek-ai/dsh-session",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 16,
+    "to": "@deepseek-ai/dsh-subprocess",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 17,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 22,
+    "to": "../deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 23,
+    "to": "../sources/chat.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 24,
+    "to": "./sessions.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 25,
+    "to": "../sources/cron.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 26,
+    "to": "../sources/inbox.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 27,
+    "to": "../sources/inbox.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 28,
+    "to": "../sources/session.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 29,
+    "to": "../sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 30,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 31,
+    "to": "../sources/registry.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 32,
+    "to": "../sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 33,
+    "to": "./executor.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 34,
+    "to": "./delivery.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 35,
+    "to": "./effects.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 36,
+    "to": "./health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 37,
+    "to": "./store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 38,
+    "to": "./lock.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 39,
+    "to": "./passes.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 40,
+    "to": "./session-health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 41,
+    "to": "./watchdog.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 42,
+    "to": "../sources/rule.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 43,
+    "to": "./prompts.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 44,
+    "to": "./sessions.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 45,
+    "to": "./desk-loop.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 46,
+    "to": "./tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 47,
+    "to": "./files.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 48,
+    "to": "./views.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 49,
+    "to": "./http.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 14,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 8,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 9,
+    "to": "@deepseek-ai/dsh-agent",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 10,
+    "to": "@deepseek-ai/dsh-session",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 11,
+    "to": "@deepseek-ai/dsh-scope",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 12,
+    "to": "@deepseek-ai/dsh-api-session-controller",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 13,
+    "to": "@deepseek-ai/dsh-session-persistence",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 14,
+    "to": "@deepseek-ai/dsh-workspace",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 15,
+    "to": "@deepseek-ai/dsh-permission-presets",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 16,
+    "to": "@deepseek-ai/dsh-system-prompt",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 17,
+    "to": "@deepseek-ai/dsh-tools",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 18,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 19,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 20,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 21,
+    "to": "../core/model.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 22,
+    "to": "./agent-delivery.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 23,
+    "to": "./prompts.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 24,
+    "to": "./skills.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 25,
+    "to": "./tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 62,
+    "to": "./desk-loop.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 9,
+    "to": "node:sqlite",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 10,
+    "to": "./desk-history.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 11,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 12,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 13,
+    "to": "../core/model.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 14,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 15,
+    "to": "../core/engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 16,
+    "to": "../core/engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 17,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 18,
+    "to": "zod",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 19,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 20,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 21,
+    "to": "../core/errors.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 22,
+    "to": "./store.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 23,
+    "to": "./views.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 7,
+    "to": "../core/model.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 8,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 9,
+    "to": "../core/timing.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 13,
+    "to": "./health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 8,
+    "to": "./ids.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 9,
+    "to": "./errors.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 10,
+    "to": "./model.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 16,
+    "to": "./policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 17,
+    "to": "./policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/ids.ts",
+    "line": 2,
+    "to": "node:crypto",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 6,
+    "to": "./model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 7,
+    "to": "./model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 8,
+    "to": "./engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 9,
+    "to": "./engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 8,
+    "to": "zod",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 9,
+    "to": "./ids.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 10,
+    "to": "./model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 11,
+    "to": "./timing.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 8,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 9,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 10,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 11,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 12,
+    "to": "@deepseek-ai/schemastery",
+    "typeOnly": false
+  },
+  {
+    "file": "src/index.ts",
+    "line": 9,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "src/index.ts",
+    "line": 10,
+    "to": "./app/runtime.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/index.ts",
+    "line": 11,
+    "to": "./app/skills.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/index.ts",
+    "line": 12,
+    "to": "./deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 56,
+    "to": "node:fs",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 57,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 58,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 59,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 67,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 68,
+    "to": "../core/model.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 69,
+    "to": "../app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 70,
+    "to": "./kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 8,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 9,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 10,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 11,
+    "to": "../app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 12,
+    "to": "./kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 10,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 11,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 12,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 13,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 14,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 15,
+    "to": "../app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 16,
+    "to": "./kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 7,
+    "to": "../core/index.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 8,
+    "to": "../app/effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 9,
+    "to": "../app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 10,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 7,
+    "to": "../core/policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 8,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 9,
+    "to": "./kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 17,
+    "to": "../core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 18,
+    "to": "../core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 19,
+    "to": "../core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 20,
+    "to": "../app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 21,
+    "to": "./kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 8,
+    "to": "../app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 9,
+    "to": "./kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/agent-delivery.spec.ts",
+    "line": 8,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/agent-delivery.spec.ts",
+    "line": 9,
+    "to": "../src/app/agent-delivery.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/agent-delivery.spec.ts",
+    "line": 10,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 8,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 10,
+    "to": "zod",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 11,
+    "to": "../src/sources/inbox.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 12,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 13,
+    "to": "../src/app/tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 14,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 15,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 12,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 13,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 14,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 15,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 16,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 17,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 18,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/background.spec.ts",
+    "line": 8,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/background.spec.ts",
+    "line": 9,
+    "to": "../src/app/background.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/background.spec.ts",
+    "line": 10,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 12,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 13,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 14,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 15,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 18,
+    "to": "../bridges/lib/frontmatter.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 20,
+    "to": "../bridges/lib/inbound.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 22,
+    "to": "../bridges/lib/outbound.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 24,
+    "to": "../bridges/lib/route.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 26,
+    "to": "../bridges/lib/run.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 28,
+    "to": "../bridges/telegram/transform.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 30,
+    "to": "../bridges/dingtalk/transform.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 32,
+    "to": "../bridges/wecom/crypt.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 34,
+    "to": "../bridges/wecom/transform.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 36,
+    "to": "../bridges/qq/transform.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 38,
+    "to": "../bridges/qq/protocol.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 40,
+    "to": "../bridges/lark/transform.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 42,
+    "to": "../bridges/lib/log.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 43,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/build.spec.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/build.spec.ts",
+    "line": 10,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/build.spec.ts",
+    "line": 11,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/build.spec.ts",
+    "line": 12,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 11,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 12,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 13,
+    "to": "../src/app/effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 14,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 19,
+    "to": "../src/sources/registry.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 20,
+    "to": "../src/sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 12,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 13,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 14,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 15,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 16,
+    "to": "../src/app/delivery.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 17,
+    "to": "../src/app/effects.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 18,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 19,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 20,
+    "to": "../src/app/sessions.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 21,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 22,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 23,
+    "to": "../src/sources/chat.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 24,
+    "to": "../src/sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 25,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 26,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 27,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 10,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 11,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 12,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 14,
+    "to": "../bridges/lib/inbound.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 16,
+    "to": "../bridges/lib/outbound.mjs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 17,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 18,
+    "to": "../src/app/effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 19,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 23,
+    "to": "../src/sources/chat.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 24,
+    "to": "../src/sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 25,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 2,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 3,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 4,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 5,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 6,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 7,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 8,
+    "to": "../src/app/delivery.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 12,
+    "to": "../src/app/effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 13,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 14,
+    "to": "../src/app/lock.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 15,
+    "to": "../src/app/sessions.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 16,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 17,
+    "to": "../src/core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 18,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 19,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/dependencies.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/dependencies.spec.ts",
+    "line": 10,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/deployment.spec.ts",
+    "line": 7,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/deployment.spec.ts",
+    "line": 8,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/deployment.spec.ts",
+    "line": 9,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/deployment.spec.ts",
+    "line": 10,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/deployment.spec.ts",
+    "line": 11,
+    "to": "../src/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/deployment.spec.ts",
+    "line": 12,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/desk-history.spec.ts",
+    "line": 5,
+    "to": "node:sqlite",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/desk-history.spec.ts",
+    "line": 6,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/desk-history.spec.ts",
+    "line": 7,
+    "to": "../src/app/desk-history.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/desk-tools.spec.ts",
+    "line": 5,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/desk-tools.spec.ts",
+    "line": 6,
+    "to": "../src/app/desk-tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/desk-tools.spec.ts",
+    "line": 7,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 8,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 10,
+    "to": "../src/app/effects.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 11,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 12,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 13,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 2,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 3,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 8,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 9,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 10,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 11,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 12,
+    "to": "../src/app/executor.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 13,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 14,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 15,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 16,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 17,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 18,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 19,
+    "to": "../src/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 20,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 21,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 22,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 23,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 7,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 8,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 10,
+    "to": "../src/app/files.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 11,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 12,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 13,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 8,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 9,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 10,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 11,
+    "to": "../src/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 12,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 13,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 14,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 2,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 3,
+    "to": "../../src/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 4,
+    "to": "../../src/app/runtime.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 5,
+    "to": "./host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 6,
+    "to": "./temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 8,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/helpers/temp.ts",
+    "line": 18,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/temp.ts",
+    "line": 19,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/temp.ts",
+    "line": 20,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/helpers/temp.ts",
+    "line": 21,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 8,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 10,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 11,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 12,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 13,
+    "to": "../src/core/engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 16,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/mount.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/mount.spec.ts",
+    "line": 10,
+    "to": "../src/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/mount.spec.ts",
+    "line": 11,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/mount.spec.ts",
+    "line": 12,
+    "to": "../src/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/mount.spec.ts",
+    "line": 13,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/mount.spec.ts",
+    "line": 14,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 12,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 13,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 14,
+    "to": "@deepseek-ai/cordis",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 15,
+    "to": "@deepseek-ai/dsh-subprocess",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 16,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 17,
+    "to": "node:fs/promises",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 18,
+    "to": "../src/app/delivery.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 19,
+    "to": "../src/app/effects.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 20,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 21,
+    "to": "../src/app/sessions.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 22,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 23,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 24,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 25,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 7,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 8,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 10,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 11,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 16,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 17,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 18,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/policy.spec.ts",
+    "line": 8,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/policy.spec.ts",
+    "line": 9,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/policy.spec.ts",
+    "line": 10,
+    "to": "../src/core/policy.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/policy.spec.ts",
+    "line": 11,
+    "to": "../src/core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/prompts.spec.ts",
+    "line": 2,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/prompts.spec.ts",
+    "line": 3,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/prompts.spec.ts",
+    "line": 4,
+    "to": "../src/app/prompts.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/prompts.spec.ts",
+    "line": 5,
+    "to": "../src/app/skills.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes-route.spec.ts",
+    "line": 8,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes-route.spec.ts",
+    "line": 9,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 7,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 8,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 9,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 10,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 11,
+    "to": "../src/core/timing.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 12,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recipes.spec.ts",
+    "line": 13,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 8,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 9,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 10,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 11,
+    "to": "../src/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 12,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 13,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 14,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 15,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/runtime-budget.spec.ts",
+    "line": 11,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/runtime-budget.spec.ts",
+    "line": 12,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/runtime-budget.spec.ts",
+    "line": 13,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/runtime-budget.spec.ts",
+    "line": 14,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 27,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 28,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 29,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 30,
+    "to": "../src/app/views.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 31,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 32,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 36,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 37,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 38,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 39,
+    "to": "../src/app/health.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 40,
+    "to": "../src/app/runtime.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 41,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 42,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/silent-visibility.spec.ts",
+    "line": 16,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/silent-visibility.spec.ts",
+    "line": 17,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/silent-visibility.spec.ts",
+    "line": 18,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 1,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 2,
+    "to": "../src/app/skills.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 2,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 3,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 4,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 5,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 6,
+    "to": "../src/app/effects.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 7,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 11,
+    "to": "../src/core/engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 12,
+    "to": "../src/core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 13,
+    "to": "../src/sources/cron.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 14,
+    "to": "../src/sources/registry.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 15,
+    "to": "../src/sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 16,
+    "to": "../src/sources/rule.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 17,
+    "to": "../src/sources/inbox.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 18,
+    "to": "../src/sources/kind.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 19,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 2,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 3,
+    "to": "node:sqlite",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 4,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 5,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 6,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 7,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 8,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 9,
+    "to": "../src/core/index.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 10,
+    "to": "../src/core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 11,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/temp.spec.ts",
+    "line": 13,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/temp.spec.ts",
+    "line": 14,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/temp.spec.ts",
+    "line": 15,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/temp.spec.ts",
+    "line": 16,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 9,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 10,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 11,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 12,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 13,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 14,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 15,
+    "to": "../src/core/errors.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/timing.spec.ts",
+    "line": 2,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/timing.spec.ts",
+    "line": 3,
+    "to": "../src/core/timing.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-schema-json.spec.ts",
+    "line": 16,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-schema-json.spec.ts",
+    "line": 17,
+    "to": "../src/app/tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-schema-json.spec.ts",
+    "line": 18,
+    "to": "../src/core/memory.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-schema-json.spec.ts",
+    "line": 19,
+    "to": "../src/core/engine.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-schema-json.spec.ts",
+    "line": 20,
+    "to": "../src/core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 17,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 18,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 19,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 20,
+    "to": "../src/app/tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 21,
+    "to": "../src/core/memory.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 22,
+    "to": "../src/core/engine.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tool-surface-docs.spec.ts",
+    "line": 23,
+    "to": "../src/core/policy.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 7,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 8,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 9,
+    "to": "zod",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 10,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 11,
+    "to": "../src/app/tools.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 12,
+    "to": "../src/core/index.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 16,
+    "to": "./helpers/temp.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 10,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 11,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 12,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 13,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 14,
+    "to": "../src/core/memory.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 15,
+    "to": "../src/app/store.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 16,
+    "to": "../src/core/engine.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/views.spec.ts",
+    "line": 7,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/views.spec.ts",
+    "line": 8,
+    "to": "../src/app/views.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/views.spec.ts",
+    "line": 9,
+    "to": "../src/core/model.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 8,
+    "to": "node:fs",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 9,
+    "to": "node:os",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 10,
+    "to": "node:path",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 11,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 12,
+    "to": "../src/app/watchdog.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 13,
+    "to": "../src/app/health.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/worker-preset.spec.ts",
+    "line": 10,
+    "to": "vitest",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/worker-preset.spec.ts",
+    "line": 11,
+    "to": "../src/core/index.ts",
+    "typeOnly": true
+  },
+  {
+    "file": "tests/worker-preset.spec.ts",
+    "line": 12,
+    "to": "./helpers/deployment.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tests/worker-preset.spec.ts",
+    "line": 13,
+    "to": "./helpers/host.ts",
+    "typeOnly": false
+  },
+  {
+    "file": "tsdown.config.ts",
+    "line": 1,
+    "to": "tsdown",
+    "typeOnly": false
+  },
+  {
+    "file": "vitest.config.ts",
+    "line": 1,
+    "to": "vitest/config",
+    "typeOnly": false
+  }
+]

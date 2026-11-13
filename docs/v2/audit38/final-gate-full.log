@@ -1,0 +1,60 @@
+── 本次运行：scripts/gate.sh （2026-11-13 13:09:36）
+── typecheck
+   ✓ typecheck
+── build
+   ✓ build
+── test
+   ✓ test
+── artifact
+   ✓ artifact：lib/index.js 比每个源文件都新
+   ✓ artifact：产物盖的 schema 版本是 7
+── 计数：Tests  1218 passed (1218) 
+── 随包发布但不进 bundle 的文件（只报告，与上次发布的清单 diff）
+   CHANGELOG.md  ed8901ec3a4d337e7b9a421ca22c8deba00e4cf76144e135c2258bfe92fcc904
+   README.md  ba0e38e7fd008db560482f161b7bd51bcac43b18902eb7feb162a451f883351b
+   bridges/README.md  53ed5ac235f815146ed2aa42eddff6700fb4fdbb67b3bf8eae524af3c70e25e5
+   bridges/dingtalk/README.md  b0c20287d4b2644516ccfe6c2f99e81493d5baf59ab3db1444cee766eb63d7fe
+   bridges/dingtalk/bridge.mjs  7a329f199e11f10cd6be231fac7c0ad71cc6601a1d5338967c729d44e2b4d203
+   bridges/dingtalk/package.json  b207dea14b51838fd023c8964bf4574a30691b240b491672c350313ed867ad70
+   bridges/dingtalk/transform.mjs  a489fce3022b467cf1c4c050c58596ab6b0551218d374570633d7de190272150
+   bridges/lark/README.md  5fa1bd37b0f123e6899b6bb5c2012b9ce11716e5d5e4dea4ecdec1fccf85b5c2
+   bridges/lark/bridge.mjs  ecbae300ad13a48434a221882c512769331a220a37771a9177cd543f436359f2
+   bridges/lark/package.json  ef7016aa554cdbcf7cf7e2fb5f243b1a101b9b28f26b96664e8bf4039522bb0c
+   bridges/lark/transform.mjs  671b1370b1210256d88804a335a9f74a63a587c53be4c0dced5018d95859839c
+   bridges/lib/frontmatter.mjs  67db4850176bfe120e2d46de8f01abcec2ae9b1eda442d527a2b7c0c0f85eb0d
+   bridges/lib/inbound.mjs  2c61031c37ed11689b121b4fd10da531e2d6d65ad45c05bfcbfa117a1373dcc6
+   bridges/lib/log.mjs  260f7ead2a91bd201679ae37ed4d49aa19560d511a7f36601fe087da4fabafaf
+   bridges/lib/outbound.mjs  effb2179a96eaafb1b7a62908dbe7795e7974ef48cf8002a00469f1a18248fa9
+   bridges/lib/route.mjs  8918a63f70bb714dd588b191c138844f499961b350dac35e11e0eed2609456f5
+   bridges/lib/run.mjs  097ee92912bb548fa4c90d0b20ff359287f8af6b2b87b92d5165667c9c6e3d51
+   bridges/lib/state.mjs  fcf23a32ccb421325feacf8070db96514b4ce209bdef9ee13076778335bd7be1
+   bridges/qq/README.md  0249a91d69268f2676ffdfb8f28dddf812b4dc237e71f91c6af9b4ed3f0f52e8
+   bridges/qq/bridge.mjs  1bd92f77ca8037189c45e56cb59adec95c609a69dbb803cffb64a1ab39590664
+   bridges/qq/protocol.mjs  9d29801259eabe71d812ebf9968f8def1c9c86d6e19329baf8300eca7539d087
+   bridges/qq/transform.mjs  b77d924313fccde2dd54a151d60fbff490d19fd730dd8bea3639415a2091dceb
+   bridges/telegram/README.md  35224db7acc24aeeb9b5202da3eadd14cec05cdcc4383f1b3e2bc3778f1f21d8
+   bridges/telegram/bridge.mjs  a30e09e1f6bd336504ed02a5fffe25624cdb0ed623b7e2ed7e638ff4a1bfa147
+   bridges/telegram/transform.mjs  f28b655adcbd725593bc1180e3e8156b7fbe2a12c6ced749ab7b0a0fca114d53
+   bridges/wecom/README.md  3e68ff307eaf0d2af6a43f109db123160e4f7e2130ae8812fff27433d0e7a5c6
+   bridges/wecom/bridge.mjs  f2e10dbc0f609354d3c4fad129a7817b5ac8c53dc5ed994a639da480d53887d4
+   bridges/wecom/crypt.mjs  d2ba1dbffe67b0286801d0f4c235505dae7a34d28e5a8b3e916517ff54d49efe
+   bridges/wecom/transform.mjs  d392bb1c2149687ffba206cb24adf90ab0e63c558b5bf00f9eb038b946a5d7ac
+   client.js  a750507edb1685a1b9a0867ae2a8bc7431bcfb788d9d928e4c16535e9be4b55b
+   cordis.patch.yml  81bd21d43ce706a1ade281d4d3369d27f2c33632e6958f15fa0697e6f0fb8bc8
+   examples/README.md  93ca5b4ec2f90a3f88d28014e496019380498e79c2f09b478518f6adf8d3011f
+   examples/daily-digest.json  f8b8f3c9dc86045818682fcc10c7e2a7843638bfa4fa64103169ca39c4126671
+   examples/data-report.md  ed54559ce925a70c03af8d4969c99116223717cfaf5d42ec028b5b9210468ce8
+   locale/en.json  a0a1a0662e2c470650f4e0b3f06f2df47fe2e56283b50843bc2cbcf739687a03
+   locale/zh.json  c826aedb16505aae2426d5fce82f96a407553fbf07283389b8fcb060e189aaaa
+   panel/index.html  46c8627d7cc8110190bdbfec4707061089333884318a225ee42e57e112ec23e1
+   prompts/orchestrator.md  7c8966caa751db7575ec0ebb91bda0bc33bed8c914de0bd77d7e53c9b12c50ee
+   prompts/triage.md  ebb1c511f8ef01cac0084913ce2a8aff7e1b7f02ecbd652a22ee198fe3d05a09
+   prompts/worker.md  d6e7256cc27b69c08b1381717321d86f8bcaac0949f5e1a20c54d141a19a9d24
+   （共 40 个文件，按路径排序；不含 lib/ —— 它就是 bundle，由新鲜度与版本号检查覆盖）
+── 源码树哈希：aa037de716efe69a
+   取样：src tests scripts panel prompts bridges docs lib locale examples package.json cordis.patch.yml README.md
+   排除：node_modules、.DS_Store、*.tsbuildinfo；find -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256，再聚合一次
+   含义：这一行是**这份证据对应哪一棵树**的指纹。release.sh 第 1 步会重算它并与这里比对，
+         不等就说明日志是陈旧的（闸门跑过之后树又变了），必须重跑 ./scripts/gate.sh。
+
+结论：通过。产物 2cac4b8c36ee96b6…（516828 字节）

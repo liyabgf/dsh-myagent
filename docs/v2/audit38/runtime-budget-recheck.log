@@ -1,0 +1,10 @@
+
+ RUN  v4.1.8 /private/var/folders/cb/dx90h3g57qsc4fj38007t68c0000gn/T/myagent-audit38-gate-0kzzcl9r
+
+ ✓ tests/runtime-budget.spec.ts (4 tests) 64ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  12:56:00
+   Duration  442ms (transform 205ms, setup 0ms, import 286ms, tests 64ms, environment 0ms)
+

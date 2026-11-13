@@ -1,0 +1,3 @@
+before_lib=2cac4b8c36ee96b638a0ae2fe7d14a4309e779727f782389eda0ad02d9524def
+typecheck_exit=0
+test_exit=0

@@ -1,0 +1,3098 @@
+[
+  {
+    "path": ".gitignore",
+    "sha256": "d23a11ec36b8a094c1e0c9dbe502b9e5bc69adb7520298488ddeaeaffb4ddbe4",
+    "lines": 10,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "CHANGELOG.md",
+    "sha256": "ed8901ec3a4d337e7b9a421ca22c8deba00e4cf76144e135c2258bfe92fcc904",
+    "lines": 42,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "LICENSE",
+    "sha256": "2f1dc9093af54289d08bf13021ca8e639c656ea33e8aa40c1ad21c366e25344f",
+    "lines": 21,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "README.md",
+    "sha256": "ba0e38e7fd008db560482f161b7bd51bcac43b18902eb7feb162a451f883351b",
+    "lines": 455,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "SECURITY.md",
+    "sha256": "05c57c048dbdbc0ceb4dbadacf44791a668429f8ad10242fa73016d4ede75a49",
+    "lines": 154,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/README.md",
+    "sha256": "53ed5ac235f815146ed2aa42eddff6700fb4fdbb67b3bf8eae524af3c70e25e5",
+    "lines": 173,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/dingtalk/README.md",
+    "sha256": "b0c20287d4b2644516ccfe6c2f99e81493d5baf59ab3db1444cee766eb63d7fe",
+    "lines": 50,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/dingtalk/bridge.mjs",
+    "sha256": "7a329f199e11f10cd6be231fac7c0ad71cc6601a1d5338967c729d44e2b4d203",
+    "lines": 202,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/dingtalk/package.json",
+    "sha256": "b207dea14b51838fd023c8964bf4574a30691b240b491672c350313ed867ad70",
+    "lines": 16,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/dingtalk/transform.mjs",
+    "sha256": "a489fce3022b467cf1c4c050c58596ab6b0551218d374570633d7de190272150",
+    "lines": 98,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lark/README.md",
+    "sha256": "5fa1bd37b0f123e6899b6bb5c2012b9ce11716e5d5e4dea4ecdec1fccf85b5c2",
+    "lines": 141,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lark/bridge.mjs",
+    "sha256": "ecbae300ad13a48434a221882c512769331a220a37771a9177cd543f436359f2",
+    "lines": 237,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lark/package.json",
+    "sha256": "ef7016aa554cdbcf7cf7e2fb5f243b1a101b9b28f26b96664e8bf4039522bb0c",
+    "lines": 16,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lark/transform.mjs",
+    "sha256": "671b1370b1210256d88804a335a9f74a63a587c53be4c0dced5018d95859839c",
+    "lines": 125,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/frontmatter.mjs",
+    "sha256": "67db4850176bfe120e2d46de8f01abcec2ae9b1eda442d527a2b7c0c0f85eb0d",
+    "lines": 68,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/inbound.mjs",
+    "sha256": "2c61031c37ed11689b121b4fd10da531e2d6d65ad45c05bfcbfa117a1373dcc6",
+    "lines": 104,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/log.mjs",
+    "sha256": "260f7ead2a91bd201679ae37ed4d49aa19560d511a7f36601fe087da4fabafaf",
+    "lines": 51,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/outbound.mjs",
+    "sha256": "effb2179a96eaafb1b7a62908dbe7795e7974ef48cf8002a00469f1a18248fa9",
+    "lines": 229,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/route.mjs",
+    "sha256": "8918a63f70bb714dd588b191c138844f499961b350dac35e11e0eed2609456f5",
+    "lines": 71,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/run.mjs",
+    "sha256": "097ee92912bb548fa4c90d0b20ff359287f8af6b2b87b92d5165667c9c6e3d51",
+    "lines": 76,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/lib/state.mjs",
+    "sha256": "fcf23a32ccb421325feacf8070db96514b4ce209bdef9ee13076778335bd7be1",
+    "lines": 30,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/qq/README.md",
+    "sha256": "0249a91d69268f2676ffdfb8f28dddf812b4dc237e71f91c6af9b4ed3f0f52e8",
+    "lines": 59,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/qq/bridge.mjs",
+    "sha256": "1bd92f77ca8037189c45e56cb59adec95c609a69dbb803cffb64a1ab39590664",
+    "lines": 347,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/qq/protocol.mjs",
+    "sha256": "9d29801259eabe71d812ebf9968f8def1c9c86d6e19329baf8300eca7539d087",
+    "lines": 108,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/qq/transform.mjs",
+    "sha256": "b77d924313fccde2dd54a151d60fbff490d19fd730dd8bea3639415a2091dceb",
+    "lines": 93,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/telegram/README.md",
+    "sha256": "35224db7acc24aeeb9b5202da3eadd14cec05cdcc4383f1b3e2bc3778f1f21d8",
+    "lines": 104,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/telegram/bridge.mjs",
+    "sha256": "a30e09e1f6bd336504ed02a5fffe25624cdb0ed623b7e2ed7e638ff4a1bfa147",
+    "lines": 273,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/telegram/transform.mjs",
+    "sha256": "f28b655adcbd725593bc1180e3e8156b7fbe2a12c6ced749ab7b0a0fca114d53",
+    "lines": 138,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/wecom/README.md",
+    "sha256": "3e68ff307eaf0d2af6a43f109db123160e4f7e2130ae8812fff27433d0e7a5c6",
+    "lines": 65,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/wecom/bridge.mjs",
+    "sha256": "f2e10dbc0f609354d3c4fad129a7817b5ac8c53dc5ed994a639da480d53887d4",
+    "lines": 248,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/wecom/crypt.mjs",
+    "sha256": "d2ba1dbffe67b0286801d0f4c235505dae7a34d28e5a8b3e916517ff54d49efe",
+    "lines": 75,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "bridges/wecom/transform.mjs",
+    "sha256": "d392bb1c2149687ffba206cb24adf90ab0e63c558b5bf00f9eb038b946a5d7ac",
+    "lines": 66,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "client.js",
+    "sha256": "a750507edb1685a1b9a0867ae2a8bc7431bcfb788d9d928e4c16535e9be4b55b",
+    "lines": 61,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "cordis.patch.yml",
+    "sha256": "81bd21d43ce706a1ade281d4d3369d27f2c33632e6958f15fa0697e6f0fb8bc8",
+    "lines": 203,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "docs/design.md",
+    "sha256": "c9fc04128d6d3b939f70ddb2474f5132c7217fc829c7a39402bdf0de85f2a015",
+    "lines": 149,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/install-live.md",
+    "sha256": "55b71342d1f3b44fed1af658eda9406c057fdfbc00d455d0a7a4c93ca468c35e",
+    "lines": 119,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/integration-checklist.md",
+    "sha256": "bcd065477176cca3258addbc2870b32e0ba3f699896e711094c094bc3977f47c",
+    "lines": 129,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/00-audit-and-plan.md",
+    "sha256": "4899d127504e774e85778f9e85b614da3fe6248926ce0c43c8119d4d0cfa5e51",
+    "lines": 9023,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/01-live-acceptance-current-build.md",
+    "sha256": "6225d2d9aa6e08adbb319126d26a74739bd3af899fc295a36d092aa62d602ab7",
+    "lines": 674,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/02-live-acceptance-v2.md",
+    "sha256": "8c3ec142ff43a5bab7aa772088e82535226ba0a33e94dc53fb9551bcda6097f7",
+    "lines": 233,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/02b-live-acceptance-v2-addendum.md",
+    "sha256": "a847b44483eb1aa8ff78a3151a13b3945060bc6946694719d1ae1eb561871045",
+    "lines": 431,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/03-deployment-and-rollback.md",
+    "sha256": "c1cb3ffab0a62e538849679c248c04eae3501814fe5dfef28440ee0cda9c4c5f",
+    "lines": 181,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/04-execution-discipline.md",
+    "sha256": "32137e3b9d660c5edb89c598dacced9de632dc4b885aa4bb74a9f7d1a5016b35",
+    "lines": 445,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/05-panel-v2-ui.md",
+    "sha256": "1871f8bc59365497e3e61a12c01ef4a766d3ce02c440ae432003b7ebf4ee9980",
+    "lines": 89,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/06-security-risk-register.md",
+    "sha256": "5740ede438e73042b4d1de7fe5ddda284f1103c33115090d11e2f9b4020764e2",
+    "lines": 294,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/07-modules-and-capabilities.md",
+    "sha256": "389f315714e98ecafb57e909f5b50b1b0e3cc9baecf60ea60d20e498628093ac",
+    "lines": 1235,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/08-acceptance-recipe.md",
+    "sha256": "1b94b1437fe8d2077b20f33aaf99bfec46d5527e15e259b2eaabb173969f373f",
+    "lines": 491,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/09-architecture.md",
+    "sha256": "0411fa2f06cd78d648933eb6f9dff0083f6397d9f813cc765b7e478c5e4c4868",
+    "lines": 368,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/10-v1-to-v2.md",
+    "sha256": "31f0252cfee546072c4a7ae8c3a2418e5316c4255e4b83e9b71a51bd8351f3f7",
+    "lines": 172,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/11-test-report.md",
+    "sha256": "74fb6cef290d6b1e4d97b453da5f7a45cfbaa8bdc4f95178eb8e5234a27cb41a",
+    "lines": 610,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/12-unimplemented.md",
+    "sha256": "d8f70eff2640672e6cc4ca3d0d367c2f69e2029e7268a2b6f54843f101567e40",
+    "lines": 536,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/13-data-model.md",
+    "sha256": "1040dfb97829f161c4da7781c5ccd9a1d51963a543e2b4a44441fb3c2c2bbcf1",
+    "lines": 195,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/14-live-acceptance-watchdog.md",
+    "sha256": "ef7ac34ffc45b699dedcba86b8a571cbca51311d08149801def429ca4fd9fd8e",
+    "lines": 342,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/15-p8-contract.md",
+    "sha256": "c9521938bfbb8d31d83ae234443bd09d477a5d77d1173ce3834785544b80159b",
+    "lines": 246,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/16-live-acceptance-chat.md",
+    "sha256": "e354fc11badf94e0d35bcf29bba62b4c8cc27fe7f1d7d14d366b8fd81422b4d4",
+    "lines": 695,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/17-fault-injection.md",
+    "sha256": "530e449c91a6c5ebe12954d0000dae36f486ab296b359c82b0da9ea90580c82c",
+    "lines": 298,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/18-live-acceptance-full.md",
+    "sha256": "7d66122ad744b5f4b2af06bcda979fbf319c3ee06f08f40ba0f2013419704757",
+    "lines": 234,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/19-production-findings.md",
+    "sha256": "72bbb808b05b9c4063b0ca547b864905ddb2851ab7d0e3c29c49d96a98734fbe",
+    "lines": 372,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/20-capability-and-asset-analysis.md",
+    "sha256": "182a3fdcf78aa9c3228f03b9ec68577be886035017ff65386ed7bae5f525349a",
+    "lines": 415,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/21-engineering-plan.md",
+    "sha256": "8707eb7ac004c8d2734c99ef9415045d0929a8e0910061f7cbf8e8bcf347a634",
+    "lines": 389,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/22-panel-usability-plan.md",
+    "sha256": "6400d1bb99b642b24a27280bc7203045cb319ef6f78bd80d02470bbfdd4da907",
+    "lines": 226,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/23-panel-usability-engineering.md",
+    "sha256": "ba526aabea7ea0e0af870d8e0333d516e09377096e79d940238839bc6998f232",
+    "lines": 84,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/24-panel-usability-round2.md",
+    "sha256": "c7ee0237de16984a31f7173ac4820b11c159a847f3b9d7f7edd77178cb922bc5",
+    "lines": 146,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/25-ecosystem-nodes-and-task-environment.md",
+    "sha256": "34faa22b5af7abb95109760317dea81c9b4e6741213e8a2ccb665918311ff597",
+    "lines": 194,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/26-acceptance-s1-s4.md",
+    "sha256": "6313e2d8b2bdc11cd232dd00e4da8aa01c65dd28f58c052cf0cea18c1ffcaad4",
+    "lines": 87,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/27-open-interfaces-and-panel-next.md",
+    "sha256": "b2861404c9894c5cc1b380b426cd83c5d78aa10607dc87287b0dd41587381cba",
+    "lines": 201,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/28-regression-playbooks.md",
+    "sha256": "35dc35f7aea9f74e8cb9c08929056ae7480bb2eb335fbde30051f217282aeb4b",
+    "lines": 87,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/29-architecture-and-connectivity-audit.md",
+    "sha256": "1d4b1a544a04ddbbf52ad14d2c2f5ee9451d453a54184a2066dab9e4d02c2c8a",
+    "lines": 180,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/30-desk-centric-architecture-audit.md",
+    "sha256": "5c23fc6f75c831830da30ba02a21bc836d084e8eb7a70eb93c5dae0769b0a027",
+    "lines": 174,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/31-desk-llm-api.md",
+    "sha256": "77374c4c0f6847a9bf7874fa80d23da439b23b438d6dcbdc538d32b840ef529c",
+    "lines": 114,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/36-reconstruction-engineering.md",
+    "sha256": "2caed2c0169bde411805a74ac10f637519c57eaf03084ebf429fee04382d02ba",
+    "lines": 205,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "docs/v2/37-audit-discipline-and-full-audit.md",
+    "sha256": "d709bb2657603ff370c3ee57a65c49f249bbe4f46f40644292a3817c1ba679a2",
+    "lines": 513,
+    "status": "全文文档审核（历史事实未重验）",
+    "method": "full text review required",
+    "evidence": "docs-review.md"
+  },
+  {
+    "path": "examples/README.md",
+    "sha256": "93ca5b4ec2f90a3f88d28014e496019380498e79c2f09b478518f6adf8d3011f",
+    "lines": 52,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/daily-digest.json",
+    "sha256": "f8b8f3c9dc86045818682fcc10c7e2a7843638bfa4fa64103169ca39c4126671",
+    "lines": 32,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/data-report.md",
+    "sha256": "ed54559ce925a70c03af8d4969c99116223717cfaf5d42ec028b5b9210468ce8",
+    "lines": 20,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/README.md",
+    "sha256": "90bf5aeb61ef572abf704dc89019497576fdc94ec98b5e42c2b343df1ece2a7d",
+    "lines": 62,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/RESULT.md",
+    "sha256": "0f8eea639787a91423181c78b0d8ddf01b8d97470ab392ff00b07eb0a62359f3",
+    "lines": 54,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/brief.md",
+    "sha256": "9d705c8edf2900730d5e4c3faf190d84e2353f41a367d0a4bde47666ec965fb8",
+    "lines": 431,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/article.py",
+    "sha256": "814a174284c216dd54816cc5e3e78641ffc69ebafeea1ae3e01e9e93a1b30e4d",
+    "lines": 33,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/body.py",
+    "sha256": "357ce6f347e40346f1fb8c6c778449e0b94f9224447df11770d8ca92f2749b85",
+    "lines": 25,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/digest_news.py",
+    "sha256": "aa5552f82c6cab5e47b6255deca5935bfc52f1765fdcc5621a8d9343d535f349",
+    "lines": 60,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/fetch.py",
+    "sha256": "c1b79ee3aa95187bdae674d0e7a9879a94dd656bb22ef062adf8bdfa455cbb8a",
+    "lines": 76,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/gnews_decode.py",
+    "sha256": "cefbf26e5950ae4dd595b5814be4b6f7af49d0e4a977dfa9b7e1a1ce8c52f95e",
+    "lines": 56,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/html2txt.py",
+    "sha256": "7cf313aed815ebb1fff31f9bb8e1871727750339ca8b180e5a27bbe31b49f7c6",
+    "lines": 50,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/mk_appendix.py",
+    "sha256": "2e4c957ab51370ecfe5c47c304c86efe954193a3d8976d65d094f3c55fa261d6",
+    "lines": 204,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/mk_m8.py",
+    "sha256": "a7fc348aafb965b3e2b81e2227950b699936c7f3f8a0c2a130b97e981eba2572",
+    "lines": 62,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/mk_news_manifest.py",
+    "sha256": "e2809c2eb0de1303540094971d54c2621e465b642a1bd8b40a21625b237dce06",
+    "lines": 48,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/mk_news_manifest2.py",
+    "sha256": "7adb880fc0c46d5cc1d3db2e9267ae8479bbd6b71061653c6425dc33f7f3769f",
+    "lines": 54,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/mk_registry.py",
+    "sha256": "de1ba19fe16e052220f083f28af487d1ae21f81a237a96c9ad4fdcbf4e71ea10",
+    "lines": 52,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/parse_hn.py",
+    "sha256": "345af8ec319a3265e9ad0d91064386c9026d0f5a731bc8b8d63b8bdc2dd9e3fd",
+    "lines": 29,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/parse_rss.py",
+    "sha256": "6a98e62f0084222fbfc703511b769195190b0ed5e82de5f9263206010080d323",
+    "lines": 48,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/scripts/pick_articles.py",
+    "sha256": "687e934a0573440048765704928ff19ee041f055420384f930f798966e0472bf",
+    "lines": 32,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m1.tsv",
+    "sha256": "cf34911dc8e104363cdcc649a10733def32b30cc72a07b782486247ae94cdd02",
+    "lines": 12,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m10.tsv",
+    "sha256": "4309f375a96f2e9d892a17fa81a34c52c7631f9b4fa50b3deefed90ad7f2c3b1",
+    "lines": 20,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m2_sec.tsv",
+    "sha256": "5af5c03a91ac18d1a8b2e0db0381d362832cd5031e17b1e2140c0e721b99ff03",
+    "lines": 6,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m3_news.tsv",
+    "sha256": "199d6501ff21dc702da9817a5d605a4df39c62b611b7533140b2e6ee15732aef",
+    "lines": 60,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m4_news.tsv",
+    "sha256": "68ff980bee5cb8bd84fe8a4c9c00bfb57f38cab269924959d648dcd98253f1e0",
+    "lines": 68,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m5_articles.tsv",
+    "sha256": "46d2cedad030d6a7ee57210196f6ca0bcf50dd177caec52d6d9004e7c9e61163",
+    "lines": 58,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m6_primary.tsv",
+    "sha256": "9c5628cda842559d925961a715313598ccc74745e45b9f5de3e8d97f03d51d8e",
+    "lines": 27,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m7_social.tsv",
+    "sha256": "7136070c1132ca6a66c284fe10b9dc57d4b8cec3875e4825570ce01edca549eb",
+    "lines": 26,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m8.tsv",
+    "sha256": "200a55fbe4dc4fc6a7a3eb2450f3b12935edef198bfae22c1e8c35cccefe1112",
+    "lines": 34,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/m9.tsv",
+    "sha256": "81bd7283ff508ce76ae40fed76c471dccb0e92aeeb2590f37ac5b5fb5dce4a2c",
+    "lines": 18,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/manifest.csv",
+    "sha256": "5d62f592682ccec59766b0624d911a638ed35a678c64fdaac94b595dc6c09e16",
+    "lines": 314,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/sources/registry.md",
+    "sha256": "5d9f0e8d73de6e43dbb76e3d139ab8d50f474367a0a9f714a9dd2b7619dd4668",
+    "lines": 423,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/aa_gemini4_carbon_index.txt",
+    "sha256": "84a3a105fd30dbf10febdb6b0acd97d843ed03f0336a303af19dd518a204734f",
+    "lines": 57,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art10_A_Google_Cloud_outage_disrupted_operatio.txt",
+    "sha256": "da839bdd6f3c8dfe1b778dd2264139a4018fcd2c6298b5d77052d31ec1e24b30",
+    "lines": 111,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art10_Billboard_Owner_Penske_Media_Officially_.txt",
+    "sha256": "4067c86d8bfcf689025b018737e26028334b3def475a8b86aad1ac02f33c41c1",
+    "lines": 116,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art10_Market_Chatter_Alphabets_Isomorphic_Labs.txt",
+    "sha256": "ee6af9f3ffb2f3505d243f55c197cfd8f10d275cf512aa831e38d50bc9097847",
+    "lines": 40,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art10_Reddit_is_going_logged-in_only.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art10_Trump_threatens_EU_will_pay.txt",
+    "sha256": "31fafdbc0d0285b6fc552fef769d6434fea9531c16b304196ebd0f54e925acc9",
+    "lines": 50,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art10_What_Took_Halifax_Revolut_Down.txt",
+    "sha256": "629db887d38d9f3c74a86fb6202e3f7c309946523f85ac9da95a982ea01af0f3",
+    "lines": 76,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_AI_buildout_hits_snag_as_Google_and_Mi.txt",
+    "sha256": "0c500d45d285d8fbf9ca45640d0c65df788081f8d53b53f471dd8b25e1a5fd27",
+    "lines": 96,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Alphabet_Raised_41_Billion_in_One_Qua.txt",
+    "sha256": "d5d177c96f1b223b9ad9544f663d60d487b372cf3298416d13c56de29e80bef2",
+    "lines": 182,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Alphabet_sinks_10__as_it_holds_2026_ca.txt",
+    "sha256": "453ffcae10c4554ad10c8ab958e721ab09c8b65fa6462b3290e9f9620ae7885b",
+    "lines": 106,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Google_DeepMind_Safety_Researcher_Quit.txt",
+    "sha256": "aed85b4d33d0fc2966d39c3da2922644db829a264b6283cd6a3805d3f77017cf",
+    "lines": 220,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Google_confirms_Gemini_models_hacked_t.txt",
+    "sha256": "dbbe33179065724bc39eb572a61b0ba2df8a9b989e60a833540308829fbe3a1f",
+    "lines": 82,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Google_expands_AI_Search_ads_globally.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Google_value_plunges_by_500bn.txt",
+    "sha256": "26a4eeeeec7958e281f95aaf0ed582694caf454eda9f976524585b887b95bfd8",
+    "lines": 88,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Googlebook_Launches_at_899.txt",
+    "sha256": "2be5acb86e38973f8676d0c1f05becc3fa3f32c648562099be130299c30b1a69",
+    "lines": 152,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_Waymo_co-CEO_addresses_scrapped_Uber_d.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art8_YouTube_now_requires_creators_to_have_.txt",
+    "sha256": "c9208f0de804a105759cd51bb30b3afc6e5b3c0be03d38b336bf3fadf998695c",
+    "lines": 98,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Alphabet_Lost__410_Billion_in_One_Day.txt",
+    "sha256": "d0878d7ccc7dd64da8b64a774124c5d5a4bd1f95c8acad6bef96f9fc55ec55e4",
+    "lines": 155,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Alphabet_launches__6_billion_bond_sale.txt",
+    "sha256": "a982eaa017baeb7d44de562938dde58b210aef3dc502c80c4010d3f2e26d1ac9",
+    "lines": 34,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Alphabet_reaffirms__195_billion.txt",
+    "sha256": "e62e42cc1f7c7bbe875f5ca36c511ec6edc12325d170a2cb9923baa5c5428294",
+    "lines": 114,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Alphabet_reports_Q3_2026_revenue.txt",
+    "sha256": "04ea77f1d12de5f7db2b44f9fdaf2a76d6c669bc602a3c315f44d022a125c3dd",
+    "lines": 67,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Alphabet_starts_selling_its_TPU_chips.txt",
+    "sha256": "408290c2c5966ca4bd4e55671fc68c99dedac9262303d745e063a681bb576968",
+    "lines": 124,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Anthropic_partners_face_enormous_counter.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Dell_XPS_Googlebook_Review.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_DuckDuckGo_courts_schools_as_Google_ties.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_EU_says_it_is_in_talks_with_Google.txt",
+    "sha256": "f4d52bb3c623e78cfc5c262b87cb8c64ef09e3c1076004529126bb8cbb4a5704",
+    "lines": 40,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Even_more_ads_are_coming_to_Google_searc.txt",
+    "sha256": "0821f439a51486b74c87b484180048704d38a3569c5737a252f47ea85aa0d4d2",
+    "lines": 177,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Gemini_4_Carbon_is_Googles_second_new_f.txt",
+    "sha256": "797aba9e023ebc84c108434e029f5c6828abf38788f52292d8c61a6ecd4ad260",
+    "lines": 68,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_AI_Overview_Lawsuit_Dismissed.txt",
+    "sha256": "64f72da9c74d3f881897b642d392fea9e13be1f401a2514daae9b27a117333b2",
+    "lines": 202,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_Cloud_Sales_Explode_103_Percent.txt",
+    "sha256": "049971409a4f50c60cbf3d568123b53fb5cd06dd97eb32416ee028b5a035d00d",
+    "lines": 86,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_Cloud_crosses_24__of_Alphabet_rev.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_DeepMind_researcher_quits_with_ch.txt",
+    "sha256": "8022e3e2604e1a4ec8a9cc6253695bf3d931ec90f0c335abee567347d9b4e635",
+    "lines": 62,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_Faces_a__3.2_Billion_Ad-Tech_Dama.txt",
+    "sha256": "cef62eee2137507b948d913224992856d890fa4b864666e91da915c6708bf2bc",
+    "lines": 182,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_Is_Forcing_AI_Overviews_in_Classr.txt",
+    "sha256": "2dd3e7b950cb99affff79fc7f9662efe36d4711555c9d3b25024869308821d5e",
+    "lines": 76,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_admits_AI_search_makes_less_money.txt",
+    "sha256": "7ec61b3d76d8d233c3207d976dd95a662af55ca31a0da1c55fbfaba51826ae02",
+    "lines": 90,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_alters_its_cloud_playbook.txt",
+    "sha256": "7504ae26fbae2f77c5070cef2a5220a1a1edf49c75166c72485d22b12c94a69f",
+    "lines": 128,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_deepens_Anthropic_TPU_partnership.txt",
+    "sha256": "8bc052b716fc35c54ae8087b3f67aa0066d85e971615267ec1dd38e825feffed",
+    "lines": 128,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_is_entirely_disabling_Search_in_s.txt",
+    "sha256": "7499d4fa1e0f0d632e2f0643b008c7f43f53f3919973c0b6762a5255c1466e31",
+    "lines": 150,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_layoffs__4500_workers_seek_guara.txt",
+    "sha256": "02aba44ac7a62c37b68f13dcc363266bef3688555694bddc39dec5e24f681f27",
+    "lines": 77,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_responds_to_political_backlash.txt",
+    "sha256": "e04dd6c7904c3aee0bbc32fa2b8e1fd53f431eee7eaec70aef866609c35e2745",
+    "lines": 82,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_says_it_can_build_data_centers_th.txt",
+    "sha256": "5f89385b39e276b4ae81a3718e05cdfff6f30d4358f1341f05fa383964146112",
+    "lines": 118,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_shakes_up_AI_leadership.txt",
+    "sha256": "f87bcfb3c9f79a8d48e06274608248c87c290db06920249c6677a692540622a2",
+    "lines": 111,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Google_spent_months_pushing_AI_mode.txt",
+    "sha256": "afc3e76c2af4c1b8520855c18657e72f19c445970b1e25284d465261117cd1e0",
+    "lines": 56,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_HP_Googlebook_14_review.txt",
+    "sha256": "4d3c341405f951149042fe7ebbde2e8ca00a9019190cbad0206460092d566990",
+    "lines": 153,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Hello_Googlebook__The_complete_FAQ.txt",
+    "sha256": "c40353f55390b119d9db5eb2df089a8221322deb4e3bcccd29c89b06719a9f8a",
+    "lines": 449,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_How_Google_is_bucking_tech_industrys_la.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Lenovo_Googlebook_15_Review__The_Costs.txt",
+    "sha256": "3c7643235966a747f0ade71ad9490167de899342b4c673c019096231730b21ee",
+    "lines": 416,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Mayor_Zohran_Mamdani_Blasts_Google.txt",
+    "sha256": "14102105202349e8157491627e72ff28ad8d949cb6038f751c19e6e63ce28efa",
+    "lines": 92,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Meet_AI_Engineer_Who_Resigned_from_DeepM.txt",
+    "sha256": "19287b8ba34f9b27e9aa0a411d0daef189238b3fa7388858acba4c514318e056",
+    "lines": 309,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Pichai_Says_Google_Cloud_Is_Giving_Up_Re.txt",
+    "sha256": "295e23840132eb88f8c6e63be070f0220d5011581d6bf26b65b086256fff09c1",
+    "lines": 79,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_The_Court_Just_Unsealed_Judge_Brinkema.txt",
+    "sha256": "861185523a4a79e9480e013cf85520e3a378662837f606110e7cd80c8153aec4",
+    "lines": 164,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Thore_Graepel_leaves_DeepMind.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Top_EU_court_upholds_Google_Android_fine.txt",
+    "sha256": "423d7d0c6b1eb9ee435d3d271cfdab0dfa37a1db44ecfe282dbca94f0172b9d0",
+    "lines": 56,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_US_court_rules_Google_will_not_have_to_s.txt",
+    "sha256": "6f60ed500ce9dd60832d04640398ccb3b951d8d987d6a74f6d0b88b6810088d9",
+    "lines": 86,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Unions_gain_access_to_thousands_of_Googl.txt",
+    "sha256": "5eecf3cb051dffec2a86cca53baf25ba16971cece6017781b4cfef1218177b66",
+    "lines": 60,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Waymo_adds_nearly_250_square_miles.txt",
+    "sha256": "86f3825613c10d9630a739d34852ad0db85f3feeede148e37e54c507089bf826",
+    "lines": 111,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Waymo_locks_in__5B_loan_from_Blackstone.txt",
+    "sha256": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "lines": 2,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_Why_AI_is_boosting_Metas_ad_business.txt",
+    "sha256": "c73e6ca3a9613b8a6eb658cf44020da48781719e68b76c6a0cf5be9cfb4309db",
+    "lines": 118,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/art_YouTube_missed_expectations_on_ad_revenu.txt",
+    "sha256": "43617856d6da5daf640d5f11dd68c8e7c80b8c1893e369408d3aaf927384d029",
+    "lines": 95,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/blog_ai_updates_oct2026.txt",
+    "sha256": "2a0b629b3fd0f2ddabf56c404b4036b31acfc0c1c0bcf8c27c7368bc85290a5e",
+    "lines": 174,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/blog_gemini4_argon.txt",
+    "sha256": "ac95066247706272cf5d2b8951a4e30a64daa601c09e5bd48adffe34d988b5d4",
+    "lines": 174,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/blog_gemini4_carbon.txt",
+    "sha256": "2325e4ae37d33d3182543fa3c95094cd391e7c97436132ac81061dba6e118061",
+    "lines": 138,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/blog_gemini_edit_files.txt",
+    "sha256": "a9cd4dccbf26acc76f8213a700f09d29ae3ccf0dac1759b1077e28c37ce6834f",
+    "lines": 49,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/blog_health_ai_framework.txt",
+    "sha256": "7756e3f213710a0202f12935acffa1e6f05bf04b9586bf4d1c16cd2693a08dbe",
+    "lines": 55,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/blog_suncatcher_response.txt",
+    "sha256": "c77d7c123a8fb6d66e2156eb60c1d86e5ceaef8792e86ddd09e7b6ee2e33f136",
+    "lines": 58,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/devblog_argon_robotics.txt",
+    "sha256": "d50d9b030351102918f0d396c6e4b5cfc236e59c33ed97e73df21b697ff69b0e",
+    "lines": 444,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/dm_antigravity_chem.txt",
+    "sha256": "cf124511ed31ce82115fa75a32ff4ecc49a3bff5148dffd72a0ef0a3d4af0068",
+    "lines": 81,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/dm_gemini4_argon.txt",
+    "sha256": "35c89a3357463b80a9b66c5ffd461dace8f144aa5f382c73c05e75a897407e63",
+    "lines": 224,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/dm_gemini4_carbon.txt",
+    "sha256": "2325e4ae37d33d3182543fa3c95094cd391e7c97436132ac81061dba6e118061",
+    "lines": 138,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/dm_genie4.txt",
+    "sha256": "19e286cf18c5ad608b46909d23602dc838ab47600cc15339af1b8fba730176cd",
+    "lines": 129,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/essay_google_weird.txt",
+    "sha256": "00e27b5f1eb042dd29487ecd3194e19583591f8e142a9f1322c7b33bac93c2ef",
+    "lines": 24,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/gultsch_play.txt",
+    "sha256": "8b13a80a401736057ebe64c60b44d0ad54a2238798aaf764b6d7257ab46e7647",
+    "lines": 39,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/insideevs_waymo_uber.txt",
+    "sha256": "c84aefd1ff3624654bf5ce31a638357c5ec41f36ae83c1ac9cede738c33a8bd5",
+    "lines": 155,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/intercept_deepmind_resign.txt",
+    "sha256": "256e9b865cb2a6347d5543d34eb3bf983802ac38986a5a23a751698fef6f9e0b",
+    "lines": 289,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/kadoa_search_below_half.txt",
+    "sha256": "8a74873b72ad47e71d43e282009425d9a7dd33bea7198af3e1f51736bba7f5b4",
+    "lines": 108,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/n9to5_ai_overview_payout.txt",
+    "sha256": "774fe48ed3bef8c3849db51b7fee644cf03b6178caa34f2bf80e2fde9278e66f",
+    "lines": 61,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/osnews_chromebook_updates.txt",
+    "sha256": "a49acc8fa9055069794744d8610ffed31e77f41868db9ae474ff13f1cd044148",
+    "lines": 206,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/pymnts_ai_exposure.txt",
+    "sha256": "3059a524e4d57d4cd83deb257e70ed5c93aa9df30b29d9924ab5adc1b64329b5",
+    "lines": 91,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/sec_10q_q3_2026.txt",
+    "sha256": "bb7e4d06e1c0e759a032307c92cedae13271d419e36abce27ed1b2759d79478c",
+    "lines": 4089,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/sec_424b2.txt",
+    "sha256": "71f02877d5e5f32e9597f70deaaa6e5d5a8d2a621b4c245b7282480c3327a2d3",
+    "lines": 5939,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/sec_424b5.txt",
+    "sha256": "202a87cc5658d3f02f5e97bdbac4716ca6b9145691be3594bb9f3e50d5137288",
+    "lines": 4863,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/sec_ex991_q3_2026.txt",
+    "sha256": "aa016330af8d175413980e624f52f14a3fc15ffe809c07604d9592b2f2d8bbd5",
+    "lines": 671,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/tnw_ai_overviews_clicks.txt",
+    "sha256": "d5cbfb557697b8b29ae1d57942f4524cfcb6364d1e9b65723c6026744b6b4222",
+    "lines": 46,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/tnw_pentagon_2018.txt",
+    "sha256": "377194b8592018da6b3db612115c72d7a1597e6583ca0f29a00634c22e0304ac",
+    "lines": 52,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_android_botnet.txt",
+    "sha256": "c3ef0ae46d1c0eaec07e192d16cb6d530136b3c1cba6bdf401bdd303775e0fa4",
+    "lines": 144,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_gmail_photos_ads.txt",
+    "sha256": "f0e2501c760590dc81122e9ba35d7b454483d9966e3f668c9d32378c6e83880e",
+    "lines": 148,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_openai_search.txt",
+    "sha256": "9e7e26fdd35a0be5376fcaa95757829b63ef046188572768aea34243f75aa738",
+    "lines": 144,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_schools_search_ai.txt",
+    "sha256": "7499d4fa1e0f0d632e2f0643b008c7f43f53f3919973c0b6762a5255c1466e31",
+    "lines": 150,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_scraping_optout.txt",
+    "sha256": "2bffe66ba1a29feff3dd4917eac498e7e13cfa3653bada9265ef8918044fd62b",
+    "lines": 144,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_search_ai_money.txt",
+    "sha256": "ff6911579e4356a56b6e9c7f874cddc2caf91cf94f981658a0d50e58ba7a0adc",
+    "lines": 201,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/verge_suncatcher.txt",
+    "sha256": "7b44e16ad3769e2445a69c18b87d2e743620eceb808ee386460170cfae46f020",
+    "lines": 142,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/waymo_blog.txt",
+    "sha256": "897a593eaebbbd360f782f44267f9571e76637c629a9888b391c9cffed7de681",
+    "lines": 223,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/waymo_toronto.txt",
+    "sha256": "20c1def363621d001067973525a025621b0f260d654a89ea6b1b692b44a419b2",
+    "lines": 62,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/yahoo_q3_transcript.txt",
+    "sha256": "6ec1c08118e8e2e679c62a030e7d96a661cfcaa27e28f670a4d77216a6f6d206",
+    "lines": 267,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-1-collect/txt/yahoo_tpu_second.txt",
+    "sha256": "bb7fa779b26e6d39e0b6baae15226e4547a03dba4e03ca7d6f538b1e6fd6b793",
+    "lines": 92,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/README.md",
+    "sha256": "e0e2dcb933ceadd61f66d5a3525d42100b2f239dba4878e9064962757917a4d1",
+    "lines": 105,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/RESULT.md",
+    "sha256": "4e43238f884ca3007bc2db43be5a1540a45aad7daf9fd6bdfb441b90546a45c4",
+    "lines": 107,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/01_法律事件年表.md",
+    "sha256": "541366bdd5875ade2d338eec56bf7941084b1d08e4e8098d1de2fbeffe40ddec",
+    "lines": 370,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/02_谷歌法律处境综合论述.md",
+    "sha256": "f39c8f0927e2f46b0a856c132ed594eb642eb51bae78bb6dece057b586696609",
+    "lines": 308,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/03_信息比对_两Ticket对照.md",
+    "sha256": "8bdb5609bd0fd987daa6f58ba0d3b8821c8c04bb8b1689019ce5ff46caeb5078",
+    "lines": 141,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/04_给搜集信息Ticket的口径修正.md",
+    "sha256": "bef264a137f773a835cb2b02ccb6f799d89ee0402f084365e90bacb235f7a4e6",
+    "lines": 55,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/05_监管与法律风险自述与敞口量化.md",
+    "sha256": "92184741921240f953d064fc07a3330060dce5656bb5049c128e60b0d091a497",
+    "lines": 162,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/legal-events-chronology.csv",
+    "sha256": "94885964107db7e20e5224c5763c82b135353c0bc8f98c67bb5e126f64db79f1",
+    "lines": 138,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/legal-exposure-register.csv",
+    "sha256": "ea6a8b524bb3da1059a75d0a028e2a30c17a549881ffe32dc81fbb4f19b802e3",
+    "lines": 51,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/scratch/bnews.py",
+    "sha256": "43646c7575690b7ef7689b19ad36c7aa0bc56c923e8ebc8e6efb65d4145c0a41",
+    "lines": 22,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/scratch/bsearch.py",
+    "sha256": "5d9bcde5f79eedc6ac273217405976194ca1424aad7923fe0f94bd1f39054527",
+    "lines": 33,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/web/bingnews.py",
+    "sha256": "148528856e3a3e7b0d95acc0fb65e72fef4494835e81fd3271fc625f67653505",
+    "lines": 18,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/web/bingurls.py",
+    "sha256": "9f99abf5b9b8d381bc4ef7036214df5df58d7ca15996cf49159839f86ed4f379",
+    "lines": 22,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/analysis/web/gnsearch.py",
+    "sha256": "4fe59e5e05cd9d7e07ed0fc61304977b0085888a895a9d1ba3b4c3be246fa9bb",
+    "lines": 22,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/notes/legal_candidates.tsv",
+    "sha256": "e22ca4aac803a78a87adcc7fde6620c0680d9ec4031b2d4d6cc510526480733d",
+    "lines": 749,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/notes/legal_top.md",
+    "sha256": "0f4432d049aff8cbe558412078f7b57953ccdad2b7245079021729728d0d2783",
+    "lines": 2320,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/notes/scope_a_jurisdictions_privacy.md",
+    "sha256": "107b03e0b9daa05e8df4103bcb85a6f9e384153f78e8feda79f9834ee353be81",
+    "lines": 473,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/notes/scope_b_ai_ip_securities.md",
+    "sha256": "25531b779a59e906f8ade0ca1e78d1020bcc247d359eb3d9b93874b01aa69014",
+    "lines": 472,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/notes/sec_legal_extracts.md",
+    "sha256": "bac9d58189d1b325538bf34993c62fc67c84e935b75074c70b440d840a6357f2",
+    "lines": 371,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/build_chronology.py",
+    "sha256": "442cdf4b29dca000d548f39c2ee768163edc514bcbb6efd01961fb0fff98ba0d",
+    "lines": 667,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/build_exposure_register.py",
+    "sha256": "7b7c8d2186383adedb479e3693680ecacdcc9d3b911dfc3745e2d3e986d9243a",
+    "lines": 177,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/fetch_legal.py",
+    "sha256": "b441812ede74d917768478f27ee8390a77f434a343c4cec5f560e0f0f273c3b6",
+    "lines": 287,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/fetch_sec.py",
+    "sha256": "d7d4feda774b5bfe92af525a5bd0f885ab747574899d2d18017932da991625d8",
+    "lines": 167,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/fetch_stage3.py",
+    "sha256": "101f1730693ff0d38e3bbe75f002f1600615818f41c5cb07eeec3ea0242c3b4d",
+    "lines": 303,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/filter_legal.py",
+    "sha256": "8df8de89d029d849bd2980d34d9beff088c613e1492b38d8376744722a67974d",
+    "lines": 137,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/html2txt.py",
+    "sha256": "b6b05b2614041f1de9bd284e6a73a2be4b5556515fe0f29b50321c36551c8553",
+    "lines": 72,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/scripts/parse_index.py",
+    "sha256": "2093ac0efcdd6b03740976a612b17648455ddbdfef9ec22136d612bb6b77d622",
+    "lines": 232,
+    "status": "全文静态已审（历史代码）",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/sources/manifest_stage1.csv",
+    "sha256": "e79ec61d9cbd341823ae8604cb83a32c738810470d86e7f96d793d937dec0ef0",
+    "lines": 77,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/sources/manifest_stage2_sec.csv",
+    "sha256": "c89069a010265615af5545f87ef27ddd12efe4d7cb9670485a8e6219af71d46f",
+    "lines": 9,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/sources/manifest_stage3.csv",
+    "sha256": "7eb8d15b9ca03a65d60f7f3ec46fa855d4ca3baf7e9ef8b9c4661b1cfcb4a184",
+    "lines": 79,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/10-K_2025-12-31_000165204426000018.txt",
+    "sha256": "2bbda2f1609b6ab63bf82b82c1a21d5ba17dec34a5a40e95a92997d8fd4a05f3",
+    "lines": 10277,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/10-Q_2025-09-30_000165204425000091.txt",
+    "sha256": "04d2995d43bb5a021c3089d80764424a6d78435076ef0522af3827fb1af7b058",
+    "lines": 8795,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/10-Q_2026-03-31_000165204426000048.txt",
+    "sha256": "24bea738ad2e612c2254097c1becc8da81cba5780b1c5cabc4c9ed2462b932ed",
+    "lines": 6709,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/10-Q_2026-06-30_000165204426000071.txt",
+    "sha256": "777237afd21f5d2e46b9d7d858d2e831d28891ea5589996b386bd63088aa9035",
+    "lines": 9473,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/10-Q_2026-09-30_000165204426000084.txt",
+    "sha256": "a0ce5b749de6ca36d250a586857aa6e8d59fd0a9ce6474900feb81f6404f6073",
+    "lines": 9553,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/424B2_2026-11-04_000119312526447343.txt",
+    "sha256": "7152fd684d92a9272d275bb81661a6766dd61f46e012a094c849b0e848b2b887",
+    "lines": 4883,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/8-K_2026-10-28_000165204426000080.txt",
+    "sha256": "aa37c5a45e76ae555235cd10e8eca1c621873bacdf88937147033fa4406d4bbd",
+    "lines": 297,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/8-K_2026-10-28_000165204426000080_googexhibit991q32026.txt",
+    "sha256": "cccc5e9c17267189c293452b48a714a8e8ab4fb3a729dbfe0e675b6320b21cbf",
+    "lines": 1916,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/articles/247wallst_adtech_3_2b.txt",
+    "sha256": "bb0c9295b5ef19a96c8bedc2391da2aec56245f3c0000c6fd3cddd7abd96963a",
+    "lines": 257,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/articles/adexchanger_brinkema_tldr.txt",
+    "sha256": "31caca4b3f412beda5a5f64e768a20841c9ad5db2db095b379a7f59594f31ccf",
+    "lines": 168,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/articles/yahoo_adtech_remedies.txt",
+    "sha256": "1fd6cb631e6dfa4ab894b9226746f7ea9633067bff6fddfc752859e5e0f9d3dd",
+    "lines": 118,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_final_judgment_2025-12-05.txt",
+    "sha256": "7c398ee31d0393531693a044f2fd9b9b12c11fca8cf6a6ad7c88130f39f42d18",
+    "lines": 1594,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_joint_status_report_2026-09-30.txt",
+    "sha256": "1e602d05b6e0447d9558bd7c7e5194b06fb4fee1ee89d02f9ec1a6473ae43161",
+    "lines": 1037,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_joint_status_report_2026-10-14.txt",
+    "sha256": "d8ab7886d5a2153cffe042175fc4678b702750acc184349aa12c735b2a9926a4",
+    "lines": 1601,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_memorandum_opinion_2025-12-05.txt",
+    "sha256": "78594557fc6db2f320221b2dee8f4ba144574f9ecfbd718adf921b383f763012",
+    "lines": 11298,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_order_2026-05-29.txt",
+    "sha256": "91f706dc0af10b3f18253b75927740d87162697e66d47c97c012014c079358b8",
+    "lines": 432,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_order_2026-08-25_status_conference.txt",
+    "sha256": "4559130790d50d26d9fd20226fab21ea366d46803b65d323faabf31306acc16a",
+    "lines": 209,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_plaintiffs_1st_compliance_report_2026-05-04.txt",
+    "sha256": "52fb353e581eeb582a0ba130260b6b41944bdb8d3e396205dbbbbf1c27d2f270",
+    "lines": 1990,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_plaintiffs_2nd_compliance_report_2026-09-17.txt",
+    "sha256": "65dfaee5024e97620d6df88ef5e54201d3d6fc400afc1cb09bdd5d567dded804",
+    "lines": 2282,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_syndication_recommendation_2026-10-13.txt",
+    "sha256": "da0b80646bab62f5a84b1eca11c3a88ba43b80875814a9c1fc2397a04a7d8588",
+    "lines": 1532,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_syndication_recommendation_full_2026-10-13.txt",
+    "sha256": "2852aa5aa2abc377a9cc9f06fe294ae6489b7186087fe0139306d9fe227c76f8",
+    "lines": 1959,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_us_opening_brief_cross_appeal_2026-10-21.txt",
+    "sha256": "5f22ea5bfbcaea012863a5fe80881464f7cbc89532100dcb805dbfb6d2a58542",
+    "lines": 8114,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj/search_us_reply_brief_cross_appeal_2026-10-29.txt",
+    "sha256": "1b37dc877baaa46dd98d0d867ea600c4d27c1f4f5cef651a51a63191ecc618f2",
+    "lines": 1744,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj_atr_google_search_case.txt",
+    "sha256": "e21f6904cd01225cfa3892ecf70b810c53198a301960c950a82a7b2424ba43fd",
+    "lines": 589,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/doj_opa_google.txt",
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "lines": 1,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_25_1992.txt",
+    "sha256": "606ba3c8adffe326dff87d3d513ff1fb9ffdec4a6c937912502bb14ef8cab68a",
+    "lines": 49,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_25_2675.txt",
+    "sha256": "472a37375869ca03ebbad86cad9f508e9aba5f968753b805637f6a83d467373e",
+    "lines": 29,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_25_2964.txt",
+    "sha256": "c24780e087a1268b6ec94a5824da42dc2a5d1d29215a8901b571b632b669a470",
+    "lines": 29,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_25_811.txt",
+    "sha256": "ad8e77c64461626c6f21a15c694c826cc9e36e78815f56c7c02b72a5a59d74bd",
+    "lines": 49,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_26_1634.txt",
+    "sha256": "9296e37967374fbe6aeb8a14abecaae970c4270fafce773ed5a599e255d0386a",
+    "lines": 51,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_26_1670.txt",
+    "sha256": "4d99a65a7cc127e94fae7de1e4c212b68ed84f88fcd809e02dfb7813fd01c5e7",
+    "lines": 55,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_26_202.txt",
+    "sha256": "08d928fec3cacd3a844be73866e599e62ee83ecab2598130f4a4a2abc32fcf2e",
+    "lines": 23,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_26_333.txt",
+    "sha256": "05cfc4cd778092a98e7d5b3d89d43483ff973135b2901e95f281a719d8f2eb9e",
+    "lines": 41,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_26_825.txt",
+    "sha256": "8efd612764cb7d908d47412c07096cc0a6a086f493dce50eab325ed31acbb4b1",
+    "lines": 39,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_IP_26_887.txt",
+    "sha256": "75565a17c9f3dfbbe8815358f1aec9de6a1be895613b4a9e93c37e3e87874c6e",
+    "lines": 27,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_SPEECH_25_2460.txt",
+    "sha256": "8872c6f07c5e7e67a1b2acb19daf538b53f2490ef6b6ad7364835a8fb566031d",
+    "lines": 81,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu/eu_STATEMENT_25_2034.txt",
+    "sha256": "5fcff27f32b0aa11936893ff61248220160fe7fb3de325b8e0a28c6be855c8c7",
+    "lines": 41,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu_competition_cases.txt",
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "lines": 1,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/eu_dma_gatekeepers_page.txt",
+    "sha256": "d76bb2c3be4079fe60e4f2bde1ae8fa3d51cd973ccd61dcd954fbd28a5af710e",
+    "lines": 149,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/texas_ag_google.txt",
+    "sha256": "1cf1d3ac5e954246e606bd6716c14e3855c509b7a2924f74839d90074a1fcc2a",
+    "lines": 169,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-confirms-apple-and-google-have-strategic-market-status-in-mobile-platforms.txt",
+    "sha256": "52ec891f5f27e6ce17fc10b82c0368cf0255db3190785c4ef35254afedaaba86",
+    "lines": 105,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-confirms-google-has-strategic-market-status-in-search-services.txt",
+    "sha256": "8632d902abe3134520994f921f2e35e6c31674e7ad7958a6cf7b239fc37f84ce",
+    "lines": 117,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-consults-on-new-requirements-for-apple-and-googles-mobile-platforms.txt",
+    "sha256": "22a4f6a0fff5d115684b292e44db6a8e143241eb8e060980cb510f17bbc9058f",
+    "lines": 131,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-proposes-action-to-drive-more-competition-on-mobile-platforms.txt",
+    "sha256": "623bc43940155904d44f1b18f4b2d98002a7d5bcfb7d20c4d4997fdc72cf137e",
+    "lines": 143,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-proposes-package-of-measures-to-improve-google-search-services-in-uk.txt",
+    "sha256": "33eb43ab6d33a761f49a64354caece2df3cba009e50b1052c18f8330293bac2c",
+    "lines": 101,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-secures-commitments-from-apple-and-google-to-improve-fairness-in-app-store-processes-and-enhance-ios-interoperability.txt",
+    "sha256": "d6f91fff8b64c9fb337a261948f849593fb9eb5f7be403c6329334ed87482cf2",
+    "lines": 123,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-secures-fairer-deal-for-publishers-and-improves-google-search-services-in-uk.txt",
+    "sha256": "9c282f23fb3ca2792b91811d438c3a27769bd7f79202aa8a3d3528ded4aca17a",
+    "lines": 109,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-strengthens-proposals-allowing-people-choice-over-their-search-service.txt",
+    "sha256": "c7037287b636380b1406379a5d797d3f7be940c4cfab8a0662e5882642456eb0",
+    "lines": 109,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "examples/real-run-2-compare/txt/uk/cma-takes-first-steps-to-ensure-choice-in-business-software.txt",
+    "sha256": "5db2fe3ba41940ddb8d7b89ef5aa80fa0adf1704705f90653992cafe8b241cb7",
+    "lines": 143,
+    "status": "历史数据仅枚举/哈希；事实未核验",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "lib/index.d.ts",
+    "sha256": "a7b1549c68196e1ae56a6d44a40e0127e476c5ce1db2576dff709c51080170e9",
+    "lines": 2215,
+    "status": "生成物身份/差异核查（不人工逐行）",
+    "method": "generated artifact",
+    "evidence": "runtime-review.md + gate-snapshot.log"
+  },
+  {
+    "path": "lib/index.js",
+    "sha256": "2cac4b8c36ee96b638a0ae2fe7d14a4309e779727f782389eda0ad02d9524def",
+    "lines": 12137,
+    "status": "生成物身份/差异核查（不人工逐行）",
+    "method": "generated artifact",
+    "evidence": "runtime-review.md + gate-snapshot.log"
+  },
+  {
+    "path": "locale/en.json",
+    "sha256": "a0a1a0662e2c470650f4e0b3f06f2df47fe2e56283b50843bc2cbcf739687a03",
+    "lines": 6,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "locale/zh.json",
+    "sha256": "c826aedb16505aae2426d5fce82f96a407553fbf07283389b8fcb060e189aaaa",
+    "lines": 6,
+    "status": "全文已读/边界审查",
+    "method": "full text review required",
+    "evidence": "examples-code-review.md"
+  },
+  {
+    "path": "package.json",
+    "sha256": "57fb6d7886a2371ccf114c14082b231b6ed3fb1332170e90ed6725bcfe0c16a5",
+    "lines": 97,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "panel/index.html",
+    "sha256": "46c8627d7cc8110190bdbfec4707061089333884318a225ee42e57e112ec23e1",
+    "lines": 4925,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "pnpm-lock.yaml",
+    "sha256": "7eac769b32f1e9eb62bf8a26a34590398afcff0686fde420044f85555ed05d7c",
+    "lines": 3209,
+    "status": "锁文件结构审核；未做依赖漏洞/供应链审计",
+    "method": "full text review required",
+    "evidence": "operations.jsonl"
+  },
+  {
+    "path": "prompts/orchestrator.md",
+    "sha256": "7c8966caa751db7575ec0ebb91bda0bc33bed8c914de0bd77d7e53c9b12c50ee",
+    "lines": 105,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "prompts/triage.md",
+    "sha256": "ebb1c511f8ef01cac0084913ce2a8aff7e1b7f02ecbd652a22ee198fe3d05a09",
+    "lines": 107,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "prompts/worker.md",
+    "sha256": "d6e7256cc27b69c08b1381717321d86f8bcaac0949f5e1a20c54d141a19a9d24",
+    "lines": 130,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "scripts/gate.sh",
+    "sha256": "daa1904c7f1435f0353fdc949c8ca66e1973506c98be909a81a946a101661470",
+    "lines": 280,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "scripts/release.sh",
+    "sha256": "68e012e1617ed5f3c997fffecb61951c2ae7e75f20b708190a823c0648647f03",
+    "lines": 561,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "scripts/verify-browser.mjs",
+    "sha256": "2f4cb39e0fcaddef87653052032bb26b445682a1e4b8b897dd29f8b276b7fe25",
+    "lines": 1212,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "scripts/verify-live.sh",
+    "sha256": "47f6651ea20c315bab53689733e0fcc195d6f09efc9462ca105b2e06fef59000",
+    "lines": 126,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "scripts/verify-migration.sh",
+    "sha256": "65b90eef2de0db29ed16391581eab58187f6170a065ec985431fb70698a6edd2",
+    "lines": 92,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "src/app/about.ts",
+    "sha256": "65678ed0bfdca99cfad60ba506da4a8000c936d2bf963da4f02edaeb07909f1e",
+    "lines": 37,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/agent-delivery.ts",
+    "sha256": "0fa756cf1286947c3dc9e414c24575e5b002145f7dcc0d98419dced4f098f3f9",
+    "lines": 115,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/background.ts",
+    "sha256": "f9221988cee7c89df6d12df854eea7cbdc1ae24bef2112972dd0fe8469c7c180",
+    "lines": 124,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/delivery.ts",
+    "sha256": "8a3fda299baee21691bffd477fe9c3f88ec0be86d986b8d365b1929e4b5d21ff",
+    "lines": 875,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/desk-history.ts",
+    "sha256": "61e00bb4c16be1e23768672cb80e799c282b1c3dab33426ddcdf17cfae4f8536",
+    "lines": 170,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/desk-llm.ts",
+    "sha256": "b63e9cc32c2dab4f5464af41ec58ebe123d4001287c34066a66e6d2f423e99f6",
+    "lines": 144,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/desk-loop.ts",
+    "sha256": "bfa09c1e2f63e65bfb81617497d9e6f850e4745d511672686258b49bd411dc66",
+    "lines": 365,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/desk-tools.ts",
+    "sha256": "36ab3fd6f5b315552f7b75d6188345f14a65a53a1969c712bcb5113197578c7d",
+    "lines": 116,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/effects.ts",
+    "sha256": "3a0bfd2f554540ea79e267d5a949c795b595cf3e4655e1672b41c464900ac28b",
+    "lines": 200,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/app/executor.ts",
+    "sha256": "00d88964c8a14f85dd0d88b0a22402b6137195d1a8af3bd41358df351f07fc50",
+    "lines": 803,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/files.ts",
+    "sha256": "474b2282dcf4dbc323716d4ab521cf57c6bdb08e522f1bd841cf9967310cc4bb",
+    "lines": 142,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/health.ts",
+    "sha256": "8dc7ca6e1a0af60ffa00223f727394eb90d5bded709d5ae28ea69a768dea9541",
+    "lines": 41,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/http.ts",
+    "sha256": "f454e427a9d5bfb4f39b246f855de4f778dbca313fa5983625be596f63796756",
+    "lines": 849,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/lock.ts",
+    "sha256": "838c3eb082f5e67e5d271da42852c290019b33a6e39890a22ddd6ccb4e814f01",
+    "lines": 96,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/app/passes.ts",
+    "sha256": "c536cbd0e5087800c399b8b264c08896579c89c13a5d953b61ec8e7ea3283732",
+    "lines": 78,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/app/prompts.ts",
+    "sha256": "22b0419927c605eab84a4bb0db98d7a81f2ef0e494294d83d82d3fad74a6ea6f",
+    "lines": 277,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/runtime.ts",
+    "sha256": "15cfcc4de87adcf0842890f9cef0961a85ed691855cc13f2b22c99bb7e350512",
+    "lines": 1767,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/session-health.ts",
+    "sha256": "44a91509d51f2b5c78ac6734cb3fe0f7f22992e757862d374f40ef4f4d6cf6c9",
+    "lines": 127,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/sessions.ts",
+    "sha256": "0c069731a95625c9259676c1796ee8e5bdc03b043f3dae811e685bb9ebde141f",
+    "lines": 941,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/app/skills.ts",
+    "sha256": "1a1374fc12c932a02dd7b54504d6a56c11666ddaab33fbb1006ab5d161ecf8ec",
+    "lines": 510,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/store.ts",
+    "sha256": "b98026682f98229bd4a3901fcd85cb1ee1c46c1b0947282a43f0f94accbad7e2",
+    "lines": 841,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/app/tools.ts",
+    "sha256": "a41761eba7035864a0a7cf0d07d2b2d477d8d892404b330f13c77b6843603f04",
+    "lines": 560,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/views.ts",
+    "sha256": "1dcb2a3f88a4906743f22129976f4fc6df807f18d668110510a74fd56d889601",
+    "lines": 152,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "app-support-review.md"
+  },
+  {
+    "path": "src/app/watchdog.ts",
+    "sha256": "ae6bd60d24842f5b5ce57be80ca9f031c06722d6a62a7db184367dacdc80d337",
+    "lines": 183,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/engine.ts",
+    "sha256": "20468d839beeffbccdb80583fd71429b0c92052268e3eb0229592a8e78b54e80",
+    "lines": 1860,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/errors.ts",
+    "sha256": "c3dc03bce3d3e8b34a1485c843dfd06d94fedebb1068eb72ae85798ef806c25c",
+    "lines": 60,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/ids.ts",
+    "sha256": "a86e37ca10c13abdf78561865aa57270062a71475f5d56539ea9f1f9d7d6e2e1",
+    "lines": 23,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/index.ts",
+    "sha256": "6e05cd7a64f1e8109bb3ceb79e85427f2f5e38dea9fd4286786f8ff9de367c9d",
+    "lines": 8,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/memory.ts",
+    "sha256": "bdec5a10f03a4f908c08efe32a22867e572945abf18925b28803d518fcc9221a",
+    "lines": 211,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/model.ts",
+    "sha256": "e644de491d863395642469e13125e37418f6bfa3c50a4703d4ed3c62dca5201c",
+    "lines": 531,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/policy.ts",
+    "sha256": "e39929c069c3cb00e43cd0a50cd954c4865ed8a202129ad3f8d376d6db4e4ec4",
+    "lines": 609,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/core/timing.ts",
+    "sha256": "48638b1face56c47b76e837499d7cbbc873bf1d2056278723a8a24befdd6191c",
+    "lines": 233,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/deployment.ts",
+    "sha256": "515e242c91d65f1c2a0ace5acad5bf0c8711939d60c5af1567f0b53843bda594",
+    "lines": 96,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/index.ts",
+    "sha256": "5b77de003411820fa8bc305da5a1f1fa72d1e0000bcceb795e0bf656ed1dee75",
+    "lines": 105,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "runtime-review.md"
+  },
+  {
+    "path": "src/sources/chat.ts",
+    "sha256": "c0744f0e6917ad627f9a913bdefd881cddf4894ed0a93c4fc388db9277d51299",
+    "lines": 761,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/sources/cron.ts",
+    "sha256": "5caf1fc0cd18a13d207b66fc12e131d612d4ae56f14a7ac4d2d120cc95d86f50",
+    "lines": 275,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/sources/inbox.ts",
+    "sha256": "5036218ffcb3503827e3a3c91ddd149477f4924f3aacfb7b2454ac5175287044",
+    "lines": 310,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/sources/kind.ts",
+    "sha256": "7911579faa92f1020c5b07abd908f8a809405c4c78679b4f6a96cadd67b49b6d",
+    "lines": 132,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/sources/registry.ts",
+    "sha256": "177327371f8b975ba2d665fb312c919ddd9114d37daedb7d37e5b834581c7b57",
+    "lines": 89,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/sources/rule.ts",
+    "sha256": "4ac4718aecce7647ebefa53990cdc6104ab215f77fb88f569cc0c5ae0d4c8760",
+    "lines": 116,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "src/sources/session.ts",
+    "sha256": "99d3684145f27c894a7795c0860cd9ddbbb71a7efd14792477a88332d2cc0482",
+    "lines": 34,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "core-sources-review.md"
+  },
+  {
+    "path": "tests/agent-delivery.spec.ts",
+    "sha256": "5683d2726b2d6fa027e634b7397471a350710ef94cc5b67e28cd9b20eff122f7",
+    "lines": 160,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/attachments.spec.ts",
+    "sha256": "dceac49c549c51583bf0c48567199af99715feb6ef5c9aff3c17aa5260f40ad0",
+    "lines": 168,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/auto-retry.spec.ts",
+    "sha256": "8cefd08556ab88fba925665e34fa0257853700dc7cf52c5c42115cf4cd28a41a",
+    "lines": 185,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/background.spec.ts",
+    "sha256": "b6edfa2bc71fead04c08af86aaef916830b15ae048597bf93ba9735134964e25",
+    "lines": 171,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/bridges.spec.ts",
+    "sha256": "ecc07a0371f7789e7e0d902a3c27b7104b6697a66cbbaf27276328a24b153f5e",
+    "lines": 1032,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/build.spec.ts",
+    "sha256": "728825c63e45a42e82d8ecc376056da47f4c2eccb316134eb6fe3750dfef0d94",
+    "lines": 55,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/chat-contract.spec.ts",
+    "sha256": "ac443b73b94d2dfd6bba1e2dc9c15adacbaf4a22ce6474b67e4dd20850be3d05",
+    "lines": 465,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/chat-send.spec.ts",
+    "sha256": "4c25bf159c0a24b5bbc43166179e0e98ca9149db3a0ea6ae517195589c5d50d4",
+    "lines": 921,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/chat.spec.ts",
+    "sha256": "b8f439cd25ab6201aef2391f7493ecfc569956020534b64cd705e45a2486c7d4",
+    "lines": 865,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/delivery.spec.ts",
+    "sha256": "0bedffea6d6a2741a11fe35c9e2629869e68e79f226ead733885860280a5d525",
+    "lines": 539,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/dependencies.spec.ts",
+    "sha256": "515e582a2c2915d54ad8907b4cf1fc71b7022de5c47a6b6c3002d50239a5be3a",
+    "lines": 116,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/deployment.spec.ts",
+    "sha256": "882b194c1d49f9d03025c2c80789a3783f1fcbe9825d8429cb5e5b043b039ce8",
+    "lines": 132,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/desk-history.spec.ts",
+    "sha256": "1184cc4411fbcf086876c05d3ad0a87adae55914be3d42bf0f081ead6d14e101",
+    "lines": 263,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/desk-tools.spec.ts",
+    "sha256": "dee43921f370fe2556cbce837d750bdb54c84ba8a61620ec035b9b80aeef91ec",
+    "lines": 68,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/effects.spec.ts",
+    "sha256": "a8b1d226bd26fc7d5a773e5397cfb840d1863be67a8045270d8ef29df8cdddbc",
+    "lines": 268,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/engine.spec.ts",
+    "sha256": "c7a6435402509ef7e9aba27525c5dd876364a7965902a21179e863bba6e61ec5",
+    "lines": 1622,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/executor.spec.ts",
+    "sha256": "c67307fbd867d9b7a70f6762f0fdbf9a4e9d767f6e39e8cb16255f95e7770c76",
+    "lines": 999,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/fault-injection.spec.ts",
+    "sha256": "944257085dc2841c449cddb6019b4dbfe1efcdeb54c74d005034a91098eca697",
+    "lines": 780,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/files.spec.ts",
+    "sha256": "f647daa60751b7d2d1c655a54ea9b024da56090513d398c080252ba989b01b99",
+    "lines": 264,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/flow.spec.ts",
+    "sha256": "1bf5aa166dd15e1e3c0cba1bacc5fb49f9861def16cfa2d265e38b9ad058b4a9",
+    "lines": 911,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/helpers/deployment.ts",
+    "sha256": "036573499391ea69bed47386251b26ad3a1c9c298254d1da0518124d068fb4ba",
+    "lines": 44,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/helpers/host.ts",
+    "sha256": "1131f231609e41bea1788c81b9172fee1acc69fdc81bc187771ca4e1f252706e",
+    "lines": 585,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/helpers/temp.ts",
+    "sha256": "d0930d525f615d08e3077515c2c64f5462928d8dcf5466605e5a30ba37aefc8a",
+    "lines": 57,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/http.spec.ts",
+    "sha256": "ae9b7c73d1db50725d13c920b0f64f44417c8f221f5ea581f8e91336691973a0",
+    "lines": 1210,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/mount.spec.ts",
+    "sha256": "0b66ecfe1525adaaeb4e874f253ab3cb18c297abeb4a5417c28e5bc93e1ca13c",
+    "lines": 115,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/notify-machine.spec.ts",
+    "sha256": "0cf10f63b6054a0e8290ae25cb93c444950a86e91f0370dcab128ea2dfdd7c6b",
+    "lines": 342,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/notify.spec.ts",
+    "sha256": "83af0c38db2501a644a87afcd9237e82c6b79a7033452e6e36ee31cb64ea9d82",
+    "lines": 267,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/panel.spec.ts",
+    "sha256": "7bae5253708c29ff13e885716497c0711af1989341c9474d4234733dac2048e9",
+    "lines": 6009,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/policy.spec.ts",
+    "sha256": "9bc6a993b71d357e0e6ef1f0180330d966e91051025d60066c09129514a3cd19",
+    "lines": 462,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/prompts.spec.ts",
+    "sha256": "5274e4fbdc58fa2ef7865efa051dea4d024cee50a918932fd1ad6e0b731153ad",
+    "lines": 157,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/recipes-route.spec.ts",
+    "sha256": "19a9ffce367505c1d17ed8dc53e6fe6e5e5ac665fe73bab4a7e1d5595b6c9b87",
+    "lines": 62,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/recipes.spec.ts",
+    "sha256": "75b721120505fe97e711cf54adcb73f9e384e6506932af32992336ed56abba90",
+    "lines": 186,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/recovery.spec.ts",
+    "sha256": "92c9a5176305aff5210e4cb9301577073353f41becc72b1f47c0a4809e36db75",
+    "lines": 250,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/runtime-budget.spec.ts",
+    "sha256": "d3104842c15de0cc8d17945820b1c2a8228498024428e717fbd6ceaec20d75cf",
+    "lines": 129,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/session-decoration.spec.ts",
+    "sha256": "4516b63cb5e80f5401c59486fe34408f11009704aa758a98dbb46e075fc63e7a",
+    "lines": 391,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/session-health.spec.ts",
+    "sha256": "6f9ef31046a3c143092c87e699d7d618315fa5dec9ba0e0d7a315514c982964a",
+    "lines": 321,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/silent-visibility.spec.ts",
+    "sha256": "17ff07e6c161b24c0aafea97a0cfd99f2178945410f780970a8da2fa534b5e33",
+    "lines": 54,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/skills.spec.ts",
+    "sha256": "62e93b0c4e9f60647a0e8c915a57cdb5388df24493c49c74b0da2b62f366f2a6",
+    "lines": 284,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/sources.spec.ts",
+    "sha256": "304d0af1c0b8864a360259e6ac68efe97aa4e1c81ac7c5928608f690b732c9ac",
+    "lines": 1193,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/store.spec.ts",
+    "sha256": "59767be6a8f816092a22c1e270ba7bf252aa18f03a837eef9481c210a06487be",
+    "lines": 474,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/temp.spec.ts",
+    "sha256": "5950643fcb0714dbfe757de17d4b5b741f48a42c4d3ffcbeff42a47679eff90d",
+    "lines": 43,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/ticket-delete.spec.ts",
+    "sha256": "c4614bdaf03e78d989eb78c3cbd634bd7f51ae56bc658e1ebb5adb66ccf44b4d",
+    "lines": 206,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/timing.spec.ts",
+    "sha256": "746d78f5c187b4c933f087f3e4282de56e895048b3cdebafd1ff39ac1c47e566",
+    "lines": 130,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/tool-schema-json.spec.ts",
+    "sha256": "01e84cf9cd030a6d8c7c8cb0c963932a99b2e607fd96064e55b9e8303603099b",
+    "lines": 109,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/tool-surface-docs.spec.ts",
+    "sha256": "c815c254b914db1d03362ee9f4a379ae41c0f5b60c3de29e50ed117870a727d7",
+    "lines": 92,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/tools.spec.ts",
+    "sha256": "600fc5d8c9da05579318d6e9c3406d7042f647582a133674fb1f66061af2055d",
+    "lines": 518,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/transaction.spec.ts",
+    "sha256": "4e48fa642a24017d5cfd87b8eca190abb06da443a3cbc88621330d7b86e4bd1e",
+    "lines": 175,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/views.spec.ts",
+    "sha256": "3099e285713bcaf9aab4d38b6104bb81647956ff460770d89e80dcf84cc3462d",
+    "lines": 213,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/watchdog.spec.ts",
+    "sha256": "749582a13a010a2cd537c08fa3b407494696394426afb45302cd56b21702bb38",
+    "lines": 189,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tests/worker-preset.spec.ts",
+    "sha256": "580c8563b88334653954c559e3568886aae93d149f17a596823ad1c6b4c95d1f",
+    "lines": 87,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "test-coverage-review.md"
+  },
+  {
+    "path": "tsconfig.json",
+    "sha256": "96587db8714e35f829d9adbd468fbe855caccb1baf1045da1b33a669931f02fa",
+    "lines": 21,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "tsdown.config.ts",
+    "sha256": "0e3cfe5ce81ee945a3781120c712ae89fa42e09b01604d3a871a14a1503407fb",
+    "lines": 13,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  },
+  {
+    "path": "vitest.config.ts",
+    "sha256": "cc95f5cf6070084b99073a21949222a6ce74ec737a2c0141af0e523cd53f37ff",
+    "lines": 9,
+    "status": "全文静态已审",
+    "method": "full text review required",
+    "evidence": "surfaces-release-review.md"
+  }
+]

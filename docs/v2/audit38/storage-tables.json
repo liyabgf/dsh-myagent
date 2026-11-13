@@ -1,0 +1,67 @@
+[
+  {
+    "name": "schema_version",
+    "line": 23,
+    "definition": "CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)"
+  },
+  {
+    "name": "triggers",
+    "line": 24,
+    "definition": "CREATE TABLE IF NOT EXISTS triggers (\n  id TEXT PRIMARY KEY,\n  source TEXT NOT NULL,\n  kind TEXT NOT NULL,\n  at TEXT NOT NULL,\n  disposition TEXT NOT NULL,\n  record TEXT NOT NULL\n) WITHOUT ROWID"
+  },
+  {
+    "name": "threads",
+    "line": 33,
+    "definition": "CREATE TABLE IF NOT EXISTS threads (\n  key TEXT PRIMARY KEY,\n  record TEXT NOT NULL\n) WITHOUT ROWID"
+  },
+  {
+    "name": "tickets",
+    "line": 37,
+    "definition": "CREATE TABLE IF NOT EXISTS tickets (\n  id TEXT PRIMARY KEY,\n  createdAt TEXT NOT NULL,\n  open INTEGER NOT NULL,\n  record TEXT NOT NULL,\n  workId TEXT GENERATED ALWAYS AS (json_extract(record, '$.workId')"
+  },
+  {
+    "name": "projects",
+    "line": 47,
+    "definition": "CREATE TABLE IF NOT EXISTS projects (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  createdAt TEXT NOT NULL,\n  record TEXT NOT NULL\n) WITHOUT ROWID"
+  },
+  {
+    "name": "works",
+    "line": 53,
+    "definition": "CREATE TABLE IF NOT EXISTS works (\n  id TEXT PRIMARY KEY,\n  projectId TEXT,\n  name TEXT NOT NULL,\n  createdAt TEXT NOT NULL,\n  record TEXT NOT NULL\n) WITHOUT ROWID"
+  },
+  {
+    "name": "decisions",
+    "line": 61,
+    "definition": "CREATE TABLE IF NOT EXISTS decisions (\n  id TEXT PRIMARY KEY,\n  triggerId TEXT NOT NULL,\n  at TEXT NOT NULL,\n  outcome TEXT NOT NULL,\n  record TEXT NOT NULL\n) WITHOUT ROWID"
+  },
+  {
+    "name": "effects",
+    "line": 69,
+    "definition": "CREATE TABLE IF NOT EXISTS effects (\n  kind TEXT NOT NULL,\n  key TEXT NOT NULL,\n  payload TEXT NOT NULL,\n  dueAt INTEGER NOT NULL,\n  failures INTEGER NOT NULL DEFAULT 0,\n  running INTEGER NOT NULL DEFAULT 0,\n  PRIMARY KEY (kind, key)"
+  },
+  {
+    "name": "artifacts",
+    "line": 79,
+    "definition": "CREATE TABLE IF NOT EXISTS artifacts (\n  ticketId TEXT NOT NULL,\n  path TEXT NOT NULL,\n  at TEXT NOT NULL,\n  record TEXT NOT NULL,\n  PRIMARY KEY (ticketId, path)"
+  },
+  {
+    "name": "events",
+    "line": 87,
+    "definition": "CREATE TABLE IF NOT EXISTS events (\n  ticketId TEXT NOT NULL,\n  seq INTEGER NOT NULL,\n  at TEXT NOT NULL,\n  type TEXT NOT NULL,\n  record TEXT NOT NULL,\n  PRIMARY KEY (ticketId, seq)"
+  },
+  {
+    "name": "ticket_deps",
+    "line": 96,
+    "definition": "CREATE TABLE IF NOT EXISTS ticket_deps (\n  upstream TEXT NOT NULL,\n  downstream TEXT NOT NULL,\n  record TEXT NOT NULL,\n  PRIMARY KEY (upstream, downstream)"
+  },
+  {
+    "name": "kv",
+    "line": 103,
+    "definition": "CREATE TABLE IF NOT EXISTS kv (\n  key TEXT PRIMARY KEY,\n  value TEXT NOT NULL\n) WITHOUT ROWID"
+  },
+  {
+    "name": "desk_messages",
+    "line": 256,
+    "definition": "CREATE TABLE IF NOT EXISTS desk_messages (\n  seq INTEGER PRIMARY KEY AUTOINCREMENT,\n  role TEXT NOT NULL,\n  content TEXT NOT NULL,\n  tool_calls TEXT,\n  tool_call_id TEXT,\n  name TEXT,\n  ticketId TEXT,\n  requestId TEXT,\n  at TEXT NOT NULL\n)"
+  }
+]

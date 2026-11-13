@@ -1,0 +1,84 @@
+{
+  "method": "Markdown inline local link existence; not semantic or external validation",
+  "checked": 84,
+  "missing": [
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 81,
+      "target": "/tmp/myagent-acc-watchdog/item1-state.json",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 81,
+      "target": "/tmp/myagent-acc-watchdog/item1-ps.txt",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 177,
+      "target": "/tmp/myagent-acc-watchdog/item2b-mechanism.json",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 177,
+      "target": "/tmp/myagent-acc-watchdog/runB-before.txt",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 177,
+      "target": "/tmp/myagent-acc-watchdog/runB-after.txt",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 177,
+      "target": "/tmp/myagent-acc-watchdog/runB-put-time.txt",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 220,
+      "target": "/tmp/myagent-acc-watchdog/item3-events.json",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/14-live-acceptance-watchdog.md",
+      "line": 220,
+      "target": "/tmp/myagent-acc-watchdog/item3-health.json",
+      "kind": "missing local link"
+    },
+    {
+      "file": "docs/v2/16-live-acceptance-chat.md",
+      "line": 194,
+      "target": "hello.txt",
+      "kind": "missing local link"
+    },
+    {
+      "file": "examples/real-run-1-collect/README.md",
+      "line": 11,
+      "target": "digests/news_digest.tsv",
+      "kind": "missing local link"
+    },
+    {
+      "file": "examples/real-run-2-compare/analysis/02_谷歌法律处境综合论述.md",
+      "line": 302,
+      "target": "../sources/index_all.tsv",
+      "kind": "missing local link"
+    },
+    {
+      "file": "examples/real-run-2-compare/analysis/02_谷歌法律处境综合论述.md",
+      "line": 304,
+      "target": "bing_real_urls.txt",
+      "kind": "missing local link"
+    },
+    {
+      "file": "examples/real-run-2-compare/analysis/03_信息比对_两Ticket对照.md",
+      "line": 20,
+      "target": "../sources/index_all.tsv",
+      "kind": "missing local link"
+    }
+  ]
+}

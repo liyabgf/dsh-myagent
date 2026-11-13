@@ -1,0 +1,271 @@
+── 本次运行：scripts/gate.sh （2026-11-13 12:54:18）
+── typecheck
+$ tsc --noEmit
+── build
+$ tsdown
+ℹ tsdown v0.22.14 powered by rolldown v1.2.16
+ℹ config file: /private/var/folders/cb/dx90h3g57qsc4fj38007t68c0000gn/T/myagent-audit38-gate-0kzzcl9r/tsdown.config.ts 
+ℹ entry: src/index.ts
+ℹ target: es2023
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ Cleaning 2 files
+ℹ lib/index.js    516.83 kB │ gzip: 156.63 kB
+ℹ lib/index.d.ts  110.49 kB │ gzip:  33.96 kB
+ℹ 2 files, total: 627.32 kB
+✔ Build complete in 879ms
+── test
+$ vitest run
+
+ RUN  v4.1.8 /private/var/folders/cb/dx90h3g57qsc4fj38007t68c0000gn/T/myagent-audit38-gate-0kzzcl9r
+
+(node:69113) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/auto-retry.spec.ts (6 tests) 1947ms
+     ✓ is relaunched automatically, and the relaunch is visible on the board, in the log and in the count  390ms
+     ✓ is uncapped by default: a second dead turn relaunches again instead of failing the Ticket  515ms
+     ✓ stops at watchdog.autoRetryMax, fails the Ticket in front of a person, and parks a decision-queue entry  511ms
+     ✓ does nothing at all when watchdog.autoRetry is off, which is the pre-0.11.0 shape  340ms
+ ✓ tests/session-decoration.spec.ts (10 tests) 1996ms
+     ✓ gives a Session named like a worker nothing at all when no Ticket is behind the name  546ms
+     ✓ closes a triage Ticket, and refuses to be a second way of ending ordinary work  356ms
+(node:69109) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:69110) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/session-health.spec.ts (5 tests) 3277ms
+     ✓ says so, and names the Session and the Ticket it claimed  528ms
+     ✓ survives an unrelated Ticket’s problem and that Ticket ending  924ms
+     ✓ survives the front desk’s own recovery, which clears MAIN_SESSION and nothing else  498ms
+     ✓ accounts two impostors separately, and retires the line when the Session is gone  500ms
+     ✓ ignores agent/error from an unrelated DSH Session, and retires MAIN_SESSION when the front desk completes a turn  825ms
+(node:69112) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/http.spec.ts (58 tests) 3572ms
+     ✓ names the identities whose messages are being held, and leaves the mapped one out  341ms
+     ✓ says how many identities the health line did not name, rather than cutting them off silently  341ms
+     ✓ tells a Source that is not looking from a queue that is empty  667ms
+     ✓ answers the policy the gate will apply, so the page never re-derives the fallback  338ms
+     ✓ counts a reply on its way back to the platform that asked, and names the address it goes to  507ms
+     ✓ carries each channel’s held count, uncollected replies and last intake — and never invents a zero  337ms
+     ✓ lists a disabled channel as disabled instead of dropping it, so “off” and “never configured” differ  332ms
+ ✓ tests/notify.spec.ts (11 tests) 3816ms
+     ✓ writes RESULT.md in the Ticket's own directory, and leaves a notice rather than waking the front desk  378ms
+     ✓ wakes the front desk when the worker needs a decision  348ms
+     ✓ still tells the front desk when the record could not be written  342ms
+     ✓ tells the front desk in the gate's own words  350ms
+     ✓ asks the desktop when the operator turned it on, with the summary quoted into it  342ms
+     ✓ does not ask the desktop when the operator did not turn it on  356ms
+     ✓ carries on when the desktop will not take it, because the notice is the record  339ms
+     ✓ shows the result and the files, so the operator does not have to open the directory  342ms
+     ✓ wakes the front desk for the first give-up and not for the two that follow  504ms
+     ✓ a triage ready result leaves a silent notify and does not wake the desk a second time  345ms
+(node:69118) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/recovery.spec.ts (8 tests) 1769ms
+     ✓ takes over an Assignment whose worker died with the process, in the same directory  366ms
+     ✓ takes over an Assignment whose Session survived the reload but whose turn did not  343ms
+     ✓ replays a launch that was queued but never started, without marking anything interrupted  508ms
+     ✓ leaves an ended Ticket alone, and does not resurrect its worker  348ms
+(node:69107) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/ticket-delete.spec.ts (6 tests) 1919ms
+     ✓ keeps a tombstone that carries the numbers, because after the files are gone nothing else does  355ms
+     ✓ leaves the produced files alone when asked to keep them, which is the default  342ms
+     ✓ removes the row when asked, and keeps the intake record either way  342ms
+     ✓ refuses to remove a directory outside the work root, and says so where somebody will see it  342ms
+     ✓ is reachable over HTTP, defaults to the reversible end, and refuses an option it does not know  342ms
+ ✓ tests/recipes.spec.ts (10 tests) 389ms
+ ✓ tests/files.spec.ts (18 tests) 1200ms
+ ✓ tests/dependencies.spec.ts (5 tests) 792ms
+     ✓ does not launch until the one it waits for has finished, and the wait costs it nothing  497ms
+ ✓ tests/sources.spec.ts (50 tests) 1063ms
+ ✓ tests/worker-preset.spec.ts (3 tests) 719ms
+     ✓ leaves every other Ticket on the ordinary worker preset, with no shell paragraph in its prompt  340ms
+(node:69106) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/chat.spec.ts (27 tests) 161ms
+ ✓ tests/tools.spec.ts (28 tests) 238ms
+ ✓ tests/effects.spec.ts (16 tests) 123ms
+ ✓ tests/store.spec.ts (28 tests) 134ms
+ ❯ tests/runtime-budget.spec.ts (4 tests | 1 failed) 85ms
+     ✓ says nothing while the work is inside its budget 43ms
+     × tells the worker to wrap up and report when the budget is reached, exactly once per attempt 14ms
+     ✓ stops the work a grace period later and hands the Ticket to a person, naming the budget 13ms
+     ✓ leaves a Ticket with no budget alone, whatever how long it has been running 15ms
+ ✓ tests/notify-machine.spec.ts (16 tests) 83ms
+ ✓ tests/desk-history.spec.ts (15 tests) 80ms
+ ✓ tests/delivery.spec.ts (27 tests) 72ms
+ ✓ tests/mount.spec.ts (7 tests) 59ms
+ ✓ tests/bridges.spec.ts (82 tests) 49ms
+ ✓ tests/policy.spec.ts (40 tests) 36ms
+ ✓ tests/recipes-route.spec.ts (4 tests) 47ms
+ ✓ tests/engine.spec.ts (105 tests) 50ms
+ ✓ tests/attachments.spec.ts (11 tests) 29ms
+ ✓ tests/transaction.spec.ts (14 tests) 49ms
+ ✓ tests/timing.spec.ts (22 tests) 22ms
+ ✓ tests/chat-contract.spec.ts (32 tests) 27ms
+ ✓ tests/panel.spec.ts (319 tests) 5465ms
+ ✓ tests/background.spec.ts (18 tests) 18ms
+ ✓ tests/views.spec.ts (17 tests) 22ms
+ ✓ tests/temp.spec.ts (2 tests) 25ms
+ ✓ tests/desk-tools.spec.ts (6 tests) 19ms
+ ✓ tests/deployment.spec.ts (10 tests) 13ms
+ ✓ tests/tool-schema-json.spec.ts (2 tests) 18ms
+ ✓ tests/agent-delivery.spec.ts (12 tests) 6ms
+ ✓ tests/prompts.spec.ts (11 tests) 8ms
+ ✓ tests/audit38-repro.spec.ts (10 tests) 14ms
+ ✓ tests/watchdog.spec.ts (9 tests) 6ms
+ ✓ tests/skills.spec.ts (13 tests) 5ms
+ ✓ tests/build.spec.ts (4 tests) 5ms
+ ✓ tests/tool-surface-docs.spec.ts (4 tests) 3ms
+ ✓ tests/flow.spec.ts (30 tests) 7184ms
+     ✓ runs the whole chain and writes the answer where a person can read it  392ms
+     ✓ brings a blocked question to the front desk, and an answer back to the same worker  508ms
+     ✓ stops a Ticket mid-turn, which cancels the turn and ends its authorization  344ms
+     ✓ stops a Ticket whose turn already ended, without cancelling anything  337ms
+     ✓ keeps the Session identity DSH answers with, and addresses the worker by it  359ms
+     ✓ bounds a notice summary to what DSH accepts, however long the report is  340ms
+     ✓ stamps the delivery, so a turn that ends without a report is not mistaken for one that never started  343ms
+     ✓ leaves a reporting worker to close its own turn, and cuts short only what a person stopped  339ms
+     ✓ re-authorizes a restored worker instead of trusting what the crash left behind  505ms
+     ✓ does not rewrite a permission preset a worker already runs under  504ms
+     ✓ keeps the Session DSH gave, so a report still reaches the operator  349ms
+     ✓ is told apart from a worker that did its work and forgot to report  357ms
+     ✓ is told how work is dispatched, not only that a new Ticket is needed  339ms
+     ✓ a note with attachment paths copies the files into inputs/ before delivering to worker  345ms
+ ✓ tests/fault-injection.spec.ts (17 tests) 7511ms
+     ✓ records notice_lost on the Ticket with the words that were owed, and the event outlives the health line the next pass clears  397ms
+     ✓ keeps notice_lost across a restart, while the health line is erased by the next quiet pass and by the restart itself  352ms
+     ✓ delivers the notice and records no loss when the front desk comes back after two refusals  509ms
+     ✓ writes one lost row when the same failing effect is given up on twice  341ms
+     ✓ receives a lost Trigger again instead of answering that it was already handled  336ms
+     ✓ keeps the pass when writing the lost record fails, which is what a failing Store does to it  335ms
+     ✓ leaves a failed report on the Ticket, and the front desk hears about it  508ms
+     ✓ puts the cause on the Ticket, which is what a health line answering "now" cannot be  345ms
+     ✓ takes a problem off the board when its Ticket ends, and leaves an unrelated Ticket’s problem on it  839ms
+     ✓ retires the problem when that Session completes a turn, and not when the turn that failed ends  505ms
+     ✓ keeps saying what is wrong through every pass that follows, because a quiet pass is not evidence  590ms
+     ✓ records that work resumed after an interruption, so a rescued run cannot be read as a smooth one  514ms
+     ✓ calls neither an ordinary report nor a retry a resumption, so the event stays worth reading  1039ms
+     ✓ records notice_lost on the Ticket with the policy detail text when a policy notice gives up  376ms
+ ✓ tests/silent-visibility.spec.ts (1 test) 10050ms
+     ✓ raises one decision and leaves no health problem behind  10049ms
+ ✓ tests/executor.spec.ts (39 tests) 10478ms
+     ✓ runs only as many workers as the settings allow, and queues the rest  380ms
+     ✓ starts the queued worker once a slot is free, in the directory it was promised  683ms
+     ✓ runs two workers when the settings allow two  345ms
+     ✓ holds new work while paused and takes it when unpaused, so nothing is refused or lost  338ms
+     ✓ holds a queued launch while paused, and runs it when the pause lifts  675ms
+     ✓ settles a launch for an Assignment a retry replaced, instead of starting a second worker  337ms
+     ✓ settles a launch for a Ticket a person stopped before it ran  337ms
+     ✓ reports a prepare failure and leaves the Ticket retryable, because the directory may be half-made  342ms
+     ✓ says plainly when a prepare command was stopped before it finished  339ms
+     ✓ leaves the work queued and says so on the board, without pretending the Ticket started  336ms
+     ✓ does not hold back an accepted Ticket, which is what separates a denial from a pause  341ms
+     ✓ says nothing about a Work when the Ticket belongs to none  337ms
+     ✓ keeps counting the launch as starting, so it stays visible and still holds its slot  1520ms
+     ✓ hands back the registered file’s text, and refuses one nobody claimed  398ms
+     ✓ lists accessible Tickets and their registered artifacts when path is omitted, and materializes a safe local copy under inputs/  382ms
+     ✓ names the worker that wrote it, and does not claim it came from the operator  688ms
+     ✓ still says the operator wrote it when the operator wrote it  523ms
+     ✓ is zero as soon as the worker has reported, and the board carries problems only  526ms
+ ✓ tests/chat-send.spec.ts (26 tests) 11983ms
+     ✓ turns a mapped message file into a Ticket whose Mandate says where it came from  379ms
+     ✓ holds a message from an unmapped identity, and admits the same file once the map names it  507ms
+     ✓ hands the Source the address from the Trigger and the worker's own words, and consumes the effect  514ms
+     ✓ brings a blocked question back to the channel, without instructions only myagent's own front desk could follow  506ms
+     ✓ queues one reply when the same words are asked for twice, and a second when they differ  508ms
+     ✓ reaches the requester, and says what became of the work rather than calling it dropped  501ms
+     ✓ wakes the front desk with the way to act, because a notice in a history nobody reads is not an escalation  500ms
+     ✓ still sends nothing for progress — the other half of the rule, and the one that keeps a chat room quiet  500ms
+     ✓ progress reaches the front desk and never the requester — one line per turn in a room is how a bot gets muted  504ms
+     ✓ the Watchdog giving up reaches the requester, and wakes the front desk with the means to act  502ms
+   ✓ records every escalation and tells the requester once, because the Watchdog gives up again on every pass  673ms
+     ✓ puts the words in out/, and records on the Ticket that the requester was told  507ms
+     ✓ a Ticket the front desk opens with a copied address reports back into the same chat  544ms
+     ✓ attaches verified files inside the Ticket directory to the outbound envelope, and refuses symbolic links  531ms
+     ✓ keeps the effect, counts the failure on its row and names it on the board when the Source refuses  530ms
+     ✓ records a give-up in the Ticket's log and its directory, and both outlive the health board  692ms
+     ✓ fails the effect rather than calling something that is not there when the address names a Source that only produces  518ms
+     ✓ counts the ordinary Reports it could not send back, so the number is a fact about the deployment  349ms
+     ✓ a stopped Ticket with nowhere to write still wakes the front desk, and counts the place it could not reach  362ms
+     ✓ names the earlier job in the room, and in RESULT.md, with no id and no path in either  894ms
+     ✓ counts a craft the engine itself recorded, so the shape one file writes is the shape the other reads  894ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/runtime-budget.spec.ts > a scheduled firing with a wall-clock budget > tells the worker to wrap up and report when the budget is reached, exactly once per attempt
+AssertionError: expected 'pending' to be 'running' // Object.is equality
+
+Expected: "running"
+Received: "pending"
+
+ ❯ backdate tests/runtime-budget.spec.ts:39:28
+     37|   const ticket = context.runtime.store.tickets.get(ticketId)!
+     38|   const assignment = ticket.assignments.at(-1)!
+     39|   expect(assignment.state).toBe('running')
+       |                            ^
+     40|   context.runtime.store.tickets.save({
+     41|     ...ticket,
+ ❯ tests/runtime-budget.spec.ts:68:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 47 passed (48)
+      Tests  1 failed | 1217 passed (1218)
+   Start at  12:54:23
+   Duration  12.65s (transform 3.01s, setup 0ms, import 7.41s, tests 76.64s, environment 706ms)
+
+[ELIFECYCLE] Test failed. See above for more details.
+── artifact
+── 计数：Tests  1 failed | 1217 passed (1218) 
+── 随包发布但不进 bundle 的文件（只报告，与上次发布的清单 diff）
+   CHANGELOG.md  ed8901ec3a4d337e7b9a421ca22c8deba00e4cf76144e135c2258bfe92fcc904
+   README.md  ba0e38e7fd008db560482f161b7bd51bcac43b18902eb7feb162a451f883351b
+   bridges/README.md  53ed5ac235f815146ed2aa42eddff6700fb4fdbb67b3bf8eae524af3c70e25e5
+   bridges/dingtalk/README.md  b0c20287d4b2644516ccfe6c2f99e81493d5baf59ab3db1444cee766eb63d7fe
+   bridges/dingtalk/bridge.mjs  7a329f199e11f10cd6be231fac7c0ad71cc6601a1d5338967c729d44e2b4d203
+   bridges/dingtalk/package.json  b207dea14b51838fd023c8964bf4574a30691b240b491672c350313ed867ad70
+   bridges/dingtalk/transform.mjs  a489fce3022b467cf1c4c050c58596ab6b0551218d374570633d7de190272150
+   bridges/lark/README.md  5fa1bd37b0f123e6899b6bb5c2012b9ce11716e5d5e4dea4ecdec1fccf85b5c2
+   bridges/lark/bridge.mjs  ecbae300ad13a48434a221882c512769331a220a37771a9177cd543f436359f2
+   bridges/lark/package.json  ef7016aa554cdbcf7cf7e2fb5f243b1a101b9b28f26b96664e8bf4039522bb0c
+   bridges/lark/transform.mjs  671b1370b1210256d88804a335a9f74a63a587c53be4c0dced5018d95859839c
+   bridges/lib/frontmatter.mjs  67db4850176bfe120e2d46de8f01abcec2ae9b1eda442d527a2b7c0c0f85eb0d
+   bridges/lib/inbound.mjs  2c61031c37ed11689b121b4fd10da531e2d6d65ad45c05bfcbfa117a1373dcc6
+   bridges/lib/log.mjs  260f7ead2a91bd201679ae37ed4d49aa19560d511a7f36601fe087da4fabafaf
+   bridges/lib/outbound.mjs  effb2179a96eaafb1b7a62908dbe7795e7974ef48cf8002a00469f1a18248fa9
+   bridges/lib/route.mjs  8918a63f70bb714dd588b191c138844f499961b350dac35e11e0eed2609456f5
+   bridges/lib/run.mjs  097ee92912bb548fa4c90d0b20ff359287f8af6b2b87b92d5165667c9c6e3d51
+   bridges/lib/state.mjs  fcf23a32ccb421325feacf8070db96514b4ce209bdef9ee13076778335bd7be1
+   bridges/qq/README.md  0249a91d69268f2676ffdfb8f28dddf812b4dc237e71f91c6af9b4ed3f0f52e8
+   bridges/qq/bridge.mjs  1bd92f77ca8037189c45e56cb59adec95c609a69dbb803cffb64a1ab39590664
+   bridges/qq/protocol.mjs  9d29801259eabe71d812ebf9968f8def1c9c86d6e19329baf8300eca7539d087
+   bridges/qq/transform.mjs  b77d924313fccde2dd54a151d60fbff490d19fd730dd8bea3639415a2091dceb
+   bridges/telegram/README.md  35224db7acc24aeeb9b5202da3eadd14cec05cdcc4383f1b3e2bc3778f1f21d8
+   bridges/telegram/bridge.mjs  a30e09e1f6bd336504ed02a5fffe25624cdb0ed623b7e2ed7e638ff4a1bfa147
+   bridges/telegram/transform.mjs  f28b655adcbd725593bc1180e3e8156b7fbe2a12c6ced749ab7b0a0fca114d53
+   bridges/wecom/README.md  3e68ff307eaf0d2af6a43f109db123160e4f7e2130ae8812fff27433d0e7a5c6
+   bridges/wecom/bridge.mjs  f2e10dbc0f609354d3c4fad129a7817b5ac8c53dc5ed994a639da480d53887d4
+   bridges/wecom/crypt.mjs  d2ba1dbffe67b0286801d0f4c235505dae7a34d28e5a8b3e916517ff54d49efe
+   bridges/wecom/transform.mjs  d392bb1c2149687ffba206cb24adf90ab0e63c558b5bf00f9eb038b946a5d7ac
+   client.js  a750507edb1685a1b9a0867ae2a8bc7431bcfb788d9d928e4c16535e9be4b55b
+   cordis.patch.yml  81bd21d43ce706a1ade281d4d3369d27f2c33632e6958f15fa0697e6f0fb8bc8
+   examples/README.md  93ca5b4ec2f90a3f88d28014e496019380498e79c2f09b478518f6adf8d3011f
+   examples/daily-digest.json  f8b8f3c9dc86045818682fcc10c7e2a7843638bfa4fa64103169ca39c4126671
+   examples/data-report.md  ed54559ce925a70c03af8d4969c99116223717cfaf5d42ec028b5b9210468ce8
+   locale/en.json  a0a1a0662e2c470650f4e0b3f06f2df47fe2e56283b50843bc2cbcf739687a03
+   locale/zh.json  c826aedb16505aae2426d5fce82f96a407553fbf07283389b8fcb060e189aaaa
+   panel/index.html  46c8627d7cc8110190bdbfec4707061089333884318a225ee42e57e112ec23e1
+   prompts/orchestrator.md  7c8966caa751db7575ec0ebb91bda0bc33bed8c914de0bd77d7e53c9b12c50ee
+   prompts/triage.md  ebb1c511f8ef01cac0084913ce2a8aff7e1b7f02ecbd652a22ee198fe3d05a09
+   prompts/worker.md  d6e7256cc27b69c08b1381717321d86f8bcaac0949f5e1a20c54d141a19a9d24
+   （共 40 个文件，按路径排序；不含 lib/ —— 它就是 bundle，由新鲜度与版本号检查覆盖）
+── 源码树哈希：aa037de716efe69a
+   取样：src tests scripts panel prompts bridges docs lib locale examples package.json cordis.patch.yml README.md
+   排除：node_modules、.DS_Store、*.tsbuildinfo；find -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256，再聚合一次
+   含义：这一行是**这份证据对应哪一棵树**的指纹。release.sh 第 1 步会重算它并与这里比对，
+         不等就说明日志是陈旧的（闸门跑过之后树又变了），必须重跑 ./scripts/gate.sh。
+结论：未通过 —— test

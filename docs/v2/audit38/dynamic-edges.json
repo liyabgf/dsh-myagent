@@ -1,0 +1,1400 @@
+[
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 42,
+    "callee": "ctx.on",
+    "arg0": "'session/event'"
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 51,
+    "callee": "this.seen.set",
+    "arg0": "session"
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 62,
+    "callee": "this.seen.set",
+    "arg0": "agent.session"
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 519,
+    "callee": "host.effects.handle",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 520,
+    "callee": "host.effects.handle",
+    "arg0": "'send'"
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 587,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 597,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 637,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'send'"
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 758,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 116,
+    "callee": "this.enqueue",
+    "arg0": "{ kind: 'relay', requestId, text, ticketId }"
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 125,
+    "callee": "this.enqueue",
+    "arg0": "{ kind: 'notify', requestId, text, ticketId }"
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 96,
+    "callee": "this.handlers.set",
+    "arg0": "kind"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 332,
+    "callee": "host.effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 333,
+    "callee": "host.effects.handle",
+    "arg0": "'input'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 346,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 352,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'input'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 388,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 400,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 438,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 490,
+    "callee": "this.starting.set",
+    "arg0": "ticketId"
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 28,
+    "callee": "this.entries.set",
+    "arg0": "name"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 366,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 367,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 378,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 413,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 427,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 437,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 438,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 439,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 445,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 451,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 452,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 453,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 454,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 455,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 456,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 459,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 461,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 462,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 467,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 471,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 479,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 485,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 492,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 498,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 504,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 510,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 517,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 526,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 532,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 534,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 536,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 544,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 567,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 576,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 597,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 615,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 636,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 641,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 647,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 659,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 682,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 720,
+    "callee": "route",
+    "arg0": "'PUT'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 725,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 740,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 741,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 742,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 746,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 751,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 755,
+    "callee": "route",
+    "arg0": "'PUT'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 761,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 766,
+    "callee": "route",
+    "arg0": "'POST'"
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 771,
+    "callee": "route",
+    "arg0": "'GET'"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 112,
+    "callee": "this.cache.set",
+    "arg0": "role"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 197,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsConfig"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 198,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsRevision"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 209,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsConfig"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 210,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsRevision"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 224,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsConfig"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 225,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsRevision"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 244,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsConfig"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 264,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsConfig"
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 265,
+    "callee": "this.store.set",
+    "arg0": "KV.promptsRevision"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 435,
+    "callee": "this.store.set",
+    "arg0": "KV.mainSession"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 439,
+    "callee": "this.sessionIndex.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 511,
+    "callee": "this.effects.handle",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 945,
+    "callee": "this.store.set",
+    "arg0": "key"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1018,
+    "callee": "this.store.set",
+    "arg0": "retryKey"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1033,
+    "callee": "this.store.set",
+    "arg0": "KV.operatorQueue"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1040,
+    "callee": "this.store.set",
+    "arg0": "KV.operatorQueue"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1121,
+    "callee": "this.store.set",
+    "arg0": "nudgeKey"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1435,
+    "callee": "this.sessionIndex.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1456,
+    "callee": "this.context.on",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1510,
+    "callee": "this.context.on",
+    "arg0": "'agent/disposed'"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1532,
+    "callee": "this.context.on",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1547,
+    "callee": "this.sessionErrors.set",
+    "arg0": "agent.id"
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 83,
+    "callee": "this.problems.set",
+    "arg0": "subject"
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 440,
+    "callee": "this.ctx.on",
+    "arg0": "'agent/created'"
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 449,
+    "callee": "this.ctx.on",
+    "arg0": "'tools/result'"
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 594,
+    "callee": "presets.set",
+    "arg0": "agent.session"
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 701,
+    "callee": "this.bindings.set",
+    "arg0": "agent"
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 749,
+    "callee": "this.crafts.set",
+    "arg0": "agent"
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 926,
+    "callee": "this.attempts.set",
+    "arg0": "ticket.id"
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 784,
+    "callee": "this.set",
+    "arg0": "KV.settingsDocument"
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 785,
+    "callee": "this.set",
+    "arg0": "KV.settingsRevision"
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 829,
+    "callee": "this.set",
+    "arg0": "KV.lostTriggers"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 336,
+    "callee": "this.emit",
+    "arg0": "{ type: 'trigger.received', triggerId: trigger.id, disposition }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 396,
+    "callee": "this.emit",
+    "arg0": "{ type: 'trigger.received', triggerId: trigger.id, disposition }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 405,
+    "callee": "this.emit",
+    "arg0": "{ type: 'ticket.created', ticket: prepared }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 624,
+    "callee": "this.emit",
+    "arg0": "{ type: 'ticket.resumed', ticket: next }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 709,
+    "callee": "this.emit",
+    "arg0": "{ type: 'assignment.ended', ticketId, assignmentId: assignment.id }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 712,
+    "callee": "this.emit",
+    "arg0": "{ type: 'ticket.ended', ticket: next }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 776,
+    "callee": "this.emit",
+    "arg0": "{ type: 'assignment.started', ticketId, assignmentId }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 833,
+    "callee": "this.emit",
+    "arg0": "{ type: 'report.recorded', ticket: updated, report: next }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1213,
+    "callee": "this.emit",
+    "arg0": "{ type: 'assignment.ended', ticketId, assignmentId: assignment.id }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1214,
+    "callee": "this.emit",
+    "arg0": "{ type: 'ticket.ended', ticket: next }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1216,
+    "callee": "this.emit",
+    "arg0": "{ type: 'report.recorded', ticket: next, report: recorded }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1283,
+    "callee": "this.emit",
+    "arg0": "{ type: 'policy.changed', effects }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1326,
+    "callee": "this.emit",
+    "arg0": "{ type: 'assignment.ended', ticketId, assignmentId: assignment.id }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1327,
+    "callee": "this.emit",
+    "arg0": "{ type: 'ticket.ended', ticket: next }"
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1713,
+    "callee": "this.emit",
+    "arg0": "{ type: 'ticket.ended', ticket: next }"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 14,
+    "callee": "this.records.set",
+    "arg0": "record.trigger.id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 17,
+    "callee": "this.records.set",
+    "arg0": "id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 23,
+    "callee": "this.records.set",
+    "arg0": "this.keyOf(dependency.upstream, dependency.downstream)"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 29,
+    "callee": "this.records.set",
+    "arg0": "key"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 47,
+    "callee": "this.records.set",
+    "arg0": "project.id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 52,
+    "callee": "this.records.set",
+    "arg0": "id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 57,
+    "callee": "this.records.set",
+    "arg0": "work.id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 63,
+    "callee": "this.records.set",
+    "arg0": "id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 69,
+    "callee": "this.records.set",
+    "arg0": "ticket.id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 83,
+    "callee": "this.records.set",
+    "arg0": "id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 89,
+    "callee": "this.records.set",
+    "arg0": "decision.id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 95,
+    "callee": "this.records.set",
+    "arg0": "id"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 100,
+    "callee": "this.records.set",
+    "arg0": "`${artifact.ticketId}\\u0000${artifact.path}`"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 107,
+    "callee": "this.records.set",
+    "arg0": "key"
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 114,
+    "callee": "this.records.set",
+    "arg0": "thread.key"
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 56,
+    "callee": "formats.set",
+    "arg0": "zone"
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 114,
+    "callee": "this.cursor.set",
+    "arg0": "state"
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 271,
+    "callee": "this.cursor.set",
+    "arg0": "state"
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 60,
+    "callee": "this.running.set",
+    "arg0": "kind.name"
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 61,
+    "callee": "this.signatures.set",
+    "arg0": "kind.name"
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 99,
+    "callee": "this.host.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/agent-delivery.spec.ts",
+    "line": 117,
+    "callee": "host.emit",
+    "arg0": "'session/event'"
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 40,
+    "callee": "host.emit",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 46,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 334,
+    "callee": "cursors.set",
+    "arg0": "id"
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 66,
+    "callee": "cursors.set",
+    "arg0": "id"
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 215,
+    "callee": "handlers.set",
+    "arg0": "kind"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 61,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 62,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 74,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 79,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 98,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 99,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 119,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 120,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 140,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 141,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 157,
+    "callee": "withBadHook.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 158,
+    "callee": "withBadHook.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 169,
+    "callee": "effects.handle",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 170,
+    "callee": "effects.enqueue",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 171,
+    "callee": "effects.enqueue",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 181,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 187,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 195,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 199,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 207,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 208,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 216,
+    "callee": "revived.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 224,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 227,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 234,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 235,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 236,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 237,
+    "callee": "effects.enqueue",
+    "arg0": "'notify'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 252,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 253,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 261,
+    "callee": "effects.handle",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 262,
+    "callee": "effects.enqueue",
+    "arg0": "'launch'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 229,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 265,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 332,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 372,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 382,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 411,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 425,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 454,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 481,
+    "callee": "runtime.effects.enqueue",
+    "arg0": "'trigger'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 540,
+    "callee": "host.emit",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 546,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 650,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 293,
+    "callee": "host.emit",
+    "arg0": "'agent/created'"
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 337,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 488,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 492,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 650,
+    "callee": "host.emit",
+    "arg0": "'tools/result'"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 343,
+    "callee": "logs.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 397,
+    "callee": "listeners.set",
+    "arg0": "name"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 398,
+    "callee": "listeners.set",
+    "arg0": "name"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 409,
+    "callee": "routes.set",
+    "arg0": "route.path"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 423,
+    "callee": "presets.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 424,
+    "callee": "agents.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 427,
+    "callee": "host.emit",
+    "arg0": "'agent/created'"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 434,
+    "callee": "agents.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 443,
+    "callee": "presets.set",
+    "arg0": "session.id"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 505,
+    "callee": "services.children.set",
+    "arg0": "'worker-1'"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 522,
+    "callee": "agents.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 527,
+    "callee": "restored.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 528,
+    "callee": "presets.set",
+    "arg0": "sessionId"
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 546,
+    "callee": "blobs.set",
+    "arg0": "href"
+  },
+  {
+    "file": "tests/prompts.spec.ts",
+    "line": 12,
+    "callee": "values.set",
+    "arg0": "key"
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 69,
+    "callee": "host.emit",
+    "arg0": "'agent/created'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 80,
+    "callee": "host.agents.set",
+    "arg0": "id"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 81,
+    "callee": "host.emit",
+    "arg0": "'agent/created'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 88,
+    "callee": "host.emit",
+    "arg0": "'agent/disposed'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 129,
+    "callee": "host.emit",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 135,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 229,
+    "callee": "host.emit",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 286,
+    "callee": "host.emit",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 293,
+    "callee": "host.emit",
+    "arg0": "'agent/error'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 304,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 314,
+    "callee": "host.emit",
+    "arg0": "'agent/status'"
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 75,
+    "callee": "cursors.set",
+    "arg0": "id"
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 304,
+    "callee": "cursors.set",
+    "arg0": "'cron'"
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 427,
+    "callee": "host.cursor('cron').set",
+    "arg0": "{\n      own: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },\n      inherited: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },\n    }"
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 473,
+    "callee": "host.cursor('cron').set",
+    "arg0": "{\n      scout: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },\n      plain: { next: Date.parse('2026-11-03T09:59:00Z'), missed: 0 },\n    }"
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 533,
+    "callee": "host.cursor('cron').set",
+    "arg0": "{ [scheduleId]: { next, missed: 0 } }"
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 1164,
+    "callee": "cursors.set",
+    "arg0": "'cron'"
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 235,
+    "callee": "made.set",
+    "arg0": "'kv:gone'"
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 283,
+    "callee": "made.set",
+    "arg0": "KV.sourceCursor('cron')"
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 292,
+    "callee": "first.set",
+    "arg0": "'probe'"
+  },
+  {
+    "file": "tests/store.spec.ts",
+    "line": 308,
+    "callee": "first.set",
+    "arg0": "'anything'"
+  }
+]

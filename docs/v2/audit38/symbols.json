@@ -1,0 +1,6848 @@
+[
+  {
+    "file": "src/app/about.ts",
+    "line": 16,
+    "kind": "InterfaceDeclaration",
+    "name": "ChangeEntry",
+    "end": 20
+  },
+  {
+    "file": "src/app/about.ts",
+    "line": 23,
+    "kind": "FunctionDeclaration",
+    "name": "changesView",
+    "end": 37
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 15,
+    "kind": "InterfaceDeclaration",
+    "name": "MessageSourceMap",
+    "end": 17
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 20,
+    "kind": "TypeAliasDeclaration",
+    "name": "Seen",
+    "end": 20
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 26,
+    "kind": "FunctionDeclaration",
+    "name": "deliveryId",
+    "end": 30
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 37,
+    "kind": "ClassDeclaration",
+    "name": "AgentDelivery",
+    "end": 115
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 40,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 57
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 60,
+    "kind": "MethodDeclaration",
+    "name": "history",
+    "end": 80
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 83,
+    "kind": "MethodDeclaration",
+    "name": "holds",
+    "end": 87
+  },
+  {
+    "file": "src/app/agent-delivery.ts",
+    "line": 94,
+    "kind": "MethodDeclaration",
+    "name": "send",
+    "end": 114
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 12,
+    "kind": "InterfaceDeclaration",
+    "name": "Jobs",
+    "end": 16
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 19,
+    "kind": "InterfaceDeclaration",
+    "name": "Subagents",
+    "end": 22
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 47,
+    "kind": "FunctionDeclaration",
+    "name": "until",
+    "end": 55
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 58,
+    "kind": "FunctionDeclaration",
+    "name": "killJobs",
+    "end": 80
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 93,
+    "kind": "FunctionDeclaration",
+    "name": "stopSubagents",
+    "end": 113
+  },
+  {
+    "file": "src/app/background.ts",
+    "line": 116,
+    "kind": "FunctionDeclaration",
+    "name": "stopBackground",
+    "end": 124
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 62,
+    "kind": "InterfaceDeclaration",
+    "name": "DeliveryHost",
+    "end": 102
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 108,
+    "kind": "InterfaceDeclaration",
+    "name": "SendPayload",
+    "end": 115
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 129,
+    "kind": "FunctionDeclaration",
+    "name": "clipped",
+    "end": 135
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 170,
+    "kind": "InterfaceDeclaration",
+    "name": "BorrowedWork",
+    "end": 179
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 191,
+    "kind": "FunctionDeclaration",
+    "name": "borrowedFrom",
+    "end": 220
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 233,
+    "kind": "FunctionDeclaration",
+    "name": "creditText",
+    "end": 260
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 288,
+    "kind": "FunctionDeclaration",
+    "name": "creditLine",
+    "end": 291
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 301,
+    "kind": "FunctionDeclaration",
+    "name": "sendKey",
+    "end": 303
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 316,
+    "kind": "FunctionDeclaration",
+    "name": "replyText",
+    "end": 329
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 332,
+    "kind": "FunctionDeclaration",
+    "name": "addressOf",
+    "end": 334
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 337,
+    "kind": "TypeAliasDeclaration",
+    "name": "NotifyPayload",
+    "end": 342
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 347,
+    "kind": "FunctionDeclaration",
+    "name": "headline",
+    "end": 356
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 361,
+    "kind": "FunctionDeclaration",
+    "name": "relayText",
+    "end": 385
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 393,
+    "kind": "FunctionDeclaration",
+    "name": "escalationText",
+    "end": 401
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 411,
+    "kind": "FunctionDeclaration",
+    "name": "isFirstEscalation",
+    "end": 413
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 416,
+    "kind": "FunctionDeclaration",
+    "name": "escalationRelayText",
+    "end": 425
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 435,
+    "kind": "FunctionDeclaration",
+    "name": "resultDocument",
+    "end": 462
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 472,
+    "kind": "FunctionDeclaration",
+    "name": "executable",
+    "end": 478
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 480,
+    "kind": "FunctionDeclaration",
+    "name": "findNotifier",
+    "end": 490
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 492,
+    "kind": "ClassDeclaration",
+    "name": "OutcomeDelivery",
+    "end": 875
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 518,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 522
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 525,
+    "kind": "MethodDeclaration",
+    "name": "sends",
+    "end": 525
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 528,
+    "kind": "MethodDeclaration",
+    "name": "complain",
+    "end": 531
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 545,
+    "kind": "MethodDeclaration",
+    "name": "summarize",
+    "end": 548
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 564,
+    "kind": "MethodDeclaration",
+    "name": "borrowedOf",
+    "end": 572
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 586,
+    "kind": "MethodDeclaration",
+    "name": "escalated",
+    "end": 591
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 594,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 617
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 626,
+    "kind": "MethodDeclaration",
+    "name": "send",
+    "end": 641
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 653,
+    "kind": "MethodDeclaration",
+    "name": "resolveOutboundFiles",
+    "end": 670
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 672,
+    "kind": "MethodDeclaration",
+    "name": "sendReply",
+    "end": 690
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 707,
+    "kind": "MethodDeclaration",
+    "name": "sendGaveUp",
+    "end": 753
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 756,
+    "kind": "MethodDeclaration",
+    "name": "policyChanged",
+    "end": 761
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 764,
+    "kind": "MethodDeclaration",
+    "name": "notify",
+    "end": 837
+  },
+  {
+    "file": "src/app/delivery.ts",
+    "line": 848,
+    "kind": "MethodDeclaration",
+    "name": "machineNotification",
+    "end": 874
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 17,
+    "kind": "TypeAliasDeclaration",
+    "name": "DeskRole",
+    "end": 17
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 20,
+    "kind": "InterfaceDeclaration",
+    "name": "DeskToolCall",
+    "end": 24
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 27,
+    "kind": "InterfaceDeclaration",
+    "name": "DeskMessage",
+    "end": 40
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 44,
+    "kind": "ClassDeclaration",
+    "name": "DeskHistory",
+    "end": 139
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 45,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 45
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 51,
+    "kind": "MethodDeclaration",
+    "name": "append",
+    "end": 70
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 76,
+    "kind": "MethodDeclaration",
+    "name": "recent",
+    "end": 100
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 103,
+    "kind": "MethodDeclaration",
+    "name": "since",
+    "end": 112
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 115,
+    "kind": "MethodDeclaration",
+    "name": "latestSeq",
+    "end": 118
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 121,
+    "kind": "MethodDeclaration",
+    "name": "setSystem",
+    "end": 125
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 131,
+    "kind": "MethodDeclaration",
+    "name": "trim",
+    "end": 138
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 143,
+    "kind": "InterfaceDeclaration",
+    "name": "RawRow",
+    "end": 153
+  },
+  {
+    "file": "src/app/desk-history.ts",
+    "line": 155,
+    "kind": "FunctionDeclaration",
+    "name": "deserialize",
+    "end": 170
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 23,
+    "kind": "InterfaceDeclaration",
+    "name": "DeskLlmResponse",
+    "end": 30
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 42,
+    "kind": "FunctionDeclaration",
+    "name": "deskGenerate",
+    "end": 77
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 81,
+    "kind": "FunctionDeclaration",
+    "name": "processChunk",
+    "end": 83
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 85,
+    "kind": "FunctionDeclaration",
+    "name": "assembleResponse",
+    "end": 100
+  },
+  {
+    "file": "src/app/desk-llm.ts",
+    "line": 103,
+    "kind": "FunctionDeclaration",
+    "name": "toRequestMessage",
+    "end": 144
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 48,
+    "kind": "TypeAliasDeclaration",
+    "name": "MessageKind",
+    "end": 48
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 50,
+    "kind": "InterfaceDeclaration",
+    "name": "QueueEntry",
+    "end": 57
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 59,
+    "kind": "InterfaceDeclaration",
+    "name": "DeskStatus",
+    "end": 72
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 76,
+    "kind": "ClassDeclaration",
+    "name": "DeskLoop",
+    "end": 353
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 87,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 96
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 99,
+    "kind": "MethodDeclaration",
+    "name": "init",
+    "end": 102
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 105,
+    "kind": "MethodDeclaration",
+    "name": "onPromptsChanged",
+    "end": 108
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 114,
+    "kind": "MethodDeclaration",
+    "name": "relay",
+    "end": 117
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 123,
+    "kind": "MethodDeclaration",
+    "name": "notify",
+    "end": 126
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 129,
+    "kind": "MethodDeclaration",
+    "name": "getStatus",
+    "end": 140
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 144,
+    "kind": "MethodDeclaration",
+    "name": "enqueue",
+    "end": 149
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 151,
+    "kind": "MethodDeclaration",
+    "name": "scheduleRun",
+    "end": 155
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 157,
+    "kind": "MethodDeclaration",
+    "name": "runLoop",
+    "end": 195
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 197,
+    "kind": "MethodDeclaration",
+    "name": "processEntry",
+    "end": 222
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 224,
+    "kind": "MethodDeclaration",
+    "name": "runTurn",
+    "end": 308
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 319,
+    "kind": "MethodDeclaration",
+    "name": "settleDirectTriageAnswer",
+    "end": 346
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 348,
+    "kind": "MethodDeclaration",
+    "name": "addError",
+    "end": 352
+  },
+  {
+    "file": "src/app/desk-loop.ts",
+    "line": 358,
+    "kind": "FunctionDeclaration",
+    "name": "anyAbort",
+    "end": 365
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 19,
+    "kind": "InterfaceDeclaration",
+    "name": "ToolCallResult",
+    "end": 25
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 49,
+    "kind": "FunctionDeclaration",
+    "name": "deskGateToolSchema",
+    "end": 65
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 71,
+    "kind": "FunctionDeclaration",
+    "name": "deskToolSchemas",
+    "end": 76
+  },
+  {
+    "file": "src/app/desk-tools.ts",
+    "line": 86,
+    "kind": "FunctionDeclaration",
+    "name": "executeDeskToolCalls",
+    "end": 116
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 12,
+    "kind": "ClassDeclaration",
+    "name": "Later",
+    "end": 17
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 13,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 16
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 20,
+    "kind": "TypeAliasDeclaration",
+    "name": "EffectHandler",
+    "end": 20
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 22,
+    "kind": "InterfaceDeclaration",
+    "name": "EffectOutcome",
+    "end": 25
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 27,
+    "kind": "InterfaceDeclaration",
+    "name": "EffectsOptions",
+    "end": 40
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 59,
+    "kind": "FunctionDeclaration",
+    "name": "backoff",
+    "end": 61
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 63,
+    "kind": "ClassDeclaration",
+    "name": "Effects",
+    "end": 200
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 86,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 93
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 96,
+    "kind": "MethodDeclaration",
+    "name": "handle",
+    "end": 96
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 99,
+    "kind": "MethodDeclaration",
+    "name": "enqueue",
+    "end": 101
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 103,
+    "kind": "MethodDeclaration",
+    "name": "pending",
+    "end": 103
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 109,
+    "kind": "MethodDeclaration",
+    "name": "runDue",
+    "end": 135
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 144,
+    "kind": "MethodDeclaration",
+    "name": "complain",
+    "end": 148
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 156,
+    "kind": "MethodDeclaration",
+    "name": "summarize",
+    "end": 164
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 166,
+    "kind": "MethodDeclaration",
+    "name": "settle",
+    "end": 196
+  },
+  {
+    "file": "src/app/effects.ts",
+    "line": 199,
+    "kind": "MethodDeclaration",
+    "name": "dispose",
+    "end": 199
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 58,
+    "kind": "FunctionDeclaration",
+    "name": "authorOf",
+    "end": 66
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 68,
+    "kind": "ClassDeclaration",
+    "name": "PrepareFailed",
+    "end": 68
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 70,
+    "kind": "InterfaceDeclaration",
+    "name": "ExecutorHost",
+    "end": 84
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 87,
+    "kind": "InterfaceDeclaration",
+    "name": "LaunchPayload",
+    "end": 87
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 89,
+    "kind": "TypeAliasDeclaration",
+    "name": "InputPayload",
+    "end": 89
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 106,
+    "kind": "InterfaceDeclaration",
+    "name": "ExecutionSandbox",
+    "end": 172
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 181,
+    "kind": "FunctionDeclaration",
+    "name": "assertNoSymlinkUnder",
+    "end": 200
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 206,
+    "kind": "InterfaceDeclaration",
+    "name": "SandboxSubprocess",
+    "end": 218
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 220,
+    "kind": "ClassDeclaration",
+    "name": "LocalHostSandbox",
+    "end": 314
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 222,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 222
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 223,
+    "kind": "MethodDeclaration",
+    "name": "prepareWorkspace",
+    "end": 225
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 226,
+    "kind": "MethodDeclaration",
+    "name": "deliverAttachment",
+    "end": 230
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 231,
+    "kind": "MethodDeclaration",
+    "name": "writeWorkspaceFile",
+    "end": 239
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 240,
+    "kind": "MethodDeclaration",
+    "name": "removeWorkspace",
+    "end": 242
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 245,
+    "kind": "MethodDeclaration",
+    "name": "listWorkspace",
+    "end": 247
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 248,
+    "kind": "MethodDeclaration",
+    "name": "readWorkspaceFile",
+    "end": 250
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 251,
+    "kind": "MethodDeclaration",
+    "name": "runPrepare",
+    "end": 266
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 267,
+    "kind": "MethodDeclaration",
+    "name": "materializeInput",
+    "end": 313
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 316,
+    "kind": "ClassDeclaration",
+    "name": "DshExecutor",
+    "end": 803
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 328,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 334
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 339,
+    "kind": "MethodDeclaration",
+    "name": "prepare",
+    "end": 342
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 345,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 347
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 350,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 353
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 362,
+    "kind": "MethodDeclaration",
+    "name": "gaveUp",
+    "end": 372
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 381,
+    "kind": "MethodDeclaration",
+    "name": "releaseDependants",
+    "end": 390
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 396,
+    "kind": "MethodDeclaration",
+    "name": "releaseWaitingSlots",
+    "end": 402
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 410,
+    "kind": "MethodDeclaration",
+    "name": "stuckLaunches",
+    "end": 421
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 437,
+    "kind": "MethodDeclaration",
+    "name": "rescueStuckLaunch",
+    "end": 439
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 442,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 444
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 450,
+    "kind": "MethodDeclaration",
+    "name": "used",
+    "end": 456
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 459,
+    "kind": "MethodDeclaration",
+    "name": "agentRunning",
+    "end": 461
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 464,
+    "kind": "MethodDeclaration",
+    "name": "sessionOf",
+    "end": 467
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 475,
+    "kind": "MethodDeclaration",
+    "name": "launch",
+    "end": 552
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 555,
+    "kind": "MethodDeclaration",
+    "name": "prepareDirectory",
+    "end": 573
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 582,
+    "kind": "MethodDeclaration",
+    "name": "copyAttachments",
+    "end": 608
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 614,
+    "kind": "MethodDeclaration",
+    "name": "environment",
+    "end": 623
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 627,
+    "kind": "MethodDeclaration",
+    "name": "taskText",
+    "end": 689
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 696,
+    "kind": "MethodDeclaration",
+    "name": "threadContext",
+    "end": 712
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 720,
+    "kind": "MethodDeclaration",
+    "name": "deliverInputs",
+    "end": 760
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 772,
+    "kind": "MethodDeclaration",
+    "name": "halt",
+    "end": 791
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 794,
+    "kind": "MethodDeclaration",
+    "name": "haltBackground",
+    "end": 796
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 799,
+    "kind": "MethodDeclaration",
+    "name": "isWorkTool",
+    "end": 799
+  },
+  {
+    "file": "src/app/executor.ts",
+    "line": 802,
+    "kind": "MethodDeclaration",
+    "name": "sessionOf",
+    "end": 802
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 25,
+    "kind": "InterfaceDeclaration",
+    "name": "FileEntry",
+    "end": 32
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 34,
+    "kind": "InterfaceDeclaration",
+    "name": "FileListing",
+    "end": 39
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 42,
+    "kind": "FunctionDeclaration",
+    "name": "isTextFile",
+    "end": 44
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 53,
+    "kind": "FunctionDeclaration",
+    "name": "resolveInside",
+    "end": 57
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 68,
+    "kind": "FunctionDeclaration",
+    "name": "resolveRealInside",
+    "end": 98
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 101,
+    "kind": "FunctionDeclaration",
+    "name": "listFiles",
+    "end": 134
+  },
+  {
+    "file": "src/app/files.ts",
+    "line": 137,
+    "kind": "FunctionDeclaration",
+    "name": "readForPanel",
+    "end": 142
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 7,
+    "kind": "InterfaceDeclaration",
+    "name": "HealthState",
+    "end": 11
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 14,
+    "kind": "ClassDeclaration",
+    "name": "HealthEntry",
+    "end": 21
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 17,
+    "kind": "MethodDeclaration",
+    "name": "record",
+    "end": 17
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 19,
+    "kind": "MethodDeclaration",
+    "name": "problem",
+    "end": 19
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 20,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 20
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 24,
+    "kind": "ClassDeclaration",
+    "name": "HealthBoard",
+    "end": 41
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 26,
+    "kind": "MethodDeclaration",
+    "name": "entry",
+    "end": 30
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 32,
+    "kind": "MethodDeclaration",
+    "name": "problems",
+    "end": 37
+  },
+  {
+    "file": "src/app/health.ts",
+    "line": 38,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 40
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 42,
+    "kind": "InterfaceDeclaration",
+    "name": "HttpHost",
+    "end": 107
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 111,
+    "kind": "ClassDeclaration",
+    "name": "RouteError",
+    "end": 115
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 112,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 114
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 117,
+    "kind": "InterfaceDeclaration",
+    "name": "RouteRequest",
+    "end": 121
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 123,
+    "kind": "InterfaceDeclaration",
+    "name": "Route",
+    "end": 127
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 132,
+    "kind": "FunctionDeclaration",
+    "name": "readBody",
+    "end": 144
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 146,
+    "kind": "FunctionDeclaration",
+    "name": "json",
+    "end": 151
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 158,
+    "kind": "FunctionDeclaration",
+    "name": "sameOrigin",
+    "end": 166
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 169,
+    "kind": "FunctionDeclaration",
+    "name": "failure",
+    "end": 187
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 189,
+    "kind": "FunctionDeclaration",
+    "name": "match",
+    "end": 202
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 232,
+    "kind": "FunctionDeclaration",
+    "name": "chatView",
+    "end": 273
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 294,
+    "kind": "FunctionDeclaration",
+    "name": "lostCount",
+    "end": 302
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 305,
+    "kind": "FunctionDeclaration",
+    "name": "stateView",
+    "end": 361
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 364,
+    "kind": "FunctionDeclaration",
+    "name": "table",
+    "end": 773
+  },
+  {
+    "file": "src/app/http.ts",
+    "line": 816,
+    "kind": "FunctionDeclaration",
+    "name": "registerHttp",
+    "end": 849
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 15,
+    "kind": "InterfaceDeclaration",
+    "name": "LockRecord",
+    "end": 20
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 23,
+    "kind": "ClassDeclaration",
+    "name": "LockHeld",
+    "end": 28
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 24,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 27
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 31,
+    "kind": "FunctionDeclaration",
+    "name": "alive",
+    "end": 35
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 37,
+    "kind": "FunctionDeclaration",
+    "name": "read",
+    "end": 42
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 45,
+    "kind": "ClassDeclaration",
+    "name": "StateLock",
+    "end": 58
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 47,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 47
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 50,
+    "kind": "MethodDeclaration",
+    "name": "release",
+    "end": 57
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 64,
+    "kind": "FunctionDeclaration",
+    "name": "takeLock",
+    "end": 90
+  },
+  {
+    "file": "src/app/lock.ts",
+    "line": 93,
+    "kind": "FunctionDeclaration",
+    "name": "writeMarker",
+    "end": 96
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 11,
+    "kind": "InterfaceDeclaration",
+    "name": "PassesOptions",
+    "end": 19
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 21,
+    "kind": "ClassDeclaration",
+    "name": "Passes",
+    "end": 78
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 31,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 34
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 36,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 41
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 44,
+    "kind": "MethodDeclaration",
+    "name": "requestPass",
+    "end": 48
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 50,
+    "kind": "MethodDeclaration",
+    "name": "pass",
+    "end": 68
+  },
+  {
+    "file": "src/app/passes.ts",
+    "line": 71,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 77
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 14,
+    "kind": "TypeAliasDeclaration",
+    "name": "PromptRole",
+    "end": 14
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 30,
+    "kind": "FunctionDeclaration",
+    "name": "packageFile",
+    "end": 36
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 39,
+    "kind": "FunctionDeclaration",
+    "name": "promptFile",
+    "end": 41
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 50,
+    "kind": "InterfaceDeclaration",
+    "name": "SavedSkill",
+    "end": 82
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 84,
+    "kind": "InterfaceDeclaration",
+    "name": "PromptConfig",
+    "end": 89
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 92,
+    "kind": "ClassDeclaration",
+    "name": "PromptConflict",
+    "end": 92
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 95,
+    "kind": "InterfaceDeclaration",
+    "name": "PromptVersion",
+    "end": 101
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 103,
+    "kind": "ClassDeclaration",
+    "name": "Prompts",
+    "end": 277
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 107,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 107
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 110,
+    "kind": "MethodDeclaration",
+    "name": "base",
+    "end": 114
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 116,
+    "kind": "MethodDeclaration",
+    "name": "config",
+    "end": 116
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 119,
+    "kind": "MethodDeclaration",
+    "name": "current",
+    "end": 122
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 124,
+    "kind": "MethodDeclaration",
+    "name": "revision",
+    "end": 124
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 126,
+    "kind": "MethodDeclaration",
+    "name": "version",
+    "end": 128
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 138,
+    "kind": "MethodDeclaration",
+    "name": "onChange",
+    "end": 141
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 143,
+    "kind": "MethodDeclaration",
+    "name": "notifyChange",
+    "end": 147
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 150,
+    "kind": "MethodDeclaration",
+    "name": "skills",
+    "end": 153
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 156,
+    "kind": "MethodDeclaration",
+    "name": "saveSkill",
+    "end": 201
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 204,
+    "kind": "MethodDeclaration",
+    "name": "setSkillEnabled",
+    "end": 213
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 216,
+    "kind": "MethodDeclaration",
+    "name": "removeSkill",
+    "end": 227
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 239,
+    "kind": "MethodDeclaration",
+    "name": "recordSkillUse",
+    "end": 246
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 248,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 268
+  },
+  {
+    "file": "src/app/prompts.ts",
+    "line": 274,
+    "kind": "MethodDeclaration",
+    "name": "overrideIsBase",
+    "end": 276
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 80,
+    "kind": "FunctionDeclaration",
+    "name": "directoryBytes",
+    "end": 90
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 113,
+    "kind": "FunctionDeclaration",
+    "name": "lastSaid",
+    "end": 123
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 137,
+    "kind": "InterfaceDeclaration",
+    "name": "TurnEndReason",
+    "end": 140
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 142,
+    "kind": "FunctionDeclaration",
+    "name": "turnEndReason",
+    "end": 151
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 159,
+    "kind": "InterfaceDeclaration",
+    "name": "WorkerProgress",
+    "end": 200
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 209,
+    "kind": "FunctionDeclaration",
+    "name": "usageOf",
+    "end": 229
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 237,
+    "kind": "FunctionDeclaration",
+    "name": "progressOf",
+    "end": 267
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 270,
+    "kind": "FunctionDeclaration",
+    "name": "saidText",
+    "end": 274
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 277,
+    "kind": "InterfaceDeclaration",
+    "name": "Recipe",
+    "end": 284
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 286,
+    "kind": "ClassDeclaration",
+    "name": "Runtime",
+    "end": 1746
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 327,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 521
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 526,
+    "kind": "MethodDeclaration",
+    "name": "toolsHost",
+    "end": 545
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 551,
+    "kind": "MethodDeclaration",
+    "name": "returnAddressOf",
+    "end": 555
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 567,
+    "kind": "MethodDeclaration",
+    "name": "replyToRequester",
+    "end": 584
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 597,
+    "kind": "MethodDeclaration",
+    "name": "deleteTicket",
+    "end": 621
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 631,
+    "kind": "MethodDeclaration",
+    "name": "removeAssets",
+    "end": 645
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 648,
+    "kind": "MethodDeclaration",
+    "name": "silentAttempts",
+    "end": 660
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 672,
+    "kind": "MethodDeclaration",
+    "name": "mountedAt",
+    "end": 672
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 681,
+    "kind": "MethodDeclaration",
+    "name": "watchdogArmedInterval",
+    "end": 681
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 690,
+    "kind": "MethodDeclaration",
+    "name": "promoteSkill",
+    "end": 743
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 750,
+    "kind": "MethodDeclaration",
+    "name": "readArtifact",
+    "end": 867
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 870,
+    "kind": "MethodDeclaration",
+    "name": "watchdogHost",
+    "end": 921
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 929,
+    "kind": "MethodDeclaration",
+    "name": "subscribe",
+    "end": 932
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 935,
+    "kind": "MethodDeclaration",
+    "name": "sourceHost",
+    "end": 949
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 954,
+    "kind": "MethodDeclaration",
+    "name": "settings",
+    "end": 961
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 967,
+    "kind": "MethodDeclaration",
+    "name": "saveSettings",
+    "end": 991
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 999,
+    "kind": "MethodDeclaration",
+    "name": "autoRetry",
+    "end": 1022
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1029,
+    "kind": "MethodDeclaration",
+    "name": "raiseDecision",
+    "end": 1035
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1037,
+    "kind": "MethodDeclaration",
+    "name": "decisions",
+    "end": 1037
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1039,
+    "kind": "MethodDeclaration",
+    "name": "dismissDecision",
+    "end": 1041
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1049,
+    "kind": "MethodDeclaration",
+    "name": "presetFor",
+    "end": 1052
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1076,
+    "kind": "MethodDeclaration",
+    "name": "deskPatrol",
+    "end": 1103
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1105,
+    "kind": "MethodDeclaration",
+    "name": "enforceRuntimeBudgets",
+    "end": 1143
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1149,
+    "kind": "MethodDeclaration",
+    "name": "panelPath",
+    "end": 1152
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1158,
+    "kind": "MethodDeclaration",
+    "name": "progress",
+    "end": 1174
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1178,
+    "kind": "MethodDeclaration",
+    "name": "artifacts",
+    "end": 1178
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1180,
+    "kind": "MethodDeclaration",
+    "name": "sourceStatus",
+    "end": 1188
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1196,
+    "kind": "MethodDeclaration",
+    "name": "nudge",
+    "end": 1203
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1205,
+    "kind": "MethodDeclaration",
+    "name": "setupProblem",
+    "end": 1205
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1208,
+    "kind": "MethodDeclaration",
+    "name": "panelHtml",
+    "end": 1210
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1218,
+    "kind": "MethodDeclaration",
+    "name": "recipes",
+    "end": 1249
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1260,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 1317
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1329,
+    "kind": "MethodDeclaration",
+    "name": "announceSandbox",
+    "end": 1339
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1342,
+    "kind": "MethodDeclaration",
+    "name": "markProblem",
+    "end": 1345
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1351,
+    "kind": "MethodDeclaration",
+    "name": "createMainSession",
+    "end": 1364
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1374,
+    "kind": "MethodDeclaration",
+    "name": "mainSession",
+    "end": 1379
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1387,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 1421
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1427,
+    "kind": "MethodDeclaration",
+    "name": "ticketIdOfSession",
+    "end": 1429
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1432,
+    "kind": "MethodDeclaration",
+    "name": "indexSessions",
+    "end": 1437
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1447,
+    "kind": "MethodDeclaration",
+    "name": "wireAgents",
+    "end": 1549
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1559,
+    "kind": "MethodDeclaration",
+    "name": "causeOf",
+    "end": 1564
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1571,
+    "kind": "MethodDeclaration",
+    "name": "usesMainDesk",
+    "end": 1573
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1579,
+    "kind": "MethodDeclaration",
+    "name": "recover",
+    "end": 1621
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1636,
+    "kind": "MethodDeclaration",
+    "name": "reconcileGhostTickets",
+    "end": 1659
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1662,
+    "kind": "MethodDeclaration",
+    "name": "refresh",
+    "end": 1694
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1697,
+    "kind": "MethodDeclaration",
+    "name": "onEvent",
+    "end": 1745
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1749,
+    "kind": "FunctionDeclaration",
+    "name": "createRuntime",
+    "end": 1756
+  },
+  {
+    "file": "src/app/runtime.ts",
+    "line": 1759,
+    "kind": "InterfaceDeclaration",
+    "name": "DecisionRequest",
+    "end": 1765
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 71,
+    "kind": "ClassDeclaration",
+    "name": "SessionHealth",
+    "end": 127
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 75,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 79
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 82,
+    "kind": "MethodDeclaration",
+    "name": "problem",
+    "end": 85
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 94,
+    "kind": "MethodDeclaration",
+    "name": "clear",
+    "end": 96
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 107,
+    "kind": "MethodDeclaration",
+    "name": "summarize",
+    "end": 110
+  },
+  {
+    "file": "src/app/session-health.ts",
+    "line": 117,
+    "kind": "MethodDeclaration",
+    "name": "compose",
+    "end": 126
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 55,
+    "kind": "InterfaceDeclaration",
+    "name": "MainState",
+    "end": 60
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 64,
+    "kind": "InterfaceDeclaration",
+    "name": "SessionsHost",
+    "end": 145
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 148,
+    "kind": "InterfaceDeclaration",
+    "name": "Binding",
+    "end": 153
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 171,
+    "kind": "FunctionDeclaration",
+    "name": "knownToolsOf",
+    "end": 176
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 179,
+    "kind": "FunctionDeclaration",
+    "name": "refusedNamesOf",
+    "end": 183
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 194,
+    "kind": "FunctionDeclaration",
+    "name": "guardWorkerCall",
+    "end": 309
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 311,
+    "kind": "FunctionDeclaration",
+    "name": "workerSection",
+    "end": 341
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 359,
+    "kind": "FunctionDeclaration",
+    "name": "oneLine",
+    "end": 361
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 373,
+    "kind": "FunctionDeclaration",
+    "name": "craftLines",
+    "end": 391
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 394,
+    "kind": "FunctionDeclaration",
+    "name": "mainSection",
+    "end": 403
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 405,
+    "kind": "ClassDeclaration",
+    "name": "Sessions",
+    "end": 941
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 435,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 460
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 470,
+    "kind": "MethodDeclaration",
+    "name": "setProblemSink",
+    "end": 470
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 473,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 476
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 484,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 487
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 495,
+    "kind": "MethodDeclaration",
+    "name": "resolve",
+    "end": 500
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 503,
+    "kind": "MethodDeclaration",
+    "name": "ensureMaster",
+    "end": 520
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 523,
+    "kind": "MethodDeclaration",
+    "name": "resumeMaster",
+    "end": 530
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 536,
+    "kind": "MethodDeclaration",
+    "name": "ensure",
+    "end": 555
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 558,
+    "kind": "MethodDeclaration",
+    "name": "selectModel",
+    "end": 566
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 576,
+    "kind": "MethodDeclaration",
+    "name": "resume",
+    "end": 585
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 592,
+    "kind": "MethodDeclaration",
+    "name": "authorize",
+    "end": 596
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 601,
+    "kind": "MethodDeclaration",
+    "name": "decorateAgent",
+    "end": 632
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 638,
+    "kind": "MethodDeclaration",
+    "name": "decorate",
+    "end": 702
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 726,
+    "kind": "MethodDeclaration",
+    "name": "syncCrafts",
+    "end": 759
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 762,
+    "kind": "MethodDeclaration",
+    "name": "releaseCrafts",
+    "end": 769
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 779,
+    "kind": "MethodDeclaration",
+    "name": "countCraftUse",
+    "end": 804
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 814,
+    "kind": "MethodDeclaration",
+    "name": "restrict",
+    "end": 845
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 848,
+    "kind": "MethodDeclaration",
+    "name": "release",
+    "end": 859
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 862,
+    "kind": "MethodDeclaration",
+    "name": "forget",
+    "end": 862
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 868,
+    "kind": "MethodDeclaration",
+    "name": "setDeskLoop",
+    "end": 868
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 869,
+    "kind": "MethodDeclaration",
+    "name": "hasDeskLoop",
+    "end": 869
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 874,
+    "kind": "MethodDeclaration",
+    "name": "notify",
+    "end": 885
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 891,
+    "kind": "MethodDeclaration",
+    "name": "relay",
+    "end": 903
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 906,
+    "kind": "MethodDeclaration",
+    "name": "promptMaster",
+    "end": 910
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 922,
+    "kind": "MethodDeclaration",
+    "name": "attempt",
+    "end": 922
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 924,
+    "kind": "MethodDeclaration",
+    "name": "promptWorker",
+    "end": 929
+  },
+  {
+    "file": "src/app/sessions.ts",
+    "line": 932,
+    "kind": "MethodDeclaration",
+    "name": "dispose",
+    "end": 940
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 33,
+    "kind": "InterfaceDeclaration",
+    "name": "SkillsPort",
+    "end": 48
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 58,
+    "kind": "TypeAliasDeclaration",
+    "name": "SkillProblemSink",
+    "end": 58
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 322,
+    "kind": "InterfaceDeclaration",
+    "name": "BuiltInSkillView",
+    "end": 331
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 333,
+    "kind": "FunctionDeclaration",
+    "name": "builtInSkillsView",
+    "end": 347
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 360,
+    "kind": "FunctionDeclaration",
+    "name": "craftCatalogDescription",
+    "end": 364
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 377,
+    "kind": "FunctionDeclaration",
+    "name": "registerSkills",
+    "end": 394
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 397,
+    "kind": "FunctionDeclaration",
+    "name": "reasonOf",
+    "end": 399
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 407,
+    "kind": "InterfaceDeclaration",
+    "name": "DynamicSkillsSource",
+    "end": 410
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 434,
+    "kind": "FunctionDeclaration",
+    "name": "registerDynamicSkills",
+    "end": 476
+  },
+  {
+    "file": "src/app/skills.ts",
+    "line": 491,
+    "kind": "FunctionDeclaration",
+    "name": "confirmRegistered",
+    "end": 510
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 157,
+    "kind": "InterfaceDeclaration",
+    "name": "LostPayload",
+    "end": 163
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 272,
+    "kind": "ClassDeclaration",
+    "name": "SchemaTooNew",
+    "end": 277
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 273,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 276
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 282,
+    "kind": "ClassDeclaration",
+    "name": "Dependencies",
+    "end": 309
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 285,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 285
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 286,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 290
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 291,
+    "kind": "MethodDeclaration",
+    "name": "delete",
+    "end": 293
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 295,
+    "kind": "MethodDeclaration",
+    "name": "upstreamOf",
+    "end": 298
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 300,
+    "kind": "MethodDeclaration",
+    "name": "downstreamOf",
+    "end": 303
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 305,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 308
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 311,
+    "kind": "ClassDeclaration",
+    "name": "Events",
+    "end": 328
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 312,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 312
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 314,
+    "kind": "MethodDeclaration",
+    "name": "append",
+    "end": 322
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 324,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 327
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 331,
+    "kind": "ClassDeclaration",
+    "name": "Threads",
+    "end": 349
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 332,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 332
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 334,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 337
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 339,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 343
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 345,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 348
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 351,
+    "kind": "ClassDeclaration",
+    "name": "Artifacts",
+    "end": 367
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 352,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 352
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 355,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 360
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 363,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 366
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 369,
+    "kind": "ClassDeclaration",
+    "name": "Triggers",
+    "end": 426
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 370,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 370
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 379,
+    "kind": "MethodDeclaration",
+    "name": "countBySource",
+    "end": 386
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 387,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 392
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 393,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 398
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 409,
+    "kind": "MethodDeclaration",
+    "name": "insertLost",
+    "end": 414
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 415,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 419
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 421,
+    "kind": "MethodDeclaration",
+    "name": "since",
+    "end": 425
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 428,
+    "kind": "ClassDeclaration",
+    "name": "Projects",
+    "end": 444
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 429,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 429
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 430,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 434
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 435,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 438
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 439,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 442
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 443,
+    "kind": "MethodDeclaration",
+    "name": "remove",
+    "end": 443
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 446,
+    "kind": "ClassDeclaration",
+    "name": "Works",
+    "end": 467
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 447,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 447
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 448,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 452
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 453,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 456
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 457,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 460
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 461,
+    "kind": "MethodDeclaration",
+    "name": "byProject",
+    "end": 465
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 466,
+    "kind": "MethodDeclaration",
+    "name": "remove",
+    "end": 466
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 469,
+    "kind": "ClassDeclaration",
+    "name": "Tickets",
+    "end": 526
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 470,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 470
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 473,
+    "kind": "MethodDeclaration",
+    "name": "byWork",
+    "end": 476
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 477,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 480
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 481,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 485
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 486,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 492
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 493,
+    "kind": "MethodDeclaration",
+    "name": "open",
+    "end": 496
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 498,
+    "kind": "MethodDeclaration",
+    "name": "page",
+    "end": 505
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 506,
+    "kind": "MethodDeclaration",
+    "name": "count",
+    "end": 516
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 518,
+    "kind": "MethodDeclaration",
+    "name": "remove",
+    "end": 518
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 520,
+    "kind": "MethodDeclaration",
+    "name": "deleted",
+    "end": 524
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 528,
+    "kind": "ClassDeclaration",
+    "name": "Decisions",
+    "end": 547
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 529,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 529
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 530,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 533
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 534,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 538
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 539,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 542
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 543,
+    "kind": "MethodDeclaration",
+    "name": "since",
+    "end": 546
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 550,
+    "kind": "InterfaceDeclaration",
+    "name": "EffectRow",
+    "end": 557
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 564,
+    "kind": "ClassDeclaration",
+    "name": "Store",
+    "end": 841
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 583,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 602
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 605,
+    "kind": "MethodDeclaration",
+    "name": "open",
+    "end": 612
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 621,
+    "kind": "MethodDeclaration",
+    "name": "migrate",
+    "end": 642
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 644,
+    "kind": "MethodDeclaration",
+    "name": "atomic",
+    "end": 680
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 686,
+    "kind": "MethodDeclaration",
+    "name": "deferredFailed",
+    "end": 691
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 694,
+    "kind": "MethodDeclaration",
+    "name": "readVersion",
+    "end": 706
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 708,
+    "kind": "MethodDeclaration",
+    "name": "afterCommit",
+    "end": 711
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 716,
+    "kind": "MethodDeclaration",
+    "name": "enqueueEffect",
+    "end": 720
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 723,
+    "kind": "MethodDeclaration",
+    "name": "claimEffects",
+    "end": 733
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 736,
+    "kind": "MethodDeclaration",
+    "name": "settleEffect",
+    "end": 738
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 741,
+    "kind": "MethodDeclaration",
+    "name": "failEffect",
+    "end": 744
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 747,
+    "kind": "MethodDeclaration",
+    "name": "deferEffect",
+    "end": 749
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 752,
+    "kind": "MethodDeclaration",
+    "name": "releaseRunning",
+    "end": 755
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 757,
+    "kind": "MethodDeclaration",
+    "name": "pendingEffects",
+    "end": 759
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 761,
+    "kind": "MethodDeclaration",
+    "name": "effectCounts",
+    "end": 765
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 770,
+    "kind": "MethodDeclaration",
+    "name": "settings",
+    "end": 773
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 776,
+    "kind": "MethodDeclaration",
+    "name": "settingsRevision",
+    "end": 778
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 781,
+    "kind": "MethodDeclaration",
+    "name": "saveSettings",
+    "end": 788
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 792,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 795
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 797,
+    "kind": "MethodDeclaration",
+    "name": "set",
+    "end": 800
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 802,
+    "kind": "MethodDeclaration",
+    "name": "delete",
+    "end": 802
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 805,
+    "kind": "MethodDeclaration",
+    "name": "keys",
+    "end": 808
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 820,
+    "kind": "MethodDeclaration",
+    "name": "pushLostPayload",
+    "end": 830
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 833,
+    "kind": "MethodDeclaration",
+    "name": "lostPayloads",
+    "end": 838
+  },
+  {
+    "file": "src/app/store.ts",
+    "line": 840,
+    "kind": "MethodDeclaration",
+    "name": "close",
+    "end": 840
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 26,
+    "kind": "InterfaceDeclaration",
+    "name": "Tool",
+    "end": 31
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 40,
+    "kind": "FunctionDeclaration",
+    "name": "definitionOf",
+    "end": 57
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 59,
+    "kind": "InterfaceDeclaration",
+    "name": "ToolsHost",
+    "end": 108
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 131,
+    "kind": "FunctionDeclaration",
+    "name": "refusal",
+    "end": 137
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 140,
+    "kind": "InterfaceDeclaration",
+    "name": "ArtifactCatalogEntry",
+    "end": 151
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 153,
+    "kind": "TypeAliasDeclaration",
+    "name": "ArtifactRead",
+    "end": 160
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 165,
+    "kind": "FunctionDeclaration",
+    "name": "workerTools",
+    "end": 317
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 322,
+    "kind": "FunctionDeclaration",
+    "name": "mainTools",
+    "end": 556
+  },
+  {
+    "file": "src/app/tools.ts",
+    "line": 558,
+    "kind": "FunctionDeclaration",
+    "name": "latestAssignmentState",
+    "end": 560
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 12,
+    "kind": "FunctionDeclaration",
+    "name": "updatedAt",
+    "end": 19
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 22,
+    "kind": "InterfaceDeclaration",
+    "name": "TicketSummary",
+    "end": 56
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 58,
+    "kind": "FunctionDeclaration",
+    "name": "ticketSummary",
+    "end": 75
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 78,
+    "kind": "FunctionDeclaration",
+    "name": "ticketView",
+    "end": 104
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 114,
+    "kind": "FunctionDeclaration",
+    "name": "scheduleView",
+    "end": 143
+  },
+  {
+    "file": "src/app/views.ts",
+    "line": 146,
+    "kind": "FunctionDeclaration",
+    "name": "decisionView",
+    "end": 152
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 16,
+    "kind": "InterfaceDeclaration",
+    "name": "WatchdogAction",
+    "end": 21
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 24,
+    "kind": "InterfaceDeclaration",
+    "name": "WatchdogHost",
+    "end": 61
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 63,
+    "kind": "ClassDeclaration",
+    "name": "Watchdog",
+    "end": 183
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 78,
+    "kind": "MethodDeclaration",
+    "name": "armedInterval",
+    "end": 78
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 80,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 80
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 82,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 85
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 87,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 91
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 94,
+    "kind": "MethodDeclaration",
+    "name": "look",
+    "end": 102
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 105,
+    "kind": "MethodDeclaration",
+    "name": "rescueStuck",
+    "end": 134
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 140,
+    "kind": "MethodDeclaration",
+    "name": "reportSilent",
+    "end": 154
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 163,
+    "kind": "MethodDeclaration",
+    "name": "settingsChanged",
+    "end": 167
+  },
+  {
+    "file": "src/app/watchdog.ts",
+    "line": 169,
+    "kind": "MethodDeclaration",
+    "name": "arm",
+    "end": 182
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 20,
+    "kind": "InterfaceDeclaration",
+    "name": "TriggerRecord",
+    "end": 23
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 33,
+    "kind": "InterfaceDeclaration",
+    "name": "LostTrigger",
+    "end": 47
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 49,
+    "kind": "InterfaceDeclaration",
+    "name": "TriggerRepository",
+    "end": 61
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 63,
+    "kind": "InterfaceDeclaration",
+    "name": "TicketRepository",
+    "end": 81
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 84,
+    "kind": "InterfaceDeclaration",
+    "name": "DependencyRepository",
+    "end": 93
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 96,
+    "kind": "InterfaceDeclaration",
+    "name": "EventRepository",
+    "end": 101
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 104,
+    "kind": "InterfaceDeclaration",
+    "name": "ProjectRepository",
+    "end": 110
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 113,
+    "kind": "InterfaceDeclaration",
+    "name": "WorkRepository",
+    "end": 121
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 123,
+    "kind": "InterfaceDeclaration",
+    "name": "DecisionRepository",
+    "end": 128
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 131,
+    "kind": "TypeAliasDeclaration",
+    "name": "DecisionRecord",
+    "end": 131
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 134,
+    "kind": "InterfaceDeclaration",
+    "name": "ArtifactRepository",
+    "end": 139
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 141,
+    "kind": "InterfaceDeclaration",
+    "name": "ThreadRepository",
+    "end": 146
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 148,
+    "kind": "InterfaceDeclaration",
+    "name": "Repositories",
+    "end": 158
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 161,
+    "kind": "InterfaceDeclaration",
+    "name": "Transaction",
+    "end": 165
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 168,
+    "kind": "InterfaceDeclaration",
+    "name": "Executor",
+    "end": 177
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 180,
+    "kind": "InterfaceDeclaration",
+    "name": "Delivery",
+    "end": 198
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 200,
+    "kind": "TypeAliasDeclaration",
+    "name": "DomainEvent",
+    "end": 208
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 210,
+    "kind": "InterfaceDeclaration",
+    "name": "EngineOptions",
+    "end": 219
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 222,
+    "kind": "InterfaceDeclaration",
+    "name": "ReceiveResult",
+    "end": 226
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 239,
+    "kind": "FunctionDeclaration",
+    "name": "canCollaborate",
+    "end": 246
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 248,
+    "kind": "FunctionDeclaration",
+    "name": "withAssignment",
+    "end": 254
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 263,
+    "kind": "ClassDeclaration",
+    "name": "Engine",
+    "end": 1752
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 272,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 286
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 297,
+    "kind": "MethodDeclaration",
+    "name": "receive",
+    "end": 410
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 417,
+    "kind": "MethodDeclaration",
+    "name": "followThreadForContext",
+    "end": 425
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 430,
+    "kind": "MethodDeclaration",
+    "name": "unfollowThreadForContext",
+    "end": 437
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 444,
+    "kind": "MethodDeclaration",
+    "name": "subscribeTicketToThread",
+    "end": 455
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 460,
+    "kind": "MethodDeclaration",
+    "name": "unsubscribeTicketFromThread",
+    "end": 468
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 473,
+    "kind": "MethodDeclaration",
+    "name": "getThread",
+    "end": 475
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 481,
+    "kind": "MethodDeclaration",
+    "name": "triggerExists",
+    "end": 484
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 492,
+    "kind": "MethodDeclaration",
+    "name": "createTicket",
+    "end": 556
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 562,
+    "kind": "MethodDeclaration",
+    "name": "ensureFollowupWork",
+    "end": 577
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 580,
+    "kind": "MethodDeclaration",
+    "name": "replied",
+    "end": 585
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 591,
+    "kind": "MethodDeclaration",
+    "name": "note",
+    "end": 593
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 599,
+    "kind": "MethodDeclaration",
+    "name": "answer",
+    "end": 632
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 643,
+    "kind": "MethodDeclaration",
+    "name": "noteFromWorker",
+    "end": 657
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 660,
+    "kind": "MethodDeclaration",
+    "name": "addInput",
+    "end": 677
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 690,
+    "kind": "MethodDeclaration",
+    "name": "stopTicket",
+    "end": 715
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 721,
+    "kind": "MethodDeclaration",
+    "name": "retryTicket",
+    "end": 754
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 757,
+    "kind": "MethodDeclaration",
+    "name": "dismiss",
+    "end": 765
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 770,
+    "kind": "MethodDeclaration",
+    "name": "assignmentStarted",
+    "end": 779
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 782,
+    "kind": "MethodDeclaration",
+    "name": "inputsDelivered",
+    "end": 793
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 796,
+    "kind": "MethodDeclaration",
+    "name": "deliveryFailed",
+    "end": 802
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 816,
+    "kind": "MethodDeclaration",
+    "name": "turnEnded",
+    "end": 836
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 843,
+    "kind": "MethodDeclaration",
+    "name": "createProject",
+    "end": 855
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 858,
+    "kind": "MethodDeclaration",
+    "name": "createWork",
+    "end": 875
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 884,
+    "kind": "MethodDeclaration",
+    "name": "attachWork",
+    "end": 897
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 908,
+    "kind": "MethodDeclaration",
+    "name": "workNamedOrCreate",
+    "end": 912
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 918,
+    "kind": "MethodDeclaration",
+    "name": "projects",
+    "end": 921
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 924,
+    "kind": "MethodDeclaration",
+    "name": "works",
+    "end": 927
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 945,
+    "kind": "MethodDeclaration",
+    "name": "archiveProject",
+    "end": 952
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 954,
+    "kind": "MethodDeclaration",
+    "name": "unarchiveProject",
+    "end": 961
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 964,
+    "kind": "MethodDeclaration",
+    "name": "deleteProject",
+    "end": 975
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 977,
+    "kind": "MethodDeclaration",
+    "name": "archiveWork",
+    "end": 984
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 986,
+    "kind": "MethodDeclaration",
+    "name": "unarchiveWork",
+    "end": 993
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 996,
+    "kind": "MethodDeclaration",
+    "name": "deleteWork",
+    "end": 1013
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1015,
+    "kind": "MethodDeclaration",
+    "name": "requireProject",
+    "end": 1019
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1029,
+    "kind": "MethodDeclaration",
+    "name": "assertDeletable",
+    "end": 1036
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1054,
+    "kind": "MethodDeclaration",
+    "name": "deleteTicket",
+    "end": 1085
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1087,
+    "kind": "MethodDeclaration",
+    "name": "requireWork",
+    "end": 1091
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1094,
+    "kind": "MethodDeclaration",
+    "name": "project",
+    "end": 1094
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1097,
+    "kind": "MethodDeclaration",
+    "name": "work",
+    "end": 1097
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1100,
+    "kind": "MethodDeclaration",
+    "name": "ticketsOfWork",
+    "end": 1100
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1110,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 1112
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1122,
+    "kind": "MethodDeclaration",
+    "name": "reportGaveUp",
+    "end": 1124
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1126,
+    "kind": "MethodDeclaration",
+    "name": "recordReport",
+    "end": 1221
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1227,
+    "kind": "MethodDeclaration",
+    "name": "assignmentInterrupted",
+    "end": 1254
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1262,
+    "kind": "MethodDeclaration",
+    "name": "policyChanged",
+    "end": 1286
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1291,
+    "kind": "MethodDeclaration",
+    "name": "require",
+    "end": 1295
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1298,
+    "kind": "MethodDeclaration",
+    "name": "trigger",
+    "end": 1302
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1312,
+    "kind": "MethodDeclaration",
+    "name": "failTicket",
+    "end": 1331
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1339,
+    "kind": "MethodDeclaration",
+    "name": "bindSession",
+    "end": 1354
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1357,
+    "kind": "MethodDeclaration",
+    "name": "decisionOf",
+    "end": 1359
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1362,
+    "kind": "MethodDeclaration",
+    "name": "dispositionOf",
+    "end": 1364
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1371,
+    "kind": "MethodDeclaration",
+    "name": "record",
+    "end": 1376
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1387,
+    "kind": "MethodDeclaration",
+    "name": "interruptedAt",
+    "end": 1396
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1405,
+    "kind": "MethodDeclaration",
+    "name": "dependOn",
+    "end": 1418
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1421,
+    "kind": "MethodDeclaration",
+    "name": "dropDependency",
+    "end": 1427
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1430,
+    "kind": "MethodDeclaration",
+    "name": "artifactsOf",
+    "end": 1433
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1447,
+    "kind": "MethodDeclaration",
+    "name": "authorizeArtifactRead",
+    "end": 1466
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1481,
+    "kind": "MethodDeclaration",
+    "name": "recordArtifactRead",
+    "end": 1499
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1511,
+    "kind": "MethodDeclaration",
+    "name": "citationsOf",
+    "end": 1525
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1535,
+    "kind": "MethodDeclaration",
+    "name": "skillLineageOf",
+    "end": 1547
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1550,
+    "kind": "MethodDeclaration",
+    "name": "skillPromoted",
+    "end": 1555
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1558,
+    "kind": "MethodDeclaration",
+    "name": "skillUsed",
+    "end": 1577
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1587,
+    "kind": "MethodDeclaration",
+    "name": "watchdogEscalated",
+    "end": 1592
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1603,
+    "kind": "MethodDeclaration",
+    "name": "replyLost",
+    "end": 1608
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1622,
+    "kind": "MethodDeclaration",
+    "name": "noticeLost",
+    "end": 1627
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1642,
+    "kind": "MethodDeclaration",
+    "name": "triggerLost",
+    "end": 1650
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1653,
+    "kind": "MethodDeclaration",
+    "name": "ticket",
+    "end": 1653
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1656,
+    "kind": "MethodDeclaration",
+    "name": "open",
+    "end": 1656
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1664,
+    "kind": "MethodDeclaration",
+    "name": "watchdogActed",
+    "end": 1669
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1679,
+    "kind": "MethodDeclaration",
+    "name": "ruleChainStopped",
+    "end": 1684
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1687,
+    "kind": "MethodDeclaration",
+    "name": "dependantsOf",
+    "end": 1687
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1690,
+    "kind": "MethodDeclaration",
+    "name": "blockedBy",
+    "end": 1693
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1702,
+    "kind": "MethodDeclaration",
+    "name": "cascadeFrom",
+    "end": 1717
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1726,
+    "kind": "MethodDeclaration",
+    "name": "createsCycle",
+    "end": 1736
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1739,
+    "kind": "MethodDeclaration",
+    "name": "history",
+    "end": 1742
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1744,
+    "kind": "MethodDeclaration",
+    "name": "mutate",
+    "end": 1751
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1764,
+    "kind": "FunctionDeclaration",
+    "name": "artifactPath",
+    "end": 1789
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1791,
+    "kind": "FunctionDeclaration",
+    "name": "attachmentName",
+    "end": 1802
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1808,
+    "kind": "FunctionDeclaration",
+    "name": "attachmentsOf",
+    "end": 1813
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1816,
+    "kind": "FunctionDeclaration",
+    "name": "ticketIdOf",
+    "end": 1818
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1829,
+    "kind": "FunctionDeclaration",
+    "name": "payloadText",
+    "end": 1831
+  },
+  {
+    "file": "src/core/engine.ts",
+    "line": 1845,
+    "kind": "FunctionDeclaration",
+    "name": "lostTriggerOf",
+    "end": 1860
+  },
+  {
+    "file": "src/core/errors.ts",
+    "line": 47,
+    "kind": "TypeAliasDeclaration",
+    "name": "UserErrorCode",
+    "end": 47
+  },
+  {
+    "file": "src/core/errors.ts",
+    "line": 53,
+    "kind": "ClassDeclaration",
+    "name": "UserError",
+    "end": 60
+  },
+  {
+    "file": "src/core/errors.ts",
+    "line": 54,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 57
+  },
+  {
+    "file": "src/core/ids.ts",
+    "line": 11,
+    "kind": "FunctionDeclaration",
+    "name": "key",
+    "end": 13
+  },
+  {
+    "file": "src/core/ids.ts",
+    "line": 16,
+    "kind": "FunctionDeclaration",
+    "name": "slug",
+    "end": 23
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 11,
+    "kind": "ClassDeclaration",
+    "name": "TriggerStore",
+    "end": 18
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 13,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 13
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 14,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 14
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 15,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 15
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 16,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 16
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 17,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 17
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 20,
+    "kind": "ClassDeclaration",
+    "name": "DependencyStore",
+    "end": 30
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 22,
+    "kind": "MethodDeclaration",
+    "name": "keyOf",
+    "end": 22
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 23,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 23
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 24,
+    "kind": "MethodDeclaration",
+    "name": "delete",
+    "end": 24
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 25,
+    "kind": "MethodDeclaration",
+    "name": "upstreamOf",
+    "end": 25
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 26,
+    "kind": "MethodDeclaration",
+    "name": "downstreamOf",
+    "end": 26
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 27,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 27
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 28,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 28
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 29,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 29
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 32,
+    "kind": "ClassDeclaration",
+    "name": "EventStore",
+    "end": 43
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 34,
+    "kind": "MethodDeclaration",
+    "name": "append",
+    "end": 39
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 40,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 40
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 41,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 41
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 42,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 42
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 45,
+    "kind": "ClassDeclaration",
+    "name": "ProjectStore",
+    "end": 53
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 47,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 47
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 48,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 48
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 49,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 49
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 50,
+    "kind": "MethodDeclaration",
+    "name": "remove",
+    "end": 50
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 51,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 51
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 52,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 52
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 55,
+    "kind": "ClassDeclaration",
+    "name": "WorkStore",
+    "end": 64
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 57,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 57
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 58,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 58
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 59,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 59
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 60,
+    "kind": "MethodDeclaration",
+    "name": "byProject",
+    "end": 60
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 61,
+    "kind": "MethodDeclaration",
+    "name": "remove",
+    "end": 61
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 62,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 62
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 63,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 63
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 66,
+    "kind": "ClassDeclaration",
+    "name": "TicketStore",
+    "end": 84
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 68,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 68
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 69,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 69
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 73,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 73
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 74,
+    "kind": "MethodDeclaration",
+    "name": "deleted",
+    "end": 74
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 75,
+    "kind": "MethodDeclaration",
+    "name": "remove",
+    "end": 75
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 76,
+    "kind": "MethodDeclaration",
+    "name": "open",
+    "end": 78
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 79,
+    "kind": "MethodDeclaration",
+    "name": "byWork",
+    "end": 81
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 82,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 82
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 83,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 83
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 86,
+    "kind": "ClassDeclaration",
+    "name": "DecisionStore",
+    "end": 96
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 88,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 88
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 89,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 89
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 90,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 93
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 94,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 94
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 95,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 95
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 98,
+    "kind": "ClassDeclaration",
+    "name": "ArtifactStore",
+    "end": 108
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 100,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 100
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 101,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 105
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 106,
+    "kind": "MethodDeclaration",
+    "name": "snapshot",
+    "end": 106
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 107,
+    "kind": "MethodDeclaration",
+    "name": "restore",
+    "end": 107
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 111,
+    "kind": "ClassDeclaration",
+    "name": "ThreadStore",
+    "end": 116
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 113,
+    "kind": "MethodDeclaration",
+    "name": "get",
+    "end": 113
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 114,
+    "kind": "MethodDeclaration",
+    "name": "save",
+    "end": 114
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 115,
+    "kind": "MethodDeclaration",
+    "name": "list",
+    "end": 115
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 119,
+    "kind": "ClassDeclaration",
+    "name": "Memory",
+    "end": 211
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 150,
+    "kind": "MethodDeclaration",
+    "name": "atomic",
+    "end": 189
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 191,
+    "kind": "MethodDeclaration",
+    "name": "deferredFailed",
+    "end": 196
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 198,
+    "kind": "MethodDeclaration",
+    "name": "afterCommit",
+    "end": 201
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 204,
+    "kind": "MethodDeclaration",
+    "name": "triggerList",
+    "end": 204
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 206,
+    "kind": "MethodDeclaration",
+    "name": "ticketList",
+    "end": 206
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 208,
+    "kind": "MethodDeclaration",
+    "name": "decisionList",
+    "end": 208
+  },
+  {
+    "file": "src/core/memory.ts",
+    "line": 210,
+    "kind": "MethodDeclaration",
+    "name": "triggerOf",
+    "end": 210
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 4,
+    "kind": "TypeAliasDeclaration",
+    "name": "SourceKindName",
+    "end": 4
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 7,
+    "kind": "InterfaceDeclaration",
+    "name": "Actor",
+    "end": 12
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 21,
+    "kind": "InterfaceDeclaration",
+    "name": "ReplyTo",
+    "end": 31
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 34,
+    "kind": "InterfaceDeclaration",
+    "name": "Trigger",
+    "end": 65
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 74,
+    "kind": "InterfaceDeclaration",
+    "name": "Thread",
+    "end": 90
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 93,
+    "kind": "TypeAliasDeclaration",
+    "name": "Disposition",
+    "end": 110
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 113,
+    "kind": "TypeAliasDeclaration",
+    "name": "Strength",
+    "end": 113
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 116,
+    "kind": "InterfaceDeclaration",
+    "name": "Project",
+    "end": 130
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 139,
+    "kind": "InterfaceDeclaration",
+    "name": "Work",
+    "end": 150
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 159,
+    "kind": "InterfaceDeclaration",
+    "name": "Dependency",
+    "end": 170
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 173,
+    "kind": "TypeAliasDeclaration",
+    "name": "TicketEventType",
+    "end": 206
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 222,
+    "kind": "FunctionDeclaration",
+    "name": "released",
+    "end": 225
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 227,
+    "kind": "InterfaceDeclaration",
+    "name": "TicketEvent",
+    "end": 237
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 240,
+    "kind": "InterfaceDeclaration",
+    "name": "Artifact",
+    "end": 248
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 257,
+    "kind": "TypeAliasDeclaration",
+    "name": "MandateVia",
+    "end": 257
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 264,
+    "kind": "InterfaceDeclaration",
+    "name": "Mandate",
+    "end": 273
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 276,
+    "kind": "TypeAliasDeclaration",
+    "name": "ReportState",
+    "end": 276
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 278,
+    "kind": "InterfaceDeclaration",
+    "name": "Report",
+    "end": 286
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 288,
+    "kind": "TypeAliasDeclaration",
+    "name": "AssignmentState",
+    "end": 288
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 291,
+    "kind": "InterfaceDeclaration",
+    "name": "Assignment",
+    "end": 312
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 322,
+    "kind": "InterfaceDeclaration",
+    "name": "Attachment",
+    "end": 327
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 329,
+    "kind": "InterfaceDeclaration",
+    "name": "Execution",
+    "end": 338
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 340,
+    "kind": "TypeAliasDeclaration",
+    "name": "TicketOutcome",
+    "end": 340
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 342,
+    "kind": "InterfaceDeclaration",
+    "name": "TicketEnded",
+    "end": 347
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 350,
+    "kind": "InterfaceDeclaration",
+    "name": "Attention",
+    "end": 353
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 356,
+    "kind": "InterfaceDeclaration",
+    "name": "TicketResult",
+    "end": 360
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 362,
+    "kind": "InterfaceDeclaration",
+    "name": "TicketNote",
+    "end": 365
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 368,
+    "kind": "InterfaceDeclaration",
+    "name": "Ticket",
+    "end": 412
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 421,
+    "kind": "InterfaceDeclaration",
+    "name": "InputBy",
+    "end": 425
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 427,
+    "kind": "TypeAliasDeclaration",
+    "name": "TicketInput",
+    "end": 433
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 435,
+    "kind": "TypeAliasDeclaration",
+    "name": "DecisionOutcome",
+    "end": 435
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 438,
+    "kind": "InterfaceDeclaration",
+    "name": "Decision",
+    "end": 448
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 478,
+    "kind": "FunctionDeclaration",
+    "name": "waitsForPerson",
+    "end": 483
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 489,
+    "kind": "TypeAliasDeclaration",
+    "name": "TicketStage",
+    "end": 490
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 492,
+    "kind": "FunctionDeclaration",
+    "name": "ticketStage",
+    "end": 508
+  },
+  {
+    "file": "src/core/model.ts",
+    "line": 519,
+    "kind": "FunctionDeclaration",
+    "name": "canRetry",
+    "end": 531
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 353,
+    "kind": "TypeAliasDeclaration",
+    "name": "Settings",
+    "end": 353
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 354,
+    "kind": "TypeAliasDeclaration",
+    "name": "Schedule",
+    "end": 354
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 361,
+    "kind": "FunctionDeclaration",
+    "name": "authorizationShape",
+    "end": 398
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 418,
+    "kind": "TypeAliasDeclaration",
+    "name": "GateReason",
+    "end": 418
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 421,
+    "kind": "InterfaceDeclaration",
+    "name": "GateVerdict",
+    "end": 432
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 455,
+    "kind": "FunctionDeclaration",
+    "name": "sourcePolicy",
+    "end": 469
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 481,
+    "kind": "FunctionDeclaration",
+    "name": "identityShape",
+    "end": 489
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 491,
+    "kind": "FunctionDeclaration",
+    "name": "gate",
+    "end": 514
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 521,
+    "kind": "FunctionDeclaration",
+    "name": "requestedScope",
+    "end": 529
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 532,
+    "kind": "InterfaceDeclaration",
+    "name": "Policy",
+    "end": 552
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 554,
+    "kind": "FunctionDeclaration",
+    "name": "settingsPolicy",
+    "end": 577
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 566,
+    "kind": "MethodDeclaration",
+    "name": "revalidate",
+    "end": 575
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 581,
+    "kind": "InterfaceDeclaration",
+    "name": "PolicyEffect",
+    "end": 586
+  },
+  {
+    "file": "src/core/policy.ts",
+    "line": 592,
+    "kind": "FunctionDeclaration",
+    "name": "policyEffects",
+    "end": 609
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 10,
+    "kind": "TypeAliasDeclaration",
+    "name": "Timing",
+    "end": 14
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 17,
+    "kind": "InterfaceDeclaration",
+    "name": "CronSpec",
+    "end": 27
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 30,
+    "kind": "InterfaceDeclaration",
+    "name": "ZoneParts",
+    "end": 37
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 45,
+    "kind": "FunctionDeclaration",
+    "name": "localZone",
+    "end": 47
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 49,
+    "kind": "FunctionDeclaration",
+    "name": "formatOf",
+    "end": 59
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 62,
+    "kind": "FunctionDeclaration",
+    "name": "zoneParts",
+    "end": 69
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 72,
+    "kind": "FunctionDeclaration",
+    "name": "offsetOf",
+    "end": 75
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 81,
+    "kind": "FunctionDeclaration",
+    "name": "localToUtc",
+    "end": 93
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 97,
+    "kind": "FunctionDeclaration",
+    "name": "knownTimeZone",
+    "end": 99
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 101,
+    "kind": "FunctionDeclaration",
+    "name": "parseTime",
+    "end": 109
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 112,
+    "kind": "FunctionDeclaration",
+    "name": "field",
+    "end": 139
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 146,
+    "kind": "FunctionDeclaration",
+    "name": "parseCron",
+    "end": 159
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 162,
+    "kind": "FunctionDeclaration",
+    "name": "dayMatches",
+    "end": 166
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 169,
+    "kind": "FunctionDeclaration",
+    "name": "isoWeekday",
+    "end": 172
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 180,
+    "kind": "FunctionDeclaration",
+    "name": "nextRun",
+    "end": 198
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 201,
+    "kind": "FunctionDeclaration",
+    "name": "nextCron",
+    "end": 216
+  },
+  {
+    "file": "src/core/timing.ts",
+    "line": 219,
+    "kind": "FunctionDeclaration",
+    "name": "describeTiming",
+    "end": 233
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 15,
+    "kind": "FunctionDeclaration",
+    "name": "expandPath",
+    "end": 21
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 24,
+    "kind": "FunctionDeclaration",
+    "name": "dshHome",
+    "end": 27
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 38,
+    "kind": "TypeAliasDeclaration",
+    "name": "DeploymentConfig",
+    "end": 38
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 41,
+    "kind": "InterfaceDeclaration",
+    "name": "Machine",
+    "end": 47
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 50,
+    "kind": "ClassDeclaration",
+    "name": "SetupError",
+    "end": 55
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 51,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 54
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 60,
+    "kind": "FunctionDeclaration",
+    "name": "ensure",
+    "end": 68
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 74,
+    "kind": "FunctionDeclaration",
+    "name": "machineOf",
+    "end": 91
+  },
+  {
+    "file": "src/deployment.ts",
+    "line": 94,
+    "kind": "FunctionDeclaration",
+    "name": "machineView",
+    "end": 96
+  },
+  {
+    "file": "src/index.ts",
+    "line": 41,
+    "kind": "FunctionDeclaration",
+    "name": "apply",
+    "end": 86
+  },
+  {
+    "file": "src/index.ts",
+    "line": 89,
+    "kind": "FunctionDeclaration",
+    "name": "errorChain",
+    "end": 96
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 85,
+    "kind": "TypeAliasDeclaration",
+    "name": "Taken",
+    "end": 85
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 91,
+    "kind": "TypeAliasDeclaration",
+    "name": "ChatSettings",
+    "end": 91
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 92,
+    "kind": "TypeAliasDeclaration",
+    "name": "ChatChannel",
+    "end": 92
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 105,
+    "kind": "InterfaceDeclaration",
+    "name": "ChannelFact",
+    "end": 120
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 122,
+    "kind": "InterfaceDeclaration",
+    "name": "Message",
+    "end": 134
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 144,
+    "kind": "FunctionDeclaration",
+    "name": "parseMessage",
+    "end": 174
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 186,
+    "kind": "FunctionDeclaration",
+    "name": "normalizeChatTitle",
+    "end": 191
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 193,
+    "kind": "FunctionDeclaration",
+    "name": "defaultChatTitle",
+    "end": 201
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 205,
+    "kind": "ClassDeclaration",
+    "name": "ChatSource",
+    "end": 752
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 223,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 223
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 225,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 227
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 230,
+    "kind": "MethodDeclaration",
+    "name": "poll",
+    "end": 233
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 235,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 239
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 241,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 241
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 252,
+    "kind": "MethodDeclaration",
+    "name": "waiting",
+    "end": 252
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 260,
+    "kind": "MethodDeclaration",
+    "name": "channels",
+    "end": 260
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 263,
+    "kind": "MethodDeclaration",
+    "name": "pollOnce",
+    "end": 298
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 301,
+    "kind": "MethodDeclaration",
+    "name": "scan",
+    "end": 402
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 419,
+    "kind": "MethodDeclaration",
+    "name": "outboundFacts",
+    "end": 432
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 435,
+    "kind": "MethodDeclaration",
+    "name": "scanChannel",
+    "end": 651
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 662,
+    "kind": "MethodDeclaration",
+    "name": "take",
+    "end": 680
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 702,
+    "kind": "MethodDeclaration",
+    "name": "findContinuationTarget",
+    "end": 734
+  },
+  {
+    "file": "src/sources/chat.ts",
+    "line": 736,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 751
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 15,
+    "kind": "TypeAliasDeclaration",
+    "name": "CursorState",
+    "end": 15
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 35,
+    "kind": "ClassDeclaration",
+    "name": "CronSource",
+    "end": 273
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 52,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 52
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 55,
+    "kind": "MethodDeclaration",
+    "name": "state",
+    "end": 55
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 57,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 60
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 63,
+    "kind": "MethodDeclaration",
+    "name": "poll",
+    "end": 66
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 68,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 72
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 74,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 74
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 77,
+    "kind": "MethodDeclaration",
+    "name": "reconcile",
+    "end": 130
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 133,
+    "kind": "MethodDeclaration",
+    "name": "arm",
+    "end": 159
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 161,
+    "kind": "MethodDeclaration",
+    "name": "fire",
+    "end": 172
+  },
+  {
+    "file": "src/sources/cron.ts",
+    "line": 175,
+    "kind": "MethodDeclaration",
+    "name": "fireDue",
+    "end": 272
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 29,
+    "kind": "TypeAliasDeclaration",
+    "name": "Taken",
+    "end": 29
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 32,
+    "kind": "InterfaceDeclaration",
+    "name": "FrontMatter",
+    "end": 38
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 45,
+    "kind": "FunctionDeclaration",
+    "name": "frontMatter",
+    "end": 66
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 70,
+    "kind": "FunctionDeclaration",
+    "name": "readdirSafe",
+    "end": 73
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 84,
+    "kind": "FunctionDeclaration",
+    "name": "uniqueName",
+    "end": 86
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 88,
+    "kind": "ClassDeclaration",
+    "name": "InboxSource",
+    "end": 307
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 101,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 101
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 104,
+    "kind": "MethodDeclaration",
+    "name": "directory",
+    "end": 107
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 109,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 112
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 125,
+    "kind": "MethodDeclaration",
+    "name": "checkWritableByOthers",
+    "end": 138
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 141,
+    "kind": "MethodDeclaration",
+    "name": "poll",
+    "end": 144
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 146,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 150
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 152,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 152
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 155,
+    "kind": "MethodDeclaration",
+    "name": "pollOnce",
+    "end": 187
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 190,
+    "kind": "MethodDeclaration",
+    "name": "scan",
+    "end": 278
+  },
+  {
+    "file": "src/sources/inbox.ts",
+    "line": 285,
+    "kind": "MethodDeclaration",
+    "name": "take",
+    "end": 306
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 13,
+    "kind": "InterfaceDeclaration",
+    "name": "SourceStatus",
+    "end": 20
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 23,
+    "kind": "InterfaceDeclaration",
+    "name": "Cursor",
+    "end": 26
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 29,
+    "kind": "InterfaceDeclaration",
+    "name": "SourceHost",
+    "end": 48
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 77,
+    "kind": "InterfaceDeclaration",
+    "name": "Source",
+    "end": 90
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 93,
+    "kind": "InterfaceDeclaration",
+    "name": "SourceKind",
+    "end": 96
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 115,
+    "kind": "InterfaceDeclaration",
+    "name": "DeliverOptions",
+    "end": 118
+  },
+  {
+    "file": "src/sources/kind.ts",
+    "line": 120,
+    "kind": "InterfaceDeclaration",
+    "name": "TwoWaySource",
+    "end": 123
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 12,
+    "kind": "FunctionDeclaration",
+    "name": "signatureOf",
+    "end": 17
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 19,
+    "kind": "ClassDeclaration",
+    "name": "SourceRegistry",
+    "end": 89
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 24,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 24
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 27,
+    "kind": "MethodDeclaration",
+    "name": "sync",
+    "end": 41
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 43,
+    "kind": "MethodDeclaration",
+    "name": "syncNow",
+    "end": 67
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 71,
+    "kind": "MethodDeclaration",
+    "name": "nudge",
+    "end": 73
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 75,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 81
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 83,
+    "kind": "MethodDeclaration",
+    "name": "source",
+    "end": 83
+  },
+  {
+    "file": "src/sources/registry.ts",
+    "line": 86,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 88
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 23,
+    "kind": "ClassDeclaration",
+    "name": "RuleSource",
+    "end": 114
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 31,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 33
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 35,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 40
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 42,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 45
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 47,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 47
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 56,
+    "kind": "MethodDeclaration",
+    "name": "onEnded",
+    "end": 104
+  },
+  {
+    "file": "src/sources/rule.ts",
+    "line": 106,
+    "kind": "MethodDeclaration",
+    "name": "summarize",
+    "end": 113
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 11,
+    "kind": "ClassDeclaration",
+    "name": "SessionSource",
+    "end": 32
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 18,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 18
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 20,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 24
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 26,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 26
+  },
+  {
+    "file": "src/sources/session.ts",
+    "line": 28,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 31
+  },
+  {
+    "file": "tests/agent-delivery.spec.ts",
+    "line": 14,
+    "kind": "InterfaceDeclaration",
+    "name": "Harness",
+    "end": 18
+  },
+  {
+    "file": "tests/agent-delivery.spec.ts",
+    "line": 20,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 24
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 22,
+    "kind": "FunctionDeclaration",
+    "name": "engineHarness",
+    "end": 35
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 29,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 29
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 29,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 29
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 29,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 29
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 31,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 31
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 106,
+    "kind": "FunctionDeclaration",
+    "name": "host",
+    "end": 146
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 114,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 114
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 114,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 114
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 114,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 114
+  },
+  {
+    "file": "tests/attachments.spec.ts",
+    "line": 116,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 116
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 24,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 29
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 36,
+    "kind": "FunctionDeclaration",
+    "name": "failUpstream",
+    "end": 47
+  },
+  {
+    "file": "tests/auto-retry.spec.ts",
+    "line": 50,
+    "kind": "FunctionDeclaration",
+    "name": "started",
+    "end": 61
+  },
+  {
+    "file": "tests/bridges.spec.ts",
+    "line": 56,
+    "kind": "TypeAliasDeclaration",
+    "name": "Reply",
+    "end": 56
+  },
+  {
+    "file": "tests/build.spec.ts",
+    "line": 18,
+    "kind": "FunctionDeclaration",
+    "name": "sources",
+    "end": 26
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 242,
+    "kind": "FunctionDeclaration",
+    "name": "engineWith",
+    "end": 257
+  },
+  {
+    "file": "tests/chat-contract.spec.ts",
+    "line": 313,
+    "kind": "FunctionDeclaration",
+    "name": "hostFor",
+    "end": 337
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 33,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 38
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 44,
+    "kind": "FunctionDeclaration",
+    "name": "drop",
+    "end": 50
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 58,
+    "kind": "FunctionDeclaration",
+    "name": "chatSettings",
+    "end": 69
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 72,
+    "kind": "FunctionDeclaration",
+    "name": "chatDeployment",
+    "end": 82
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 85,
+    "kind": "FunctionDeclaration",
+    "name": "asked",
+    "end": 94
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 97,
+    "kind": "FunctionDeclaration",
+    "name": "replyToOf",
+    "end": 101
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 104,
+    "kind": "FunctionDeclaration",
+    "name": "closeChannel",
+    "end": 108
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 111,
+    "kind": "FunctionDeclaration",
+    "name": "reopenChannel",
+    "end": 113
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 749,
+    "kind": "FunctionDeclaration",
+    "name": "channellessChat",
+    "end": 752
+  },
+  {
+    "file": "tests/chat-send.spec.ts",
+    "line": 755,
+    "kind": "FunctionDeclaration",
+    "name": "refusal",
+    "end": 793
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 27,
+    "kind": "ClassDeclaration",
+    "name": "RecordingExecutor",
+    "end": 39
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 30,
+    "kind": "MethodDeclaration",
+    "name": "prepare",
+    "end": 32
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 33,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 36
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 37,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 37
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 38,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 38
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 41,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 76
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 81,
+    "kind": "FunctionDeclaration",
+    "name": "drop",
+    "end": 88
+  },
+  {
+    "file": "tests/chat.spec.ts",
+    "line": 101,
+    "kind": "FunctionDeclaration",
+    "name": "doc",
+    "end": 106
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 190,
+    "kind": "InterfaceDeclaration",
+    "name": "Rig",
+    "end": 201
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 209,
+    "kind": "FunctionDeclaration",
+    "name": "rig",
+    "end": 250
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 223,
+    "kind": "MethodDeclaration",
+    "name": "debug",
+    "end": 223
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 223,
+    "kind": "MethodDeclaration",
+    "name": "info",
+    "end": 223
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 223,
+    "kind": "MethodDeclaration",
+    "name": "error",
+    "end": 223
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 246,
+    "kind": "MethodDeclaration",
+    "name": "notify",
+    "end": 248
+  },
+  {
+    "file": "tests/delivery.spec.ts",
+    "line": 253,
+    "kind": "FunctionDeclaration",
+    "name": "live",
+    "end": 267
+  },
+  {
+    "file": "tests/dependencies.spec.ts",
+    "line": 15,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 20
+  },
+  {
+    "file": "tests/dependencies.spec.ts",
+    "line": 22,
+    "kind": "FunctionDeclaration",
+    "name": "withDeployment",
+    "end": 25
+  },
+  {
+    "file": "tests/desk-history.spec.ts",
+    "line": 9,
+    "kind": "FunctionDeclaration",
+    "name": "makeDb",
+    "end": 19
+  },
+  {
+    "file": "tests/desk-history.spec.ts",
+    "line": 134,
+    "kind": "FunctionDeclaration",
+    "name": "makeStore",
+    "end": 144
+  },
+  {
+    "file": "tests/desk-tools.spec.ts",
+    "line": 9,
+    "kind": "FunctionDeclaration",
+    "name": "host",
+    "end": 9
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 15,
+    "kind": "InterfaceDeclaration",
+    "name": "Harness",
+    "end": 20
+  },
+  {
+    "file": "tests/effects.spec.ts",
+    "line": 22,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 37
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 6,
+    "kind": "ClassDeclaration",
+    "name": "FakeExecutor",
+    "end": 26
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 19,
+    "kind": "MethodDeclaration",
+    "name": "prepare",
+    "end": 22
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 23,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 23
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 24,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 24
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 25,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 25
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 28,
+    "kind": "ClassDeclaration",
+    "name": "FakeDelivery",
+    "end": 33
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 31,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 31
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 32,
+    "kind": "MethodDeclaration",
+    "name": "policyChanged",
+    "end": 32
+  },
+  {
+    "file": "tests/engine.spec.ts",
+    "line": 37,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 59
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 21,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 26
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 34,
+    "kind": "FunctionDeclaration",
+    "name": "dueNow",
+    "end": 37
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 44,
+    "kind": "FunctionDeclaration",
+    "name": "taken",
+    "end": 46
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 54,
+    "kind": "FunctionDeclaration",
+    "name": "one",
+    "end": 63
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 66,
+    "kind": "FunctionDeclaration",
+    "name": "two",
+    "end": 73
+  },
+  {
+    "file": "tests/executor.spec.ts",
+    "line": 357,
+    "kind": "FunctionDeclaration",
+    "name": "withAttachment",
+    "end": 367
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 28,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 33
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 41,
+    "kind": "FunctionDeclaration",
+    "name": "retryNow",
+    "end": 46
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 49,
+    "kind": "FunctionDeclaration",
+    "name": "exhaust",
+    "end": 51
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 54,
+    "kind": "FunctionDeclaration",
+    "name": "restart",
+    "end": 60
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 63,
+    "kind": "FunctionDeclaration",
+    "name": "started",
+    "end": 70
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 536,
+    "kind": "FunctionDeclaration",
+    "name": "failUpstream",
+    "end": 547
+  },
+  {
+    "file": "tests/fault-injection.spec.ts",
+    "line": 550,
+    "kind": "FunctionDeclaration",
+    "name": "startAnother",
+    "end": 563
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 22,
+    "kind": "FunctionDeclaration",
+    "name": "sample",
+    "end": 36
+  },
+  {
+    "file": "tests/files.spec.ts",
+    "line": 139,
+    "kind": "FunctionDeclaration",
+    "name": "ticketWithFiles",
+    "end": 154
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 18,
+    "kind": "FunctionDeclaration",
+    "name": "deployment",
+    "end": 27
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 30,
+    "kind": "FunctionDeclaration",
+    "name": "drop",
+    "end": 35
+  },
+  {
+    "file": "tests/flow.spec.ts",
+    "line": 41,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 46
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 8,
+    "kind": "InterfaceDeclaration",
+    "name": "Deployment",
+    "end": 23
+  },
+  {
+    "file": "tests/helpers/deployment.ts",
+    "line": 33,
+    "kind": "FunctionDeclaration",
+    "name": "deployment",
+    "end": 41
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 12,
+    "kind": "InterfaceDeclaration",
+    "name": "SessionRecord",
+    "end": 18
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 21,
+    "kind": "InterfaceDeclaration",
+    "name": "JobRecord",
+    "end": 26
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 29,
+    "kind": "InterfaceDeclaration",
+    "name": "ServiceCalls",
+    "end": 42
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 45,
+    "kind": "InterfaceDeclaration",
+    "name": "RegisteredTool",
+    "end": 54
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 63,
+    "kind": "InterfaceDeclaration",
+    "name": "RecordedGuard",
+    "end": 66
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 69,
+    "kind": "InterfaceDeclaration",
+    "name": "AgentRecord",
+    "end": 97
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 100,
+    "kind": "FunctionDeclaration",
+    "name": "sessionRecord",
+    "end": 107
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 116,
+    "kind": "InterfaceDeclaration",
+    "name": "RestrictPolicy",
+    "end": 119
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 129,
+    "kind": "InterfaceDeclaration",
+    "name": "DeliveryFault",
+    "end": 134
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 137,
+    "kind": "FunctionDeclaration",
+    "name": "fakeAgent",
+    "end": 189
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 144,
+    "kind": "MethodDeclaration",
+    "name": "cancel",
+    "end": 144
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 146,
+    "kind": "MethodDeclaration",
+    "name": "followup",
+    "end": 152
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 154,
+    "kind": "MethodDeclaration",
+    "name": "inject",
+    "end": 158
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 167,
+    "kind": "MethodDeclaration",
+    "name": "register",
+    "end": 167
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 169,
+    "kind": "MethodDeclaration",
+    "name": "restrict",
+    "end": 181
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 191,
+    "kind": "InterfaceDeclaration",
+    "name": "StubHost",
+    "end": 262
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 274,
+    "kind": "InterfaceDeclaration",
+    "name": "StubOptions",
+    "end": 333
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 335,
+    "kind": "FunctionDeclaration",
+    "name": "stubHost",
+    "end": 570
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 392,
+    "kind": "MethodDeclaration",
+    "name": "info",
+    "end": 392
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 392,
+    "kind": "MethodDeclaration",
+    "name": "warn",
+    "end": 392
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 392,
+    "kind": "MethodDeclaration",
+    "name": "error",
+    "end": 392
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 392,
+    "kind": "MethodDeclaration",
+    "name": "debug",
+    "end": 392
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 452,
+    "kind": "MethodDeclaration",
+    "name": "[Symbol.dispose]",
+    "end": 452
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 559,
+    "kind": "MethodDeclaration",
+    "name": "writeHead",
+    "end": 559
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 560,
+    "kind": "MethodDeclaration",
+    "name": "end",
+    "end": 560
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 573,
+    "kind": "FunctionDeclaration",
+    "name": "brokenHost",
+    "end": 583
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 576,
+    "kind": "MethodDeclaration",
+    "name": "info",
+    "end": 576
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 576,
+    "kind": "MethodDeclaration",
+    "name": "warn",
+    "end": 576
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 576,
+    "kind": "MethodDeclaration",
+    "name": "error",
+    "end": 576
+  },
+  {
+    "file": "tests/helpers/host.ts",
+    "line": 576,
+    "kind": "MethodDeclaration",
+    "name": "debug",
+    "end": 576
+  },
+  {
+    "file": "tests/helpers/temp.ts",
+    "line": 37,
+    "kind": "FunctionDeclaration",
+    "name": "discard",
+    "end": 43
+  },
+  {
+    "file": "tests/helpers/temp.ts",
+    "line": 53,
+    "kind": "FunctionDeclaration",
+    "name": "tempDir",
+    "end": 57
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 21,
+    "kind": "FunctionDeclaration",
+    "name": "withDeployment",
+    "end": 24
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 27,
+    "kind": "FunctionDeclaration",
+    "name": "createTicket",
+    "end": 33
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 48,
+    "kind": "FunctionDeclaration",
+    "name": "untilPass",
+    "end": 54
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 707,
+    "kind": "FunctionDeclaration",
+    "name": "drop",
+    "end": 713
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 716,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 721
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 724,
+    "kind": "InterfaceDeclaration",
+    "name": "ChatView",
+    "end": 730
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 739,
+    "kind": "FunctionDeclaration",
+    "name": "chatDeployment",
+    "end": 758
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 760,
+    "kind": "FunctionDeclaration",
+    "name": "withChat",
+    "end": 763
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 926,
+    "kind": "InterfaceDeclaration",
+    "name": "LostRow",
+    "end": 926
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 927,
+    "kind": "InterfaceDeclaration",
+    "name": "LostPayloadView",
+    "end": 927
+  },
+  {
+    "file": "tests/http.spec.ts",
+    "line": 928,
+    "kind": "InterfaceDeclaration",
+    "name": "LostView",
+    "end": 931
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 35,
+    "kind": "InterfaceDeclaration",
+    "name": "HarnessOptions",
+    "end": 44
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 46,
+    "kind": "InterfaceDeclaration",
+    "name": "Harness",
+    "end": 59
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 64,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 117
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 120,
+    "kind": "FunctionDeclaration",
+    "name": "ticket",
+    "end": 137
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 140,
+    "kind": "FunctionDeclaration",
+    "name": "notification",
+    "end": 143
+  },
+  {
+    "file": "tests/notify-machine.spec.ts",
+    "line": 146,
+    "kind": "FunctionDeclaration",
+    "name": "onPath",
+    "end": 153
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 16,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 21
+  },
+  {
+    "file": "tests/notify.spec.ts",
+    "line": 24,
+    "kind": "FunctionDeclaration",
+    "name": "started",
+    "end": 33
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 35,
+    "kind": "InterfaceDeclaration",
+    "name": "Call",
+    "end": 43
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 46,
+    "kind": "ClassDeclaration",
+    "name": "Refusal",
+    "end": 48
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 47,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 47
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 52,
+    "kind": "TypeAliasDeclaration",
+    "name": "Routes",
+    "end": 52
+  },
+  {
+    "file": "tests/panel.spec.ts",
+    "line": 534,
+    "kind": "InterfaceDeclaration",
+    "name": "Download",
+    "end": 534
+  },
+  {
+    "file": "tests/policy.spec.ts",
+    "line": 167,
+    "kind": "TypeAliasDeclaration",
+    "name": "GateReasonOf",
+    "end": 167
+  },
+  {
+    "file": "tests/prompts.spec.ts",
+    "line": 8,
+    "kind": "FunctionDeclaration",
+    "name": "fakeStore",
+    "end": 15
+  },
+  {
+    "file": "tests/recovery.spec.ts",
+    "line": 21,
+    "kind": "FunctionDeclaration",
+    "name": "restart",
+    "end": 27
+  },
+  {
+    "file": "tests/runtime-budget.spec.ts",
+    "line": 24,
+    "kind": "FunctionDeclaration",
+    "name": "startedWithBudget",
+    "end": 33
+  },
+  {
+    "file": "tests/runtime-budget.spec.ts",
+    "line": 36,
+    "kind": "FunctionDeclaration",
+    "name": "backdate",
+    "end": 45
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 48,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 53
+  },
+  {
+    "file": "tests/session-decoration.spec.ts",
+    "line": 56,
+    "kind": "FunctionDeclaration",
+    "name": "drop",
+    "end": 61
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 58,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 63
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 78,
+    "kind": "FunctionDeclaration",
+    "name": "announce",
+    "end": 83
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 86,
+    "kind": "FunctionDeclaration",
+    "name": "dispose",
+    "end": 89
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 97,
+    "kind": "FunctionDeclaration",
+    "name": "recordWarns",
+    "end": 102
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 105,
+    "kind": "FunctionDeclaration",
+    "name": "started",
+    "end": 118
+  },
+  {
+    "file": "tests/session-health.spec.ts",
+    "line": 125,
+    "kind": "FunctionDeclaration",
+    "name": "failUpstream",
+    "end": 136
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 8,
+    "kind": "FunctionDeclaration",
+    "name": "catalog",
+    "end": 21
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 15,
+    "kind": "MethodDeclaration",
+    "name": "register",
+    "end": 18
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 24,
+    "kind": "FunctionDeclaration",
+    "name": "library",
+    "end": 30
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 28,
+    "kind": "MethodDeclaration",
+    "name": "onChange",
+    "end": 28
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 128,
+    "kind": "MethodDeclaration",
+    "name": "register",
+    "end": 131
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 222,
+    "kind": "MethodDeclaration",
+    "name": "onChange",
+    "end": 222
+  },
+  {
+    "file": "tests/skills.spec.ts",
+    "line": 241,
+    "kind": "MethodDeclaration",
+    "name": "register",
+    "end": 245
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 21,
+    "kind": "ClassDeclaration",
+    "name": "RecordingExecutor",
+    "end": 31
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 25,
+    "kind": "MethodDeclaration",
+    "name": "prepare",
+    "end": 27
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 28,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 28
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 29,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 29
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 30,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 30
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 33,
+    "kind": "ClassDeclaration",
+    "name": "RecordingDelivery",
+    "end": 36
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 35,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 35
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 43,
+    "kind": "MethodDeclaration",
+    "name": "handle",
+    "end": 43
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 43,
+    "kind": "MethodDeclaration",
+    "name": "dispose",
+    "end": 43
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 48,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 86
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 89,
+    "kind": "FunctionDeclaration",
+    "name": "drop",
+    "end": 96
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 532,
+    "kind": "FunctionDeclaration",
+    "name": "cursorsSeed",
+    "end": 534
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 635,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 635
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 635,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 635
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 636,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 636
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 636,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 636
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 655,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 655
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 655,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 655
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 893,
+    "kind": "ClassDeclaration",
+    "name": "Counted",
+    "end": 908
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 899,
+    "kind": "Constructor",
+    "name": "constructor",
+    "end": 899
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 901,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 904
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 905,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 905
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 906,
+    "kind": "MethodDeclaration",
+    "name": "open",
+    "end": 906
+  },
+  {
+    "file": "tests/sources.spec.ts",
+    "line": 907,
+    "kind": "MethodDeclaration",
+    "name": "status",
+    "end": 907
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 20,
+    "kind": "FunctionDeclaration",
+    "name": "settle",
+    "end": 25
+  },
+  {
+    "file": "tests/ticket-delete.spec.ts",
+    "line": 41,
+    "kind": "FunctionDeclaration",
+    "name": "fill",
+    "end": 46
+  },
+  {
+    "file": "tests/tool-schema-json.spec.ts",
+    "line": 23,
+    "kind": "FunctionDeclaration",
+    "name": "findNonJson",
+    "end": 49
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 18,
+    "kind": "ClassDeclaration",
+    "name": "FakeExecutor",
+    "end": 28
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 22,
+    "kind": "MethodDeclaration",
+    "name": "prepare",
+    "end": 24
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 25,
+    "kind": "MethodDeclaration",
+    "name": "start",
+    "end": 25
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 26,
+    "kind": "MethodDeclaration",
+    "name": "deliver",
+    "end": 26
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 27,
+    "kind": "MethodDeclaration",
+    "name": "stop",
+    "end": 27
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 30,
+    "kind": "ClassDeclaration",
+    "name": "FakeDelivery",
+    "end": 33
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 32,
+    "kind": "MethodDeclaration",
+    "name": "report",
+    "end": 32
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 35,
+    "kind": "InterfaceDeclaration",
+    "name": "Harness",
+    "end": 51
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 53,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 105
+  },
+  {
+    "file": "tests/tools.spec.ts",
+    "line": 111,
+    "kind": "FunctionDeclaration",
+    "name": "open",
+    "end": 117
+  },
+  {
+    "file": "tests/transaction.spec.ts",
+    "line": 19,
+    "kind": "InterfaceDeclaration",
+    "name": "Subject",
+    "end": 25
+  },
+  {
+    "file": "tests/watchdog.spec.ts",
+    "line": 16,
+    "kind": "FunctionDeclaration",
+    "name": "harness",
+    "end": 42
+  },
+  {
+    "file": "tests/worker-preset.spec.ts",
+    "line": 18,
+    "kind": "FunctionDeclaration",
+    "name": "startedWithPreset",
+    "end": 40
+  }
+]

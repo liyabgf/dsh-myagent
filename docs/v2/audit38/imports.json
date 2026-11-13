@@ -1,0 +1,3647 @@
+[
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "../lib/log.mjs",
+    "line": 39
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "../lib/state.mjs",
+    "line": 40
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 41
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "node:path",
+    "line": 42
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "node:fs/promises",
+    "line": 43
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "node:path",
+    "line": 44
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "../lib/outbound.mjs",
+    "line": 45
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "../lib/route.mjs",
+    "line": 46
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "./transform.mjs",
+    "line": 47
+  },
+  {
+    "from": "bridges/dingtalk/bridge.mjs",
+    "to": "dingtalk-stream-sdk-nodejs",
+    "line": 64
+  },
+  {
+    "from": "bridges/dingtalk/transform.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 1
+  },
+  {
+    "from": "bridges/dingtalk/transform.mjs",
+    "to": "../lib/route.mjs",
+    "line": 2
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "../lib/log.mjs",
+    "line": 37
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "../lib/state.mjs",
+    "line": 38
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 39
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "node:fs/promises",
+    "line": 40
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "node:fs",
+    "line": 41
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "node:path",
+    "line": 42
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "../lib/outbound.mjs",
+    "line": 43
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "../lib/route.mjs",
+    "line": 44
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "./transform.mjs",
+    "line": 45
+  },
+  {
+    "from": "bridges/lark/bridge.mjs",
+    "to": "@larksuiteoapi/node-sdk",
+    "line": 62
+  },
+  {
+    "from": "bridges/lark/transform.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 1
+  },
+  {
+    "from": "bridges/lark/transform.mjs",
+    "to": "../lib/route.mjs",
+    "line": 2
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "node:fs/promises",
+    "line": 14
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "node:path",
+    "line": 15
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "node:crypto",
+    "line": 16
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "./frontmatter.mjs",
+    "line": 17
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "node:fs/promises",
+    "line": 87
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "node:path",
+    "line": 88
+  },
+  {
+    "from": "bridges/lib/inbound.mjs",
+    "to": "node:crypto",
+    "line": 89
+  },
+  {
+    "from": "bridges/lib/outbound.mjs",
+    "to": "node:fs/promises",
+    "line": 17
+  },
+  {
+    "from": "bridges/lib/outbound.mjs",
+    "to": "node:path",
+    "line": 18
+  },
+  {
+    "from": "bridges/lib/outbound.mjs",
+    "to": "./frontmatter.mjs",
+    "line": 19
+  },
+  {
+    "from": "bridges/lib/outbound.mjs",
+    "to": "./log.mjs",
+    "line": 20
+  },
+  {
+    "from": "bridges/lib/outbound.mjs",
+    "to": "node:fs/promises",
+    "line": 85
+  },
+  {
+    "from": "bridges/lib/outbound.mjs",
+    "to": "node:fs/promises",
+    "line": 186
+  },
+  {
+    "from": "bridges/lib/run.mjs",
+    "to": "node:fs/promises",
+    "line": 1
+  },
+  {
+    "from": "bridges/lib/run.mjs",
+    "to": "./log.mjs",
+    "line": 2
+  },
+  {
+    "from": "bridges/lib/state.mjs",
+    "to": "node:fs/promises",
+    "line": 7
+  },
+  {
+    "from": "bridges/lib/state.mjs",
+    "to": "node:path",
+    "line": 8
+  },
+  {
+    "from": "bridges/lib/state.mjs",
+    "to": "node:crypto",
+    "line": 9
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "../lib/log.mjs",
+    "line": 36
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "../lib/state.mjs",
+    "line": 37
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 38
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "node:path",
+    "line": 39
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "node:fs/promises",
+    "line": 40
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "../lib/outbound.mjs",
+    "line": 41
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "../lib/route.mjs",
+    "line": 42
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "./transform.mjs",
+    "line": 43
+  },
+  {
+    "from": "bridges/qq/bridge.mjs",
+    "to": "./protocol.mjs",
+    "line": 44
+  },
+  {
+    "from": "bridges/qq/transform.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 1
+  },
+  {
+    "from": "bridges/qq/transform.mjs",
+    "to": "../lib/route.mjs",
+    "line": 2
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "../lib/log.mjs",
+    "line": 30
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "../lib/run.mjs",
+    "line": 31
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "../lib/state.mjs",
+    "line": 32
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 33
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "node:path",
+    "line": 34
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "node:fs/promises",
+    "line": 35
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "node:path",
+    "line": 36
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "../lib/outbound.mjs",
+    "line": 37
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "../lib/route.mjs",
+    "line": 38
+  },
+  {
+    "from": "bridges/telegram/bridge.mjs",
+    "to": "./transform.mjs",
+    "line": 40
+  },
+  {
+    "from": "bridges/telegram/transform.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 1
+  },
+  {
+    "from": "bridges/telegram/transform.mjs",
+    "to": "../lib/route.mjs",
+    "line": 2
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "node:http",
+    "line": 33
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "../lib/log.mjs",
+    "line": 34
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "../lib/state.mjs",
+    "line": 35
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 36
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "node:path",
+    "line": 37
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "node:fs/promises",
+    "line": 38
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "../lib/outbound.mjs",
+    "line": 39
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "../lib/route.mjs",
+    "line": 40
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "./crypt.mjs",
+    "line": 41
+  },
+  {
+    "from": "bridges/wecom/bridge.mjs",
+    "to": "./transform.mjs",
+    "line": 42
+  },
+  {
+    "from": "bridges/wecom/crypt.mjs",
+    "to": "node:crypto",
+    "line": 1
+  },
+  {
+    "from": "bridges/wecom/transform.mjs",
+    "to": "../lib/inbound.mjs",
+    "line": 1
+  },
+  {
+    "from": "bridges/wecom/transform.mjs",
+    "to": "../lib/route.mjs",
+    "line": 2
+  },
+  {
+    "from": "client.js",
+    "to": "react",
+    "line": 15
+  },
+  {
+    "from": "lib/index.d.ts",
+    "to": "zod",
+    "line": 1
+  },
+  {
+    "from": "lib/index.d.ts",
+    "to": "@deepseek-ai/schemastery",
+    "line": 2
+  },
+  {
+    "from": "lib/index.d.ts",
+    "to": "node:sqlite",
+    "line": 3
+  },
+  {
+    "from": "lib/index.d.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 4
+  },
+  {
+    "from": "lib/index.d.ts",
+    "to": "the front desk wrote to them",
+    "line": 253
+  },
+  {
+    "from": "lib/index.d.ts",
+    "to": ";\n  readonly decision_missing: ",
+    "line": 1928
+  },
+  {
+    "from": "lib/index.js",
+    "to": "node:fs",
+    "line": 1
+  },
+  {
+    "from": "lib/index.js",
+    "to": "node:fs/promises",
+    "line": 2
+  },
+  {
+    "from": "lib/index.js",
+    "to": "node:path",
+    "line": 3
+  },
+  {
+    "from": "lib/index.js",
+    "to": "node:crypto",
+    "line": 4
+  },
+  {
+    "from": "lib/index.js",
+    "to": "zod",
+    "line": 5
+  },
+  {
+    "from": "lib/index.js",
+    "to": "node:os",
+    "line": 6
+  },
+  {
+    "from": "lib/index.js",
+    "to": "@deepseek-ai/schemastery",
+    "line": 7
+  },
+  {
+    "from": "lib/index.js",
+    "to": "@deepseek-ai/dsh-scope",
+    "line": 8
+  },
+  {
+    "from": "lib/index.js",
+    "to": "@deepseek-ai/dsh-llm",
+    "line": 9
+  },
+  {
+    "from": "lib/index.js",
+    "to": "node:sqlite",
+    "line": 10
+  },
+  {
+    "from": "lib/index.js",
+    "to": ",\n\tdecision_missing: ",
+    "line": 121
+  },
+  {
+    "from": "lib/index.js",
+    "to": "the answer was never owed",
+    "line": 3563
+  },
+  {
+    "from": "lib/index.js",
+    "to": "never tried",
+    "line": 3916
+  },
+  {
+    "from": "lib/index.js",
+    "to": "no answer was ever owed",
+    "line": 7090
+  },
+  {
+    "from": "lib/index.js",
+    "to": "had nowhere to send to",
+    "line": 7444
+  },
+  {
+    "from": "lib/index.js",
+    "to": "same",
+    "line": 8864
+  },
+  {
+    "from": "lib/index.js",
+    "to": "I could not look",
+    "line": 10054
+  },
+  {
+    "from": "scripts/verify-browser.mjs",
+    "to": "node:module",
+    "line": 18
+  },
+  {
+    "from": "scripts/verify-browser.mjs",
+    "to": "~/deepseek-harness/benchmarks/node_modules/playwright",
+    "line": 20
+  },
+  {
+    "from": "scripts/verify-browser.mjs",
+    "to": "node:child_process",
+    "line": 28
+  },
+  {
+    "from": "scripts/verify-browser.mjs",
+    "to": "node:fs/promises",
+    "line": 872
+  },
+  {
+    "from": "src/app/about.ts",
+    "to": "node:fs",
+    "line": 12
+  },
+  {
+    "from": "src/app/about.ts",
+    "to": "./prompts.ts",
+    "line": 13
+  },
+  {
+    "from": "src/app/agent-delivery.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 8
+  },
+  {
+    "from": "src/app/agent-delivery.ts",
+    "to": "@deepseek-ai/dsh-agent",
+    "line": 9
+  },
+  {
+    "from": "src/app/agent-delivery.ts",
+    "to": "@deepseek-ai/dsh-llm",
+    "line": 10
+  },
+  {
+    "from": "src/app/agent-delivery.ts",
+    "to": "@deepseek-ai/dsh-session",
+    "line": 11
+  },
+  {
+    "from": "src/app/agent-delivery.ts",
+    "to": "@deepseek-ai/dsh-session-persistence",
+    "line": 12
+  },
+  {
+    "from": "src/app/background.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 7
+  },
+  {
+    "from": "src/app/background.ts",
+    "to": "@deepseek-ai/dsh-agent",
+    "line": 8
+  },
+  {
+    "from": "src/app/background.ts",
+    "to": "@deepseek-ai/dsh-session",
+    "line": 9
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "no answer was ever owed",
+    "line": 11
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "node:fs",
+    "line": 13
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "node:fs/promises",
+    "line": 14
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "./files.ts",
+    "line": 15
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "node:os",
+    "line": 16
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "node:path",
+    "line": 17
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 18
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "@deepseek-ai/dsh-subprocess",
+    "line": 19
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "../core/index.ts",
+    "line": 20
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "../core/policy.ts",
+    "line": 21
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "../sources/kind.ts",
+    "line": 22
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "./effects.ts",
+    "line": 23
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "./health.ts",
+    "line": 24
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "./sessions.ts",
+    "line": 25
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "./store.ts",
+    "line": 26
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "this borrowed from nothing",
+    "line": 212
+  },
+  {
+    "from": "src/app/delivery.ts",
+    "to": "had nowhere to send to",
+    "line": 524
+  },
+  {
+    "from": "src/app/desk-history.ts",
+    "to": "node:sqlite",
+    "line": 13
+  },
+  {
+    "from": "src/app/desk-llm.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 15
+  },
+  {
+    "from": "src/app/desk-llm.ts",
+    "to": "@deepseek-ai/dsh-llm",
+    "line": 16
+  },
+  {
+    "from": "src/app/desk-llm.ts",
+    "to": "@deepseek-ai/dsh-llm",
+    "line": 17
+  },
+  {
+    "from": "src/app/desk-llm.ts",
+    "to": "./desk-history.ts",
+    "line": 18
+  },
+  {
+    "from": "src/app/desk-llm.ts",
+    "to": "../core/policy.ts",
+    "line": 19
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 25
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "@deepseek-ai/dsh-llm",
+    "line": 26
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "./store.ts",
+    "line": 27
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "./tools.ts",
+    "line": 28
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "./prompts.ts",
+    "line": 29
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "../core/policy.ts",
+    "line": 30
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "../core/engine.ts",
+    "line": 31
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "./desk-history.ts",
+    "line": 32
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "./desk-llm.ts",
+    "line": 33
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "./desk-tools.ts",
+    "line": 34
+  },
+  {
+    "from": "src/app/desk-loop.ts",
+    "to": "../core/model.ts",
+    "line": 35
+  },
+  {
+    "from": "src/app/desk-tools.ts",
+    "to": "@deepseek-ai/dsh-llm",
+    "line": 12
+  },
+  {
+    "from": "src/app/desk-tools.ts",
+    "to": "./desk-history.ts",
+    "line": 13
+  },
+  {
+    "from": "src/app/desk-tools.ts",
+    "to": "./tools.ts",
+    "line": 14
+  },
+  {
+    "from": "src/app/desk-tools.ts",
+    "to": "../core/model.ts",
+    "line": 15
+  },
+  {
+    "from": "src/app/effects.ts",
+    "to": "./health.ts",
+    "line": 8
+  },
+  {
+    "from": "src/app/effects.ts",
+    "to": "./store.ts",
+    "line": 9
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "node:fs/promises",
+    "line": 10
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "node:path",
+    "line": 11
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 12
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "@deepseek-ai/dsh-session",
+    "line": 13
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "@deepseek-ai/dsh-subprocess",
+    "line": 14
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "../core/index.ts",
+    "line": 18
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "../core/policy.ts",
+    "line": 19
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "./files.ts",
+    "line": 20
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "./background.ts",
+    "line": 21
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "./effects.ts",
+    "line": 22
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "./health.ts",
+    "line": 23
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "./sessions.ts",
+    "line": 24
+  },
+  {
+    "from": "src/app/executor.ts",
+    "to": "./store.ts",
+    "line": 25
+  },
+  {
+    "from": "src/app/files.ts",
+    "to": "node:fs/promises",
+    "line": 9
+  },
+  {
+    "from": "src/app/files.ts",
+    "to": "node:path",
+    "line": 10
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "node:http",
+    "line": 8
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "node:fs/promises",
+    "line": 9
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "zod",
+    "line": 10
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 11
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "@deepseek-ai/dsh-host-webserver",
+    "line": 12
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../core/index.ts",
+    "line": 13
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../core/index.ts",
+    "line": 14
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../core/errors.ts",
+    "line": 15
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../core/policy.ts",
+    "line": 16
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../core/timing.ts",
+    "line": 17
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./about.ts",
+    "line": 18
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./prompts.ts",
+    "line": 19
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./skills.ts",
+    "line": 20
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./views.ts",
+    "line": 21
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./files.ts",
+    "line": 22
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./runtime.ts",
+    "line": 23
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../deployment.ts",
+    "line": 24
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./health.ts",
+    "line": 25
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./passes.ts",
+    "line": 26
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./prompts.ts",
+    "line": 27
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../sources/registry.ts",
+    "line": 28
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../sources/kind.ts",
+    "line": 29
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "../core/model.ts",
+    "line": 30
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./store.ts",
+    "line": 31
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./views.ts",
+    "line": 32
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./executor.ts",
+    "line": 33
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "./desk-loop.ts",
+    "line": 40
+  },
+  {
+    "from": "src/app/http.ts",
+    "to": "I could not look",
+    "line": 345
+  },
+  {
+    "from": "src/app/lock.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "src/app/lock.ts",
+    "to": "node:os",
+    "line": 10
+  },
+  {
+    "from": "src/app/lock.ts",
+    "to": "node:path",
+    "line": 11
+  },
+  {
+    "from": "src/app/lock.ts",
+    "to": "node:crypto",
+    "line": 12
+  },
+  {
+    "from": "src/app/passes.ts",
+    "to": "./effects.ts",
+    "line": 8
+  },
+  {
+    "from": "src/app/passes.ts",
+    "to": "./health.ts",
+    "line": 9
+  },
+  {
+    "from": "src/app/prompts.ts",
+    "to": "node:fs",
+    "line": 8
+  },
+  {
+    "from": "src/app/prompts.ts",
+    "to": "node:path",
+    "line": 9
+  },
+  {
+    "from": "src/app/prompts.ts",
+    "to": "./skills.ts",
+    "line": 10
+  },
+  {
+    "from": "src/app/prompts.ts",
+    "to": "./store.ts",
+    "line": 11
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "node:fs",
+    "line": 10
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "node:fs/promises",
+    "line": 11
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "node:path",
+    "line": 12
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 13
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "@deepseek-ai/dsh-agent",
+    "line": 14
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "@deepseek-ai/dsh-session",
+    "line": 15
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "@deepseek-ai/dsh-subprocess",
+    "line": 16
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../core/index.ts",
+    "line": 21
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../deployment.ts",
+    "line": 22
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/chat.ts",
+    "line": 23
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./sessions.ts",
+    "line": 24
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/cron.ts",
+    "line": 25
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/inbox.ts",
+    "line": 26
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/inbox.ts",
+    "line": 27
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/session.ts",
+    "line": 28
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/kind.ts",
+    "line": 29
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../core/model.ts",
+    "line": 30
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/registry.ts",
+    "line": 31
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/kind.ts",
+    "line": 32
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./executor.ts",
+    "line": 33
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./delivery.ts",
+    "line": 34
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./effects.ts",
+    "line": 35
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./health.ts",
+    "line": 36
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./store.ts",
+    "line": 37
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./lock.ts",
+    "line": 38
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./passes.ts",
+    "line": 39
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./session-health.ts",
+    "line": 40
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./watchdog.ts",
+    "line": 41
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "../sources/rule.ts",
+    "line": 42
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./prompts.ts",
+    "line": 43
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./sessions.ts",
+    "line": 44
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./desk-loop.ts",
+    "line": 45
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./tools.ts",
+    "line": 46
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./files.ts",
+    "line": 47
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./views.ts",
+    "line": 48
+  },
+  {
+    "from": "src/app/runtime.ts",
+    "to": "./http.ts",
+    "line": 49
+  },
+  {
+    "from": "src/app/session-health.ts",
+    "to": "./health.ts",
+    "line": 14
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 8
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-agent",
+    "line": 9
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-session",
+    "line": 10
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-scope",
+    "line": 11
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-api-session-controller",
+    "line": 12
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-session-persistence",
+    "line": 13
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-workspace",
+    "line": 14
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-permission-presets",
+    "line": 15
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-system-prompt",
+    "line": 16
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "@deepseek-ai/dsh-tools",
+    "line": 17
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "node:fs",
+    "line": 18
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "node:path",
+    "line": 19
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "node:os",
+    "line": 20
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "../core/model.ts",
+    "line": 21
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "./agent-delivery.ts",
+    "line": 22
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "./prompts.ts",
+    "line": 23
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "./skills.ts",
+    "line": 24
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "./tools.ts",
+    "line": 25
+  },
+  {
+    "from": "src/app/sessions.ts",
+    "to": "./desk-loop.ts",
+    "line": 62
+  },
+  {
+    "from": "src/app/skills.ts",
+    "to": "never tried",
+    "line": 191
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "node:sqlite",
+    "line": 9
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "./desk-history.ts",
+    "line": 10
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "node:fs",
+    "line": 11
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "node:path",
+    "line": 12
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "../core/model.ts",
+    "line": 13
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "../core/model.ts",
+    "line": 14
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "../core/engine.ts",
+    "line": 15
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "../core/engine.ts",
+    "line": 16
+  },
+  {
+    "from": "src/app/store.ts",
+    "to": "../core/policy.ts",
+    "line": 17
+  },
+  {
+    "from": "src/app/tools.ts",
+    "to": "zod",
+    "line": 18
+  },
+  {
+    "from": "src/app/tools.ts",
+    "to": "../core/index.ts",
+    "line": 19
+  },
+  {
+    "from": "src/app/tools.ts",
+    "to": "../core/model.ts",
+    "line": 20
+  },
+  {
+    "from": "src/app/tools.ts",
+    "to": "../core/errors.ts",
+    "line": 21
+  },
+  {
+    "from": "src/app/tools.ts",
+    "to": "./store.ts",
+    "line": 22
+  },
+  {
+    "from": "src/app/tools.ts",
+    "to": "./views.ts",
+    "line": 23
+  },
+  {
+    "from": "src/app/views.ts",
+    "to": "../core/model.ts",
+    "line": 7
+  },
+  {
+    "from": "src/app/views.ts",
+    "to": "../core/policy.ts",
+    "line": 8
+  },
+  {
+    "from": "src/app/views.ts",
+    "to": "../core/timing.ts",
+    "line": 9
+  },
+  {
+    "from": "src/app/watchdog.ts",
+    "to": "./health.ts",
+    "line": 13
+  },
+  {
+    "from": "src/app/watchdog.ts",
+    "to": "same",
+    "line": 66
+  },
+  {
+    "from": "src/core/engine.ts",
+    "to": "./ids.ts",
+    "line": 8
+  },
+  {
+    "from": "src/core/engine.ts",
+    "to": "./errors.ts",
+    "line": 9
+  },
+  {
+    "from": "src/core/engine.ts",
+    "to": "./model.ts",
+    "line": 15
+  },
+  {
+    "from": "src/core/engine.ts",
+    "to": "./policy.ts",
+    "line": 16
+  },
+  {
+    "from": "src/core/engine.ts",
+    "to": "./policy.ts",
+    "line": 17
+  },
+  {
+    "from": "src/core/engine.ts",
+    "to": "myagent gave up waiting for you",
+    "line": 1234
+  },
+  {
+    "from": "src/core/errors.ts",
+    "to": ",\n  decision_missing: ",
+    "line": 25
+  },
+  {
+    "from": "src/core/ids.ts",
+    "to": "node:crypto",
+    "line": 2
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./model.ts",
+    "line": 2
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./ids.ts",
+    "line": 3
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./errors.ts",
+    "line": 4
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./policy.ts",
+    "line": 5
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./timing.ts",
+    "line": 6
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./engine.ts",
+    "line": 7
+  },
+  {
+    "from": "src/core/index.ts",
+    "to": "./memory.ts",
+    "line": 8
+  },
+  {
+    "from": "src/core/memory.ts",
+    "to": "./model.ts",
+    "line": 6
+  },
+  {
+    "from": "src/core/memory.ts",
+    "to": "./model.ts",
+    "line": 7
+  },
+  {
+    "from": "src/core/memory.ts",
+    "to": "./engine.ts",
+    "line": 8
+  },
+  {
+    "from": "src/core/memory.ts",
+    "to": "./engine.ts",
+    "line": 9
+  },
+  {
+    "from": "src/core/model.ts",
+    "to": "the front desk wrote to them",
+    "line": 181
+  },
+  {
+    "from": "src/core/policy.ts",
+    "to": "zod",
+    "line": 8
+  },
+  {
+    "from": "src/core/policy.ts",
+    "to": "./ids.ts",
+    "line": 9
+  },
+  {
+    "from": "src/core/policy.ts",
+    "to": "./model.ts",
+    "line": 10
+  },
+  {
+    "from": "src/core/policy.ts",
+    "to": "./timing.ts",
+    "line": 11
+  },
+  {
+    "from": "src/deployment.ts",
+    "to": "node:fs",
+    "line": 8
+  },
+  {
+    "from": "src/deployment.ts",
+    "to": "node:os",
+    "line": 9
+  },
+  {
+    "from": "src/deployment.ts",
+    "to": "node:path",
+    "line": 10
+  },
+  {
+    "from": "src/deployment.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 11
+  },
+  {
+    "from": "src/deployment.ts",
+    "to": "@deepseek-ai/schemastery",
+    "line": 12
+  },
+  {
+    "from": "src/index.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 9
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./app/runtime.ts",
+    "line": 10
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./app/skills.ts",
+    "line": 11
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./deployment.ts",
+    "line": 12
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./app/prompts.ts",
+    "line": 98
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./deployment.ts",
+    "line": 99
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./core/index.ts",
+    "line": 100
+  },
+  {
+    "from": "src/index.ts",
+    "to": "myagent",
+    "line": 102
+  },
+  {
+    "from": "src/index.ts",
+    "to": "./sources/kind.ts",
+    "line": 105
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "node:fs",
+    "line": 56
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "node:fs/promises",
+    "line": 57
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "node:path",
+    "line": 58
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "../core/index.ts",
+    "line": 59
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "../core/policy.ts",
+    "line": 67
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "../core/model.ts",
+    "line": 68
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "../app/health.ts",
+    "line": 69
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "./kind.ts",
+    "line": 70
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "nothing has arrived in three days",
+    "line": 103
+  },
+  {
+    "from": "src/sources/chat.ts",
+    "to": "the answer was never owed",
+    "line": 690
+  },
+  {
+    "from": "src/sources/cron.ts",
+    "to": "../core/index.ts",
+    "line": 8
+  },
+  {
+    "from": "src/sources/cron.ts",
+    "to": "../core/policy.ts",
+    "line": 9
+  },
+  {
+    "from": "src/sources/cron.ts",
+    "to": "../core/model.ts",
+    "line": 10
+  },
+  {
+    "from": "src/sources/cron.ts",
+    "to": "../app/health.ts",
+    "line": 11
+  },
+  {
+    "from": "src/sources/cron.ts",
+    "to": "./kind.ts",
+    "line": 12
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "node:fs/promises",
+    "line": 10
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "node:path",
+    "line": 11
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "../core/index.ts",
+    "line": 12
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "../core/policy.ts",
+    "line": 13
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "../core/model.ts",
+    "line": 14
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "../app/health.ts",
+    "line": 15
+  },
+  {
+    "from": "src/sources/inbox.ts",
+    "to": "./kind.ts",
+    "line": 16
+  },
+  {
+    "from": "src/sources/kind.ts",
+    "to": "../core/index.ts",
+    "line": 7
+  },
+  {
+    "from": "src/sources/kind.ts",
+    "to": "../app/effects.ts",
+    "line": 8
+  },
+  {
+    "from": "src/sources/kind.ts",
+    "to": "../app/health.ts",
+    "line": 9
+  },
+  {
+    "from": "src/sources/kind.ts",
+    "to": "../core/model.ts",
+    "line": 10
+  },
+  {
+    "from": "src/sources/kind.ts",
+    "to": "../core/ids.ts",
+    "line": 126
+  },
+  {
+    "from": "src/sources/registry.ts",
+    "to": "../core/policy.ts",
+    "line": 7
+  },
+  {
+    "from": "src/sources/registry.ts",
+    "to": "../core/model.ts",
+    "line": 8
+  },
+  {
+    "from": "src/sources/registry.ts",
+    "to": "./kind.ts",
+    "line": 9
+  },
+  {
+    "from": "src/sources/rule.ts",
+    "to": "../core/index.ts",
+    "line": 17
+  },
+  {
+    "from": "src/sources/rule.ts",
+    "to": "../core/model.ts",
+    "line": 18
+  },
+  {
+    "from": "src/sources/rule.ts",
+    "to": "../core/policy.ts",
+    "line": 19
+  },
+  {
+    "from": "src/sources/rule.ts",
+    "to": "../app/health.ts",
+    "line": 20
+  },
+  {
+    "from": "src/sources/rule.ts",
+    "to": "./kind.ts",
+    "line": 21
+  },
+  {
+    "from": "src/sources/session.ts",
+    "to": "../app/health.ts",
+    "line": 8
+  },
+  {
+    "from": "src/sources/session.ts",
+    "to": "./kind.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/agent-delivery.spec.ts",
+    "to": "vitest",
+    "line": 8
+  },
+  {
+    "from": "tests/agent-delivery.spec.ts",
+    "to": "../src/app/agent-delivery.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/agent-delivery.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "node:path",
+    "line": 8
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "zod",
+    "line": 10
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "../src/sources/inbox.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/attachments.spec.ts",
+    "to": ", () => {\n    expect(attachmentsOf(trigger({ attachments: [",
+    "line": 38
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "node:fs",
+    "line": 12
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "vitest",
+    "line": 13
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/auto-retry.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/background.spec.ts",
+    "to": "vitest",
+    "line": 8
+  },
+  {
+    "from": "tests/background.spec.ts",
+    "to": "../src/app/background.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/background.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "node:fs/promises",
+    "line": 12
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "node:os",
+    "line": 13
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "node:path",
+    "line": 14
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "vitest",
+    "line": 15
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lib/frontmatter.mjs",
+    "line": 18
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lib/inbound.mjs",
+    "line": 20
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lib/outbound.mjs",
+    "line": 22
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lib/route.mjs",
+    "line": 24
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lib/run.mjs",
+    "line": 26
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/telegram/transform.mjs",
+    "line": 28
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/dingtalk/transform.mjs",
+    "line": 30
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/wecom/crypt.mjs",
+    "line": 32
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/wecom/transform.mjs",
+    "line": 34
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/qq/transform.mjs",
+    "line": 36
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/qq/protocol.mjs",
+    "line": 38
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lark/transform.mjs",
+    "line": 40
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "../bridges/lib/log.mjs",
+    "line": 42
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "node:fs",
+    "line": 43
+  },
+  {
+    "from": "tests/bridges.spec.ts",
+    "to": "node:fs/promises",
+    "line": 312
+  },
+  {
+    "from": "tests/build.spec.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "tests/build.spec.ts",
+    "to": "node:path",
+    "line": 10
+  },
+  {
+    "from": "tests/build.spec.ts",
+    "to": "vitest",
+    "line": 11
+  },
+  {
+    "from": "tests/build.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": "vitest",
+    "line": 11
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": "../src/sources/registry.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": "../src/sources/kind.ts",
+    "line": 20
+  },
+  {
+    "from": "tests/chat-contract.spec.ts",
+    "to": ", () => {\n    const current = mapped({ U09XYZ: { actor: ",
+    "line": 146
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "node:fs",
+    "line": 12
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "node:path",
+    "line": 13
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "vitest",
+    "line": 14
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "node:fs/promises",
+    "line": 15
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/app/delivery.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/app/sessions.ts",
+    "line": 20
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 21
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 22
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/sources/chat.ts",
+    "line": 23
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "../src/sources/kind.ts",
+    "line": 24
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 25
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 26
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 27
+  },
+  {
+    "from": "tests/chat-send.spec.ts",
+    "to": ", async () => {\n    const context = await chatDeployment()\n    try {\n      // The registry is what mounts a kind. Nothing below constructs a ChatSource, so a kind missing from the\n      // Runtime",
+    "line": 116
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "node:fs",
+    "line": 10
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "node:path",
+    "line": 11
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "vitest",
+    "line": 12
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../bridges/lib/inbound.mjs",
+    "line": 14
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../bridges/lib/outbound.mjs",
+    "line": 16
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 22
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../src/sources/chat.ts",
+    "line": 23
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "../src/sources/kind.ts",
+    "line": 24
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 25
+  },
+  {
+    "from": "tests/chat.spec.ts",
+    "to": "nothing has arrived in days",
+    "line": 728
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "node:fs",
+    "line": 2
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "node:os",
+    "line": 3
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "node:path",
+    "line": 4
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "vitest",
+    "line": 5
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "node:fs/promises",
+    "line": 6
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 7
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/app/delivery.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/app/lock.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/app/sessions.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "../src/core/model.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/delivery.spec.ts",
+    "to": "we could not read it",
+    "line": 475
+  },
+  {
+    "from": "tests/dependencies.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/dependencies.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/deployment.spec.ts",
+    "to": "node:fs",
+    "line": 7
+  },
+  {
+    "from": "tests/deployment.spec.ts",
+    "to": "node:os",
+    "line": 8
+  },
+  {
+    "from": "tests/deployment.spec.ts",
+    "to": "node:path",
+    "line": 9
+  },
+  {
+    "from": "tests/deployment.spec.ts",
+    "to": "vitest",
+    "line": 10
+  },
+  {
+    "from": "tests/deployment.spec.ts",
+    "to": "../src/deployment.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/deployment.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "node:sqlite",
+    "line": 5
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "vitest",
+    "line": 6
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/desk-history.ts",
+    "line": 7
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 134
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 143
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 157
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/prompts.ts",
+    "line": 159
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/desk-loop.ts",
+    "line": 160
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 161
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 162
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 179
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/prompts.ts",
+    "line": 187
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/desk-loop.ts",
+    "line": 188
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 189
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 190
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 191
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 219
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/prompts.ts",
+    "line": 222
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/desk-loop.ts",
+    "line": 223
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 224
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 225
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 245
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/prompts.ts",
+    "line": 253
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/desk-loop.ts",
+    "line": 254
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 255
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 256
+  },
+  {
+    "from": "tests/desk-history.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 257
+  },
+  {
+    "from": "tests/desk-tools.spec.ts",
+    "to": "vitest",
+    "line": 5
+  },
+  {
+    "from": "tests/desk-tools.spec.ts",
+    "to": "../src/app/desk-tools.ts",
+    "line": 6
+  },
+  {
+    "from": "tests/desk-tools.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 7
+  },
+  {
+    "from": "tests/desk-tools.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/desk-tools.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 65
+  },
+  {
+    "from": "tests/effects.spec.ts",
+    "to": "node:path",
+    "line": 8
+  },
+  {
+    "from": "tests/effects.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/effects.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/effects.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/effects.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/effects.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/engine.spec.ts",
+    "to": "vitest",
+    "line": 2
+  },
+  {
+    "from": "tests/engine.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 3
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "node:fs",
+    "line": 8
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "node:path",
+    "line": 9
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "vitest",
+    "line": 10
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "../src/app/executor.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": "I got the id wrong",
+    "line": 690
+  },
+  {
+    "from": "tests/executor.spec.ts",
+    "to": ", () => {\n  // The collaboration channel let one Ticket",
+    "line": 892
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "node:fs",
+    "line": 16
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "node:path",
+    "line": 17
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "vitest",
+    "line": 18
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "../src/deployment.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 20
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 21
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 22
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 23
+  },
+  {
+    "from": "tests/fault-injection.spec.ts",
+    "to": ".\n      const payload = { source: ",
+    "line": 330
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "node:fs",
+    "line": 7
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "node:path",
+    "line": 8
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "../src/app/files.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": ", async () => {\n    const root = sample()\n    const read = await readForPanel(join(root, ",
+    "line": 129
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "node:fs",
+    "line": 144
+  },
+  {
+    "from": "tests/files.spec.ts",
+    "to": "node:fs",
+    "line": 230
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "node:fs",
+    "line": 8
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "node:path",
+    "line": 9
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "vitest",
+    "line": 10
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "../src/deployment.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "node:fs",
+    "line": 880
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "node:path",
+    "line": 881
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "node:os",
+    "line": 882
+  },
+  {
+    "from": "tests/flow.spec.ts",
+    "to": "node:fs",
+    "line": 897
+  },
+  {
+    "from": "tests/helpers/deployment.ts",
+    "to": "node:path",
+    "line": 2
+  },
+  {
+    "from": "tests/helpers/deployment.ts",
+    "to": "../../src/deployment.ts",
+    "line": 3
+  },
+  {
+    "from": "tests/helpers/deployment.ts",
+    "to": "../../src/app/runtime.ts",
+    "line": 4
+  },
+  {
+    "from": "tests/helpers/deployment.ts",
+    "to": "./host.ts",
+    "line": 5
+  },
+  {
+    "from": "tests/helpers/deployment.ts",
+    "to": "./temp.ts",
+    "line": 6
+  },
+  {
+    "from": "tests/helpers/host.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 8
+  },
+  {
+    "from": "tests/helpers/temp.ts",
+    "to": "node:fs",
+    "line": 18
+  },
+  {
+    "from": "tests/helpers/temp.ts",
+    "to": "node:os",
+    "line": 19
+  },
+  {
+    "from": "tests/helpers/temp.ts",
+    "to": "node:path",
+    "line": 20
+  },
+  {
+    "from": "tests/helpers/temp.ts",
+    "to": "vitest",
+    "line": 21
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "vitest",
+    "line": 8
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "node:path",
+    "line": 10
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/http.spec.ts",
+    "to": "there was nowhere to put it",
+    "line": 917
+  },
+  {
+    "from": "tests/mount.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/mount.spec.ts",
+    "to": "../src/deployment.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/mount.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/mount.spec.ts",
+    "to": "../src/index.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/mount.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/mount.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "node:fs",
+    "line": 12
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "node:path",
+    "line": 13
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "@deepseek-ai/cordis",
+    "line": 14
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "@deepseek-ai/dsh-subprocess",
+    "line": 15
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "vitest",
+    "line": 16
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "node:fs/promises",
+    "line": 17
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "../src/app/delivery.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 20
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "../src/app/sessions.ts",
+    "line": 21
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 22
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 23
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 24
+  },
+  {
+    "from": "tests/notify-machine.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 25
+  },
+  {
+    "from": "tests/notify.spec.ts",
+    "to": "node:fs",
+    "line": 7
+  },
+  {
+    "from": "tests/notify.spec.ts",
+    "to": "node:path",
+    "line": 8
+  },
+  {
+    "from": "tests/notify.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/notify.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/notify.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": "node:fs",
+    "line": 16
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": "node:path",
+    "line": 17
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": "vitest",
+    "line": 18
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": "myagent gave up waiting",
+    "line": 1627
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": ", () => {\n  // 【U14 产品变更】「来源」页解散了，这一个入口变成两个：\n  //   来源状态表 → 总览的「活从哪来」；健康与队列 → 顶栏「状态」抽屉。\n  // 旧写法：click(button(",
+    "line": 2086
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": ", async () => {\n    await mount(routes())\n    await openSettings()\n    expect(JSON.parse(area(",
+    "line": 2284
+  },
+  {
+    "from": "tests/panel.spec.ts",
+    "to": "broken host",
+    "line": 2438
+  },
+  {
+    "from": "tests/policy.spec.ts",
+    "to": "vitest",
+    "line": 8
+  },
+  {
+    "from": "tests/policy.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/policy.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/policy.spec.ts",
+    "to": "../src/core/model.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/prompts.spec.ts",
+    "to": "node:fs",
+    "line": 2
+  },
+  {
+    "from": "tests/prompts.spec.ts",
+    "to": "vitest",
+    "line": 3
+  },
+  {
+    "from": "tests/prompts.spec.ts",
+    "to": "../src/app/prompts.ts",
+    "line": 4
+  },
+  {
+    "from": "tests/prompts.spec.ts",
+    "to": "../src/app/skills.ts",
+    "line": 5
+  },
+  {
+    "from": "tests/prompts.spec.ts",
+    "to": ", () => {\n    for (const role of [",
+    "line": 18
+  },
+  {
+    "from": "tests/recipes-route.spec.ts",
+    "to": "vitest",
+    "line": 8
+  },
+  {
+    "from": "tests/recipes-route.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/recipes-route.spec.ts",
+    "to": ", async () => {\n    const context = await deployment(",
+    "line": 12
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "node:fs",
+    "line": 7
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "node:path",
+    "line": 8
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "vitest",
+    "line": 9
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "../src/core/timing.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/recipes.spec.ts",
+    "to": "one scan took it twice",
+    "line": 128
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "node:fs",
+    "line": 8
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "node:path",
+    "line": 9
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "vitest",
+    "line": 10
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "../src/deployment.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/recovery.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/runtime-budget.spec.ts",
+    "to": "vitest",
+    "line": 11
+  },
+  {
+    "from": "tests/runtime-budget.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/runtime-budget.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/runtime-budget.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "node:fs",
+    "line": 27
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "node:path",
+    "line": 28
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "vitest",
+    "line": 29
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "../src/app/views.ts",
+    "line": 30
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 31
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 32
+  },
+  {
+    "from": "tests/session-decoration.spec.ts",
+    "to": "here is some text",
+    "line": 172
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "node:fs",
+    "line": 36
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "node:path",
+    "line": 37
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "vitest",
+    "line": 38
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 39
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "../src/app/runtime.ts",
+    "line": 40
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 41
+  },
+  {
+    "from": "tests/session-health.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 42
+  },
+  {
+    "from": "tests/silent-visibility.spec.ts",
+    "to": "vitest",
+    "line": 16
+  },
+  {
+    "from": "tests/silent-visibility.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/silent-visibility.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/skills.spec.ts",
+    "to": "vitest",
+    "line": 1
+  },
+  {
+    "from": "tests/skills.spec.ts",
+    "to": "../src/app/skills.ts",
+    "line": 5
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "node:fs",
+    "line": 2
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "node:path",
+    "line": 3
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "vitest",
+    "line": 4
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 5
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/app/effects.ts",
+    "line": 6
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/core/model.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/sources/cron.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/sources/registry.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/sources/kind.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/sources/rule.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/sources/inbox.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "../src/sources/kind.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/sources.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "node:fs",
+    "line": 2
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "node:sqlite",
+    "line": 3
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "node:os",
+    "line": 4
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "node:path",
+    "line": 5
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "vitest",
+    "line": 6
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 7
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 8
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "../src/core/model.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/store.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/temp.spec.ts",
+    "to": "node:fs",
+    "line": 13
+  },
+  {
+    "from": "tests/temp.spec.ts",
+    "to": "vitest",
+    "line": 14
+  },
+  {
+    "from": "tests/temp.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/temp.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "node:fs",
+    "line": 9
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "node:path",
+    "line": 10
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "node:os",
+    "line": 11
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "vitest",
+    "line": 12
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/ticket-delete.spec.ts",
+    "to": "../src/core/errors.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/timing.spec.ts",
+    "to": "vitest",
+    "line": 2
+  },
+  {
+    "from": "tests/timing.spec.ts",
+    "to": "../src/core/timing.ts",
+    "line": 3
+  },
+  {
+    "from": "tests/tool-schema-json.spec.ts",
+    "to": "vitest",
+    "line": 16
+  },
+  {
+    "from": "tests/tool-schema-json.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 17
+  },
+  {
+    "from": "tests/tool-schema-json.spec.ts",
+    "to": "../src/core/memory.ts",
+    "line": 18
+  },
+  {
+    "from": "tests/tool-schema-json.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 19
+  },
+  {
+    "from": "tests/tool-schema-json.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 20
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "node:fs",
+    "line": 17
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "node:path",
+    "line": 18
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "vitest",
+    "line": 19
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 20
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "../src/core/memory.ts",
+    "line": 21
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 22
+  },
+  {
+    "from": "tests/tool-surface-docs.spec.ts",
+    "to": "../src/core/policy.ts",
+    "line": 23
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "node:path",
+    "line": 7
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "vitest",
+    "line": 8
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "zod",
+    "line": 9
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 10
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "../src/app/tools.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/tools.spec.ts",
+    "to": "./helpers/temp.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "node:fs",
+    "line": 10
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "node:os",
+    "line": 11
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "node:path",
+    "line": 12
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "vitest",
+    "line": 13
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "../src/core/memory.ts",
+    "line": 14
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "../src/app/store.ts",
+    "line": 15
+  },
+  {
+    "from": "tests/transaction.spec.ts",
+    "to": "../src/core/engine.ts",
+    "line": 16
+  },
+  {
+    "from": "tests/views.spec.ts",
+    "to": "vitest",
+    "line": 7
+  },
+  {
+    "from": "tests/views.spec.ts",
+    "to": "../src/app/views.ts",
+    "line": 8
+  },
+  {
+    "from": "tests/views.spec.ts",
+    "to": "../src/core/model.ts",
+    "line": 9
+  },
+  {
+    "from": "tests/watchdog.spec.ts",
+    "to": "node:fs",
+    "line": 8
+  },
+  {
+    "from": "tests/watchdog.spec.ts",
+    "to": "node:os",
+    "line": 9
+  },
+  {
+    "from": "tests/watchdog.spec.ts",
+    "to": "node:path",
+    "line": 10
+  },
+  {
+    "from": "tests/watchdog.spec.ts",
+    "to": "vitest",
+    "line": 11
+  },
+  {
+    "from": "tests/watchdog.spec.ts",
+    "to": "../src/app/watchdog.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/watchdog.spec.ts",
+    "to": "../src/app/health.ts",
+    "line": 13
+  },
+  {
+    "from": "tests/worker-preset.spec.ts",
+    "to": "vitest",
+    "line": 10
+  },
+  {
+    "from": "tests/worker-preset.spec.ts",
+    "to": "../src/core/index.ts",
+    "line": 11
+  },
+  {
+    "from": "tests/worker-preset.spec.ts",
+    "to": "./helpers/deployment.ts",
+    "line": 12
+  },
+  {
+    "from": "tests/worker-preset.spec.ts",
+    "to": "./helpers/host.ts",
+    "line": 13
+  },
+  {
+    "from": "tsdown.config.ts",
+    "to": "tsdown",
+    "line": 1
+  },
+  {
+    "from": "vitest.config.ts",
+    "to": "vitest/config",
+    "line": 1
+  }
+]

@@ -1,0 +1,10 @@
+
+ RUN  v4.1.8 /Users/liyang/Documents/SA/myagent
+
+ ✓ tests/audit38-repro.spec.ts (10 tests) 14ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  12:53:42
+   Duration  462ms (transform 227ms, setup 0ms, import 335ms, tests 14ms, environment 0ms)
+

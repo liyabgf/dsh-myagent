@@ -1,0 +1,262 @@
+[
+  {
+    "method": "GET",
+    "path": "/myagent/api/state",
+    "line": 366
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets",
+    "line": 367
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets/:id",
+    "line": 378
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets",
+    "line": 413
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/answer",
+    "line": 427
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/projects",
+    "line": 437
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/projects",
+    "line": 438
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/projects/:id",
+    "line": 439
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/works",
+    "line": 445
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/projects/:id/archive",
+    "line": 451
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/projects/:id/unarchive",
+    "line": 452
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/projects/:id/delete",
+    "line": 453
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/works/:id/archive",
+    "line": 454
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/works/:id/unarchive",
+    "line": 455
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/works/:id/delete",
+    "line": 456
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/delete",
+    "line": 459
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/works",
+    "line": 461
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/works/:id",
+    "line": 462
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/work",
+    "line": 467
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets/:id/events",
+    "line": 471
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets/:id/dependencies",
+    "line": 479
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/dependencies",
+    "line": 485
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/dependencies/drop",
+    "line": 492
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/note",
+    "line": 498
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/stop",
+    "line": 504
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/tickets/:id/retry",
+    "line": 510
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/decisions",
+    "line": 517
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/decisions/:id/dismiss",
+    "line": 526
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/recipes",
+    "line": 532
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets/:id/progress",
+    "line": 534
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets/:id/files",
+    "line": 536
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/tickets/:id/file",
+    "line": 544
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/schedules",
+    "line": 567
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/schedules/preview",
+    "line": 576
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/decisions",
+    "line": 597
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/desk-decisions",
+    "line": 615
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/desk/status",
+    "line": 636
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/desk/messages",
+    "line": 641
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/desk/providers",
+    "line": 647
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/triggers",
+    "line": 659
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/lost",
+    "line": 682
+  },
+  {
+    "method": "PUT",
+    "path": "/myagent/api/settings",
+    "line": 720
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/prompts",
+    "line": 725
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/changes",
+    "line": 740
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/operator-queue",
+    "line": 741
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/operator-queue/:id/dismiss",
+    "line": 742
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/prompts/skills/:name/toggle",
+    "line": 746
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/prompts/skills/:name/delete",
+    "line": 751
+  },
+  {
+    "method": "PUT",
+    "path": "/myagent/api/prompts",
+    "line": 755
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/pass",
+    "line": 761
+  },
+  {
+    "method": "POST",
+    "path": "/myagent/api/main-session",
+    "line": 766
+  },
+  {
+    "method": "GET",
+    "path": "/myagent/api/effects",
+    "line": 771
+  }
+]
