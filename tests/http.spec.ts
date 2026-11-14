@@ -76,6 +76,31 @@ async function untilPass(predicate: () => boolean, what: string, tries = 200): P
   throw new Error(`${what} had not happened after ${tries} attempts to wait for it`)
 }
 
+describe('browser upload API', () => {
+  it('uploads opaque bytes, creates a ticket retaining filename, and rejects reuse', async () => {
+    await withDeployment(async context => {
+      const uploaded = await context.host.request(api('attachments/upload'), { method: 'POST', body: { filename: '笔记.md', data: Buffer.from('hello upload').toString('base64') } })
+      expect(uploaded.status).toBe(200)
+      expect(uploaded.json).toMatchObject({ name: '笔记.md', size: 12 })
+      expect(uploaded.json.source).toBeUndefined()
+      const created = await context.host.request(api('tickets'), { method: 'POST', body: { title: 'uploaded', request: 'read file', upload_ids: [uploaded.json.uploadId] } })
+      expect(created.status).toBe(200)
+      const ticket = context.runtime.engine.require(created.json.ticketId as string)
+      expect(ticket.attachments[0]?.name).toBe('笔记.md')
+      expect(readFileSync(ticket.attachments[0]!.source, 'utf8')).toBe('hello upload')
+      const reused = await context.host.request(api('tickets'), { method: 'POST', body: { title: 'reused', request: 'read file', upload_ids: [uploaded.json.uploadId] } })
+      expect(reused.status).toBe(400)
+    })
+  })
+  it('rejects forged ids and invalid filenames without creating work', async () => {
+    await withDeployment(async context => {
+      expect((await context.host.request(api('attachments/upload'), { method: 'POST', body: { filename: '../secret', data: 'YQ==' } })).status).toBe(400)
+      expect((await context.host.request(api('tickets'), { method: 'POST', body: { title: 'bad', request: 'x', upload_ids: ['../../secret'] } })).status).toBe(400)
+      expect(context.runtime.store.tickets.list()).toHaveLength(0)
+    })
+  })
+})
+
 describe('the fence', () => {
   it('serves the panel page to anybody who can reach the port', async () => {
     await withDeployment(async ({ host }) => {

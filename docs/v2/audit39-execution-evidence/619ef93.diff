@@ -1,7 +1,7 @@
 commit 619ef932ec3b1bfed1cc39ba4f6b7e79f78a16ba
-Author:     operator <operator@Mac.lan>
+Author:     operator <operator@operator-host>
 AuthorDate: Fri Nov 13 16:51:03 2026 +0800
-Commit:     operator <operator@Mac.lan>
+Commit:     operator <operator@operator-host>
 CommitDate: Fri Nov 13 16:51:03 2026 +0800
 
     R3：桥接协议与源可靠性修复

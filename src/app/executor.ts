@@ -17,7 +17,7 @@ import {
   type Assignment, type Engine, type Executor, type Ticket,
 } from '../core/index.ts'
 import type { Settings } from '../core/policy.ts'
-import { listFiles, readForPanel, type FileListing } from './files.ts'
+import { listFiles, readForPanel, resolveRealInside, type FileListing } from './files.ts'
 import { stopBackground } from './background.ts'
 import { Later, type Effects } from './effects.ts'
 import type { HealthBoard, HealthEntry } from './health.ts'
@@ -647,7 +647,7 @@ export class DshExecutor implements Executor {
     const root = resolve(this.host.workRoot())
     const realRoot = await realpath(root).catch(() => root)
     for (const attachment of ticket.attachments) {
-      // 安全检查留在调用方（policy 归 myagent）：symlink、workRoot 包含、纯文件名——一个都不搬进 sandbox。
+      // Attachment path checks and cross-Ticket artifact authorization stay outside the byte-copy sandbox.
       const safeName = basename(attachment.name)
       if (safeName === '' || safeName === '.' || safeName === '..' || safeName !== attachment.name) {
         throw new PrepareFailed(`The attached file name ${attachment.name} is not a plain file name`)
@@ -658,12 +658,42 @@ export class DshExecutor implements Executor {
           throw new Error('symbolic links may not be attached')
         }
         const realSource = await realpath(attachment.source)
+        let bytes: Buffer
+        let reusedFrom: { ticketId: string; path: string } | undefined
         if (realSource === realRoot || realSource.startsWith(realRoot + sep)) {
-          throw new Error('files inside myagent workRoot belong to other Tickets and may not be attached')
+          // A workRoot path is reusable only when it is a registered artifact authorized by Engine.
+          // Never turn the workRoot prefix itself into a read permission.
+          const owners: { ticket: Ticket; directory: string }[] = []
+          for (const candidate of this.host.store.tickets.list()) {
+            const candidateDir = candidate.execution?.directory
+            if (candidateDir === undefined) continue
+            const canonical = await realpath(candidateDir).catch(() => undefined)
+            if (canonical !== undefined && realSource.startsWith(canonical + sep)) owners.push({ ticket: candidate, directory: canonical })
+          }
+          if (owners.length !== 1) throw new Error('files inside myagent workRoot must belong to exactly one known Ticket')
+          const owner = owners[0]!
+          const relativePath = relative(owner.directory, realSource).split(sep).join('/')
+          const authorized = this.host.engine.authorizeArtifactRead(ticket.id, owner.ticket.id, relativePath)
+          // Check the original path as well: canonicalizing first must not hide a symlink segment.
+          const requested = resolve(attachment.source)
+          const configuredDirectory = resolve(authorized.directory)
+          // A configured workRoot may itself be an alias; accept either its configured spelling or canonical path.
+          const validationRoot = requested.startsWith(configuredDirectory + sep) ? configuredDirectory : owner.directory
+          const lexicalPath = relative(validationRoot, requested)
+          const checked = await resolveRealInside(validationRoot, lexicalPath)
+          if (checked === undefined || await realpath(checked) !== realSource) throw new Error('artifact path escapes its Ticket or contains a symbolic link')
+          if (!info.isFile()) throw new Error('only artifact files may be attached')
+          // Match the existing artifact materialization ceiling before buffering a reused file.
+          if (info.size > 64 * 1024 * 1024) throw new Error('reused artifact exceeds the 64 MiB attachment limit')
+          bytes = await readFile(checked)
+          reusedFrom = { ticketId: owner.ticket.id, path: relativePath }
+        } else {
+          // 【G-3 站点 1】搬字节的动作走接口：宿主读（附件源在宿主上、workRoot 之外），sandbox 写。
+          // VM sandbox 在这里把已验证的字节推过边界——executor 不需要知道边界长什么样。
+          bytes = await readFile(realSource)
         }
-        // 【G-3 站点 1】搬字节的动作走接口：宿主读（附件源在宿主上、workRoot 之外），sandbox 写。
-        // VM sandbox 在这里把已验证的字节推过边界——executor 不需要知道边界长什么样。
-        await this.sandbox.deliverAttachment(directory, safeName, await readFile(realSource))
+        await this.sandbox.deliverAttachment(directory, safeName, bytes)
+        if (reusedFrom !== undefined) this.host.engine.recordArtifactRead(ticket.id, reusedFrom.ticketId, reusedFrom.path)
       } catch (error) {
         throw new PrepareFailed(`The attached file ${attachment.source} could not be copied into the Ticket's directory: ${reason(error)}`)
       }

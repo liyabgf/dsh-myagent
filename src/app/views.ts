@@ -49,6 +49,10 @@ export interface TicketSummary {
    */
   readonly triage?: boolean
   readonly waitsForPerson: boolean
+  /** A failed preparation is not a worker question: it needs repair/retry, while the Input stays queued. */
+  readonly preparationFailed: boolean
+  readonly waitingForAnswer: boolean
+  readonly inputDelivery: { readonly state: 'none' | 'pending' | 'failed' | 'delivered' | 'ended'; readonly total: number; readonly pending: number; readonly delivered: number; readonly error?: string }
   readonly question?: string
   readonly summary?: string
   readonly endedReason?: string
@@ -56,7 +60,15 @@ export interface TicketSummary {
 }
 
 export function ticketSummary(ticket: Ticket): TicketSummary {
-  const report = latestReport(ticket)
+  const assignment = latestAssignment(ticket)
+  // Historical reports remain visible in the detail/history; an open replacement attempt must describe itself.
+  const report = ticket.ended === undefined ? assignment?.report : latestReport(ticket)
+  const preparationFailed = ticket.ended === undefined && assignment?.state === 'pending' && report?.state === 'failed'
+  const pending = ticket.inputs.filter(input => input.deliveredAt === undefined).length
+  const total = ticket.inputs.length
+  const error = pending === 0 ? undefined : preparationFailed ? report?.summary : assignment?.deliveryError
+  const state = total === 0 ? 'none' : pending === 0 ? 'delivered' : ticket.ended !== undefined ? 'ended'
+    : error !== undefined ? 'failed' : 'pending'
   return {
     id: ticket.id, title: ticket.title, stage: ticketStage(ticket),
     createdAt: ticket.createdAt, updatedAt: updatedAt(ticket),
@@ -65,7 +77,10 @@ export function ticketSummary(ticket: Ticket): TicketSummary {
     ...(ticket.deleted === undefined ? {} : { deleted: ticket.deleted }),
     ...(latestAssignment(ticket)?.role === 'triage' ? { triage: true } : {}),
     waitsForPerson: waitsForPerson(ticket),
-    question: ticket.attention?.question,
+    preparationFailed,
+    waitingForAnswer: waitsForPerson(ticket) && !preparationFailed,
+    inputDelivery: { state, total, pending, delivered: total - pending, ...(error === undefined ? {} : { error }) },
+    question: preparationFailed ? undefined : ticket.attention?.question,
     summary: report?.summary,
     endedReason: ticket.ended?.reason, outcome: ticket.ended?.outcome,
     // Which Work this Ticket belongs to, and its place in that Work's history. On the summary rather than only the

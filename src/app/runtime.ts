@@ -42,6 +42,7 @@ import { impostorDetail, impostorSubject, MAIN_SESSION, SessionHealth } from './
 import { Watchdog, type WatchdogHost } from './watchdog.ts'
 import { ruleKind } from '../sources/rule.ts'
 import { packageFile, Prompts, type PromptRole } from './prompts.ts'
+import { Uploads } from './uploads.ts'
 import { Sessions, ticketOfSession, workerSessionId, workerSessionOf, type MainState } from './sessions.ts'
 import { DeskLoop } from './desk-loop.ts'
 import { mainTools, workerTools, type ArtifactCatalogEntry, type ArtifactRead, type Tool, type ToolsHost } from './tools.ts'
@@ -296,6 +297,7 @@ export class Runtime implements HttpHost {
   readonly passes: Passes
   readonly sessions: Sessions
   readonly executor: DshExecutor
+  readonly uploads: Uploads
   readonly delivery: OutcomeDelivery
   readonly engine: Engine
   deskLoop: DeskLoop | undefined = undefined  // satisfies HttpHost
@@ -364,6 +366,7 @@ export class Runtime implements HttpHost {
     this.subprocess = context.subprocess
     this.lifetime = this.abort.signal
     this.machine = machineOf(config)
+    this.uploads = new Uploads(this.machine.stateDir)
     this.lock = takeLock(this.machine.stateDir)
     // Spelled out rather than spread: `machine.promptMaxChars` is a Volatile, and spreading it wrote `"promptMaxChars": {}`
     // into the one file whose job is to tell a person where this deployment keeps its things.
@@ -558,6 +561,14 @@ export class Runtime implements HttpHost {
   // ------------------------------------------------------------------- Ports
 
   /** The Engine and Store the tools read and command. */
+  createTicketWithUploads(request: { title: string; text: string; sender?: string; scope?: string; attachments?: readonly string[]; uploadIds?: readonly string[] }): ReturnType<Engine['createTicket']> {
+    if (request.uploadIds?.length === 0 || request.uploadIds === undefined) return this.engine.createTicket(request)
+    return this.uploads.consume(request.uploadIds ?? [], sources => {
+      const result = this.engine.createTicket({ title: request.title, text: request.text, sender: request.sender, scope: request.scope, attachments: [...(request.attachments ?? []), ...sources] })
+      return { value: result, ticketId: result.ticketId }
+    })
+  }
+
   private toolsHost(): ToolsHost {
     return {
       engine: this.engine, store: this.store, acceptMode: () => this.settings().acceptMode,
@@ -1314,6 +1325,7 @@ export class Runtime implements HttpHost {
 
   private async startNow(): Promise<void> {
     if (this.stopped) return
+    this.uploads.cleanup(id => { const ticket = this.store.tickets.get(id); return ticket !== undefined && ticket.ended === undefined })
     this.indexSessions()
     this.wireAgents()
     // R1-01: Create and wire the DeskLoop BEFORE recover() so that recover()'s

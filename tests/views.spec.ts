@@ -81,6 +81,35 @@ describe('ticketSummary', () => {
   })
 })
 
+describe('delivery and preparation summaries', () => {
+  const input = { id: 'i1', kind: 'text' as const, text: '继续', at: '2026-11-03T01:06:00.000Z' }
+  it('distinguishes preparation failure from a worker question, including existing stored attention', () => {
+    const summary = ticketSummary(base({
+      assignments: [assignment({ state: 'pending', report: report({ state: 'failed', summary: 'prepare failed' }) })],
+      attention: { question: 'prepare failed', at: input.at }, inputs: [input],
+    }))
+    expect(summary).toMatchObject({ stage: 'failed', waitsForPerson: true, preparationFailed: true, waitingForAnswer: false,
+      inputDelivery: { state: 'failed', total: 1, pending: 1, delivered: 0, error: 'prepare failed' } })
+    expect(summary.question).toBeUndefined()
+  })
+  it('uses only the current open report while preserving historical reports separately', () => {
+    const ticket = base({ assignments: [assignment({ state: 'ended', report: report({ state: 'failed', summary: 'old failure' }) }),
+      assignment({ id: 'a2' })], inputs: [input] })
+    expect(ticketSummary(ticket)).toMatchObject({ stage: 'running', waitingForAnswer: false,
+      inputDelivery: { state: 'pending', total: 1, pending: 1, delivered: 0 } })
+    expect(ticketSummary(ticket).summary).toBeUndefined()
+    expect(ticketView(ticket).reports).toHaveLength(1)
+  })
+  it('reports delivery only from input timestamps and retains delivery errors until success', () => {
+    expect(ticketSummary(base({ inputs: [input] })).inputDelivery.state).toBe('pending')
+    expect(ticketSummary(base({ inputs: [input], assignments: [assignment({ deliveryError: 'offline' })] })).inputDelivery)
+      .toMatchObject({ state: 'failed', error: 'offline', pending: 1 })
+    expect(ticketSummary(base({ inputs: [{ ...input, deliveredAt: input.at }] })).inputDelivery)
+      .toEqual({ state: 'delivered', total: 1, pending: 0, delivered: 1 })
+    expect(ticketSummary(base({ inputs: [input], ended: { at: input.at, by: 'person', outcome: 'stopped', reason: 'stop' } })).inputDelivery.state).toBe('ended')
+  })
+})
+
 describe('ticketView', () => {
   it('carries the authorization verbatim, because that is what the work is allowed to do', () => {
     const view = ticketView(base())

@@ -21,22 +21,13 @@ Ticket 目录、工具清单和结束状态提供应用级限制；**它自己�
 **真边界是操作系统级的**（受限用户 / 容器 / 只读挂载 + 可写工作区），
 而 myagent **没有**提供它。这是本清单的第一优先项，尚未实现。
 
-## 2. 面板与 API 不在 DSH 宿主的身份验证之后
+## 2. 面板与 API 的认证边界
 
-实测（同一台宿主、同一时刻）：
+**当前宿主实测（2026-11-14，DSH 0.2.2-rc.3）**：myagent 的路由注册未声明匿名访问，宿主默认要求经过认证的浏览器 Peer，因此未携带宿主会话凭据的请求一律返回 **401 Unauthorized**，包括 `GET /` 和带 `x-myagent-request: 1` 的 `GET /myagent/api/state`。在已登录的 DSH Web GUI 中，浏览器会带同源会话凭据，面板可正常访问；命令行直接访问需要经过宿主认证流程，不能只靠 `x-myagent-request`。
 
-| 请求 | 结果 |
-| --- | --- |
-| `GET /`（DSH Web GUI 根） | **401**，需要 `dsh web` 打印的带 token 的 URL |
-| `GET /myagent/`（面板） | **200** |
-| `GET /myagent/api/state` + 头 `x-myagent-request: 1` | **200** |
-| 同上，**不带**那个头 | **403** |
+**这不是 myagent 自己实现的用户认证**：`x-myagent-request` 仍只是**同源围栏**，防的是别的网页跨源调用，不是本机进程身份；任何本机进程都可以伪造这个头。面板是否受宿主认证保护取决于宿主版本与路由认证策略，历史版本实测为 **200**（未认证即可访问）。
 
-那个头是**同源围栏**：它防的是"别的网页里的脚本跨源调用 myagent"，
-**不是**防本机进程——**本机任何进程都能发这个头**。
-
-**后果**：本机上任何进程都可以驱动 myagent——建 Ticket（从而以你的身份执行命令）、
-改设置（含 `allowedSenders` 与 `sources.*.deny`）、停掉在跑的工作、读取 Ticket 目录里的产物。
+**后果**：在宿主未强制认证或认证被绕过的部署中，本机任何进程都可以驱动 myagent——建 Ticket（从而以你的身份执行命令）、改设置（含 `allowedSenders` 与 `sources.*.deny`）、停掉在跑的工作、读取 Ticket 目录里的产物。真正的跨用户授权仍未实现。
 
 ## 3. inbox 不验证实际投递者身份
 
@@ -129,7 +120,7 @@ const role: PromptRole = ticket === undefined ? 'orchestrator' : 'worker'
 拿到 orchestrator 的**管理工具**：`myagent_create_ticket`（**建一张 Ticket，而它会以完全访问运行**）、
 `myagent_stop_ticket`、`myagent_retry_ticket`、`myagent_answer_ticket`。
 
-**结合上面第 2 条（面板与 API 不在宿主认证之后），本机上任何能创建 DSH 会话的进程都能拿到这个管理面。**
+**结合上面第 2 条（在宿主未强制认证的历史部署中），本机上任何能创建 DSH 会话的进程都能拿到这个管理面。**
 
 0.1.1 的修法：Ticket 不存在时**完全不装扮**——不给 myagent 工具、不给 myagent 提示词段，
 并记一条 warn（不是静默：一条没人看得见的拒绝正是审计记录里出现假话的成因）。
@@ -144,9 +135,9 @@ const role: PromptRole = ticket === undefined ? 'orchestrator' : 'worker'
 ## 已知但未修（完整清单见 `docs/v2/12-unimplemented.md`）
 
 - worker 无 OS 级沙箱（上面第 1 条）
-- 面板/API 无认证（上面第 2 条）
+- **myagent 自身没有用户认证**：面板能否访问取决于宿主的路由认证策略（上面第 2 条）；`x-myagent-request` 只是同源围栏，不是身份认证
 - **墙钟预算已实现，token/费用硬上限未实现**：排期或全局墙钟预算到期先提醒，宽限期后停止任务；当前源码已将预算检查独立于慢 effects 调度。停止子代理受当前 DSH root-tree API 限制，尚待真实 Host 验收，不能保证所有子树形状都安全停止。
-- **可靠性修复通过隔离 gate（1343 tests）不等于安全审查通过**：真实模型、平台收发、当前 Host 生命周期和浏览器视觉尚未在该修复树验收；成功回执与外部动作之间仍有崩溃重放窗口。
+- **隔离 gate（1371 tests）不等于安全审查或浏览器验收**：真实模型、平台收发、当前 Host 生命周期与浏览器视觉尚未在该修复树验收；上传回执在进程崩溃窗口内保持 reserved，需人工恢复；成功回执与外部动作之间仍有崩溃重放窗口。
 - **无跨用户归属与隔离**：现有 Project/Work 是任务组织和协作规则，不是用户/租户隔离机制。
 - 一个 Source kind 当前只有一个运行实例，可配置多个聊天频道；这是当前结构范围，不代表不再扩展部署形态。
 

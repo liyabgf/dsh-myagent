@@ -550,6 +550,77 @@ describe('files that came with the request', () => {
     } finally { await runtime.stop() }
   })
 
+  it('reuses registered outputs as request attachments before starting the next worker', async () => {
+    const context = await deployment('auto')
+    const { runtime, host } = context
+    try {
+      const producer = await one(context, 'asset-producer.md', 'produce research assets')
+      const producerDir = runtime.engine.require(producer).execution!.directory
+      writeFileSync(join(producerDir, 'notes.md'), 'reusable research', 'utf8')
+      writeFileSync(join(producerDir, 'manifest.csv'), 'url,status\nhttps://example.test,ok\n', 'utf8')
+      runtime.engine.report(producer, { state: 'ready', summary: 'research assets', files: ['notes.md', 'manifest.csv'] })
+      const result = runtime.engine.createTicket({ title: 'reuse research', text: 'make a report from these assets', attachments: [join(producerDir, 'notes.md'), join(producerDir, 'manifest.csv')] })
+      const consumer = result.ticketId!
+      await settle(runtime)
+      const ticket = runtime.engine.require(consumer)
+      expect(ticket.assignments.at(-1)?.state).toBe('running')
+      expect(readFileSync(join(ticket.execution!.directory, 'attachments', 'notes.md'), 'utf8')).toBe('reusable research')
+      expect(readFileSync(join(ticket.execution!.directory, 'attachments', 'manifest.csv'), 'utf8')).toContain('https://example.test')
+      expect(host.agents.get(workerId(consumer))?.followups[0]?.text).toContain('attachments/notes.md')
+      expect(runtime.engine.citationsOf(consumer).cites).toContain(producer)
+      expect(runtime.engine.citationsOf(producer).citedBy).toContain(consumer)
+    } finally { await runtime.stop() }
+  })
+
+  it('uses artifact registration and Work boundaries for workRoot attachments', async () => {
+    const context = await deployment('auto')
+    const { runtime } = context
+    try {
+      const producer = await one(context, 'bounded-producer.md', 'produce bounded asset')
+      await one(context, 'bounded-consumer.md', 'consume bounded asset')
+      const consumer = runtime.store.tickets.list().find(ticket => ticket.id !== producer)!.id
+      const producerDir = runtime.engine.require(producer).execution!.directory
+      const consumerDir = runtime.engine.require(consumer).execution!.directory
+      writeFileSync(join(producerDir, 'asset.csv'), 'data', 'utf8')
+      writeFileSync(join(producerDir, 'private.csv'), 'not registered', 'utf8')
+      runtime.engine.report(producer, { state: 'ready', summary: 'asset', files: ['asset.csv'] })
+      const copy = (source: string) => (runtime.executor as unknown as { copyAttachments(ticket: unknown, directory: string): Promise<void> })
+        .copyAttachments({ ...runtime.engine.require(consumer), attachments: [{ name: 'asset.csv', source }] }, consumerDir)
+      await expect(copy(join(producerDir, 'private.csv'))).rejects.toThrow()
+      expect(runtime.engine.citationsOf(consumer).cites).toEqual([])
+      const work = runtime.engine.createWork({ name: 'shared research' })
+      runtime.engine.attachWork(producer, work.id)
+      await expect(copy(join(producerDir, 'asset.csv'))).rejects.toThrow()
+      expect(runtime.engine.citationsOf(consumer).cites).toEqual([])
+      runtime.engine.attachWork(consumer, work.id)
+      await copy(join(producerDir, 'asset.csv'))
+      await copy(join(producerDir, 'asset.csv'))
+      expect(readFileSync(join(consumerDir, 'attachments', 'asset.csv'), 'utf8')).toBe('data')
+      expect(runtime.store.events.list(consumer).filter(event => event.type === 'artifact_read')).toHaveLength(1)
+      symlinkSync(join(producerDir, 'asset.csv'), join(producerDir, 'linked.csv'))
+      await expect(copy(join(producerDir, 'linked.csv'))).rejects.toThrow(/symbolic/)
+      symlinkSync(producerDir, join(producerDir, 'alias'))
+      await expect(copy(join(producerDir, 'alias', 'asset.csv'))).rejects.toThrow(/symbolic/)
+      writeFileSync(join(producerDir, 'copy-failure.csv'), 'not delivered', 'utf8')
+      runtime.store.artifacts.save({ ticketId: producer, path: 'copy-failure.csv', at: new Date().toISOString() })
+      const failure = vi.spyOn(runtime.executor.sandbox, 'deliverAttachment').mockRejectedValueOnce(new Error('copy failed'))
+      await expect(copy(join(producerDir, 'copy-failure.csv'))).rejects.toThrow('copy failed')
+      failure.mockRestore()
+      expect(runtime.store.events.list(consumer).filter(event => event.type === 'artifact_read')).toHaveLength(1)
+      const auditFailure = vi.spyOn(runtime.engine, 'recordArtifactRead').mockImplementationOnce(() => { throw new Error('audit unavailable') })
+      await expect(copy(join(producerDir, 'copy-failure.csv'))).rejects.toThrow('audit unavailable')
+      auditFailure.mockRestore()
+      await copy(join(producerDir, 'copy-failure.csv'))
+      expect(runtime.store.events.list(consumer).filter(event => event.type === 'artifact_read')).toHaveLength(2)
+      const tooLarge = join(producerDir, 'large.csv')
+      writeFileSync(tooLarge, '')
+      truncateSync(tooLarge, 64 * 1024 * 1024 + 1)
+      runtime.store.artifacts.save({ ticketId: producer, path: 'large.csv', at: new Date().toISOString() })
+      await expect(copy(tooLarge)).rejects.toThrow(/64 MiB/)
+      expect(runtime.store.events.list(consumer).filter(event => event.type === 'artifact_read')).toHaveLength(2)
+    } finally { await runtime.stop() }
+  })
+
   it('refuses to attach a file from inside workRoot (another Ticket\'s workspace) or a symbolic link', async () => {
     const context = await deployment('auto')
     const { runtime } = context

@@ -62,7 +62,7 @@
 
 最终冻结快照 `/tmp/myagent-reliability-final-acceptance-20261113` 的最新 gate 自身exit=0：typecheck/build/test/artifact ✓，1343 tests passed，源码树hash `e869b2d3d06b22ed`，tmp产物 `lib/index.js` 551241 bytes、SHA256 `4d8a3624fc34a734…`；原始输出 `/tmp/myagent-reliability-final-acceptance-gate.out`。
 
-本体提交仍未创建，push URL `no_push`；本体`lib/index.js`保持既有sha `7524842568f1c04b…`，没有用tmp bundle覆盖；工作区修改尚未commit。代码集成状态为“可靠性修复通过隔离 gate，真实宿主验收待执行”，不能称生产全验收。
+公开预览提交基于上述隔离验证树生成；源仓 push 仍封锁，线上插件未因本次公开同步而重载。代码集成状态为“可靠性修复通过隔离 gate，真实宿主验收待执行”，不能称生产全验收。
 
 补充B2f：独立review确认现代子代理清理误取消closing turn及nested timeout丢join；stop-contract-repair限定修复使用真实strict join，由Runtime全局deadline限制调用方等待；显式halt失败不能伪装成功，drain保留失败直到成功重试。该批91专项green。
 

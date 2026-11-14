@@ -31,6 +31,7 @@ import type { Artifact } from '../core/model.ts'
 import { LOST_TRIGGER_CHARS, LOST_TRIGGER_KEEP, type Store } from './store.ts'
 import { decisionView, ticketSummary, ticketView } from './views.ts'
 import type { DshExecutor } from './executor.ts'
+import { UPLOAD_BODY_BYTES, UploadError, type Uploads } from './uploads.ts'
 
 /** The path the panel and its API live under. */
 export const BASE_PATH = '/myagent'
@@ -83,6 +84,8 @@ export interface HttpHost {
   /** When the plugin mounted, which is how you tell a stale bundle from a stale page. */
   mountedAt(): string
   readonly executor: DshExecutor
+  readonly uploads: Uploads
+  createTicketWithUploads(request: { title: string; text: string; sender?: string; scope?: string; attachments?: readonly string[]; uploadIds?: readonly string[] }): ReturnType<Engine['createTicket']>
   readonly passes: Passes
   /** Look now: poll every Source, then run what is due. */
   nudge(): Promise<void>
@@ -180,6 +183,7 @@ function failure(error: unknown): [number, Record<string, unknown>] {
   if (error instanceof RouteError) {
     return [error.status, error.issues === undefined ? { error: error.message } : { error: error.message, issues: error.issues }]
   }
+  if (error instanceof UploadError) return [400, { error: error.message }]
   if (error instanceof SetupError) return [400, { error: error.message, setup: error.problem }]
   if (error instanceof PromptConflict) return [409, { error: error.message }]
   if (error instanceof UserError) return [error.missing ? 404 : 400, { error: error.message, code: error.code, values: error.values }]
@@ -410,11 +414,16 @@ function table(host: HttpHost): readonly Route[] {
         })(),
       }
     }),
+    route('POST', 'attachments/upload', async ({ body }) => {
+      const request = z.object({ filename: z.string(), data: z.string() }).strict().parse(await body(UPLOAD_BODY_BYTES))
+      host.uploads.cleanup(id => { const ticket = host.store.tickets.get(id); return ticket !== undefined && ticket.ended === undefined })
+      return host.uploads.save(request.filename, request.data)
+    }),
     route('POST', 'tickets', async ({ body }) => {
       const request = BodySchemas.create.parse(await body())
-      const result = host.engine.createTicket({
+      const result = host.createTicketWithUploads({
         title: request.title, text: request.request, scope: request.scope, sender: request.sender,
-        attachments: request.attachments,
+        attachments: request.attachments, uploadIds: request.upload_ids,
       })
       host.passes.requestPass()
       const decision = result.disposition.state === 'accepted' || result.disposition.state === 'ignored' || result.disposition.state === 'observed'
@@ -790,7 +799,8 @@ const BodySchemas = {
     title: z.string().trim().min(1).max(200), request: z.string().trim().min(1).max(20_000),
     scope: z.string().trim().max(2_000).optional(), sender: z.string().trim().max(120).optional(),
     attachments: z.array(z.string().trim().min(1).max(4_000)).max(20).optional(),
-  }).strict(),
+    upload_ids: z.array(z.string().min(1).max(100)).max(10).optional(),
+  }).strict().refine(value => (value.upload_ids?.length ?? 0) === 0 || (value.upload_ids?.length ?? 0) + (value.attachments?.length ?? 0) <= 10, 'At most 10 files can be attached with browser uploads'),
   text: z.object({ text: z.string().trim().min(1).max(20_000) }).strict(),
   reason: z.object({ reason: z.string().trim().max(500).optional() }).strict(),
   prompts: z.object({ worker: z.string().max(1_000_000).optional(), orchestrator: z.string().max(1_000_000).optional(), triage: z.string().max(1_000_000).optional() }).strict(),

@@ -569,6 +569,46 @@ describe('a report from an attempt that is not running', () => {
     expect(memory.artifacts.list(id)).toEqual([])
   })
 
+  it('clears a preparation failure when a queued launch eventually succeeds without a human retry', () => {
+    const { engine, executor } = harness()
+    executor.marksStarted = false
+    const id = engine.createTicket({ title: '恢复启动', text: '继续' }).ticketId!
+    engine.reportGaveUp(id, 'prepare failed')
+    engine.assignmentStarted(id, engine.require(id).assignments.at(-1)!.id)
+    expect(engine.require(id).assignments.at(-1)!.report).toBeUndefined()
+    expect(engine.require(id).attention).toBeUndefined()
+  })
+
+  it('recovers a preparation failure without leaving the current stage failed or losing the answer', () => {
+    const { engine, memory, executor } = harness()
+    executor.marksStarted = false
+    const made = engine.createTicket({ title: '准备失败后恢复', text: '做点事' })
+    const id = made.ticketId!
+    engine.reportGaveUp(id, 'prepare failed: session unavailable')
+    const failed = memory.tickets.get(id)!
+    expect(failed.assignments.at(-1)!.state).toBe('pending')
+    expect(failed.assignments.at(-1)!.report?.state).toBe('failed')
+    const answered = engine.answer(id, '请修复后继续')
+    expect(answered.inputs.at(-1)?.deliveredAt).toBeUndefined()
+    expect(answered.assignments.at(-1)!.report).toBeUndefined()
+    expect(answered.assignments.at(-1)!.state).toBe('pending')
+    // Preparation can fail again after saving the answer; it remains the same undelivered Input.
+    engine.reportGaveUp(id, 'prepare failed again')
+    const failures = engine.history(id).filter(event => event.type === 'report')
+    const retried = engine.retryTicket(id)
+    expect(retried.assignments.at(-1)!.report).toBeUndefined()
+    expect(retried.inputs.at(-1)?.text).toBe('请修复后继续')
+    expect(retried.inputs.at(-1)?.id).toBe(answered.inputs.at(-1)?.id)
+    expect(retried.assignments).toHaveLength(1)
+    executor.engine!.assignmentStarted(id, retried.assignments.at(-1)!.id)
+    expect(memory.tickets.get(id)!.assignments.at(-1)!.state).toBe('running')
+    expect(memory.tickets.get(id)!.assignments.at(-1)!.report).toBeUndefined()
+    expect(memory.tickets.get(id)!.inputs.at(-1)?.deliveredAt).toBeUndefined()
+    engine.inputsDelivered(id, retried.assignments.at(-1)!.id, [answered.inputs.at(-1)!.id])
+    expect(memory.tickets.get(id)!.inputs.at(-1)?.deliveredAt).toBeDefined()
+    expect(engine.history(id).filter(event => event.type === 'report')).toEqual(failures)
+  })
+
   it('still records the system giving up on an attempt that never started', () => {
     const { engine, memory, executor } = harness()
     executor.marksStarted = false

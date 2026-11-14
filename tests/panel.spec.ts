@@ -72,7 +72,7 @@ const serve = (routes: Routes) => {
     calls.push(call)
     const route = routes[`${call.method} ${call.path}`]
     if (route === undefined) return respond(404, { error: `No route for ${call.method} ${call.path}` })
-    const answer = typeof route === 'function' ? (route as (call: Call) => unknown)(call) : route
+    const answer = await (typeof route === 'function' ? (route as (call: Call) => unknown)(call) : route)
     return answer instanceof Refusal ? respond(answer.status, { error: answer.error }) : respond(200, answer)
   })
   const sent = (key: string): Call[] => calls.filter(call => `${call.method} ${call.path}` === key)
@@ -6023,5 +6023,255 @@ describe('行内归组（B-7）', () => {
     const idx = kvs.findIndex(k => k === '归属')
     expect(idx).toBeGreaterThanOrEqual(0)
     expect(String(byId('detail').querySelectorAll('dd')[idx]?.textContent)).toContain('周报（work-1）')
+  })
+})
+
+
+describe('editing through polling and asynchronous submission', () => {
+  it('keeps a connected composing detail node, selection and fresh surrounding data', async () => {
+    let title = '最初标题'
+    const { sent } = await mount(routes({ 'GET tickets/ticket-1': () => ticket({ title }) }))
+    await openListed()
+    const box = area('d-answer'); box.focus(); type('d-answer', '中文草稿'); box.setSelectionRange(1, 3)
+    box.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '中' }))
+    box.dispatchEvent(new CompositionEvent('compositionupdate', { bubbles: true, data: '中文' }))
+    title = '轮询后的标题'
+    await tick(6000)
+    expect(area('d-answer')).toBe(box)
+    expect(box.isConnected).toBe(true)
+    expect(document.activeElement).toBe(box)
+    expect([box.selectionStart, box.selectionEnd]).toEqual([1, 3])
+    expect(text('detail')).toContain(title)
+    expect(sent('GET state').length).toBeGreaterThan(1)
+    box.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '中文' }))
+    await tick(3000)
+    expect(area('d-answer')).toBe(box)
+    expect(box.value).toBe('中文草稿')
+  })
+
+  it('keeps overview IME nodes and ignores composition Enter including keyCode 229', async () => {
+    const { sent } = await mount(routes({ 'POST tickets/ticket-1/answer': ticket() }))
+    const box = area('ov-answer-ticket-1'); box.focus(); type(box.id, '中文回答')
+    box.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await tick(5000)
+    expect(area(box.id)).toBe(box)
+    expect(sent('POST tickets/ticket-1/answer')).toHaveLength(0)
+    box.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }))
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, bubbles: true }))
+    await settle()
+    expect(sent('POST tickets/ticket-1/answer')).toHaveLength(0)
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await settle()
+    expect(sent('POST tickets/ticket-1/answer')).toHaveLength(1)
+    expect(area(box.id).value).toBe('')
+  })
+
+  it('clears only the submitted detail draft and retains input typed while the answer is in flight', async () => {
+    let release!: (value: unknown) => void
+    const pending = new Promise(resolve => { release = resolve })
+    await mount(routes({ 'POST tickets/ticket-1/answer': () => pending }))
+    await openListed()
+    type('d-answer', '已提交草稿'); type('d-note', '保留备注')
+    click(button('回答')); await settle()
+    type('d-answer', '下一句新输入')
+    release(ticket()); await settle(); await settle()
+    expect(area('d-answer').value).toBe('下一句新输入')
+    expect(area('d-note').value).toBe('保留备注')
+    expect(toastText()).toBe('已提交')
+  })
+})
+
+
+describe('browser attachment uploads', () => {
+  const dropFiles = (files: File[]) => {
+    const event = new Event('drop', { bubbles: true, cancelable: true })
+    Object.defineProperty(event, 'dataTransfer', { value: { files, types: ['Files'] } })
+    byId('n-upload-drop').dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+  }
+  const finishFiles = async () => { for (let i = 0; i < 8; i++) await settle() }
+
+  it('uploads bytes, deduplicates files, removes a selection and submits opaque ids with legacy paths', async () => {
+    let sequence = 0
+    const { sent, last } = await mount(routes({
+      'POST attachments/upload': () => ({ uploadId: `opaque-${++sequence}`, name: '需求.txt', size: 6 }),
+      'POST tickets': { disposition: 'observed' },
+    }))
+    click(button('派活')); await settle()
+    const file = new File(['中文'], '需求.txt', { lastModified: 1 })
+    dropFiles([file, file]); await finishFiles()
+    expect(sent('POST attachments/upload')).toHaveLength(1)
+    expect(last('POST attachments/upload')?.body).toEqual({ filename: '需求.txt', data: base64('中文') })
+    click(button('加一个文件')); fill(one('#n-attachments input'), '/controlled/legacy.txt')
+    type('n-title', '上传任务'); type('n-request', '读取附件')
+    click(button('创建 Ticket')); await settle()
+    expect(last('POST tickets')?.body).toMatchObject({ upload_ids: ['opaque-1'], attachments: ['/controlled/legacy.txt'] })
+    expect(text('n-uploads')).toBe('')
+    expect(area('n-request').value).toBe('')
+    dropFiles([file]); await finishFiles()
+    click(button('移除', byId('n-uploads')))
+    expect(text('n-uploads')).toBe('')
+  })
+
+  it('blocks submission for pending or failed uploads and retains drafts until removal', async () => {
+    let release!: (value: unknown) => void
+    const pending = new Promise(resolve => { release = resolve })
+    const { sent } = await mount(routes({ 'POST attachments/upload': () => pending }))
+    click(button('派活')); await settle()
+    type('n-title', '草稿'); type('n-request', '不要丢失')
+    dropFiles([new File(['a'], 'file.txt')]); await finishFiles()
+    expect((byId('create') as HTMLButtonElement).disabled).toBe(true)
+    click(button('创建 Ticket')); await settle()
+    expect(sent('POST tickets')).toHaveLength(0)
+    release(refuse(413, '上传超过限制')); await finishFiles()
+    expect(text('n-uploads')).toContain('上传失败')
+    expect((byId('create') as HTMLButtonElement).disabled).toBe(true)
+    expect(area('n-request').value).toBe('不要丢失')
+    click(button('移除', byId('n-uploads')))
+    expect((byId('create') as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('rejects oversized files before reading or sending them and prevents outside-file navigation', async () => {
+    const { sent } = await mount(routes())
+    const file = new File(['x'], 'large.txt')
+    Object.defineProperty(file, 'size', { value: 8 * 1024 * 1024 + 1 })
+    dropFiles([file]); await finishFiles()
+    expect(sent('POST attachments/upload')).toHaveLength(0)
+    expect(toastText()).toContain('8 MiB')
+    const drag = new Event('dragover', { bubbles: true, cancelable: true })
+    Object.defineProperty(drag, 'dataTransfer', { value: { files: [], types: ['Files'] } })
+    document.body.dispatchEvent(drag)
+    expect(drag.defaultPrevented).toBe(true)
+  })
+})
+
+
+describe('upload picker and request ordering', () => {
+  it('accepts picker multi files, ignores a removed upload completion and retries a failed selection', async () => {
+    let release!: (value: unknown) => void
+    let count = 0
+    const delayed = new Promise(resolve => { release = resolve })
+    const { sent, last } = await mount(routes({
+      'POST attachments/upload': () => ++count === 1 ? delayed : count === 2 ? refuse(400, '拒绝上传') : { uploadId: 'retry-id', name: 'retry.txt', size: 1 },
+      'POST tickets': { disposition: 'observed' },
+    }))
+    click(button('派活')); await settle()
+    expect(input('n-upload-input').multiple).toBe(true)
+    const files = [new File(['a'], 'old.txt'), new File(['b'], 'retry.txt')]
+    const select = (chosen: File[]) => {
+      Object.defineProperty(input('n-upload-input'), 'files', { value: chosen, configurable: true })
+      input('n-upload-input').dispatchEvent(new Event('change', { bubbles: true }))
+    }
+    select(files)
+    for (let i = 0; i < 8; i++) await settle()
+    expect(sent('POST attachments/upload')).toHaveLength(2)
+    for (const remove of all('#n-uploads button')) click(remove)
+    select([files[1]!])
+    for (let i = 0; i < 8; i++) await settle()
+    release({ uploadId: 'obsolete-id', name: 'old.txt', size: 1 })
+    await settle()
+    expect(text('n-uploads')).not.toContain('old.txt')
+    expect(text('n-uploads')).toContain('已上传')
+    type('n-title', '再次上传'); type('n-request', '处理重试文件')
+    click(button('创建 Ticket')); await settle()
+    expect(last('POST tickets')?.body).toMatchObject({ upload_ids: ['retry-id'] })
+  })
+
+  it('clears a confirmed answer while retaining an unrelated draft', async () => {
+    await mount(routes({ 'POST tickets/ticket-1/answer': ticket() }))
+    await openListed()
+    type('d-answer', '提交后清空'); type('d-note', '未提交备注')
+    click(button('回答')); await settle(); await settle()
+    expect(area('d-answer').value).toBe('')
+    expect(area('d-note').value).toBe('未提交备注')
+  })
+
+  it('explains preparation failure and recorded delivery without soliciting another overview answer', async () => {
+    const failure = { preparationFailed: true, waitingForAnswer: false, inputDelivery: { state: 'failed', total: 1, pending: 1, delivered: 0, error: '准备命令失败' } }
+    await mount(routes({ 'GET tickets': { count: 1, tickets: [listed(failure)] }, 'GET tickets/ticket-1': ticket({ ...failure, question: undefined }) }))
+    expect(text('ov-attention')).toContain('准备失败，需修复后重试')
+    expect(text('ov-attention')).toContain('回答已记录，尚未送达')
+    expect(all('#ov-answer-ticket-1')).toHaveLength(0)
+    await openListed()
+    expect(text('detail')).toContain('准备命令失败')
+    expect(all('#detail button').map(labelOf)).not.toContain('没有要回答的，继续')
+  })
+})
+
+
+describe('chat editing during the main poll', () => {
+  it('preserves composing identity fields while header health continues refreshing', async () => {
+    let unhealthy = false
+    await mount(routes({ 'GET state': () => chatState({ health: unhealthy ? { executor: { ok: false, detail: '新故障' } } : {} }) }))
+    click(button('聊天')); await settle()
+    const field = input('c-platform'); field.focus(); type('c-platform', '中文身份')
+    field.setSelectionRange(1, 3)
+    field.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+    unhealthy = true
+    await tick(5000)
+    expect(input('c-platform')).toBe(field)
+    expect(document.activeElement).toBe(field)
+    expect([field.selectionStart, field.selectionEnd]).toEqual([1, 3])
+    expect(text('health')).toContain('1 个问题')
+  })
+})
+
+
+describe('U4 control refresh and file request ownership', () => {
+  it('refreshes inactive work select options and value but preserves a focused selection', async () => {
+    let works = [work()]
+    let assigned: string | undefined
+    await mount(routes({ 'GET works': () => ({ works }), 'GET tickets/ticket-1': () => ticket({ workId: assigned }) }))
+    await openListed()
+    const select = input('d-work')
+    works = [work(), work({ id: 'work-2', name: '新工作' })]
+    assigned = 'work-2'
+    await tick(5000)
+    // Work index arrives on the main poll and the next detail poll consumes it.
+    await tick(1000)
+    expect(input('d-work')).toBe(select)
+    expect(all('#d-work option').map(valueOf)).toContain('work-2')
+    expect(select.value).toBe('work-2')
+    select.focus(); choose('d-work', 'work-1')
+    assigned = 'work-2'
+    await tick(3000)
+    expect(select.value).toBe('work-1')
+  })
+
+  it('does not resurrect a closed file when its read completes', async () => {
+    let release!: (value: unknown) => void
+    const pending = new Promise(resolve => { release = resolve })
+    await mount(routes({ 'GET tickets/ticket-1/file': () => pending }))
+    await openListed(); click(button('报告.md')); await settle()
+    click(button('收起', byId('d-fileview')))
+    release(served()); await settle()
+    expect(text('d-fileview')).toBe('')
+  })
+
+  it('keeps the latest file when an older file read completes last', async () => {
+    let release!: (value: unknown) => void
+    const pending = new Promise(resolve => { release = resolve })
+    await mount(routes({ 'GET tickets/ticket-1/file': (call: Call) => call.query.get('path') === '报告.md' ? pending : served({ path: 'chart.png', text: false, base64: PNG.toString('base64') }) }))
+    await openListed(); click(button('报告.md')); await settle()
+    click(button('chart.png')); await settle()
+    release(served()); await settle()
+    expect(text('d-fileview')).toContain('chart.png')
+    expect(text('d-fileview')).not.toContain(REPORT_TEXT)
+  })
+
+  it('ignores a late error from the ticket previously opened', async () => {
+    let release!: (value: unknown) => void
+    const pending = new Promise(resolve => { release = resolve })
+    await mount(routes({
+      'GET tickets/ticket-1/file': () => pending,
+      'GET tickets/ticket-2': ticket({ id: 'ticket-2', title: '第二张任务' }),
+    }))
+    await openListed(); click(button('报告.md')); await settle()
+    window.history.replaceState(null, '', '#ticket=ticket-2')
+    window.dispatchEvent(new HashChangeEvent('hashchange')); await settle()
+    release(refuse(500, '旧任务读取失败')); await settle()
+    expect(text('detail')).toContain('第二张任务')
+    expect(text('d-fileview')).not.toContain('旧任务读取失败')
   })
 })

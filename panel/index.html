@@ -447,8 +447,10 @@
       <details class="why"><summary>留空会用什么，为什么它是英文</summary><div class="why-body"><p class="muted" style="font-size:12px">
         留空就用上面 placeholder 里那句默认范围（<code>policy.ts</code> 的 DEFAULT_SCOPE）。它是写给执行者的指令，
         所以是英文；界面给你的说明是中文，两者不冲突。想更窄就在这里写，例如「只读 data/，不要改代码」。</p></div></details>
-      <label>随任务带过去的文件（绝对路径，一行一个）</label>
-      <div id="n-attachments" class="stack" style="margin-top:0"></div>
+      <label>随任务带过去的文件</label>
+      <div id="n-upload-drop" class="form-fold" tabindex="0" style="text-align:center">拖拽文件到这里，或 <button type="button" class="btn small" id="n-upload-select">选择文件</button><input id="n-upload-input" type="file" multiple hidden><div id="n-upload-status" class="muted" role="status" style="font-size:12px;margin-top:4px">单文件 ≤ 8 MiB，最多 10 个附件，总计 ≤ 32 MiB</div></div>
+      <div id="n-uploads" class="stack" style="margin-top:0"></div>
+      <details class="why"><summary>高级：填写绝对路径</summary><div class="why-body"><div id="n-attachments" class="stack" style="margin-top:0"></div></div></details>
       <div class="row" style="margin-top:6px">
         <button class="btn small" id="add-attachment">加一个文件</button>
         <button class="btn small" id="clear-attachments" style="display:none">清空所有</button>
@@ -797,11 +799,52 @@
     for (const [k, v] of Object.entries(attrs)) {
       if (k === 'class') node.className = v
       else if (k === 'html') node.innerHTML = v
-      else if (k.startsWith('on')) node.addEventListener(k.slice(2), v)
+      else if (k.startsWith('on')) { node.addEventListener(k.slice(2), v); (node._listeners ||= {})[k.slice(2)] = v }
       else if (v !== undefined && v !== null) node.setAttribute(k, v)
     }
     for (const kid of kids.flat()) node.append(kid?.nodeType ? kid : document.createTextNode(kid ?? ''))
     return node
+  }
+  // Reconcile in place: even detaching and re-appending a focused textarea cancels native IME.
+  const composing = new WeakSet()
+  document.addEventListener('compositionstart', event => composing.add(event.target))
+  document.addEventListener('compositionupdate', event => composing.add(event.target))
+  document.addEventListener('compositionend', event => composing.delete(event.target))
+  const editor = node => node?.nodeType === 1 && node.matches('input, textarea, select')
+  const editing = node => node?.nodeType === 1 && (node.contains(document.activeElement)
+    || [node, ...node.querySelectorAll('input,textarea,select')].some(field => composing.has(field)))
+  const domKey = node => node.nodeType === 1 ? node.id || node.querySelector('input[id],textarea[id],select[id]')?.id || '' : ''
+  const reconcile = (target, source) => {
+    const previous = [...target.childNodes], used = new Set()
+    let cursor = target.firstChild
+    for (const fresh of [...source.childNodes]) {
+      const key = domKey(fresh)
+      const old = previous.find(node => !used.has(node) && node.nodeType === fresh.nodeType
+        && node.nodeName === fresh.nodeName && (key ? domKey(node) === key : !domKey(node)))
+      if (!old) { target.insertBefore(fresh, cursor); continue }
+      used.add(old)
+      if (old !== cursor) target.insertBefore(old, cursor)
+      cursor = old.nextSibling
+      if (old.nodeType === 3) { if (old.data !== fresh.data) old.data = fresh.data; continue }
+      // Keep text drafts and active native controls intact. Inactive selects and toggles
+      // still need current options/properties; attributes alone do not reset dirty DOM state.
+      if (editor(old)) {
+        // Changing availability must not overwrite the text, selection or composition buffer.
+        old.disabled = fresh.disabled
+        old.readOnly = fresh.readOnly
+        if (editing(old) || old.matches('textarea,input:not([type="checkbox"]):not([type="radio"])')) continue
+      }
+      const selectedValue = old.matches('select') ? fresh.value : null
+      for (const attr of [...old.attributes]) if (!fresh.hasAttribute(attr.name)) old.removeAttribute(attr.name)
+      for (const attr of [...fresh.attributes]) if (old.getAttribute(attr.name) !== attr.value) old.setAttribute(attr.name, attr.value)
+      for (const [name, fn] of Object.entries(old._listeners || {})) old.removeEventListener(name, fn)
+      old._listeners = fresh._listeners || {}
+      for (const [name, fn] of Object.entries(old._listeners)) old.addEventListener(name, fn)
+      if (old !== fresh) reconcile(old, fresh)
+      if (selectedValue !== null) old.value = selectedValue
+      if (old.matches('input[type="checkbox"],input[type="radio"]')) old.checked = fresh.checked
+    }
+    for (const old of previous) if (!used.has(old) && !editing(old)) old.remove()
   }
   /**
    * Escape for interpolation into innerHTML — which is the only place it is needed.
@@ -1091,7 +1134,13 @@
    * 一行任务的状态词。墓碑单独一个词，而不是继续显示它被删之前的状态：
    * 在"已删除"这个过滤器下看到"已完成"，读起来像是列表坏了。
    */
-  const stageLabel = ticket => ticket.deleted !== undefined ? '已删除' : zh(STAGE_ZH, ticket.stage)
+  const stageLabel = ticket => ticket.deleted !== undefined ? '已删除' : ticket.preparationFailed ? '准备失败' : zh(STAGE_ZH, ticket.stage)
+  const waitingForAnswer = ticket => ticket.waitingForAnswer ?? ticket.waitsForPerson
+  const deliveryText = ticket => {
+    const delivery = ticket.inputDelivery
+    if (!delivery || delivery.state === 'none') return ''
+    return ({ pending: '回答已记录，等待启动或投递', failed: '回答已记录，尚未送达；需修复后重试', delivered: '回答已送达 worker', ended: '任务已结束，仍有回答已记录但未送达' })[delivery.state] + (delivery.error ? `：${delivery.error}` : '')
+  }
   const stageClass = stage => stage === 'running' ? 'running'
     : stage === 'waiting' || stage === 'blocked' ? 'attention'
     : stage === 'done' ? 'done'
@@ -1136,7 +1185,7 @@
         el('span', {}, `${ticket.via} · ${ticket.sender}`),
         el('span', { title: when(ticket.updatedAt) }, ended ? `结束于 ${ago(ticket.updatedAt)}` : ago(ticket.updatedAt)),
         ticket.workId ? el('span', {}, `${work ? work.name : `工作 ${ticket.workId}`} · 第 ${ticket.workSeq ?? '—'} 位`) : null,
-        ticket.waitsForPerson ? el('span', { class: 'warn' }, '等你回答') : null),
+        waitingForAnswer(ticket) ? el('span', { class: 'warn' }, '等你回答') : null),
       // 已结束的任务：**为什么结束**是这一行最该说的话，原先它只在详情页里（U22）。
       // endedReason 是服务器组装的句子（多为英文），客户端无法穷举翻译——原文照登、挂在 title 上。
       ended && ticket.endedReason
@@ -1261,7 +1310,9 @@
   const showDetail = async () => {
     if (selected === null) return
     try {
-      const ticket = await api(`tickets/${encodeURIComponent(selected)}`)
+      const id = selected
+      const ticket = await api(`tickets/${encodeURIComponent(id)}`)
+      if (selected !== id) return
       renderDetail(ticket)
       void refreshLive(ticket)
       if (backend !== false) { void refreshDeps(selected); void loadEvents(selected) }
@@ -1279,7 +1330,9 @@
   const pollDetail = async () => {
     if (selected === null || document.hidden === true || tab !== 'tickets') return
     try {
-      const ticket = await api(`tickets/${encodeURIComponent(selected)}`)
+      const id = selected
+      const ticket = await api(`tickets/${encodeURIComponent(id)}`)
+      if (selected !== id) return
       renderDetail(ticket)
       void refreshLive(ticket)
       // The dependencies and the log move while a task runs, which is exactly when "why hasn't it started" is asked.
@@ -1345,11 +1398,19 @@
     return out
   }
 
+  let fileRequest = 0
   const openFile = async (id, path) => {
+    const generation = ++fileRequest
+    const requestedView = viewing
+    const current = () => generation === fileRequest && selected === id && viewing === requestedView && viewing?.path === path
     try {
       const body = await api(`tickets/${encodeURIComponent(id)}/file?path=${encodeURIComponent(path)}`)
+      if (!current()) return
       viewing = { path, text: body.text, base64: body.base64, size: body.size, absolute: body.absolute }
-    } catch (error) { viewing = { path, error: error.message } }
+    } catch (error) {
+      if (!current()) return
+      viewing = { path, error: error.message }
+    }
     renderFileView(id)
   }
 
@@ -1387,15 +1448,18 @@
   }
 
   const renderDetail = ticket => {
-    const node = $('detail')
+    if (ticket.id !== selected) return
+    const liveNode = $('detail')
+    const sameTicket = liveNode.dataset.ticket === ticket.id
+    const node = el('div')
     // What the operator was typing and looking at survives the re-render; without this a 3-second poll would eat it.
     const focus = document.activeElement && document.activeElement.id
     for (const [key, id] of [['answer', 'd-answer'], ['note', 'd-note'], ['depUp', 'd-dep-up'],
       ['depId', 'd-dep-id'], ['depOn', 'd-dep-on'], ['work', 'd-work']]) {
       const field = $(id)
-      if (field !== null) draft[key] = field.value
+      if (sameTicket && field !== null) draft[key] = field.value
     }
-    const stopField = $('d-stop-reason'); if (stopField !== null) draft.stopReason = stopField.value
+    const stopField = $('d-stop-reason'); if (sameTicket && stopField !== null) draft.stopReason = stopField.value
     /**
      * The panes a poll refills are moved instead of rebuilt, so a refresh does not blank what the operator is reading
      * for as long as the new answer takes to arrive — and the history keeps its own scroll, which is the operator's
@@ -1412,6 +1476,8 @@
     const historyView = document.querySelector('#d-events .view')
     const historyScroll = historyView === null ? 0 : historyView.scrollTop
     node.replaceChildren()
+    if (ticket.preparationFailed) node.append(el('p', { class: 'bad' }, '准备失败，需修复后重试'))
+    if (deliveryText(ticket)) node.append(el('p', { class: 'warn' }, deliveryText(ticket)))
     node.append(el('div', { class: 'row' },
       el('h2', { style: 'margin:0' }, ticket.title),
       el('span', { class: `stage ${ticket.deleted !== undefined ? 'stopped' : stageClass(ticket.stage)}`, title: ticket.stage }, stageLabel(ticket)),
@@ -1673,7 +1739,7 @@
       node.append(el('h2', { style: 'margin-top:14px' }, `输入（${inputs.length}）`))
       for (const input of shown) {
         node.append(el('pre', { class: 'muted' },
-          `[${when(input.at)}] ${input.kind}${input.deliveredAt ? ` → 已送达 ${when(input.deliveredAt)}` : ' → 未送达'}: ${input.text}`))
+          `[${when(input.at)}] ${input.kind}${input.deliveredAt ? ` → 已送达 ${when(input.deliveredAt)}` : ` → 已记录，尚未送达${ticket.inputDelivery?.error ? `（${ticket.inputDelivery.error}）` : ''}`}: ${input.text}`))
       }
     }
     // Both histories are cut to the newest six, and a cut without a way to see the rest is a lost fact — the button
@@ -1712,14 +1778,14 @@
       live ? el('div', { class: 'row' },
         el('button', {
           class: 'btn', onclick: () => {
-            if (!answer.value.trim()) return toast('先写回答内容')
-            void act(`tickets/${encodeURIComponent(ticket.id)}/answer`, { text: answer.value })
+            if (!$('d-answer').value.trim()) return toast('先写回答内容')
+            void act(`tickets/${encodeURIComponent(ticket.id)}/answer`, { text: $('d-answer').value }, 'answer')
           },
         }, '回答'),
         // 【减负】一次点击的出口：任务在等人回答，而人看完觉得"没有需要我回答的"。
         // 此前唯一的出路是打字回答（或让它一直挂着——操作者的原话是"根本没有什么真正需要我回答的，
         // 而它一直挂在那里"）。它发的是一句明确的指示，不是空回答：让 worker 自己决定并把理由写进报告。
-        ticket.waitsForPerson === true ? el('button', {
+        waitingForAnswer(ticket) === true ? el('button', {
           class: 'btn',
           title: '告诉它：这个问题不需要我回答，按你自己的判断继续，把选择和理由写进报告',
           onclick: () => void act(`tickets/${encodeURIComponent(ticket.id)}/answer`, {
@@ -1728,8 +1794,8 @@
         }, '没有要回答的，继续') : null,
         el('button', {
           class: 'btn', onclick: () => {
-            if (!note.value.trim()) return toast('先写备注内容')
-            void act(`tickets/${encodeURIComponent(ticket.id)}/note`, { text: note.value })
+            if (!$('d-note').value.trim()) return toast('先写备注内容')
+            void act(`tickets/${encodeURIComponent(ticket.id)}/note`, { text: $('d-note').value }, 'note')
           },
         }, '备注'),
         el('button', { class: 'btn', onclick: () => void act(`tickets/${encodeURIComponent(ticket.id)}/retry`, {}) }, '重试本轮'),
@@ -1746,7 +1812,10 @@
     }
     node.append(deleteBlock(ticket))
     if (stopping) stopRow.classList.remove('hidden')
-    if (focus !== null && focus !== 'body' && $(focus) !== null) $(focus).focus()
+    if (sameTicket) reconcile(liveNode, node)
+    else liveNode.replaceChildren(...node.childNodes)
+    liveNode.dataset.ticket = ticket.id
+    if (focus !== null && focus !== 'body' && $(focus) !== null && document.activeElement.id !== focus) $(focus).focus()
     if (scroll > 0) window.scrollTo(0, scroll)
     const historyNow = document.querySelector('#d-events .view')
     if (historyNow !== null && historyScroll > 0) historyNow.scrollTop = historyScroll
@@ -1858,8 +1927,17 @@
       deleting ? deleteConfirm(ticket) : null)
   }
 
-  const act = async (path, body) => {
-    try { await post(path, body); toast('已提交'); await load(); if (selected) await open(selected) }
+  const act = async (path, body, field) => {
+    const ticketId = selected
+    const submittedNode = field ? $(`d-${field}`) : null
+    try {
+      await post(path, body)
+      if (field && selected === ticketId && submittedNode === $(`d-${field}`) && submittedNode.value === body.text) {
+        submittedNode.value = ''; draft[field] = ''
+      }
+      toast('已提交'); await load()
+      if (selected === ticketId && ticketId) await showDetail()
+    }
     catch (error) { toast(error.message) }
   }
 
@@ -2048,7 +2126,7 @@
     // 手上这批就是全部时，客户端过滤即可；被 limit 截断时才补一次精确读，否则「等你回答」会漏掉列表外的任务。
     const waiting = listTruncated
       ? ((await api('tickets?state=attention&limit=20').catch(() => ({ tickets: [] }))).tickets || [])
-      : currentList.filter(item => item.waitsForPerson === true)
+      : currentList.filter(item => item.waitsForPerson === true || item.preparationFailed)
     renderAttention(attention, waiting)
     renderOldestRunning()
     renderUpcoming(upcoming, schedBody.schedules || [])
@@ -2264,7 +2342,8 @@
     }
   }
 
-  const renderAttention = (node, tickets) => {
+  const renderAttention = (liveNode, tickets) => {
+    const node = el('div')
     const waitingCount = chatStale || state === null ? 0 : ((state.chat || {}).waiting || {}).count ?? 0
     const lostTotal = ((state?.counts || {}).lost || {})
     const lostN = (state?.counts || {}).lost === undefined ? 0 : (lostTotal.rows ?? 0) + (lostTotal.payloads ?? 0)
@@ -2279,27 +2358,31 @@
       // 草稿跨刷新保留：这是详情页已验证过的机制，总览的行内回答框复用同一条纪律。
       box.addEventListener('input', () => ovDrafts.set(draftKey, box.value))
       const send = async () => {
-        const text = box.value.trim()
+        const current = $(`ov-answer-${t.id}`) || box
+        const submitted = current.value
+        const text = submitted.trim()
         if (!text) return toast('先写回答内容')
-        try { await post(`tickets/${encodeURIComponent(t.id)}/answer`, { text }); ovDrafts.delete(draftKey); toast('已回答'); await load() }
+        try { await post(`tickets/${encodeURIComponent(t.id)}/answer`, { text }); if (current.value === submitted) { current.value = ''; ovDrafts.delete(draftKey) } toast('已回答'); await load() }
         catch (error) { toast(error.message) }
       }
       box.addEventListener('keydown', event => {
-        if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send() }
+        if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229 && !composing.has(event.target)) { event.preventDefault(); void send() }
       })
       items.push(el('div', { class: 'ov-item' },
         el('div', { class: 'hd' },
           el('span', { class: 'title' }, t.title),
-          el('span', { class: 'stage attention', title: t.stage }, zh(STAGE_ZH, t.stage)),
+          el('span', { class: 'stage attention', title: t.stage }, stageLabel(t)),
           el('span', { class: 'muted', style: 'font-size:12px' }, `${t.via} · ${t.sender} · ${when(t.updatedAt)}`),
           el('button', { class: 'linklike', style: 'margin-left:auto', onclick: () => { show('tickets'); void open(t.id) } }, '打开详情')),
         // 列表接口只带 summary，不带 question（那是详情接口的字段）。总览不为了显示一句话去逐条读详情——
         // N 条就是 N 个请求。要看问题原文点「打开详情」，那里有。
         t.summary ? el('p', { class: 'muted', style: 'margin:6px 0 0' }, t.summary) : null,
-        box,
+        t.preparationFailed ? el('p', { class: 'bad' }, '准备失败，需修复后重试；可打开详情查看') : null,
+        deliveryText(t) ? el('p', { class: 'warn' }, deliveryText(t)) : null,
+        t.preparationFailed ? null : box,
         // 「发送」而不是「回答」：这是行内快速回复（Enter 也发送，IM 习惯），与详情页那个完整表单是两个操作。
         // 同名会让页面上出现两个「回答」，也让"点哪一个"变成要靠位置猜的事（§6.1 一致性）。
-        el('div', { class: 'row', style: 'margin-top:6px' }, el('button', { class: 'btn small', onclick: () => void send() }, '发送'))))
+        t.preparationFailed ? null : el('div', { class: 'row', style: 'margin-top:6px' }, el('button', { class: 'btn small', onclick: () => void send() }, '发送'))))
     }
     if (waitingCount > 0) {
       items.push(el('div', { class: 'ov-item' },
@@ -2320,6 +2403,7 @@
     node.replaceChildren(...(items.length === 0
       ? [el('div', { class: 'ov-quiet' }, '系统安静，没有需要你操作的事。'), el('span', { class: 'muted', style: 'font-size:12px;display:block;margin-top:4px' }, '等你回答的任务、未映射的聊天消息、丢失的请求会出现在这里。')]
       : items))
+    reconcile(liveNode, node)
   }
 
   const renderUpcoming = (node, schedules) => {
@@ -3618,8 +3702,9 @@ WantedBy=default.target
   const renderChat = () => {
     // 每频道健康来自 Source 自己的 channels()；旧 bundle 没有这个方法，缺席就不画数字（画成 0 是撒谎）。
     channelHealth = new Map(((state.chat || {}).channels ?? []).map(item => [item.id, item]))
-    const node = $('chat')
-    if (node === null) return
+    const liveNode = $('chat')
+    if (liveNode === null) return
+    const node = el('div')
     // Read what the operator has typed BEFORE rebuilding, so the refresh hands it back to them.
     for (const [key, id] of [['platform', 'c-platform'], ['actor', 'c-actor'], ['note', 'c-note']]) {
       const field = $(id)
@@ -3630,7 +3715,7 @@ WantedBy=default.target
       if (field !== null) channelDraft[key] = field.value
     }
     node.replaceChildren()
-    if (chatStale) { node.append(staleLine()); return }
+    if (chatStale) { node.append(staleLine()); reconcile(liveNode, node); return }
     const chat = state.chat || {}
     const policy = chat.policy || {}
     const waiting = chat.waiting || {}
@@ -3842,7 +3927,7 @@ WantedBy=default.target
           el('button', {
             class: 'btn', onclick: () => { confirmMap = null; confirmUnsafe = null; renderChat() },
           }, '取消'))))
-    actorCheck()
+    // Validate after the connected form has been reconciled.
 
     // ---- the reply tally, with the number that would otherwise be uninterpretable explained
     const sends = (state.counts || {}).sends || {}
@@ -3858,6 +3943,8 @@ WantedBy=default.target
         el('p', { class: 'muted' }, `两个数都是本次挂载以来的（挂载于 ${when(state.mountedAt)}），插件重载会归零。`
           + '已经发出去的回复在频道目录的 out/ 里；重试到彻底放弃的那一句在任务目录的 REPLY-UNDELIVERED.md 里，'
           + '并在它自己的历史里留下一条 reply_lost。')))
+    reconcile(liveNode, node)
+    actorCheck()
   }
 
   // ------------------------------------------------------------- settings
@@ -4593,6 +4680,52 @@ WantedBy=default.target
   const attachmentPaths = () => [...$('n-attachments').querySelectorAll('input')]
     .map(input => input.value.trim()).filter(path => path !== '')
 
+  const uploads = []
+  let creating = false
+  const uploadStatus = () => {
+    const pending = uploads.some(item => item.state === 'uploading')
+    const failed = uploads.some(item => item.state === 'failed')
+    $('create').disabled = creating || pending || failed
+    $('n-upload-status').textContent = pending ? '上传中，请等待完成后创建' : failed ? '上传失败：请移除失败文件后重新选择' : '单文件 ≤ 8 MiB，最多 10 个附件，总计 ≤ 32 MiB'
+    $('n-uploads').replaceChildren(...uploads.map(item => el('div', { class: 'row' },
+      el('span', { class: item.state === 'failed' ? 'bad' : 'muted' }, `${item.name} · ${item.size} 字节 · ${item.state === 'uploading' ? '上传中' : item.state === 'failed' ? `上传失败：${item.error}` : '已上传'}`),
+      el('button', { class: 'btn small', disabled: creating ? '' : undefined, onclick: () => { if (creating) return; uploads.splice(uploads.indexOf(item), 1); uploadStatus() } }, '移除'))))
+  }
+  const uploadFiles = files => {
+    if (creating) return
+    for (const file of files) {
+      if (uploads.some(item => item.key === `${file.name}:${file.size}:${file.lastModified}`)) continue
+      if (uploads.length + attachmentPaths().length >= 10) { toast('最多 10 个附件（含绝对路径）'); continue }
+      if (file.size > 8 * 1024 * 1024) { toast(`${file.name} 超过单文件 8 MiB`); continue }
+      if (uploads.reduce((n, item) => n + item.size, 0) + file.size > 32 * 1024 * 1024) { toast('上传文件总计不能超过 32 MiB'); continue }
+      const item = { key: `${file.name}:${file.size}:${file.lastModified}`, name: file.name, size: file.size, state: 'uploading' }
+      uploads.push(item); uploadStatus()
+      void (async () => {
+        try {
+          const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(String(reader.result).split(',')[1])
+            reader.onerror = () => reject(new Error('文件读取失败'))
+            reader.onabort = () => reject(new Error('文件读取取消'))
+            reader.readAsDataURL(file)
+          })
+          if (!uploads.includes(item)) return
+          const result = await post('attachments/upload', { filename: file.name, data })
+          if (!result.uploadId) throw new Error('上传响应缺少文件标识')
+          item.uploadId = result.uploadId; item.state = 'ready'
+        } catch (error) { item.state = 'failed'; item.error = error.message }
+        uploadStatus()
+      })()
+    }
+  }
+  $('n-upload-select').addEventListener('click', () => $('n-upload-input').click())
+  $('n-upload-input').addEventListener('change', event => { uploadFiles([...event.target.files]); event.target.value = '' })
+  for (const name of ['dragover', 'drop']) document.addEventListener(name, event => {
+    if (event.dataTransfer && (event.dataTransfer.files?.length || [...(event.dataTransfer.types || [])].includes('Files'))) event.preventDefault()
+  })
+  $('n-upload-drop').addEventListener('dragover', event => { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy' })
+  $('n-upload-drop').addEventListener('drop', event => { event.preventDefault(); uploadFiles([...(event.dataTransfer?.files || [])]) })
+
   const addAttachmentField = value => {
     const input = el('input', { type: 'text', placeholder: '/绝对/路径/文件.csv', value: value || '' })
     $('n-attachments').append(el('div', { class: 'row' }, input,
@@ -4643,17 +4776,23 @@ WantedBy=default.target
     const title = $('n-title').value.trim(), request = $('n-request').value.trim(), scope = $('n-scope').value.trim()
     if (!title || !request) return toast('标题和要做的事都得填')
     const attachments = attachmentPaths()
+    if (creating || uploads.some(item => item.state !== 'ready')) return toast('附件尚未就绪，请等待上传或移除失败文件')
+    if (attachments.length + uploads.length > 10) return toast('最多 10 个附件（含绝对路径）')
+    const submitted = ['n-title', 'n-request', 'n-scope'].map(id => [id, $(id).value])
+    creating = true; uploadStatus()
     try {
       const body = await post('tickets', {
-        title, request, ...(scope ? { scope } : {}), ...(attachments.length > 0 ? { attachments } : {}),
+        title, request, ...(scope ? { scope } : {}), ...(attachments.length > 0 ? { attachments } : {}), ...(uploads.length ? { upload_ids: uploads.map(item => item.uploadId) } : {}),
       })
       renderCreateResult(body)
-      $('n-title').value = ''; $('n-request').value = ''; $('n-scope').value = ''
+      for (const [id, value] of submitted) if ($(id).value === value) $(id).value = ''
+      uploads.length = 0; $('n-upload-input').value = ''
       $('n-attachments').replaceChildren()
       toast(body.ticketId ? `已开 Ticket ${body.ticketId.slice(0, 8)}` : `已记录：${body.disposition}（${body.reason || ''}）`)
       await load()
       if (body.ticketId !== undefined) { show('tickets'); await open(body.ticketId) }
     } catch (error) { $('new-result').textContent = error.message }
+    finally { creating = false; uploadStatus() }
   })
   /**
    * 创建结果（U5）：以前这里印的是接口的原始 JSON，操作者要自己从 `"disposition": "observed"` 读出

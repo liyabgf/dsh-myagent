@@ -38,10 +38,11 @@
 
 以下事项不能由 1343 项离线测试替代：
 
-1. 当前修复树尚未在真实 DSH Host 上重载运行；没有真实模型调用验收。
+1. 本修复树已经由插件管理在当前 DSH Host 上部署（`application: applied`），完成了一次受控重试；但真实模型、桥接收发与浏览器视觉验收仍未执行。
 2. Telegram/Lark 等桥未做真实平台收发闭环验收。
 3. 浏览器脚本现在支持依赖预检，但真实浏览器视觉、console、深链和大任务布局检查尚未执行。
 4. 当前 Host 的 subagents API 主要支持 exact root tree teardown；非 root member 的局部子树停止不能安全表达，代码会拒绝而不是误停兄弟。需要 Host 能力或部署约束的真实验收。
+5. 当前上传/拖拽附件使用受控 opaque upload id，限制单文件8MiB/单票32MiB、文件数10；Ticket创建后的receipt归属若在进程崩溃前未写完会保守保留为reserved，需要人工恢复，不能宣称exactly-once。
 5. 直接 Host 工具、启动与停止重叠等在途写入已增加跟踪，但真实宿主取消/事件顺序仍未证明覆盖所有极端情况。
 6. 外部工具执行与成功回执提交之间仍存在崩溃窗口，不宣称 exactly-once。
 7. StateLock 的 unlink 失败恢复、旧版本二进制兼容和最终敏感信息扫描不在本轮完整验收内。
@@ -66,4 +67,6 @@ worker 仍可能以运行进程的 OS 权限工作。inbox 的文件系统访问
 
 ## 发布状态
 
-本文件由本次公开预览准备树生成。公开树会记录本次脱敏同步和随后的公开提交，不应将其误读为 Stable 或 Production-ready；真实 Host、模型、桥接和浏览器验收仍按上文限制执行。
+本文件由公开预览准备树生成，已随公开预览提交同步到 GitHub `main` 分支。它描述的是该提交对应的源码与隔离验证证据，**不是 Stable release 或 Production-ready 承诺**。真实 Host、模型、桥接收发和浏览器验收仍按上文限制执行。
+
+补充：当前宿主默认要求经过认证的浏览器 Peer，命令行直接访问 `/myagent/` 或 API 会返回 401；已登录 DSH Web GUI 的浏览器可正常访问。`x-myagent-request` 只是同源围栏，不是用户身份认证。

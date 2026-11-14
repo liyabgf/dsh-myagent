@@ -692,7 +692,11 @@ export class Engine {
           ...(current?.role === undefined ? {} : { role: current.role }),
         }
         next = { ...next, assignments: [...next.assignments, assignment] }
-      } else if (current.report?.state === 'waiting' || current.report?.state === 'blocked') {
+      } else if (current.state === 'pending' && current.report?.state === 'failed') {
+        // Preparation failed before a worker existed. Keep the answer as an undelivered Input and remove only the
+        // obsolete current failure marker; retry/launch remains responsible for delivery.
+        next = withAssignment(next, { ...current, report: undefined })
+      } else if (current.report?.state === 'waiting' || current.report?.state === 'blocked' || current.report?.state === 'failed') {
         // Advance the running Assignment's report out of `waiting`/`blocked` once an answer is handed over, so a
         // second message in the same conversation is not mistaken for the first answer to a still-waiting Ticket.
         next = withAssignment(next, {
@@ -809,7 +813,8 @@ export class Engine {
       // An attempt that never started is pushed again as it is. Ending it and opening another would leave two
       // Assignments for one attempt, and the launch already queued for the first would only learn it was replaced.
       if (stalled !== undefined && stalled.state === 'pending') {
-        const pushed: Ticket = { ...ticket, attention: undefined }
+        // Recovery replaces the current preparation failure marker, not the immutable report events.
+        const pushed: Ticket = { ...withAssignment(ticket, { ...stalled, report: undefined }), attention: undefined }
         this.record(ticketId, 'retried', { kind: 'person' }, { assignmentId: pushed.assignments.at(-1)!.id })
         this.repos.tickets.save(pushed)
         this.tx.afterCommit(() => this.executor.start(pushed, stalled))
@@ -852,7 +857,11 @@ export class Engine {
     this.mutate(ticketId, ticket => {
       const assignment = ticket.assignments.find(item => item.id === assignmentId)
       if (assignment === undefined || assignment.state !== 'pending') return ticket
-      const next = withAssignment(ticket, { ...assignment, state: 'running', startedAt: this.now(), deliveryError: undefined })
+      const recoveringPreparation = assignment.report?.state === 'failed'
+      const next = withAssignment(recoveringPreparation ? { ...ticket, attention: undefined } : ticket, {
+        ...assignment, state: 'running', startedAt: this.now(), deliveryError: undefined,
+        ...(recoveringPreparation ? { report: undefined } : {}),
+      })
       this.record(ticketId, 'launched', { kind: 'system' }, { assignmentId })
       this.emit({ type: 'assignment.started', ticketId, assignmentId })
       return next
